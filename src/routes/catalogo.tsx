@@ -74,7 +74,8 @@ function CatalogPage() {
       else query = query.order('featured', { ascending: false }).order('created_at', { ascending: false });
       const { data, error, count } = await query.range(from, to);
       if (error) throw error;
-      return { products: (data ?? []) as unknown as Product[], total: count ?? 0 };
+      const products = (data ?? []).map((p: any) => ({ ...p, images: imageUrlsFromProductImages(p.product_images, p.images) })) as Product[];
+      return { products, total: count ?? 0 };
     },
   });
 
