@@ -9,11 +9,12 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { ORDER_STATUS_OPTIONS, PAYMENT_STATUS_OPTIONS, orderStatusLabel } from '@/lib/orderStatus';
 
 export const Route = createFileRoute('/admin/pedidos')({ component: PedidosAdmin });
 
-const STATUSES = ['pending', 'confirmed', 'preparing', 'shipped', 'delivered', 'cancelled'] as const;
-const PAYMENT_STATUSES = ['pending', 'paid', 'failed', 'refunded'] as const;
+const STATUSES = ORDER_STATUS_OPTIONS;
+const PAYMENT_STATUSES = PAYMENT_STATUS_OPTIONS;
 
 function PedidosAdmin() {
   const [orders, setOrders] = useState<any[]>([]);
@@ -63,7 +64,7 @@ function PedidosAdmin() {
           </div>
           <select value={filterStatus} onChange={(e) => setFilterStatus(e.target.value)} className="h-10 rounded-md border border-input bg-background px-3 text-sm">
             <option value="">Todos os status</option>
-            {STATUSES.map((s) => <option key={s} value={s}>{s}</option>)}
+            {STATUSES.map((s) => <option key={s} value={s}>{orderStatusLabel(s)}</option>)}
           </select>
         </div>
 
@@ -98,12 +99,12 @@ function PedidosAdmin() {
               <div className="grid grid-cols-2 gap-3 text-sm">
                 <div><Label>Status do pedido</Label>
                   <select value={edit.status} onChange={(e) => setEdit({ ...edit, status: e.target.value })} className="mt-1 h-9 w-full rounded-md border border-input bg-background px-2 text-sm">
-                    {STATUSES.map((s) => <option key={s} value={s}>{s}</option>)}
+                    {STATUSES.map((s) => <option key={s} value={s}>{orderStatusLabel(s)}</option>)}
                   </select>
                 </div>
                 <div><Label>Status do pagamento</Label>
                   <select value={edit.payment_status} onChange={(e) => setEdit({ ...edit, payment_status: e.target.value })} className="mt-1 h-9 w-full rounded-md border border-input bg-background px-2 text-sm">
-                    {PAYMENT_STATUSES.map((s) => <option key={s} value={s}>{s}</option>)}
+                    {PAYMENT_STATUSES.map((s) => <option key={s} value={s}>{orderStatusLabel(s)}</option>)}
                   </select>
                 </div>
                 <div><Label>Transportadora</Label><Input value={edit.shipping_carrier} onChange={(e) => setEdit({ ...edit, shipping_carrier: e.target.value })} /></div>
@@ -159,5 +160,5 @@ function Badge({ value, kind }: { value: string; kind: 'order' | 'payment' }) {
     failed: 'bg-red-500/10 text-red-700 dark:text-red-400',
     refunded: 'bg-muted text-muted-foreground',
   };
-  return <span className={`inline-block px-2 py-0.5 rounded text-xs font-medium ${colors[value] ?? 'bg-muted text-muted-foreground'}`}>{value}</span>;
+  return <span className={`inline-block px-2 py-0.5 rounded text-xs font-medium ${colors[value] ?? 'bg-muted text-muted-foreground'}`}>{orderStatusLabel(value)}</span>;
 }

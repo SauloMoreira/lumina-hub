@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { useAuth } from '@/hooks/useAuth';
 import { formatBRL } from '@/lib/domain';
 import { listMyOrders } from '@/server/checkout.functions';
+import { orderStatusLabel } from '@/lib/orderStatus';
 
 export const Route = createFileRoute('/conta/pedidos')({ component: MyOrders });
 
@@ -18,12 +19,17 @@ type Row = {
   created_at: string | null;
 };
 
-const STATUS_LABEL: Record<string, { label: string; cls: string }> = {
-  pending: { label: 'Aguardando pagamento', cls: 'bg-warning/15 text-warning' },
-  preparing: { label: 'Em preparação', cls: 'bg-primary-tint text-primary' },
-  shipped: { label: 'Enviado', cls: 'bg-primary-tint text-primary' },
-  delivered: { label: 'Entregue', cls: 'bg-success/15 text-success' },
-  cancelled: { label: 'Cancelado', cls: 'bg-destructive/15 text-destructive' },
+const STATUS_CLS: Record<string, string> = {
+  pending: 'bg-warning/15 text-warning',
+  awaiting_payment: 'bg-warning/15 text-warning',
+  confirmed: 'bg-primary-tint text-primary',
+  paid: 'bg-success/15 text-success',
+  preparing: 'bg-primary-tint text-primary',
+  shipped: 'bg-primary-tint text-primary',
+  out_for_delivery: 'bg-primary-tint text-primary',
+  delivered: 'bg-success/15 text-success',
+  cancelled: 'bg-destructive/15 text-destructive',
+  refunded: 'bg-surface text-muted-foreground',
 };
 
 function MyOrders() {
@@ -63,7 +69,7 @@ function MyOrders() {
         ) : (
           <div className="bg-card border border-border rounded-xl divide-y divide-border">
             {orders.map((o) => {
-              const st = STATUS_LABEL[o.status] ?? { label: o.status, cls: 'bg-surface text-muted-foreground' };
+              const st = { label: orderStatusLabel(o.status), cls: STATUS_CLS[o.status] ?? 'bg-surface text-muted-foreground' };
               return (
                 <Link
                   key={o.id}

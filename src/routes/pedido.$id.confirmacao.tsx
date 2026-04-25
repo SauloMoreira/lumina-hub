@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { useAuth } from '@/hooks/useAuth';
 import { formatBRL } from '@/lib/domain';
 import { getOrderById } from '@/server/checkout.functions';
+import { orderStatusLabel } from '@/lib/orderStatus';
 
 export const Route = createFileRoute('/pedido/$id/confirmacao')({ component: OrderConfirmation });
 
@@ -87,6 +88,7 @@ function OrderConfirmation() {
           </div>
           <h1 className="font-display font-bold text-3xl mb-2">Pedido recebido!</h1>
           <p className="text-muted-foreground">Pedido <strong className="text-foreground">#{order.order_number}</strong> · {order.created_at && new Date(order.created_at).toLocaleString('pt-BR')}</p>
+          <p className="mt-2 inline-block text-xs px-2 py-1 rounded-full bg-primary-tint text-primary font-medium">{orderStatusLabel(order.status)}</p>
         </div>
 
         {/* Status timeline */}
