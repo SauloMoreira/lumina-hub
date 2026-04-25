@@ -33,6 +33,7 @@ function ProductForm() {
   const nav = useNavigate();
   const [loading, setLoading] = useState(!isNew);
   const [saving, setSaving] = useState(false);
+  const [cats, setCats] = useState<Cat[]>([]);
   const imageManagerRef = useRef<ProductImageManagerHandle>(null);
 
   const [form, setForm] = useState({
