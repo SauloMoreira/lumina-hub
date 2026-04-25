@@ -36,7 +36,13 @@ export function ProductCard({ product, index = 0 }: { product: Product; index?: 
       >
         <div className="aspect-square bg-surface relative overflow-hidden flex items-center justify-center">
           {product.images[0] ? (
-            <img src={product.images[0]} alt={product.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
+            <img
+              src={product.images[0]}
+              alt={product.name}
+              loading="lazy"
+              decoding="async"
+              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+            />
           ) : (
             <Zap className="w-16 h-16 text-primary/20" strokeWidth={1.5} />
           )}
