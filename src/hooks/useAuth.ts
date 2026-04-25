@@ -9,13 +9,26 @@ export function useAuth() {
 
   useEffect(() => {
     let mounted = true;
+    let timeout: ReturnType<typeof setTimeout>;
+
+    const finishLoading = () => {
+      if (!mounted) return;
+      clearTimeout(timeout);
+      setLoading(false);
+    };
+
+    timeout = setTimeout(() => {
+      if (mounted) setLoading(false);
+    }, 5000);
+
     // ALWAYS subscribe first, then fetch session
     const { data: sub } = supabase.auth.onAuthStateChange((_event, s) => {
       if (!mounted) return;
       setSession(s);
       setUser(s?.user ?? null);
-      setLoading(false);
+      finishLoading();
     });
+
     supabase.auth.getSession()
       .then(({ data }) => {
         if (!mounted) return;
@@ -23,9 +36,11 @@ export function useAuth() {
         setUser(data.session?.user ?? null);
       })
       .catch(() => { /* ignore */ })
-      .finally(() => { if (mounted) setLoading(false); });
+      .finally(finishLoading);
+
     return () => {
       mounted = false;
+      clearTimeout(timeout);
       sub.subscription.unsubscribe();
     };
   }, []);
