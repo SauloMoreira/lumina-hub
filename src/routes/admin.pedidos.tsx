@@ -101,6 +101,14 @@ function PedidosAdmin() {
             </tbody>
           </table>
         </div>
+
+        <div className="flex items-center justify-between p-4 border-t border-border text-sm">
+          <span className="text-muted-foreground">Página {page}</span>
+          <div className="flex gap-2">
+            <Button variant="outline" size="sm" disabled={page <= 1} onClick={() => setPage((p) => p - 1)}>Anterior</Button>
+            <Button variant="outline" size="sm" disabled={!hasMore} onClick={() => setPage((p) => p + 1)}>Próxima</Button>
+          </div>
+        </div>
       </div>
 
       <Dialog open={open} onOpenChange={setOpen}>
