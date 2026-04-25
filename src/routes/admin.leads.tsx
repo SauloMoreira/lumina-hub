@@ -49,6 +49,9 @@ const StatusBadge = ({ status }: { status?: string | null }) => {
 function LeadsPage() {
   const [leads, setLeads] = useState<any[]>([]);
   const [filterStatus, setFilterStatus] = useState('');
+  const [search, setSearch] = useState('');
+  const [filterOrigin, setFilterOrigin] = useState('all');
+  const [filterInterest, setFilterInterest] = useState('all');
   const [view, setView] = useState<'kanban' | 'list'>('kanban');
   const [open, setOpen] = useState(false);
   const [selected, setSelected] = useState<any>(null);
@@ -61,6 +64,38 @@ function LeadsPage() {
     setLeads((data as any) ?? []);
   };
   useEffect(() => { load(); }, [filterStatus]);
+
+  // Distinct origin/interest values from current dataset
+  const originOptions = Array.from(
+    new Set(leads.map((l) => l.origin).filter(Boolean))
+  ) as string[];
+  const interestOptions = Array.from(
+    new Set(leads.map((l) => l.interest).filter(Boolean))
+  ) as string[];
+
+  const norm = (s: string) =>
+    s.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+
+  const filteredLeads = leads.filter((l) => {
+    if (filterOrigin !== 'all' && (l.origin ?? '') !== filterOrigin) return false;
+    if (filterInterest !== 'all' && (l.interest ?? '') !== filterInterest) return false;
+    if (search.trim()) {
+      const q = norm(search.trim());
+      const hay = norm(`${l.name ?? ''} ${l.company ?? ''}`);
+      if (!hay.includes(q)) return false;
+    }
+    return true;
+  });
+
+  const hasActiveFilters =
+    !!search.trim() || filterOrigin !== 'all' || filterInterest !== 'all' || !!filterStatus;
+
+  const clearFilters = () => {
+    setSearch('');
+    setFilterOrigin('all');
+    setFilterInterest('all');
+    setFilterStatus('');
+  };
 
   const openDetail = (l: any) => {
     setSelected(l);
