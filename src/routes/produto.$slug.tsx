@@ -58,13 +58,18 @@ export const Route = createFileRoute('/produto/$slug')({
     const baseDesc = p.description?.trim() || `${p.name} — disponível na Led Maricá com entrega rápida em Maricá/RJ. Frete grátis acima de R$199.`;
     const description = clamp(p.seo_description || baseDesc, 160);
     const title = p.seo_title || `${p.name}${p.brand ? ' — ' + p.brand : ''}`;
-    const image = p.images?.[0];
+    const productImages = p.product_images ?? [];
+    const allImageUrls = productImages.length
+      ? productImages.map((i) => pickUrl(i, 'full') ?? i.original_url).filter((u): u is string => !!u)
+      : (p.images ?? []);
+    const ogPrimary = productImages.find((i) => i.is_primary) ?? productImages[0];
+    const image = ogPrimary ? pickUrl(ogPrimary, 'og') ?? ogPrimary.original_url : allImageUrls[0];
 
     const seo = buildSeo({
       title,
       description,
       url: `/produto/${p.slug}`,
-      image,
+      image: image ?? undefined,
       type: 'product',
       product: {
         price: finalPrice,
@@ -84,8 +89,17 @@ export const Route = createFileRoute('/produto/$slug')({
       sku: p.sku ?? undefined,
       mpn: p.ncm ?? undefined,
       brand: { '@type': 'Brand', name: p.brand || 'Led Maricá' },
-      image: p.images ?? [],
+      image: allImageUrls,
       offers: {
+        '@type': 'Offer',
+        url: `${SITE_URL}/produto/${p.slug}`,
+        priceCurrency: 'BRL',
+        price: finalPrice,
+        priceValidUntil: new Date(Date.now() + 30 * 86400000).toISOString().split('T')[0],
+        availability: p.stock_qty > 0 ? 'https://schema.org/InStock' : 'https://schema.org/OutOfStock',
+        seller: { '@type': 'Organization', name: 'Led Maricá' },
+      },
+    });
         '@type': 'Offer',
         url: `${SITE_URL}/produto/${p.slug}`,
         priceCurrency: 'BRL',
