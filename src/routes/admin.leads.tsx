@@ -326,8 +326,29 @@ function LeadsPage() {
           </div>
         </div>
 
-        {view === 'kanban' ? (
-          <div className="p-4 overflow-x-auto">
+        {loading && leads.length === 0 ? (
+          view === 'kanban' ? (
+            <div className="p-4 overflow-x-auto">
+              <div className="grid grid-flow-col auto-cols-[minmax(260px,1fr)] gap-3 min-w-full">
+                {STATUSES.map((s) => (
+                  <div key={s} className="bg-muted/30 border border-border rounded-lg min-h-[300px] p-2 space-y-2">
+                    <Skeleton className="h-6 w-24 mb-2" />
+                    {Array.from({ length: 3 }).map((_, i) => (
+                      <Skeleton key={i} className="h-20 w-full rounded-md" />
+                    ))}
+                  </div>
+                ))}
+              </div>
+            </div>
+          ) : (
+            <div className="p-4 space-y-2">
+              {Array.from({ length: 8 }).map((_, i) => (
+                <Skeleton key={i} className="h-12 w-full" />
+              ))}
+            </div>
+          )
+        ) : view === 'kanban' ? (
+          <div className={cn('p-4 overflow-x-auto transition-opacity', isBusy && 'opacity-60')}>
             <div className="grid grid-flow-col auto-cols-[minmax(260px,1fr)] gap-3 min-w-full">
               {STATUSES.map((s) => {
                 const allItems = leadsByStatus(s);
