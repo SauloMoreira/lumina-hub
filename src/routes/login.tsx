@@ -119,7 +119,7 @@ function LoginPage() {
           </Link>
         </div>
 
-        <PrimaryButton loading={loading}>Entrar</PrimaryButton>
+        <PrimaryButton loading={loading}>{loading ? 'Entrando...' : 'Entrar'}</PrimaryButton>
       </form>
 
       <Divider />
