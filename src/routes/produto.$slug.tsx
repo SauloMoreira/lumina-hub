@@ -227,6 +227,28 @@ function ProductPage() {
             )}
           </div>
         </div>
+
+        {/* FAQ gerado por IA — bom para SEO (FAQPage schema) */}
+        {(() => {
+          const faq = extractFaq(product.specs);
+          if (faq.length === 0) return null;
+          return (
+            <section className="mt-12 max-w-3xl">
+              <h2 className="font-display font-bold text-2xl mb-4">Perguntas frequentes</h2>
+              <div className="divide-y divide-border border border-border rounded-xl bg-card">
+                {faq.map((f, i) => (
+                  <details key={i} className="group p-4">
+                    <summary className="flex justify-between items-center cursor-pointer font-medium text-sm list-none">
+                      <span>{f.question}</span>
+                      <ChevronRight className="w-4 h-4 text-muted-foreground transition-transform group-open:rotate-90" />
+                    </summary>
+                    <p className="mt-2 text-sm text-muted-foreground leading-relaxed">{f.answer}</p>
+                  </details>
+                ))}
+              </div>
+            </section>
+          );
+        })()}
       </div>
     </StoreLayout>
   );
