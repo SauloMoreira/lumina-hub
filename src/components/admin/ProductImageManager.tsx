@@ -5,7 +5,7 @@ import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { generateImageSeo } from '@/server/imageSeo.functions';
-import { pickUrl, type ProductImageRow } from '@/lib/productImages';
+import { pickUrl, variantUrl, type ProductImageRow } from '@/lib/productImages';
 
 interface Props {
   productId: string;
@@ -64,13 +64,19 @@ export function ProductImageManager({ productId, productName, brand, category }:
           .upload(path, f, { contentType: f.type, cacheControl: '31536000' });
         if (upErr) throw upErr;
         const { data: pub } = supabase.storage.from('product-images').getPublicUrl(path);
+        const originalUrl = pub.publicUrl;
         const { error: dbErr } = await supabase.from('product_images').insert({
           product_id: productId,
           sort_order: images.length + i,
-          original_url: pub.publicUrl,
+          original_url: originalUrl,
           original_size: f.size,
           original_format: ext,
-          optimized: false,
+          // URLs transformadas pelo CDN do Supabase Storage (sem processamento server-side)
+          url_full: variantUrl(originalUrl, 'full'),
+          url_card: variantUrl(originalUrl, 'card'),
+          url_thumb: variantUrl(originalUrl, 'thumb'),
+          url_og: variantUrl(originalUrl, 'og'),
+          optimized: false, // marcado true após gerar SEO via IA
         });
         if (dbErr) throw dbErr;
       }
@@ -138,6 +144,11 @@ export function ProductImageManager({ productId, productName, brand, category }:
       const { error } = await supabase
         .from('product_images')
         .update({
+          // Garantir que as variantes do CDN estejam preenchidas
+          url_full: img.url_full ?? variantUrl(img.original_url, 'full'),
+          url_card: img.url_card ?? variantUrl(img.original_url, 'card'),
+          url_thumb: img.url_thumb ?? variantUrl(img.original_url, 'thumb'),
+          url_og: img.url_og ?? variantUrl(img.original_url, 'og'),
           alt_text: seo.alt,
           title_text: seo.title,
           caption: seo.caption,
