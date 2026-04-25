@@ -114,7 +114,6 @@ export const ProductImageManager = forwardRef<ProductImageManagerHandle, Props>(
       setPendingImages([]);
       const saved = await fetchProductImages(productId);
       refreshProductCaches();
-      toast.success(`${pendingImages.length} imagem(ns) salva(s)`);
       return saved;
     } finally {
       setUploading(false);
