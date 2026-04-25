@@ -13,16 +13,17 @@ export function ChatWidgetLazy() {
   const [ready, setReady] = useState(false);
 
   useEffect(() => {
-    const w = window as Window & {
-      requestIdleCallback?: (cb: () => void, opts?: { timeout: number }) => number;
-      cancelIdleCallback?: (id: number) => void;
-    };
-    const ric = w.requestIdleCallback;
+    const ric = (window as any).requestIdleCallback as
+      | ((cb: () => void, opts?: { timeout: number }) => number)
+      | undefined;
+    const cic = (window as any).cancelIdleCallback as
+      | ((id: number) => void)
+      | undefined;
     const handle: number = ric
       ? ric(() => setReady(true), { timeout: 2000 })
       : (window.setTimeout(() => setReady(true), 1500) as unknown as number);
     return () => {
-      if (ric && w.cancelIdleCallback) w.cancelIdleCallback(handle);
+      if (ric && cic) cic(handle);
       else clearTimeout(handle);
     };
   }, []);
