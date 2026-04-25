@@ -1,6 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { useEffect, useState } from 'react';
-import { Eye, Trash2, Phone, Mail, LayoutGrid, List, Search, X } from 'lucide-react';
+import { Eye, Trash2, Phone, Mail, LayoutGrid, List, Search, X, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { AdminLayout } from '@/components/admin/AdminLayout';
 import { Button } from '@/components/ui/button';
@@ -53,6 +53,11 @@ function LeadsPage() {
   const [filterOrigin, setFilterOrigin] = useState('all');
   const [filterInterest, setFilterInterest] = useState('all');
   const [view, setView] = useState<'kanban' | 'list'>('kanban');
+  const [sortBy, setSortBy] = useState<'created_desc' | 'created_asc' | 'name_asc' | 'status' | 'value_desc'>('created_desc');
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(20);
+  const [kanbanLimits, setKanbanLimits] = useState<Record<string, number>>({});
+  const KANBAN_PAGE = 20;
   const [open, setOpen] = useState(false);
   const [selected, setSelected] = useState<any>(null);
   const [edit, setEdit] = useState({ status: 'new', notes: '', estimated_value: '' });
@@ -76,16 +81,43 @@ function LeadsPage() {
   const norm = (s: string) =>
     s.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
 
-  const filteredLeads = leads.filter((l) => {
-    if (filterOrigin !== 'all' && (l.origin ?? '') !== filterOrigin) return false;
-    if (filterInterest !== 'all' && (l.interest ?? '') !== filterInterest) return false;
-    if (search.trim()) {
-      const q = norm(search.trim());
-      const hay = norm(`${l.name ?? ''} ${l.company ?? ''}`);
-      if (!hay.includes(q)) return false;
-    }
-    return true;
-  });
+  const STATUS_ORDER: Record<string, number> = {
+    new: 0, contacted: 1, qualified: 2, proposal: 3, won: 4, lost: 5,
+  };
+
+  const filteredLeads = leads
+    .filter((l) => {
+      if (filterOrigin !== 'all' && (l.origin ?? '') !== filterOrigin) return false;
+      if (filterInterest !== 'all' && (l.interest ?? '') !== filterInterest) return false;
+      if (search.trim()) {
+        const q = norm(search.trim());
+        const hay = norm(`${l.name ?? ''} ${l.company ?? ''}`);
+        if (!hay.includes(q)) return false;
+      }
+      return true;
+    })
+    .sort((a, b) => {
+      switch (sortBy) {
+        case 'created_asc':
+          return new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
+        case 'name_asc':
+          return norm(a.name ?? '').localeCompare(norm(b.name ?? ''));
+        case 'status':
+          return (STATUS_ORDER[a.status ?? 'new'] ?? 99) - (STATUS_ORDER[b.status ?? 'new'] ?? 99);
+        case 'value_desc':
+          return (Number(b.estimated_value) || 0) - (Number(a.estimated_value) || 0);
+        case 'created_desc':
+        default:
+          return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+      }
+    });
+
+  // Reset list page when filters/sort change
+  useEffect(() => { setPage(1); setKanbanLimits({}); }, [search, filterOrigin, filterInterest, filterStatus, sortBy, pageSize]);
+
+  const totalPages = Math.max(1, Math.ceil(filteredLeads.length / pageSize));
+  const safePage = Math.min(page, totalPages);
+  const pagedLeads = filteredLeads.slice((safePage - 1) * pageSize, safePage * pageSize);
 
   const hasActiveFilters =
     !!search.trim() || filterOrigin !== 'all' || filterInterest !== 'all' || !!filterStatus;
@@ -215,6 +247,18 @@ function LeadsPage() {
               ))}
             </select>
 
+            <select
+              value={sortBy}
+              onChange={(e) => setSortBy(e.target.value as typeof sortBy)}
+              className="h-9 rounded-md border border-input bg-background px-2 text-xs"
+            >
+              <option value="created_desc">Mais recentes</option>
+              <option value="created_asc">Mais antigos</option>
+              <option value="name_asc">Nome (A–Z)</option>
+              <option value="status">Status</option>
+              <option value="value_desc">Maior valor</option>
+            </select>
+
             <span className="text-xs text-muted-foreground ml-auto">
               {filteredLeads.length} de {leads.length} {leads.length === 1 ? 'lead' : 'leads'}
             </span>
@@ -231,7 +275,10 @@ function LeadsPage() {
           <div className="p-4 overflow-x-auto">
             <div className="grid grid-flow-col auto-cols-[minmax(260px,1fr)] gap-3 min-w-full">
               {STATUSES.map((s) => {
-                const items = leadsByStatus(s);
+                const allItems = leadsByStatus(s);
+                const limit = kanbanLimits[s] ?? KANBAN_PAGE;
+                const items = allItems.slice(0, limit);
+                const hasMore = allItems.length > items.length;
                 return (
                   <div
                     key={s}
@@ -243,10 +290,10 @@ function LeadsPage() {
                       <div className="flex items-center gap-2">
                         <StatusBadge status={s} />
                       </div>
-                      <Badge variant="secondary" className="text-[10px] px-1.5 py-0">{items.length}</Badge>
+                      <Badge variant="secondary" className="text-[10px] px-1.5 py-0">{allItems.length}</Badge>
                     </div>
                     <div className="p-2 space-y-2 flex-1">
-                      {items.length === 0 && (
+                      {allItems.length === 0 && (
                         <p className="text-xs text-muted-foreground text-center py-6">Nenhum lead</p>
                       )}
                       {items.map((l) => (
@@ -287,6 +334,14 @@ function LeadsPage() {
                           </div>
                         </div>
                       ))}
+                      {hasMore && (
+                        <button
+                          onClick={() => setKanbanLimits((prev) => ({ ...prev, [s]: limit + KANBAN_PAGE }))}
+                          className="w-full text-xs text-muted-foreground hover:text-foreground py-2 border border-dashed border-border rounded-md hover:bg-muted/50 transition-colors"
+                        >
+                          Carregar mais ({allItems.length - items.length})
+                        </button>
+                      )}
                     </div>
                   </div>
                 );
@@ -294,31 +349,58 @@ function LeadsPage() {
             </div>
           </div>
         ) : (
-          <table className="w-full text-sm">
-            <thead className="text-left text-xs text-muted-foreground bg-muted/40">
-              <tr><th className="px-4 py-3 font-medium">Nome</th><th className="px-4 py-3 font-medium">Contato</th><th className="px-4 py-3 font-medium">Origem</th><th className="px-4 py-3 font-medium">Interesse</th><th className="px-4 py-3 font-medium">Status</th><th className="px-4 py-3 font-medium">Data</th><th></th></tr>
-            </thead>
-            <tbody>
-              {filteredLeads.length === 0 && <tr><td colSpan={7} className="px-4 py-8 text-center text-muted-foreground">Nenhum lead encontrado.</td></tr>}
-              {filteredLeads.map((l) => (
-                <tr key={l.id} className="border-t border-border hover:bg-muted/20">
-                  <td className="px-4 py-3 font-medium">{l.name}</td>
-                  <td className="px-4 py-3 text-xs space-y-0.5">
-                    {l.email && <div className="flex items-center gap-1 text-muted-foreground"><Mail className="w-3 h-3" />{l.email}</div>}
-                    {l.phone && <div className="flex items-center gap-1 text-muted-foreground"><Phone className="w-3 h-3" />{l.phone}</div>}
-                  </td>
-                  <td className="px-4 py-3 text-xs">{leadOriginLabel(l.origin)}</td>
-                  <td className="px-4 py-3 text-xs max-w-xs truncate">{l.interest ?? '—'}</td>
-                  <td className="px-4 py-3"><StatusBadge status={l.status} /></td>
-                  <td className="px-4 py-3 text-xs">{new Date(l.created_at).toLocaleDateString('pt-BR')}</td>
-                  <td className="px-4 py-3 text-right">
-                    <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => openDetail(l)}><Eye className="w-4 h-4" /></Button>
-                    <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive" onClick={() => del(l.id)}><Trash2 className="w-4 h-4" /></Button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+          <>
+            <table className="w-full text-sm">
+              <thead className="text-left text-xs text-muted-foreground bg-muted/40">
+                <tr><th className="px-4 py-3 font-medium">Nome</th><th className="px-4 py-3 font-medium">Contato</th><th className="px-4 py-3 font-medium">Origem</th><th className="px-4 py-3 font-medium">Interesse</th><th className="px-4 py-3 font-medium">Status</th><th className="px-4 py-3 font-medium">Data</th><th></th></tr>
+              </thead>
+              <tbody>
+                {pagedLeads.length === 0 && <tr><td colSpan={7} className="px-4 py-8 text-center text-muted-foreground">Nenhum lead encontrado.</td></tr>}
+                {pagedLeads.map((l) => (
+                  <tr key={l.id} className="border-t border-border hover:bg-muted/20">
+                    <td className="px-4 py-3 font-medium">{l.name}</td>
+                    <td className="px-4 py-3 text-xs space-y-0.5">
+                      {l.email && <div className="flex items-center gap-1 text-muted-foreground"><Mail className="w-3 h-3" />{l.email}</div>}
+                      {l.phone && <div className="flex items-center gap-1 text-muted-foreground"><Phone className="w-3 h-3" />{l.phone}</div>}
+                    </td>
+                    <td className="px-4 py-3 text-xs">{leadOriginLabel(l.origin)}</td>
+                    <td className="px-4 py-3 text-xs max-w-xs truncate">{l.interest ?? '—'}</td>
+                    <td className="px-4 py-3"><StatusBadge status={l.status} /></td>
+                    <td className="px-4 py-3 text-xs">{new Date(l.created_at).toLocaleDateString('pt-BR')}</td>
+                    <td className="px-4 py-3 text-right">
+                      <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => openDetail(l)}><Eye className="w-4 h-4" /></Button>
+                      <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive" onClick={() => del(l.id)}><Trash2 className="w-4 h-4" /></Button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+            {filteredLeads.length > 0 && (
+              <div className="px-4 py-3 border-t border-border flex items-center justify-between gap-3 flex-wrap text-xs">
+                <div className="flex items-center gap-2 text-muted-foreground">
+                  <span>
+                    {(safePage - 1) * pageSize + 1}–{Math.min(safePage * pageSize, filteredLeads.length)} de {filteredLeads.length}
+                  </span>
+                  <select
+                    value={pageSize}
+                    onChange={(e) => setPageSize(Number(e.target.value))}
+                    className="h-8 rounded-md border border-input bg-background px-2 text-xs"
+                  >
+                    {[10, 20, 50, 100].map((n) => <option key={n} value={n}>{n} / página</option>)}
+                  </select>
+                </div>
+                <div className="flex items-center gap-1">
+                  <Button variant="outline" size="sm" className="h-8" disabled={safePage <= 1} onClick={() => setPage(safePage - 1)}>
+                    <ChevronLeft className="w-3.5 h-3.5" /> Anterior
+                  </Button>
+                  <span className="px-2 text-muted-foreground">Página {safePage} de {totalPages}</span>
+                  <Button variant="outline" size="sm" className="h-8" disabled={safePage >= totalPages} onClick={() => setPage(safePage + 1)}>
+                    Próxima <ChevronRight className="w-3.5 h-3.5" />
+                  </Button>
+                </div>
+              </div>
+            )}
+          </>
         )}
       </div>
 
