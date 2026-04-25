@@ -18,6 +18,8 @@ interface Props {
 export interface ProductImageManagerHandle {
   savePending: () => Promise<ProductImageRow[]>;
   refetchImages: () => Promise<ProductImageRow[]>;
+  /** Adiciona imagens externas (URLs) como pendentes — baixa via server fn p/ contornar CORS */
+  addExternalImages: (urls: string[]) => Promise<{ added: number; failed: number }>;
 }
 
 type PendingImage = {
