@@ -18,7 +18,11 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as AdminIndexRouteImport } from './routes/admin.index'
 import { Route as ProdutoSlugRouteImport } from './routes/produto.$slug'
 import { Route as ContaPedidosRouteImport } from './routes/conta.pedidos'
+import { Route as AdminPedidosRouteImport } from './routes/admin.pedidos'
+import { Route as AdminLeadsRouteImport } from './routes/admin.leads'
+import { Route as AdminCuponsRouteImport } from './routes/admin.cupons'
 import { Route as AdminCategoriasRouteImport } from './routes/admin.categorias'
+import { Route as AdminCampanhasRouteImport } from './routes/admin.campanhas'
 import { Route as AdminProdutosIndexRouteImport } from './routes/admin.produtos.index'
 import { Route as PedidoIdConfirmacaoRouteImport } from './routes/pedido.$id.confirmacao'
 import { Route as AdminProdutosIdRouteImport } from './routes/admin.produtos.$id'
@@ -68,9 +72,29 @@ const ContaPedidosRoute = ContaPedidosRouteImport.update({
   path: '/pedidos',
   getParentRoute: () => ContaRoute,
 } as any)
+const AdminPedidosRoute = AdminPedidosRouteImport.update({
+  id: '/admin/pedidos',
+  path: '/admin/pedidos',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminLeadsRoute = AdminLeadsRouteImport.update({
+  id: '/admin/leads',
+  path: '/admin/leads',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminCuponsRoute = AdminCuponsRouteImport.update({
+  id: '/admin/cupons',
+  path: '/admin/cupons',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AdminCategoriasRoute = AdminCategoriasRouteImport.update({
   id: '/admin/categorias',
   path: '/admin/categorias',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminCampanhasRoute = AdminCampanhasRouteImport.update({
+  id: '/admin/campanhas',
+  path: '/admin/campanhas',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AdminProdutosIndexRoute = AdminProdutosIndexRouteImport.update({
@@ -96,7 +120,11 @@ export interface FileRoutesByFullPath {
   '/checkout': typeof CheckoutRoute
   '/conta': typeof ContaRouteWithChildren
   '/login': typeof LoginRoute
+  '/admin/campanhas': typeof AdminCampanhasRoute
   '/admin/categorias': typeof AdminCategoriasRoute
+  '/admin/cupons': typeof AdminCuponsRoute
+  '/admin/leads': typeof AdminLeadsRoute
+  '/admin/pedidos': typeof AdminPedidosRoute
   '/conta/pedidos': typeof ContaPedidosRoute
   '/produto/$slug': typeof ProdutoSlugRoute
   '/admin/': typeof AdminIndexRoute
@@ -111,7 +139,11 @@ export interface FileRoutesByTo {
   '/checkout': typeof CheckoutRoute
   '/conta': typeof ContaRouteWithChildren
   '/login': typeof LoginRoute
+  '/admin/campanhas': typeof AdminCampanhasRoute
   '/admin/categorias': typeof AdminCategoriasRoute
+  '/admin/cupons': typeof AdminCuponsRoute
+  '/admin/leads': typeof AdminLeadsRoute
+  '/admin/pedidos': typeof AdminPedidosRoute
   '/conta/pedidos': typeof ContaPedidosRoute
   '/produto/$slug': typeof ProdutoSlugRoute
   '/admin': typeof AdminIndexRoute
@@ -127,7 +159,11 @@ export interface FileRoutesById {
   '/checkout': typeof CheckoutRoute
   '/conta': typeof ContaRouteWithChildren
   '/login': typeof LoginRoute
+  '/admin/campanhas': typeof AdminCampanhasRoute
   '/admin/categorias': typeof AdminCategoriasRoute
+  '/admin/cupons': typeof AdminCuponsRoute
+  '/admin/leads': typeof AdminLeadsRoute
+  '/admin/pedidos': typeof AdminPedidosRoute
   '/conta/pedidos': typeof ContaPedidosRoute
   '/produto/$slug': typeof ProdutoSlugRoute
   '/admin/': typeof AdminIndexRoute
@@ -144,7 +180,11 @@ export interface FileRouteTypes {
     | '/checkout'
     | '/conta'
     | '/login'
+    | '/admin/campanhas'
     | '/admin/categorias'
+    | '/admin/cupons'
+    | '/admin/leads'
+    | '/admin/pedidos'
     | '/conta/pedidos'
     | '/produto/$slug'
     | '/admin/'
@@ -159,7 +199,11 @@ export interface FileRouteTypes {
     | '/checkout'
     | '/conta'
     | '/login'
+    | '/admin/campanhas'
     | '/admin/categorias'
+    | '/admin/cupons'
+    | '/admin/leads'
+    | '/admin/pedidos'
     | '/conta/pedidos'
     | '/produto/$slug'
     | '/admin'
@@ -174,7 +218,11 @@ export interface FileRouteTypes {
     | '/checkout'
     | '/conta'
     | '/login'
+    | '/admin/campanhas'
     | '/admin/categorias'
+    | '/admin/cupons'
+    | '/admin/leads'
+    | '/admin/pedidos'
     | '/conta/pedidos'
     | '/produto/$slug'
     | '/admin/'
@@ -190,7 +238,11 @@ export interface RootRouteChildren {
   CheckoutRoute: typeof CheckoutRoute
   ContaRoute: typeof ContaRouteWithChildren
   LoginRoute: typeof LoginRoute
+  AdminCampanhasRoute: typeof AdminCampanhasRoute
   AdminCategoriasRoute: typeof AdminCategoriasRoute
+  AdminCuponsRoute: typeof AdminCuponsRoute
+  AdminLeadsRoute: typeof AdminLeadsRoute
+  AdminPedidosRoute: typeof AdminPedidosRoute
   ProdutoSlugRoute: typeof ProdutoSlugRoute
   AdminIndexRoute: typeof AdminIndexRoute
   AdminProdutosIdRoute: typeof AdminProdutosIdRoute
@@ -263,11 +315,39 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ContaPedidosRouteImport
       parentRoute: typeof ContaRoute
     }
+    '/admin/pedidos': {
+      id: '/admin/pedidos'
+      path: '/admin/pedidos'
+      fullPath: '/admin/pedidos'
+      preLoaderRoute: typeof AdminPedidosRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin/leads': {
+      id: '/admin/leads'
+      path: '/admin/leads'
+      fullPath: '/admin/leads'
+      preLoaderRoute: typeof AdminLeadsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin/cupons': {
+      id: '/admin/cupons'
+      path: '/admin/cupons'
+      fullPath: '/admin/cupons'
+      preLoaderRoute: typeof AdminCuponsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/admin/categorias': {
       id: '/admin/categorias'
       path: '/admin/categorias'
       fullPath: '/admin/categorias'
       preLoaderRoute: typeof AdminCategoriasRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin/campanhas': {
+      id: '/admin/campanhas'
+      path: '/admin/campanhas'
+      fullPath: '/admin/campanhas'
+      preLoaderRoute: typeof AdminCampanhasRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/admin/produtos/': {
@@ -311,7 +391,11 @@ const rootRouteChildren: RootRouteChildren = {
   CheckoutRoute: CheckoutRoute,
   ContaRoute: ContaRouteWithChildren,
   LoginRoute: LoginRoute,
+  AdminCampanhasRoute: AdminCampanhasRoute,
   AdminCategoriasRoute: AdminCategoriasRoute,
+  AdminCuponsRoute: AdminCuponsRoute,
+  AdminLeadsRoute: AdminLeadsRoute,
+  AdminPedidosRoute: AdminPedidosRoute,
   ProdutoSlugRoute: ProdutoSlugRoute,
   AdminIndexRoute: AdminIndexRoute,
   AdminProdutosIdRoute: AdminProdutosIdRoute,
