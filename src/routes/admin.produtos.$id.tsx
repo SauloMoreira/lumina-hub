@@ -1,6 +1,6 @@
 import { createFileRoute, useNavigate, useParams, Link } from '@tanstack/react-router';
 import { useEffect, useState, type FormEvent } from 'react';
-import { ArrowLeft, Upload, X, Loader2 } from 'lucide-react';
+import { ArrowLeft, Loader2 } from 'lucide-react';
 import { AdminLayout } from '@/components/admin/AdminLayout';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -10,6 +10,7 @@ import { Label } from '@/components/ui/label';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { ProductSEOSection } from '@/components/admin/ProductSEOSection';
+import { ProductImageManager } from '@/components/admin/ProductImageManager';
 import { boostProductSeoAuto } from '@/server/seo.functions';
 
 export const Route = createFileRoute('/admin/produtos/$id')({ component: ProductForm });
