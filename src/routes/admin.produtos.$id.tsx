@@ -9,6 +9,7 @@ import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { ProductSEOSection } from '@/components/admin/ProductSEOSection';
 
 export const Route = createFileRoute('/admin/produtos/$id')({ component: ProductForm });
 
@@ -41,6 +42,7 @@ function ProductForm() {
     category_id: '', active: true, featured: false,
     images: [] as string[],
     tags: '',
+    seo_title: '', seo_description: '', seo_keywords: '',
   });
 
   useEffect(() => {
@@ -57,6 +59,9 @@ function ProductForm() {
           category_id: data.category_id ?? '', active: !!data.active, featured: !!data.featured,
           images: data.images ?? [],
           tags: (data.tags ?? []).join(', '),
+          seo_title: (data as any).seo_title ?? '',
+          seo_description: (data as any).seo_description ?? '',
+          seo_keywords: (data as any).seo_keywords ?? '',
         });
         setLoading(false);
       });
@@ -99,7 +104,10 @@ function ProductForm() {
       featured: form.featured,
       images: form.images,
       tags: form.tags.split(',').map((t) => t.trim()).filter(Boolean),
-    };
+      seo_title: form.seo_title.trim() || null,
+      seo_description: form.seo_description.trim() || null,
+      seo_keywords: form.seo_keywords.trim() || null,
+    } as any;
     const res = isNew
       ? await supabase.from('products').insert(payload).select('id').single()
       : await supabase.from('products').update(payload).eq('id', id);
