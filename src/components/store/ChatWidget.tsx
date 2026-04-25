@@ -6,6 +6,7 @@ import { chatWithAI, loadChatHistory } from "@/server/chat.functions";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { trackLeadCaptured } from "@/lib/tracking";
 
 interface Msg {
   role: "user" | "assistant";
@@ -91,6 +92,9 @@ export function ChatWidget() {
         setMessages((p) => [...p, { role: "assistant", content: `⚠️ ${res.error}` }]);
       } else {
         setMessages((p) => [...p, { role: "assistant", content: res.reply }]);
+        if ((res as { leadCaptured?: boolean }).leadCaptured) {
+          trackLeadCaptured("chat");
+        }
       }
     } catch (e) {
       setMessages((p) => [...p, { role: "assistant", content: "⚠️ Erro de conexão. Tente novamente." }]);
