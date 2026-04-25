@@ -68,3 +68,17 @@ export function pickUrl(img: Partial<ProductImageRow> | null | undefined, varian
   if (stored) return stored;
   return variantUrl(img.original_url ?? null, variant);
 }
+
+export type ProductImagePreviewRow = Pick<ProductImageRow, 'original_url' | 'url_card' | 'url_thumb' | 'is_primary' | 'sort_order'>;
+
+export function imageUrlsFromProductImages(
+  images: ProductImagePreviewRow[] | null | undefined,
+  fallback: string[] | null | undefined = [],
+): string[] {
+  const sorted = [...(images ?? [])].sort((a, b) => {
+    if (a.is_primary !== b.is_primary) return a.is_primary ? -1 : 1;
+    return (a.sort_order ?? 0) - (b.sort_order ?? 0);
+  });
+  const urls = sorted.map((img) => img.url_thumb ?? img.url_card ?? img.original_url).filter((url): url is string => !!url);
+  return urls.length ? urls : (fallback ?? []);
+}
