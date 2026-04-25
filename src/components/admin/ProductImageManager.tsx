@@ -122,12 +122,46 @@ export const ProductImageManager = forwardRef<ProductImageManagerHandle, Props>(
     }
   }
 
+  async function addExternalImages(urls: string[]) {
+    const valid = (urls ?? []).map((u) => (u ?? '').trim()).filter((u) => /^https?:\/\//i.test(u));
+    if (!valid.length) return { added: 0, failed: 0 };
+    const remainingSlots = MAX_IMAGES - totalImages;
+    if (remainingSlots <= 0) {
+      toast.error(`Máximo de ${MAX_IMAGES} imagens atingido.`);
+      return { added: 0, failed: valid.length };
+    }
+    const toFetch = valid.slice(0, remainingSlots);
+    const files: File[] = [];
+    let failed = valid.length - toFetch.length;
+    for (const url of toFetch) {
+      try {
+        const res = await fetchExternalImage({ data: { url } });
+        // base64 -> Blob -> File
+        const bin = atob(res.base64);
+        const bytes = new Uint8Array(bin.length);
+        for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+        const blob = new Blob([bytes], { type: res.contentType });
+        const ext = (res.contentType.split('/')[1] || 'jpg').replace(/[^a-z0-9]/g, '') || 'jpg';
+        const cleanUrl = url.split('?')[0];
+        const baseName = cleanUrl.substring(cleanUrl.lastIndexOf('/') + 1) || `imagem.${ext}`;
+        const safeName = baseName.toLowerCase().endsWith(`.${ext}`) ? baseName : `${baseName.replace(/\.[^.]+$/, '')}.${ext}`;
+        files.push(new File([blob], safeName, { type: res.contentType }));
+      } catch (e) {
+        console.error('[addExternalImages] falha em', url, e);
+        failed += 1;
+      }
+    }
+    if (files.length) handleFiles(files);
+    return { added: files.length, failed };
+  }
+
   useImperativeHandle(ref, () => ({
     savePending: uploadPendingImages,
     refetchImages: async () => {
       const result = await refetch();
       return result.data ?? [];
     },
+    addExternalImages,
   }), [pendingImages, images, productId]);
 
   function handleFiles(fileList: FileList | File[]) {
