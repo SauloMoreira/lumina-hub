@@ -9,6 +9,8 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
+import { Route as RobotsDottxtRouteImport } from './routes/robots[.]txt'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as EsqueciSenhaRouteImport } from './routes/esqueci-senha'
 import { Route as ContaRouteImport } from './routes/conta'
@@ -29,6 +31,16 @@ import { Route as AdminProdutosIndexRouteImport } from './routes/admin.produtos.
 import { Route as PedidoIdConfirmacaoRouteImport } from './routes/pedido.$id.confirmacao'
 import { Route as AdminProdutosIdRouteImport } from './routes/admin.produtos.$id'
 
+const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
+  id: '/sitemap.xml',
+  path: '/sitemap.xml',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const RobotsDottxtRoute = RobotsDottxtRouteImport.update({
+  id: '/robots.txt',
+  path: '/robots.txt',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const LoginRoute = LoginRouteImport.update({
   id: '/login',
   path: '/login',
@@ -134,6 +146,8 @@ export interface FileRoutesByFullPath {
   '/conta': typeof ContaRouteWithChildren
   '/esqueci-senha': typeof EsqueciSenhaRoute
   '/login': typeof LoginRoute
+  '/robots.txt': typeof RobotsDottxtRoute
+  '/sitemap.xml': typeof SitemapDotxmlRoute
   '/admin/campanhas': typeof AdminCampanhasRoute
   '/admin/categorias': typeof AdminCategoriasRoute
   '/admin/cupons': typeof AdminCuponsRoute
@@ -155,6 +169,8 @@ export interface FileRoutesByTo {
   '/conta': typeof ContaRouteWithChildren
   '/esqueci-senha': typeof EsqueciSenhaRoute
   '/login': typeof LoginRoute
+  '/robots.txt': typeof RobotsDottxtRoute
+  '/sitemap.xml': typeof SitemapDotxmlRoute
   '/admin/campanhas': typeof AdminCampanhasRoute
   '/admin/categorias': typeof AdminCategoriasRoute
   '/admin/cupons': typeof AdminCuponsRoute
@@ -177,6 +193,8 @@ export interface FileRoutesById {
   '/conta': typeof ContaRouteWithChildren
   '/esqueci-senha': typeof EsqueciSenhaRoute
   '/login': typeof LoginRoute
+  '/robots.txt': typeof RobotsDottxtRoute
+  '/sitemap.xml': typeof SitemapDotxmlRoute
   '/admin/campanhas': typeof AdminCampanhasRoute
   '/admin/categorias': typeof AdminCategoriasRoute
   '/admin/cupons': typeof AdminCuponsRoute
@@ -200,6 +218,8 @@ export interface FileRouteTypes {
     | '/conta'
     | '/esqueci-senha'
     | '/login'
+    | '/robots.txt'
+    | '/sitemap.xml'
     | '/admin/campanhas'
     | '/admin/categorias'
     | '/admin/cupons'
@@ -221,6 +241,8 @@ export interface FileRouteTypes {
     | '/conta'
     | '/esqueci-senha'
     | '/login'
+    | '/robots.txt'
+    | '/sitemap.xml'
     | '/admin/campanhas'
     | '/admin/categorias'
     | '/admin/cupons'
@@ -242,6 +264,8 @@ export interface FileRouteTypes {
     | '/conta'
     | '/esqueci-senha'
     | '/login'
+    | '/robots.txt'
+    | '/sitemap.xml'
     | '/admin/campanhas'
     | '/admin/categorias'
     | '/admin/cupons'
@@ -264,6 +288,8 @@ export interface RootRouteChildren {
   ContaRoute: typeof ContaRouteWithChildren
   EsqueciSenhaRoute: typeof EsqueciSenhaRoute
   LoginRoute: typeof LoginRoute
+  RobotsDottxtRoute: typeof RobotsDottxtRoute
+  SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   AdminCampanhasRoute: typeof AdminCampanhasRoute
   AdminCategoriasRoute: typeof AdminCategoriasRoute
   AdminCuponsRoute: typeof AdminCuponsRoute
@@ -278,6 +304,20 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/sitemap.xml': {
+      id: '/sitemap.xml'
+      path: '/sitemap.xml'
+      fullPath: '/sitemap.xml'
+      preLoaderRoute: typeof SitemapDotxmlRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/robots.txt': {
+      id: '/robots.txt'
+      path: '/robots.txt'
+      fullPath: '/robots.txt'
+      preLoaderRoute: typeof RobotsDottxtRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/login': {
       id: '/login'
       path: '/login'
@@ -433,6 +473,8 @@ const rootRouteChildren: RootRouteChildren = {
   ContaRoute: ContaRouteWithChildren,
   EsqueciSenhaRoute: EsqueciSenhaRoute,
   LoginRoute: LoginRoute,
+  RobotsDottxtRoute: RobotsDottxtRoute,
+  SitemapDotxmlRoute: SitemapDotxmlRoute,
   AdminCampanhasRoute: AdminCampanhasRoute,
   AdminCategoriasRoute: AdminCategoriasRoute,
   AdminCuponsRoute: AdminCuponsRoute,
