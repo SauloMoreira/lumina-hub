@@ -1,12 +1,14 @@
 import { createServerFn } from '@tanstack/react-start';
+import { createClient } from '@supabase/supabase-js';
 import { z } from 'zod';
-import { requireSupabaseAuth } from '@/integrations/supabase/auth-middleware';
+import type { Database } from '@/integrations/supabase/types';
 
 const InputSchema = z.object({
   productName: z.string().min(1).max(200),
   category: z.string().max(120).optional().nullable(),
   brand: z.string().max(120).optional().nullable(),
   index: z.number().int().min(0).max(20).optional(),
+  accessToken: z.string().min(20).max(8192),
 });
 
 const ResultSchema = z.object({
@@ -29,15 +31,39 @@ Para cada imagem de produto, gere:
 Regras: português brasileiro, sem aspas, sem emojis, sem pontuação no filename além de hífens.`;
 
 export const generateImageSeo = createServerFn({ method: 'POST' })
-  .middleware([requireSupabaseAuth])
   .inputValidator((raw: unknown) => InputSchema.parse(raw))
-  .handler(async ({ data, context }) => {
+  .handler(async ({ data }) => {
     try {
-      const { data: profile } = await context.supabase
+      const supabaseUrl = process.env.SUPABASE_URL;
+      const supabaseKey = process.env.SUPABASE_PUBLISHABLE_KEY;
+
+      if (!supabaseUrl || !supabaseKey) {
+        return { ok: false as const, error: 'Configuração de autenticação indisponível' };
+      }
+
+      const authedSupabase = createClient<Database>(supabaseUrl, supabaseKey, {
+        global: { headers: { Authorization: `Bearer ${data.accessToken}` } },
+        auth: {
+          storage: undefined,
+          persistSession: false,
+          autoRefreshToken: false,
+        },
+      });
+
+      const { data: claimsData, error: claimsError } = await authedSupabase.auth.getClaims(data.accessToken);
+      const userId = claimsData?.claims?.sub;
+
+      if (claimsError || !userId) {
+        return { ok: false as const, error: 'Sessão inválida. Faça login novamente.' };
+      }
+
+      const { data: profile, error: profileError } = await authedSupabase
         .from('profiles')
         .select('role')
-        .eq('id', context.userId)
+        .eq('id', userId)
         .maybeSingle();
+
+      if (profileError) return { ok: false as const, error: profileError.message };
       if (profile?.role !== 'admin') return { ok: false as const, error: 'Acesso negado' };
 
       const apiKey = process.env.LOVABLE_API_KEY;
@@ -56,7 +82,7 @@ export const generateImageSeo = createServerFn({ method: 'POST' })
         method: 'POST',
         headers: { Authorization: `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          model: 'google/gemini-2.5-flash',
+          model: 'google/gemini-3-flash-preview',
           messages: [
             { role: 'system', content: SYSTEM_PROMPT },
             { role: 'user', content: userPrompt },
@@ -98,9 +124,10 @@ export const generateImageSeo = createServerFn({ method: 'POST' })
       };
       const argsRaw = json.choices?.[0]?.message?.tool_calls?.[0]?.function?.arguments;
       if (!argsRaw) return { ok: false as const, error: 'Resposta da IA sem dados estruturados' };
+
       const parsed = ResultSchema.parse(typeof argsRaw === 'string' ? JSON.parse(argsRaw) : argsRaw);
-      // Garantir extensão .webp
       const filename = /\.(webp|jpg|png)$/i.test(parsed.filename) ? parsed.filename : `${parsed.filename}.webp`;
+
       return { ok: true as const, ...parsed, filename };
     } catch (e) {
       console.error('generateImageSeo error', e);
