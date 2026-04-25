@@ -141,8 +141,8 @@ export function ProductImageManager({ productId, productName, brand, category }:
           brand: brand ?? null,
           category: category ?? null,
           index: img.sort_order,
+          accessToken: token,
         },
-        headers: { Authorization: `Bearer ${token}` },
       });
       if (!seo.ok) {
         toast.error(seo.error);
