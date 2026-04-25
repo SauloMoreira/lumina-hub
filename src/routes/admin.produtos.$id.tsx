@@ -73,6 +73,41 @@ function ProductForm() {
     }
   }, [id, isNew, nav]);
 
+  async function applyBarcodeData(choice: BarcodeApplyChoice, suggested: BarcodeLookupResult['suggested']) {
+    setForm((f) => {
+      const next = { ...f };
+      if (choice.fields.name && suggested.name) {
+        next.name = suggested.name;
+        if (!f.slug.trim()) next.slug = slugify(suggested.name);
+      }
+      if (choice.fields.brand && suggested.brand) next.brand = suggested.brand;
+      if (choice.fields.description && suggested.description) next.description = suggested.description;
+      if (choice.fields.tags && suggested.tags.length) next.tags = suggested.tags.join(', ');
+      if (choice.fields.seo_title && suggested.seo_title) next.seo_title = suggested.seo_title;
+      if (choice.fields.seo_description && suggested.seo_description) next.seo_description = suggested.seo_description;
+      if (choice.fields.seo_keywords && suggested.seo_keywords) next.seo_keywords = suggested.seo_keywords;
+      if (choice.fields.category_id) next.category_id = choice.fields.category_id;
+      return next;
+    });
+
+    if (choice.images.length && !isNew) {
+      toast.info(`Importando ${choice.images.length} imagem(ns)…`);
+      try {
+        const r = await imageManagerRef.current?.addExternalImages(choice.images);
+        if (r) {
+          if (r.added > 0) toast.success(`${r.added} imagem(ns) adicionada(s) como pendentes`);
+          if (r.failed > 0) toast.warning(`${r.failed} imagem(ns) não puderam ser baixadas`);
+        }
+      } catch (e) {
+        toast.error(e instanceof Error ? e.message : 'Erro ao importar imagens');
+      }
+    } else if (choice.images.length && isNew) {
+      toast.info('Salve o produto primeiro para importar as imagens.');
+    }
+
+    toast.success('Dados aplicados. Revise e salve.');
+  }
+
 
 
   const submit = async (e: FormEvent) => {
