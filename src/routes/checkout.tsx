@@ -10,8 +10,8 @@ import { useAuth } from '@/hooks/useAuth';
 import { useCart } from '@/stores/cartStore';
 import { formatBRL } from '@/lib/domain';
 import { lookupCep, calculateShipping, applyCoupon, createOrder } from '@/server/checkout.functions';
-
 import { buildSeo } from '@/lib/seo';
+import { trackPurchase } from '@/lib/tracking';
 
 export const Route = createFileRoute('/checkout')({
   head: () => buildSeo({ title: 'Finalizar pedido', url: '/checkout', noindex: true }),
@@ -164,6 +164,7 @@ function CheckoutPage() {
         },
       });
       if (r.ok) {
+        trackPurchase({ order_number: r.orderId, total: cart.subtotal(), items: cart.items });
         cart.clear();
         navigate({ to: '/pedido/$id/confirmacao', params: { id: r.orderId } });
       } else {

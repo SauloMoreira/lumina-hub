@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as RobotsDottxtRouteImport } from './routes/robots[.]txt'
+import { Route as PrivacidadeRouteImport } from './routes/privacidade'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as EsqueciSenhaRouteImport } from './routes/esqueci-senha'
 import { Route as ContaRouteImport } from './routes/conta'
@@ -39,6 +40,11 @@ const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
 const RobotsDottxtRoute = RobotsDottxtRouteImport.update({
   id: '/robots.txt',
   path: '/robots.txt',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PrivacidadeRoute = PrivacidadeRouteImport.update({
+  id: '/privacidade',
+  path: '/privacidade',
   getParentRoute: () => rootRouteImport,
 } as any)
 const LoginRoute = LoginRouteImport.update({
@@ -146,6 +152,7 @@ export interface FileRoutesByFullPath {
   '/conta': typeof ContaRouteWithChildren
   '/esqueci-senha': typeof EsqueciSenhaRoute
   '/login': typeof LoginRoute
+  '/privacidade': typeof PrivacidadeRoute
   '/robots.txt': typeof RobotsDottxtRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/admin/campanhas': typeof AdminCampanhasRoute
@@ -169,6 +176,7 @@ export interface FileRoutesByTo {
   '/conta': typeof ContaRouteWithChildren
   '/esqueci-senha': typeof EsqueciSenhaRoute
   '/login': typeof LoginRoute
+  '/privacidade': typeof PrivacidadeRoute
   '/robots.txt': typeof RobotsDottxtRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/admin/campanhas': typeof AdminCampanhasRoute
@@ -193,6 +201,7 @@ export interface FileRoutesById {
   '/conta': typeof ContaRouteWithChildren
   '/esqueci-senha': typeof EsqueciSenhaRoute
   '/login': typeof LoginRoute
+  '/privacidade': typeof PrivacidadeRoute
   '/robots.txt': typeof RobotsDottxtRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/admin/campanhas': typeof AdminCampanhasRoute
@@ -218,6 +227,7 @@ export interface FileRouteTypes {
     | '/conta'
     | '/esqueci-senha'
     | '/login'
+    | '/privacidade'
     | '/robots.txt'
     | '/sitemap.xml'
     | '/admin/campanhas'
@@ -241,6 +251,7 @@ export interface FileRouteTypes {
     | '/conta'
     | '/esqueci-senha'
     | '/login'
+    | '/privacidade'
     | '/robots.txt'
     | '/sitemap.xml'
     | '/admin/campanhas'
@@ -264,6 +275,7 @@ export interface FileRouteTypes {
     | '/conta'
     | '/esqueci-senha'
     | '/login'
+    | '/privacidade'
     | '/robots.txt'
     | '/sitemap.xml'
     | '/admin/campanhas'
@@ -288,6 +300,7 @@ export interface RootRouteChildren {
   ContaRoute: typeof ContaRouteWithChildren
   EsqueciSenhaRoute: typeof EsqueciSenhaRoute
   LoginRoute: typeof LoginRoute
+  PrivacidadeRoute: typeof PrivacidadeRoute
   RobotsDottxtRoute: typeof RobotsDottxtRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   AdminCampanhasRoute: typeof AdminCampanhasRoute
@@ -316,6 +329,13 @@ declare module '@tanstack/react-router' {
       path: '/robots.txt'
       fullPath: '/robots.txt'
       preLoaderRoute: typeof RobotsDottxtRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/privacidade': {
+      id: '/privacidade'
+      path: '/privacidade'
+      fullPath: '/privacidade'
+      preLoaderRoute: typeof PrivacidadeRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/login': {
@@ -473,6 +493,7 @@ const rootRouteChildren: RootRouteChildren = {
   ContaRoute: ContaRouteWithChildren,
   EsqueciSenhaRoute: EsqueciSenhaRoute,
   LoginRoute: LoginRoute,
+  PrivacidadeRoute: PrivacidadeRoute,
   RobotsDottxtRoute: RobotsDottxtRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
   AdminCampanhasRoute: AdminCampanhasRoute,

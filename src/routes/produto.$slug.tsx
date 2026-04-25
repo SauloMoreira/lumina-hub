@@ -1,6 +1,6 @@
 import { createFileRoute, Link, notFound } from '@tanstack/react-router';
 import { useQuery } from '@tanstack/react-query';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Minus, Plus, ShoppingCart, Truck, Shield, Zap, ChevronRight } from 'lucide-react';
 import { toast } from 'sonner';
 import { StoreLayout } from '@/components/layout/StoreLayout';
@@ -10,6 +10,7 @@ import type { Product } from '@/lib/domain';
 import { formatBRL } from '@/lib/domain';
 import { useCart } from '@/stores/cartStore';
 import { buildSeo, SITE_URL, clamp } from '@/lib/seo';
+import { trackViewProduct, trackAddToCart } from '@/lib/tracking';
 
 type ProductWithSeo = Product & {
   seo_title?: string | null;
@@ -101,6 +102,10 @@ function ProductPage() {
 
   const { data: product, isLoading } = useQuery(productQueryOptions(slug));
 
+  useEffect(() => {
+    if (product) trackViewProduct(product);
+  }, [product]);
+
   if (isLoading) {
     return <StoreLayout><div className="container mx-auto px-4 py-12"><div className="h-96 bg-surface animate-pulse rounded-xl" /></div></StoreLayout>;
   }
@@ -114,6 +119,7 @@ function ProductPage() {
       productId: product.id, name: product.name, slug: product.slug,
       price: finalPrice, image: product.images[0] ?? null, stock: product.stock_qty,
     }, qty);
+    trackAddToCart(product, qty);
     toast.success('Adicionado ao carrinho');
   };
 

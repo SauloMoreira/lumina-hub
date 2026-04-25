@@ -1,6 +1,7 @@
 import { Link } from '@tanstack/react-router';
 import { MessageCircle, Instagram, Facebook } from 'lucide-react';
 import { STORE_NAME, STORE_WHATSAPP } from '@/lib/domain';
+import { useCookieStore } from '@/stores/cookieStore';
 import logoFooter from '@/assets/logo-footer.jpg';
 
 export function Footer() {
@@ -39,8 +40,16 @@ export function Footer() {
             <ul className="space-y-2.5 text-sm">
               <li><Link to="/catalogo" className="hover:underline">Catálogo</Link></li>
               <li><Link to="/" className="hover:underline">Promoções</Link></li>
-              <li><Link to="/" className="hover:underline">Sobre nós</Link></li>
-              <li><Link to="/" className="hover:underline">Contato</Link></li>
+              <li><Link to="/privacidade" className="hover:underline">Política de Privacidade</Link></li>
+              <li>
+                <button
+                  type="button"
+                  onClick={() => useCookieStore.getState().openPreferences()}
+                  className="hover:underline text-left"
+                >
+                  Gerenciar cookies
+                </button>
+              </li>
             </ul>
           </div>
 

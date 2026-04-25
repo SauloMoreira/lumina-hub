@@ -10,6 +10,7 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
 import type { Product, Category } from '@/lib/domain';
+import { trackSearch } from '@/lib/tracking';
 
 const PAGE_SIZE = 24;
 
@@ -99,7 +100,7 @@ function CatalogPage() {
             {search.cat ? categories?.find((c) => c.slug === search.cat)?.name ?? 'Produtos' : 'Todos os produtos'}
           </h1>
           <form
-            onSubmit={(e) => { e.preventDefault(); navigate({ search: (s: any) => ({ ...s, q: q || undefined, page: 1 }) as any }); }}
+            onSubmit={(e) => { e.preventDefault(); if (q) trackSearch(q); navigate({ search: (s: any) => ({ ...s, q: q || undefined, page: 1 }) as any }); }}
             className="max-w-md"
           >
             <div className="relative">
