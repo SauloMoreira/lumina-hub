@@ -194,4 +194,16 @@
     font-weight: 500;
     color: var(--color-muted-foreground);
   }
+
+  /* Shimmer skeleton */
+  .shimmer-block {
+    background: linear-gradient(90deg, #EDF1F7 0%, #F4F6FA 50%, #EDF1F7 100%);
+    background-size: 200% 100%;
+    animation: shimmer 1.4s ease-in-out infinite;
+  }
+
+  @keyframes shimmer {
+    0%   { background-position: 200% 0; }
+    100% { background-position: -200% 0; }
+  }
 }
