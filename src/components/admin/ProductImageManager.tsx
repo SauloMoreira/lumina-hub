@@ -123,7 +123,9 @@ export const ProductImageManager = forwardRef<ProductImageManagerHandle, Props>(
   }
 
   async function addExternalImages(urls: string[]) {
-    const valid = (urls ?? []).map((u) => (u ?? '').trim()).filter((u) => /^https?:\/\//i.test(u));
+    const valid = (urls ?? [])
+      .map((u) => (u ?? '').trim())
+      .filter((u) => /^https?:\/\//i.test(u) || /^data:image\//i.test(u));
     if (!valid.length) return { added: 0, failed: 0 };
     const remainingSlots = MAX_IMAGES - totalImages;
     if (remainingSlots <= 0) {
@@ -135,19 +137,37 @@ export const ProductImageManager = forwardRef<ProductImageManagerHandle, Props>(
     let failed = valid.length - toFetch.length;
     for (const url of toFetch) {
       try {
-        const res = await fetchExternalImage({ data: { url } });
-        // base64 -> Blob -> File
-        const bin = atob(res.base64);
-        const bytes = new Uint8Array(bin.length);
-        for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
-        const blob = new Blob([bytes], { type: res.contentType });
-        const ext = (res.contentType.split('/')[1] || 'jpg').replace(/[^a-z0-9]/g, '') || 'jpg';
-        const cleanUrl = url.split('?')[0];
-        const baseName = cleanUrl.substring(cleanUrl.lastIndexOf('/') + 1) || `imagem.${ext}`;
-        const safeName = baseName.toLowerCase().endsWith(`.${ext}`) ? baseName : `${baseName.replace(/\.[^.]+$/, '')}.${ext}`;
-        files.push(new File([blob], safeName, { type: res.contentType }));
+        let blob: Blob;
+        let contentType: string;
+        let baseName: string;
+
+        if (/^data:image\//i.test(url)) {
+          // data URL gerada pela IA — converter direto, sem proxy
+          const match = url.match(/^data:([^;]+);base64,(.+)$/);
+          if (!match) throw new Error('data URL inválida');
+          contentType = match[1];
+          const bin = atob(match[2]);
+          const bytes = new Uint8Array(bin.length);
+          for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+          blob = new Blob([bytes], { type: contentType });
+          const ext = (contentType.split('/')[1] || 'png').replace(/[^a-z0-9]/g, '') || 'png';
+          baseName = `ia-gerada-${Date.now()}.${ext}`;
+        } else {
+          const res = await fetchExternalImage({ data: { url } });
+          contentType = res.contentType;
+          const bin = atob(res.base64);
+          const bytes = new Uint8Array(bin.length);
+          for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+          blob = new Blob([bytes], { type: contentType });
+          const ext = (contentType.split('/')[1] || 'jpg').replace(/[^a-z0-9]/g, '') || 'jpg';
+          const cleanUrl = url.split('?')[0];
+          const raw = cleanUrl.substring(cleanUrl.lastIndexOf('/') + 1) || `imagem.${ext}`;
+          baseName = raw.toLowerCase().endsWith(`.${ext}`) ? raw : `${raw.replace(/\.[^.]+$/, '')}.${ext}`;
+        }
+
+        files.push(new File([blob], baseName, { type: contentType }));
       } catch (e) {
-        console.error('[addExternalImages] falha em', url, e);
+        console.error('[addExternalImages] falha em', url.slice(0, 80), e);
         failed += 1;
       }
     }
