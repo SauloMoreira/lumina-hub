@@ -1,6 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { useEffect, useState } from 'react';
-import { Eye, Trash2, Phone, Mail, LayoutGrid, List } from 'lucide-react';
+import { Eye, Trash2, Phone, Mail, LayoutGrid, List, Search, X } from 'lucide-react';
+import { Input } from '@/components/ui/input';
 import { AdminLayout } from '@/components/admin/AdminLayout';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
@@ -48,6 +49,9 @@ const StatusBadge = ({ status }: { status?: string | null }) => {
 function LeadsPage() {
   const [leads, setLeads] = useState<any[]>([]);
   const [filterStatus, setFilterStatus] = useState('');
+  const [search, setSearch] = useState('');
+  const [filterOrigin, setFilterOrigin] = useState('all');
+  const [filterInterest, setFilterInterest] = useState('all');
   const [view, setView] = useState<'kanban' | 'list'>('kanban');
   const [open, setOpen] = useState(false);
   const [selected, setSelected] = useState<any>(null);
@@ -60,6 +64,38 @@ function LeadsPage() {
     setLeads((data as any) ?? []);
   };
   useEffect(() => { load(); }, [filterStatus]);
+
+  // Distinct origin/interest values from current dataset
+  const originOptions = Array.from(
+    new Set(leads.map((l) => l.origin).filter(Boolean))
+  ) as string[];
+  const interestOptions = Array.from(
+    new Set(leads.map((l) => l.interest).filter(Boolean))
+  ) as string[];
+
+  const norm = (s: string) =>
+    s.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+
+  const filteredLeads = leads.filter((l) => {
+    if (filterOrigin !== 'all' && (l.origin ?? '') !== filterOrigin) return false;
+    if (filterInterest !== 'all' && (l.interest ?? '') !== filterInterest) return false;
+    if (search.trim()) {
+      const q = norm(search.trim());
+      const hay = norm(`${l.name ?? ''} ${l.company ?? ''}`);
+      if (!hay.includes(q)) return false;
+    }
+    return true;
+  });
+
+  const hasActiveFilters =
+    !!search.trim() || filterOrigin !== 'all' || filterInterest !== 'all' || !!filterStatus;
+
+  const clearFilters = () => {
+    setSearch('');
+    setFilterOrigin('all');
+    setFilterInterest('all');
+    setFilterStatus('');
+  };
 
   const openDetail = (l: any) => {
     setSelected(l);
@@ -108,38 +144,86 @@ function LeadsPage() {
     updateStatus(id, status);
   };
 
-  const leadsByStatus = (s: Status) => leads.filter((l) => (l.status ?? 'new') === s);
+  const leadsByStatus = (s: Status) => filteredLeads.filter((l) => (l.status ?? 'new') === s);
 
   return (
     <AdminLayout title="Leads">
       <div className="bg-card border border-border rounded-xl">
-        <div className="p-4 border-b border-border flex items-center justify-between gap-3 flex-wrap">
-          <select
-            value={filterStatus || 'all'}
-            onChange={(e) => setFilterStatus(e.target.value === 'all' ? '' : e.target.value)}
-            className="h-10 rounded-md border border-input bg-background px-3 text-sm"
-          >
-            {LEAD_STATUS_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
-          </select>
-          <div className="inline-flex rounded-md border border-border bg-background p-0.5">
-            <button
-              onClick={() => setView('kanban')}
-              className={cn(
-                'inline-flex items-center gap-1.5 px-3 h-8 text-xs rounded-sm transition-colors',
-                view === 'kanban' ? 'bg-muted text-foreground' : 'text-muted-foreground hover:text-foreground'
-              )}
+        <div className="p-4 border-b border-border space-y-3">
+          <div className="flex items-center justify-between gap-3 flex-wrap">
+            <div className="relative flex-1 min-w-[220px] max-w-md">
+              <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none" />
+              <Input
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="Buscar por nome ou empresa..."
+                className="pl-9 h-10"
+              />
+            </div>
+            <div className="inline-flex rounded-md border border-border bg-background p-0.5">
+              <button
+                onClick={() => setView('kanban')}
+                className={cn(
+                  'inline-flex items-center gap-1.5 px-3 h-8 text-xs rounded-sm transition-colors',
+                  view === 'kanban' ? 'bg-muted text-foreground' : 'text-muted-foreground hover:text-foreground'
+                )}
+              >
+                <LayoutGrid className="w-3.5 h-3.5" /> Kanban
+              </button>
+              <button
+                onClick={() => setView('list')}
+                className={cn(
+                  'inline-flex items-center gap-1.5 px-3 h-8 text-xs rounded-sm transition-colors',
+                  view === 'list' ? 'bg-muted text-foreground' : 'text-muted-foreground hover:text-foreground'
+                )}
+              >
+                <List className="w-3.5 h-3.5" /> Lista
+              </button>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2 flex-wrap">
+            <select
+              value={filterStatus || 'all'}
+              onChange={(e) => setFilterStatus(e.target.value === 'all' ? '' : e.target.value)}
+              className="h-9 rounded-md border border-input bg-background px-2 text-xs"
             >
-              <LayoutGrid className="w-3.5 h-3.5" /> Kanban
-            </button>
-            <button
-              onClick={() => setView('list')}
-              className={cn(
-                'inline-flex items-center gap-1.5 px-3 h-8 text-xs rounded-sm transition-colors',
-                view === 'list' ? 'bg-muted text-foreground' : 'text-muted-foreground hover:text-foreground'
-              )}
+              {LEAD_STATUS_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
+            </select>
+
+            <select
+              value={filterOrigin}
+              onChange={(e) => setFilterOrigin(e.target.value)}
+              className="h-9 rounded-md border border-input bg-background px-2 text-xs"
             >
-              <List className="w-3.5 h-3.5" /> Lista
-            </button>
+              <option value="all">Todas as origens</option>
+              {originOptions.map((o) => (
+                <option key={o} value={o}>{leadOriginLabel(o)}</option>
+              ))}
+            </select>
+
+            <select
+              value={filterInterest}
+              onChange={(e) => setFilterInterest(e.target.value)}
+              className="h-9 rounded-md border border-input bg-background px-2 text-xs max-w-[240px]"
+            >
+              <option value="all">Todos os interesses</option>
+              {interestOptions.map((o) => (
+                <option key={o} value={o}>
+                  {o.length > 40 ? o.slice(0, 40) + '…' : o}
+                </option>
+              ))}
+            </select>
+
+            <span className="text-xs text-muted-foreground ml-auto">
+              {filteredLeads.length} de {leads.length} {leads.length === 1 ? 'lead' : 'leads'}
+            </span>
+
+            {hasActiveFilters && (
+              <Button variant="ghost" size="sm" onClick={clearFilters} className="h-9 text-xs">
+                <X className="w-3 h-3 mr-1" /> Limpar
+              </Button>
+            )}
           </div>
         </div>
 
@@ -215,8 +299,8 @@ function LeadsPage() {
               <tr><th className="px-4 py-3 font-medium">Nome</th><th className="px-4 py-3 font-medium">Contato</th><th className="px-4 py-3 font-medium">Origem</th><th className="px-4 py-3 font-medium">Interesse</th><th className="px-4 py-3 font-medium">Status</th><th className="px-4 py-3 font-medium">Data</th><th></th></tr>
             </thead>
             <tbody>
-              {leads.length === 0 && <tr><td colSpan={7} className="px-4 py-8 text-center text-muted-foreground">Nenhum lead.</td></tr>}
-              {leads.map((l) => (
+              {filteredLeads.length === 0 && <tr><td colSpan={7} className="px-4 py-8 text-center text-muted-foreground">Nenhum lead encontrado.</td></tr>}
+              {filteredLeads.map((l) => (
                 <tr key={l.id} className="border-t border-border hover:bg-muted/20">
                   <td className="px-4 py-3 font-medium">{l.name}</td>
                   <td className="px-4 py-3 text-xs space-y-0.5">
