@@ -100,8 +100,7 @@ export const generateImageSeo = createServerFn({ method: 'POST' })
       if (!argsRaw) return { ok: false as const, error: 'Resposta da IA sem dados estruturados' };
       const parsed = ResultSchema.parse(typeof argsRaw === 'string' ? JSON.parse(argsRaw) : argsRaw);
       // Garantir extensão .webp
-      const hasExt = /\.(webp|jpg|png)$/i;
-      const filename = hasExt.test(parsed.filename) ? parsed.filename : `${parsed.filename}.webp`;
+      const filename = /\.(webp|jpg|png)$/i.test(parsed.filename) ? parsed.filename : `${parsed.filename}.webp`;
       return { ok: true as const, ...parsed, filename };
     } catch (e) {
       console.error('generateImageSeo error', e);
