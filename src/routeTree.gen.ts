@@ -11,10 +11,13 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as ContaRouteImport } from './routes/conta'
+import { Route as CheckoutRouteImport } from './routes/checkout'
 import { Route as CatalogoRouteImport } from './routes/catalogo'
 import { Route as CarrinhoRouteImport } from './routes/carrinho'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ProdutoSlugRouteImport } from './routes/produto.$slug'
+import { Route as ContaPedidosRouteImport } from './routes/conta.pedidos'
+import { Route as PedidoIdConfirmacaoRouteImport } from './routes/pedido.$id.confirmacao'
 
 const LoginRoute = LoginRouteImport.update({
   id: '/login',
@@ -24,6 +27,11 @@ const LoginRoute = LoginRouteImport.update({
 const ContaRoute = ContaRouteImport.update({
   id: '/conta',
   path: '/conta',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CheckoutRoute = CheckoutRouteImport.update({
+  id: '/checkout',
+  path: '/checkout',
   getParentRoute: () => rootRouteImport,
 } as any)
 const CatalogoRoute = CatalogoRouteImport.update({
@@ -46,31 +54,50 @@ const ProdutoSlugRoute = ProdutoSlugRouteImport.update({
   path: '/produto/$slug',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ContaPedidosRoute = ContaPedidosRouteImport.update({
+  id: '/pedidos',
+  path: '/pedidos',
+  getParentRoute: () => ContaRoute,
+} as any)
+const PedidoIdConfirmacaoRoute = PedidoIdConfirmacaoRouteImport.update({
+  id: '/pedido/$id/confirmacao',
+  path: '/pedido/$id/confirmacao',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/carrinho': typeof CarrinhoRoute
   '/catalogo': typeof CatalogoRoute
-  '/conta': typeof ContaRoute
+  '/checkout': typeof CheckoutRoute
+  '/conta': typeof ContaRouteWithChildren
   '/login': typeof LoginRoute
+  '/conta/pedidos': typeof ContaPedidosRoute
   '/produto/$slug': typeof ProdutoSlugRoute
+  '/pedido/$id/confirmacao': typeof PedidoIdConfirmacaoRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/carrinho': typeof CarrinhoRoute
   '/catalogo': typeof CatalogoRoute
-  '/conta': typeof ContaRoute
+  '/checkout': typeof CheckoutRoute
+  '/conta': typeof ContaRouteWithChildren
   '/login': typeof LoginRoute
+  '/conta/pedidos': typeof ContaPedidosRoute
   '/produto/$slug': typeof ProdutoSlugRoute
+  '/pedido/$id/confirmacao': typeof PedidoIdConfirmacaoRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/carrinho': typeof CarrinhoRoute
   '/catalogo': typeof CatalogoRoute
-  '/conta': typeof ContaRoute
+  '/checkout': typeof CheckoutRoute
+  '/conta': typeof ContaRouteWithChildren
   '/login': typeof LoginRoute
+  '/conta/pedidos': typeof ContaPedidosRoute
   '/produto/$slug': typeof ProdutoSlugRoute
+  '/pedido/$id/confirmacao': typeof PedidoIdConfirmacaoRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -78,28 +105,45 @@ export interface FileRouteTypes {
     | '/'
     | '/carrinho'
     | '/catalogo'
+    | '/checkout'
     | '/conta'
     | '/login'
+    | '/conta/pedidos'
     | '/produto/$slug'
+    | '/pedido/$id/confirmacao'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/carrinho' | '/catalogo' | '/conta' | '/login' | '/produto/$slug'
+  to:
+    | '/'
+    | '/carrinho'
+    | '/catalogo'
+    | '/checkout'
+    | '/conta'
+    | '/login'
+    | '/conta/pedidos'
+    | '/produto/$slug'
+    | '/pedido/$id/confirmacao'
   id:
     | '__root__'
     | '/'
     | '/carrinho'
     | '/catalogo'
+    | '/checkout'
     | '/conta'
     | '/login'
+    | '/conta/pedidos'
     | '/produto/$slug'
+    | '/pedido/$id/confirmacao'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   CarrinhoRoute: typeof CarrinhoRoute
   CatalogoRoute: typeof CatalogoRoute
-  ContaRoute: typeof ContaRoute
+  CheckoutRoute: typeof CheckoutRoute
+  ContaRoute: typeof ContaRouteWithChildren
   LoginRoute: typeof LoginRoute
   ProdutoSlugRoute: typeof ProdutoSlugRoute
+  PedidoIdConfirmacaoRoute: typeof PedidoIdConfirmacaoRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -116,6 +160,13 @@ declare module '@tanstack/react-router' {
       path: '/conta'
       fullPath: '/conta'
       preLoaderRoute: typeof ContaRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/checkout': {
+      id: '/checkout'
+      path: '/checkout'
+      fullPath: '/checkout'
+      preLoaderRoute: typeof CheckoutRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/catalogo': {
@@ -146,16 +197,42 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ProdutoSlugRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/conta/pedidos': {
+      id: '/conta/pedidos'
+      path: '/pedidos'
+      fullPath: '/conta/pedidos'
+      preLoaderRoute: typeof ContaPedidosRouteImport
+      parentRoute: typeof ContaRoute
+    }
+    '/pedido/$id/confirmacao': {
+      id: '/pedido/$id/confirmacao'
+      path: '/pedido/$id/confirmacao'
+      fullPath: '/pedido/$id/confirmacao'
+      preLoaderRoute: typeof PedidoIdConfirmacaoRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
+
+interface ContaRouteChildren {
+  ContaPedidosRoute: typeof ContaPedidosRoute
+}
+
+const ContaRouteChildren: ContaRouteChildren = {
+  ContaPedidosRoute: ContaPedidosRoute,
+}
+
+const ContaRouteWithChildren = ContaRoute._addFileChildren(ContaRouteChildren)
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   CarrinhoRoute: CarrinhoRoute,
   CatalogoRoute: CatalogoRoute,
-  ContaRoute: ContaRoute,
+  CheckoutRoute: CheckoutRoute,
+  ContaRoute: ContaRouteWithChildren,
   LoginRoute: LoginRoute,
   ProdutoSlugRoute: ProdutoSlugRoute,
+  PedidoIdConfirmacaoRoute: PedidoIdConfirmacaoRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

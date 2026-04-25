@@ -98,7 +98,10 @@ export function CartDrawer() {
                     <span className="font-display font-bold text-lg text-foreground">{formatBRL(subtotal)}</span>
                   </div>
                   <Button asChild className="w-full h-11" onClick={cart.close}>
-                    <Link to="/carrinho">Ir para o carrinho</Link>
+                    <Link to="/checkout">Finalizar pedido</Link>
+                  </Button>
+                  <Button asChild variant="outline" size="sm" className="w-full" onClick={cart.close}>
+                    <Link to="/carrinho">Ver carrinho completo</Link>
                   </Button>
                   <button onClick={cart.close} className="w-full text-xs text-muted-foreground hover:text-foreground py-1">
                     Continuar comprando

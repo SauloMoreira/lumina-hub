@@ -34,24 +34,18 @@ function AccountPage() {
 
         <div className="grid md:grid-cols-3 gap-4">
           {[
-            { icon: Package, title: 'Meus pedidos', desc: 'Acompanhe suas compras' },
-            { icon: MapPin, title: 'Endereços', desc: 'Gerencie endereços' },
-            { icon: UserIcon, title: 'Meus dados', desc: 'Atualize suas informações' },
+            { icon: Package, title: 'Meus pedidos', desc: 'Acompanhe suas compras', to: '/conta/pedidos' as const },
+            { icon: MapPin, title: 'Endereços', desc: 'Gerencie endereços', to: '/conta' as const },
+            { icon: UserIcon, title: 'Meus dados', desc: 'Atualize suas informações', to: '/conta' as const },
           ].map((item) => (
-            <div key={item.title} className="bg-card border border-border rounded-xl p-5 hover:shadow-elevated transition-shadow cursor-pointer">
+            <Link key={item.title} to={item.to} className="bg-card border border-border rounded-xl p-5 hover:shadow-elevated transition-shadow block">
               <div className="w-10 h-10 rounded-lg bg-primary-tint flex items-center justify-center mb-3">
                 <item.icon className="w-5 h-5 text-primary" />
               </div>
               <h3 className="font-display font-semibold mb-0.5">{item.title}</h3>
               <p className="text-xs text-muted-foreground">{item.desc}</p>
-            </div>
+            </Link>
           ))}
-        </div>
-
-        <div className="mt-8 bg-card border border-border rounded-xl p-6">
-          <h2 className="font-display font-semibold mb-3">Pedidos recentes</h2>
-          <p className="text-sm text-muted-foreground mb-4">Você ainda não fez nenhum pedido.</p>
-          <Button asChild variant="outline"><Link to="/catalogo">Começar a comprar</Link></Button>
         </div>
 
         <div className="mt-6 flex justify-end">

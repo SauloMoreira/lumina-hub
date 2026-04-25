@@ -79,7 +79,7 @@ function CartPage() {
               <p className="text-xs text-muted-foreground text-right">em até 12x de {formatBRL(total / 12)}</p>
             </div>
             <Button asChild size="lg" className="w-full h-12">
-              <Link to="/login">Finalizar pedido <ArrowRight className="w-4 h-4 ml-1.5" /></Link>
+              <Link to="/checkout">Finalizar pedido <ArrowRight className="w-4 h-4 ml-1.5" /></Link>
             </Button>
             <Button asChild variant="ghost" size="sm" className="w-full mt-2">
               <Link to="/catalogo">Continuar comprando</Link>
