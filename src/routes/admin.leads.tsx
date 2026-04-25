@@ -337,31 +337,58 @@ function LeadsPage() {
             </div>
           </div>
         ) : (
-          <table className="w-full text-sm">
-            <thead className="text-left text-xs text-muted-foreground bg-muted/40">
-              <tr><th className="px-4 py-3 font-medium">Nome</th><th className="px-4 py-3 font-medium">Contato</th><th className="px-4 py-3 font-medium">Origem</th><th className="px-4 py-3 font-medium">Interesse</th><th className="px-4 py-3 font-medium">Status</th><th className="px-4 py-3 font-medium">Data</th><th></th></tr>
-            </thead>
-            <tbody>
-              {filteredLeads.length === 0 && <tr><td colSpan={7} className="px-4 py-8 text-center text-muted-foreground">Nenhum lead encontrado.</td></tr>}
-              {filteredLeads.map((l) => (
-                <tr key={l.id} className="border-t border-border hover:bg-muted/20">
-                  <td className="px-4 py-3 font-medium">{l.name}</td>
-                  <td className="px-4 py-3 text-xs space-y-0.5">
-                    {l.email && <div className="flex items-center gap-1 text-muted-foreground"><Mail className="w-3 h-3" />{l.email}</div>}
-                    {l.phone && <div className="flex items-center gap-1 text-muted-foreground"><Phone className="w-3 h-3" />{l.phone}</div>}
-                  </td>
-                  <td className="px-4 py-3 text-xs">{leadOriginLabel(l.origin)}</td>
-                  <td className="px-4 py-3 text-xs max-w-xs truncate">{l.interest ?? '—'}</td>
-                  <td className="px-4 py-3"><StatusBadge status={l.status} /></td>
-                  <td className="px-4 py-3 text-xs">{new Date(l.created_at).toLocaleDateString('pt-BR')}</td>
-                  <td className="px-4 py-3 text-right">
-                    <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => openDetail(l)}><Eye className="w-4 h-4" /></Button>
-                    <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive" onClick={() => del(l.id)}><Trash2 className="w-4 h-4" /></Button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+          <>
+            <table className="w-full text-sm">
+              <thead className="text-left text-xs text-muted-foreground bg-muted/40">
+                <tr><th className="px-4 py-3 font-medium">Nome</th><th className="px-4 py-3 font-medium">Contato</th><th className="px-4 py-3 font-medium">Origem</th><th className="px-4 py-3 font-medium">Interesse</th><th className="px-4 py-3 font-medium">Status</th><th className="px-4 py-3 font-medium">Data</th><th></th></tr>
+              </thead>
+              <tbody>
+                {pagedLeads.length === 0 && <tr><td colSpan={7} className="px-4 py-8 text-center text-muted-foreground">Nenhum lead encontrado.</td></tr>}
+                {pagedLeads.map((l) => (
+                  <tr key={l.id} className="border-t border-border hover:bg-muted/20">
+                    <td className="px-4 py-3 font-medium">{l.name}</td>
+                    <td className="px-4 py-3 text-xs space-y-0.5">
+                      {l.email && <div className="flex items-center gap-1 text-muted-foreground"><Mail className="w-3 h-3" />{l.email}</div>}
+                      {l.phone && <div className="flex items-center gap-1 text-muted-foreground"><Phone className="w-3 h-3" />{l.phone}</div>}
+                    </td>
+                    <td className="px-4 py-3 text-xs">{leadOriginLabel(l.origin)}</td>
+                    <td className="px-4 py-3 text-xs max-w-xs truncate">{l.interest ?? '—'}</td>
+                    <td className="px-4 py-3"><StatusBadge status={l.status} /></td>
+                    <td className="px-4 py-3 text-xs">{new Date(l.created_at).toLocaleDateString('pt-BR')}</td>
+                    <td className="px-4 py-3 text-right">
+                      <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => openDetail(l)}><Eye className="w-4 h-4" /></Button>
+                      <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive" onClick={() => del(l.id)}><Trash2 className="w-4 h-4" /></Button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+            {filteredLeads.length > 0 && (
+              <div className="px-4 py-3 border-t border-border flex items-center justify-between gap-3 flex-wrap text-xs">
+                <div className="flex items-center gap-2 text-muted-foreground">
+                  <span>
+                    {(safePage - 1) * pageSize + 1}–{Math.min(safePage * pageSize, filteredLeads.length)} de {filteredLeads.length}
+                  </span>
+                  <select
+                    value={pageSize}
+                    onChange={(e) => setPageSize(Number(e.target.value))}
+                    className="h-8 rounded-md border border-input bg-background px-2 text-xs"
+                  >
+                    {[10, 20, 50, 100].map((n) => <option key={n} value={n}>{n} / página</option>)}
+                  </select>
+                </div>
+                <div className="flex items-center gap-1">
+                  <Button variant="outline" size="sm" className="h-8" disabled={safePage <= 1} onClick={() => setPage(safePage - 1)}>
+                    <ChevronLeft className="w-3.5 h-3.5" /> Anterior
+                  </Button>
+                  <span className="px-2 text-muted-foreground">Página {safePage} de {totalPages}</span>
+                  <Button variant="outline" size="sm" className="h-8" disabled={safePage >= totalPages} onClick={() => setPage(safePage + 1)}>
+                    Próxima <ChevronRight className="w-3.5 h-3.5" />
+                  </Button>
+                </div>
+              </div>
+            )}
+          </>
         )}
       </div>
 
