@@ -89,12 +89,10 @@ export function PrimaryButton({
       onMouseEnter={(e) => { if (!loading) e.currentTarget.style.backgroundColor = '#1348C0'; }}
       onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = '#1A56DB'; }}
     >
-      {loading ? (
-        <>
-          <span className="inline-block w-4 h-4 rounded-full border-2 border-white/40 border-t-white animate-spin" />
-          Entrando...
-        </>
-      ) : children}
+      {loading && (
+        <span className="inline-block w-4 h-4 rounded-full border-2 border-white/40 border-t-white animate-spin" />
+      )}
+      {children}
     </button>
   );
 }
