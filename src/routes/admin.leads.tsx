@@ -220,7 +220,7 @@ function LeadsPage() {
               <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none" />
               <Input
                 value={search}
-                onChange={(e) => setSearch(e.target.value)}
+                onChange={(e) => setSearchQ(e.target.value)}
                 placeholder="Buscar por nome ou empresa..."
                 className="pl-9 h-10"
               />
