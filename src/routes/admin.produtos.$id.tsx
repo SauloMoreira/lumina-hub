@@ -33,7 +33,6 @@ function ProductForm() {
   const nav = useNavigate();
   const [loading, setLoading] = useState(!isNew);
   const [saving, setSaving] = useState(false);
-  const [uploading, setUploading] = useState(false);
   const [cats, setCats] = useState<Cat[]>([]);
 
   const [form, setForm] = useState({
@@ -70,18 +69,7 @@ function ProductForm() {
     }
   }, [id, isNew, nav]);
 
-  const handleUpload = async (file: File) => {
-    setUploading(true);
-    const ext = file.name.split('.').pop() ?? 'jpg';
-    const path = `${crypto.randomUUID()}.${ext}`;
-    const { error } = await supabase.storage.from('product-images').upload(path, file, { contentType: file.type });
-    if (error) { toast.error(error.message); setUploading(false); return; }
-    const { data } = supabase.storage.from('product-images').getPublicUrl(path);
-    setForm((f) => ({ ...f, images: [...f.images, data.publicUrl] }));
-    setUploading(false);
-  };
 
-  const removeImage = (url: string) => setForm((f) => ({ ...f, images: f.images.filter((i) => i !== url) }));
 
   const submit = async (e: FormEvent) => {
     e.preventDefault();
