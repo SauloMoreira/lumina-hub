@@ -476,7 +476,7 @@ function LeadsPage() {
                 </div>
               </div>
             )}
-          </>
+          </div>
         )}
       </div>
 
