@@ -59,9 +59,10 @@ async function fetchGoogleImages(query: string): Promise<string[]> {
     const res = await fetch(`${GOOGLE_CSE_URL}?${params.toString()}`);
     if (!res.ok) {
       const t = await res.text().catch(() => '');
-      console.error('[barcodeLookup] google cse error', res.status, t.slice(0, 200));
+      console.error('[barcodeLookup] google cse error status=' + res.status + ' query="' + q + '" body=' + t.slice(0, 500));
       return [];
     }
+    console.log('[barcodeLookup] google cse ok query="' + q + '"');
     const data = (await res.json()) as { items?: Array<{ link?: string; mime?: string }> };
     const out: string[] = [];
     for (const it of data.items ?? []) {
