@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { generateImageSeo } from '@/server/imageSeo.functions';
 import { pickUrl, variantUrl, type ProductImageRow } from '@/lib/productImages';
 import { enhanceProductImage } from '@/lib/imageEnhance';
+import { fetchExternalImage } from '@/server/barcodeLookup.functions';
 
 interface Props {
   productId: string;
