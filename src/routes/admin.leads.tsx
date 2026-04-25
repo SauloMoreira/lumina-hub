@@ -92,6 +92,19 @@ function LeadsPage() {
   const setPageSize = (v: number) => updateSearch({ pageSize: v, page: 1 });
 
   const [leads, setLeads] = useState<any[]>([]);
+  const [searchInput, setSearchInput] = useState(search);
+
+  // Sync local input when URL changes externally (back/forward, clear filters)
+  useEffect(() => { setSearchInput(search); }, [search]);
+
+  // Debounce: push input -> URL after 300ms of inactivity
+  useEffect(() => {
+    if (searchInput === search) return;
+    const t = setTimeout(() => setSearchQ(searchInput), 300);
+    return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchInput]);
+
   const [kanbanLimits, setKanbanLimits] = useState<Record<string, number>>({});
   const KANBAN_PAGE = 20;
   const [open, setOpen] = useState(false);
@@ -219,8 +232,8 @@ function LeadsPage() {
             <div className="relative flex-1 min-w-[220px] max-w-md">
               <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none" />
               <Input
-                value={search}
-                onChange={(e) => setSearchQ(e.target.value)}
+                value={searchInput}
+                onChange={(e) => setSearchInput(e.target.value)}
                 placeholder="Buscar por nome ou empresa..."
                 className="pl-9 h-10"
               />
