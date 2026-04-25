@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
 import type { Product, Category } from '@/lib/domain';
 import { FREE_SHIPPING_THRESHOLD, formatBRL } from '@/lib/domain';
+import { imageUrlsFromProductImages } from '@/lib/productImages';
 import logoHero from '@/assets/logo-hero.webp';
 
 import { buildSeo } from '@/lib/seo';
@@ -24,7 +25,11 @@ export const Route = createFileRoute('/')({
 
 const ICONS: Record<string, any> = { Lightbulb, Zap, Cable, Plug, Sun, LayoutGrid, Wrench, Package };
 
-const PRODUCT_LIST_COLS = 'id, name, slug, price, sale_price, images, brand, tags, stock_qty, featured, category_id';
+const PRODUCT_LIST_COLS = 'id, name, slug, price, sale_price, images, brand, tags, stock_qty, featured, category_id, product_images(url_thumb, url_card, original_url, is_primary, sort_order)';
+
+function normalizeProductImages<T extends { images?: string[] | null; product_images?: any[] }>(product: T) {
+  return { ...product, images: imageUrlsFromProductImages(product.product_images, product.images) };
+}
 
 function HomePage() {
   const queryClient = useQueryClient();
@@ -38,7 +43,7 @@ function HomePage() {
         .select(PRODUCT_LIST_COLS)
         .eq('active', true).eq('featured', true).limit(8);
       if (error) throw error;
-      return data as unknown as Product[];
+      return (data ?? []).map((p: any) => normalizeProductImages(p)) as Product[];
     },
   });
 
@@ -68,7 +73,7 @@ function HomePage() {
           .order('featured', { ascending: false })
           .order('created_at', { ascending: false })
           .range(0, 23);
-        return { products: (data ?? []) as unknown as Product[], total: count ?? 0 };
+        return { products: (data ?? []).map((p: any) => normalizeProductImages(p)) as Product[], total: count ?? 0 };
       },
     });
   }, [queryClient]);

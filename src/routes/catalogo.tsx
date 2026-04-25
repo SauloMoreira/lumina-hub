@@ -11,6 +11,7 @@ import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
 import type { Product, Category } from '@/lib/domain';
 import { trackSearch } from '@/lib/tracking';
+import { imageUrlsFromProductImages } from '@/lib/productImages';
 
 const PAGE_SIZE = 24;
 
@@ -61,7 +62,7 @@ function CatalogPage() {
       const to = from + PAGE_SIZE - 1;
       let query = supabase
         .from('products')
-        .select('id, name, slug, price, sale_price, images, brand, tags, stock_qty, featured, category_id', { count: 'exact' })
+        .select('id, name, slug, price, sale_price, images, brand, tags, stock_qty, featured, category_id, product_images(url_thumb, url_card, original_url, is_primary, sort_order)', { count: 'exact' })
         .eq('active', true);
       if (search.cat) {
         const cat = categories?.find((c) => c.slug === search.cat);
@@ -73,7 +74,8 @@ function CatalogPage() {
       else query = query.order('featured', { ascending: false }).order('created_at', { ascending: false });
       const { data, error, count } = await query.range(from, to);
       if (error) throw error;
-      return { products: (data ?? []) as unknown as Product[], total: count ?? 0 };
+      const products = (data ?? []).map((p: any) => ({ ...p, images: imageUrlsFromProductImages(p.product_images, p.images) })) as Product[];
+      return { products, total: count ?? 0 };
     },
   });
 
