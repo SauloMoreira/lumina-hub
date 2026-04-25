@@ -299,8 +299,8 @@ function LeadsPage() {
               <tr><th className="px-4 py-3 font-medium">Nome</th><th className="px-4 py-3 font-medium">Contato</th><th className="px-4 py-3 font-medium">Origem</th><th className="px-4 py-3 font-medium">Interesse</th><th className="px-4 py-3 font-medium">Status</th><th className="px-4 py-3 font-medium">Data</th><th></th></tr>
             </thead>
             <tbody>
-              {leads.length === 0 && <tr><td colSpan={7} className="px-4 py-8 text-center text-muted-foreground">Nenhum lead.</td></tr>}
-              {leads.map((l) => (
+              {filteredLeads.length === 0 && <tr><td colSpan={7} className="px-4 py-8 text-center text-muted-foreground">Nenhum lead encontrado.</td></tr>}
+              {filteredLeads.map((l) => (
                 <tr key={l.id} className="border-t border-border hover:bg-muted/20">
                   <td className="px-4 py-3 font-medium">{l.name}</td>
                   <td className="px-4 py-3 text-xs space-y-0.5">
