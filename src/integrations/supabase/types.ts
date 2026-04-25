@@ -659,6 +659,15 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      apply_coupon: {
+        Args: { _code: string; _subtotal: number }
+        Returns: {
+          discount: number
+          message: string
+          valid: boolean
+        }[]
+      }
+      increment_coupon_usage: { Args: { _code: string }; Returns: undefined }
       is_admin: { Args: { _user_id: string }; Returns: boolean }
     }
     Enums: {
