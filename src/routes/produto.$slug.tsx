@@ -1,7 +1,7 @@
 import { createFileRoute, Link, notFound } from '@tanstack/react-router';
 import { useQuery } from '@tanstack/react-query';
 import { useEffect, useState } from 'react';
-import { Minus, Plus, ShoppingCart, Truck, Shield, Zap, ChevronRight } from 'lucide-react';
+import { Minus, Plus, ShoppingCart, Truck, Shield, ChevronRight } from 'lucide-react';
 import { toast } from 'sonner';
 import { StoreLayout } from '@/components/layout/StoreLayout';
 import { Button } from '@/components/ui/button';
@@ -11,6 +11,8 @@ import { formatBRL } from '@/lib/domain';
 import { useCart } from '@/stores/cartStore';
 import { buildSeo, SITE_URL, clamp } from '@/lib/seo';
 import { trackViewProduct, trackAddToCart } from '@/lib/tracking';
+import { ProductImageCarousel } from '@/components/store/ProductImageCarousel';
+import { pickUrl, type ProductImageRow } from '@/lib/productImages';
 
 type FaqItem = { question: string; answer: string };
 type ProductWithSeo = Product & {
@@ -34,7 +36,13 @@ const productQueryOptions = (slug: string) => ({
     const { data, error } = await supabase.from('products').select('*').eq('slug', slug).eq('active', true).maybeSingle();
     if (error) throw error;
     if (!data) throw notFound();
-    return data as ProductWithSeo;
+    const { data: imgs } = await supabase
+      .from('product_images')
+      .select('*')
+      .eq('product_id', (data as { id: string }).id)
+      .order('is_primary', { ascending: false })
+      .order('sort_order', { ascending: true });
+    return { ...(data as ProductWithSeo), product_images: (imgs ?? []) as ProductImageRow[] };
   },
 });
 
