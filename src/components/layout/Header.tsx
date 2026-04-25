@@ -1,8 +1,9 @@
 import { Link } from '@tanstack/react-router';
-import { Search, ShoppingCart, User as UserIcon, Menu, Sparkles } from 'lucide-react';
+import { Search, ShoppingCart, User as UserIcon, Menu, Sparkles, Shield } from 'lucide-react';
 import { useState } from 'react';
 import { useCart } from '@/stores/cartStore';
 import { useAuth } from '@/hooks/useAuth';
+import { useIsAdmin } from '@/hooks/useIsAdmin';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { STORE_NAME } from '@/lib/domain';
@@ -11,6 +12,7 @@ import logoNavbar from '@/assets/logo-navbar.png';
 export function Header() {
   const cart = useCart();
   const { user } = useAuth();
+  const isAdmin = useIsAdmin();
   const count = cart.count();
   const [q, setQ] = useState('');
 
@@ -49,6 +51,11 @@ export function Header() {
           <Button variant="outline" size="sm" className="hidden md:inline-flex h-9 gap-1.5 border-primary/30 text-primary hover:bg-primary-tint hover:text-primary">
             <Sparkles className="w-3.5 h-3.5" /> Falar com IA
           </Button>
+          {isAdmin && (
+            <Link to={'/admin' as any} aria-label="Admin">
+              <Button variant="ghost" size="icon" className="h-9 w-9 text-primary"><Shield className="w-5 h-5" /></Button>
+            </Link>
+          )}
           <Link to={user ? '/conta' : '/login'} aria-label="Conta">
             <Button variant="ghost" size="icon" className="h-9 w-9">
               <UserIcon className="w-5 h-5" />
