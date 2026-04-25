@@ -29,8 +29,20 @@ function ProdutosList() {
 
   const load = async () => {
     setLoading(true);
-    const { data } = await supabase.from('products').select('*').order('created_at', { ascending: false });
-    setProducts((data as any) ?? []);
+    const { data } = await supabase
+      .from('products')
+      .select('*, product_images(url_thumb, url_card, original_url, is_primary, sort_order)')
+      .order('created_at', { ascending: false });
+    const mapped = (data ?? []).map((p: any) => {
+      const imgs = (p.product_images ?? []).slice().sort((a: any, b: any) => {
+        if (a.is_primary !== b.is_primary) return a.is_primary ? -1 : 1;
+        return (a.sort_order ?? 0) - (b.sort_order ?? 0);
+      });
+      const fromTable = imgs.map((i: any) => i.url_thumb ?? i.url_card ?? i.original_url).filter(Boolean);
+      const merged = fromTable.length ? fromTable : (p.images ?? []);
+      return { ...p, images: merged };
+    });
+    setProducts(mapped);
     setLoading(false);
   };
 
