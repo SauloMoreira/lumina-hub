@@ -1,0 +1,206 @@
+import { createFileRoute, useNavigate, useParams, Link } from '@tanstack/react-router';
+import { useEffect, useState, type FormEvent } from 'react';
+import { ArrowLeft, Upload, X, Loader2 } from 'lucide-react';
+import { AdminLayout } from '@/components/admin/AdminLayout';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { Switch } from '@/components/ui/switch';
+import { Label } from '@/components/ui/label';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
+
+export const Route = createFileRoute('/admin/produtos/$id')({ component: ProductForm });
+
+function slugify(s: string) {
+  return s
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+    .slice(0, 80);
+}
+
+interface Cat { id: string; name: string }
+
+function ProductForm() {
+  const { id } = useParams({ strict: false }) as { id: string };
+  const isNew = id === 'novo';
+  const nav = useNavigate();
+  const [loading, setLoading] = useState(!isNew);
+  const [saving, setSaving] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const [cats, setCats] = useState<Cat[]>([]);
+
+  const [form, setForm] = useState({
+    name: '', slug: '', sku: '', brand: '', description: '',
+    price: '', sale_price: '', cost_price: '',
+    stock_qty: '0', stock_min_alert: '10',
+    weight_kg: '0.3', length_cm: '10', width_cm: '10', height_cm: '10',
+    category_id: '', active: true, featured: false,
+    images: [] as string[],
+    tags: '',
+  });
+
+  useEffect(() => {
+    supabase.from('categories').select('id,name').order('name').then(({ data }) => setCats((data as any) ?? []));
+    if (!isNew) {
+      supabase.from('products').select('*').eq('id', id).maybeSingle().then(({ data, error }) => {
+        if (error || !data) { toast.error('Produto não encontrado'); nav({ to: '/admin/produtos' as any }); return; }
+        setForm({
+          name: data.name, slug: data.slug, sku: data.sku ?? '', brand: data.brand ?? '',
+          description: data.description ?? '',
+          price: String(data.price), sale_price: data.sale_price ? String(data.sale_price) : '', cost_price: data.cost_price ? String(data.cost_price) : '',
+          stock_qty: String(data.stock_qty), stock_min_alert: String(data.stock_min_alert ?? 10),
+          weight_kg: String(data.weight_kg ?? 0.3), length_cm: String(data.length_cm ?? 10), width_cm: String(data.width_cm ?? 10), height_cm: String(data.height_cm ?? 10),
+          category_id: data.category_id ?? '', active: !!data.active, featured: !!data.featured,
+          images: data.images ?? [],
+          tags: (data.tags ?? []).join(', '),
+        });
+        setLoading(false);
+      });
+    }
+  }, [id, isNew, nav]);
+
+  const handleUpload = async (file: File) => {
+    setUploading(true);
+    const ext = file.name.split('.').pop() ?? 'jpg';
+    const path = `${crypto.randomUUID()}.${ext}`;
+    const { error } = await supabase.storage.from('product-images').upload(path, file, { contentType: file.type });
+    if (error) { toast.error(error.message); setUploading(false); return; }
+    const { data } = supabase.storage.from('product-images').getPublicUrl(path);
+    setForm((f) => ({ ...f, images: [...f.images, data.publicUrl] }));
+    setUploading(false);
+  };
+
+  const removeImage = (url: string) => setForm((f) => ({ ...f, images: f.images.filter((i) => i !== url) }));
+
+  const submit = async (e: FormEvent) => {
+    e.preventDefault();
+    setSaving(true);
+    const payload = {
+      name: form.name,
+      slug: form.slug || slugify(form.name),
+      sku: form.sku || null,
+      brand: form.brand || null,
+      description: form.description || null,
+      price: Number(form.price),
+      sale_price: form.sale_price ? Number(form.sale_price) : null,
+      cost_price: form.cost_price ? Number(form.cost_price) : null,
+      stock_qty: Number(form.stock_qty),
+      stock_min_alert: Number(form.stock_min_alert),
+      weight_kg: Number(form.weight_kg),
+      length_cm: Number(form.length_cm),
+      width_cm: Number(form.width_cm),
+      height_cm: Number(form.height_cm),
+      category_id: form.category_id || null,
+      active: form.active,
+      featured: form.featured,
+      images: form.images,
+      tags: form.tags.split(',').map((t) => t.trim()).filter(Boolean),
+    };
+    const res = isNew
+      ? await supabase.from('products').insert(payload).select('id').single()
+      : await supabase.from('products').update(payload).eq('id', id);
+    setSaving(false);
+    if (res.error) return toast.error(res.error.message);
+    toast.success(isNew ? 'Produto criado' : 'Produto atualizado');
+    nav({ to: '/admin/produtos' as any });
+  };
+
+  if (loading) return <AdminLayout title="Carregando…"><div /></AdminLayout>;
+
+  return (
+    <AdminLayout
+      title={isNew ? 'Novo produto' : 'Editar produto'}
+      action={<Link to={'/admin/produtos' as any}><Button variant="ghost" size="sm"><ArrowLeft className="w-4 h-4 mr-1" /> Voltar</Button></Link>}
+    >
+      <form onSubmit={submit} className="grid lg:grid-cols-3 gap-6 max-w-6xl">
+        <div className="lg:col-span-2 space-y-4">
+          <Section title="Informações básicas">
+            <Field label="Nome *"><Input required value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value, slug: form.slug || slugify(e.target.value) })} /></Field>
+            <div className="grid sm:grid-cols-2 gap-3">
+              <Field label="Slug"><Input value={form.slug} onChange={(e) => setForm({ ...form, slug: e.target.value })} /></Field>
+              <Field label="SKU"><Input value={form.sku} onChange={(e) => setForm({ ...form, sku: e.target.value })} /></Field>
+            </div>
+            <div className="grid sm:grid-cols-2 gap-3">
+              <Field label="Marca"><Input value={form.brand} onChange={(e) => setForm({ ...form, brand: e.target.value })} /></Field>
+              <Field label="Categoria">
+                <select value={form.category_id} onChange={(e) => setForm({ ...form, category_id: e.target.value })} className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm">
+                  <option value="">Sem categoria</option>
+                  {cats.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
+                </select>
+              </Field>
+            </div>
+            <Field label="Descrição"><Textarea rows={5} value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} /></Field>
+            <Field label="Tags (separadas por vírgula)"><Input value={form.tags} onChange={(e) => setForm({ ...form, tags: e.target.value })} placeholder="led, casa, sala" /></Field>
+          </Section>
+
+          <Section title="Preços e estoque">
+            <div className="grid sm:grid-cols-3 gap-3">
+              <Field label="Preço (R$) *"><Input required type="number" step="0.01" value={form.price} onChange={(e) => setForm({ ...form, price: e.target.value })} /></Field>
+              <Field label="Preço promocional"><Input type="number" step="0.01" value={form.sale_price} onChange={(e) => setForm({ ...form, sale_price: e.target.value })} /></Field>
+              <Field label="Custo (interno)"><Input type="number" step="0.01" value={form.cost_price} onChange={(e) => setForm({ ...form, cost_price: e.target.value })} /></Field>
+            </div>
+            <div className="grid sm:grid-cols-2 gap-3">
+              <Field label="Quantidade em estoque"><Input type="number" value={form.stock_qty} onChange={(e) => setForm({ ...form, stock_qty: e.target.value })} /></Field>
+              <Field label="Alerta de estoque baixo"><Input type="number" value={form.stock_min_alert} onChange={(e) => setForm({ ...form, stock_min_alert: e.target.value })} /></Field>
+            </div>
+          </Section>
+
+          <Section title="Dimensões (para frete)">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+              <Field label="Peso (kg)"><Input type="number" step="0.001" value={form.weight_kg} onChange={(e) => setForm({ ...form, weight_kg: e.target.value })} /></Field>
+              <Field label="Compr. (cm)"><Input type="number" value={form.length_cm} onChange={(e) => setForm({ ...form, length_cm: e.target.value })} /></Field>
+              <Field label="Larg. (cm)"><Input type="number" value={form.width_cm} onChange={(e) => setForm({ ...form, width_cm: e.target.value })} /></Field>
+              <Field label="Alt. (cm)"><Input type="number" value={form.height_cm} onChange={(e) => setForm({ ...form, height_cm: e.target.value })} /></Field>
+            </div>
+          </Section>
+        </div>
+
+        <div className="space-y-4">
+          <Section title="Imagens">
+            <div className="grid grid-cols-3 gap-2">
+              {form.images.map((url) => (
+                <div key={url} className="relative aspect-square rounded border border-border overflow-hidden group">
+                  <img src={url} alt="" className="w-full h-full object-cover" />
+                  <button type="button" onClick={() => removeImage(url)} className="absolute top-1 right-1 bg-destructive text-destructive-foreground rounded-full p-0.5 opacity-0 group-hover:opacity-100">
+                    <X className="w-3 h-3" />
+                  </button>
+                </div>
+              ))}
+              <label className="aspect-square border-2 border-dashed border-border rounded flex flex-col items-center justify-center cursor-pointer hover:border-primary text-muted-foreground hover:text-primary text-xs">
+                {uploading ? <Loader2 className="w-5 h-5 animate-spin" /> : <><Upload className="w-5 h-5 mb-1" />Enviar</>}
+                <input type="file" accept="image/*" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if (f) handleUpload(f); e.target.value = ''; }} disabled={uploading} />
+              </label>
+            </div>
+            <p className="text-xs text-muted-foreground mt-2">A primeira imagem é a principal.</p>
+          </Section>
+
+          <Section title="Visibilidade">
+            <div className="flex items-center justify-between"><Label>Ativo</Label><Switch checked={form.active} onCheckedChange={(v) => setForm({ ...form, active: v })} /></div>
+            <div className="flex items-center justify-between"><Label>Destaque na home</Label><Switch checked={form.featured} onCheckedChange={(v) => setForm({ ...form, featured: v })} /></div>
+          </Section>
+
+          <Button type="submit" disabled={saving} className="w-full">
+            {saving && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+            {isNew ? 'Criar produto' : 'Salvar alterações'}
+          </Button>
+        </div>
+      </form>
+    </AdminLayout>
+  );
+}
+
+function Section({ title, children }: { title: string; children: React.ReactNode }) {
+  return (
+    <div className="bg-card border border-border rounded-xl p-5 space-y-3">
+      <h2 className="font-display font-semibold text-sm uppercase tracking-wider text-muted-foreground">{title}</h2>
+      {children}
+    </div>
+  );
+}
+function Field({ label, children }: { label: string; children: React.ReactNode }) {
+  return <div className="space-y-1.5"><Label className="text-xs">{label}</Label>{children}</div>;
+}
