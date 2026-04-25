@@ -150,10 +150,65 @@ export const ProductImageManager = forwardRef<ProductImageManagerHandle, Props>(
   const removePendingImage = (id: string) => {
     setPendingImages((current) => {
       const target = current.find((img) => img.id === id);
-      if (target) URL.revokeObjectURL(target.previewUrl);
+      if (target) {
+        URL.revokeObjectURL(target.previewUrl);
+        if (target.originalPreviewUrl) URL.revokeObjectURL(target.originalPreviewUrl);
+      }
       return current.filter((img) => img.id !== id);
     });
   };
+
+  async function enhancePending(id: string) {
+    const target = pendingImages.find((img) => img.id === id);
+    if (!target) return;
+    setEnhancingPendingId(id);
+    try {
+      const enhanced = await enhanceProductImage(target.originalFile ?? target.file);
+      const newPreview = URL.createObjectURL(enhanced);
+      setPendingImages((current) =>
+        current.map((img) => {
+          if (img.id !== id) return img;
+          // guarda original na 1ª otimização
+          const originalFile = img.originalFile ?? img.file;
+          const originalPreviewUrl = img.originalPreviewUrl ?? img.previewUrl;
+          // só revoga preview anterior se já era uma versão otimizada
+          if (img.optimized) URL.revokeObjectURL(img.previewUrl);
+          return {
+            ...img,
+            file: enhanced,
+            previewUrl: newPreview,
+            originalFile,
+            originalPreviewUrl,
+            optimized: true,
+          };
+        }),
+      );
+      toast.success('Imagem otimizada com sucesso');
+    } catch (e) {
+      toast.error(e instanceof Error
+        ? `Não foi possível otimizar a imagem. A imagem original foi mantida. (${e.message})`
+        : 'Não foi possível otimizar a imagem. A imagem original foi mantida.');
+    } finally {
+      setEnhancingPendingId(null);
+    }
+  }
+
+  function restorePendingOriginal(id: string) {
+    setPendingImages((current) =>
+      current.map((img) => {
+        if (img.id !== id || !img.optimized || !img.originalFile || !img.originalPreviewUrl) return img;
+        URL.revokeObjectURL(img.previewUrl);
+        return {
+          ...img,
+          file: img.originalFile,
+          previewUrl: img.originalPreviewUrl,
+          originalFile: undefined,
+          originalPreviewUrl: undefined,
+          optimized: false,
+        };
+      }),
+    );
+  }
 
   const setPrimary = useMutation({
     mutationFn: async (imageId: string) => {
