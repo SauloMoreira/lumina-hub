@@ -6,6 +6,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { STORE_NAME } from '@/lib/domain';
+import logoNavbar from '@/assets/logo-navbar.png';
 
 export function Header() {
   const cart = useCart();
@@ -17,14 +18,8 @@ export function Header() {
     <header className="sticky top-0 z-50 bg-card border-b border-border" style={{ boxShadow: '0 1px 4px rgba(15,23,42,.06)' }}>
       <div className="container mx-auto px-4 h-16 flex items-center gap-6">
         {/* Logo */}
-        <Link to="/" className="flex items-center gap-2 shrink-0">
-          <div className="w-9 h-9 rounded-lg bg-primary flex items-center justify-center">
-            <Sparkles className="w-5 h-5 text-primary-foreground" />
-          </div>
-          <div className="hidden sm:block leading-tight">
-            <div className="font-display font-extrabold text-base text-foreground tracking-tight">{STORE_NAME}</div>
-            <div className="text-[10px] uppercase tracking-widest text-muted-foreground">Material Elétrico</div>
-          </div>
+        <Link to="/" className="flex items-center shrink-0" aria-label={STORE_NAME}>
+          <img src={logoNavbar} alt={STORE_NAME} className="h-11 w-auto object-contain" />
         </Link>
 
         {/* Busca */}

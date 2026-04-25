@@ -1,6 +1,7 @@
 import { Link } from '@tanstack/react-router';
-import { Sparkles, MessageCircle, Instagram, Facebook } from 'lucide-react';
+import { MessageCircle, Instagram, Facebook } from 'lucide-react';
 import { STORE_NAME, STORE_WHATSAPP } from '@/lib/domain';
+import logoFooter from '@/assets/logo-footer.jpg';
 
 export function Footer() {
   return (
@@ -9,11 +10,8 @@ export function Footer() {
         <div className="grid grid-cols-2 md:grid-cols-4 gap-10">
           {/* Marca */}
           <div className="col-span-2 md:col-span-1">
-            <div className="flex items-center gap-2 mb-4">
-              <div className="w-10 h-10 rounded-lg bg-primary-foreground/10 backdrop-blur flex items-center justify-center">
-                <Sparkles className="w-5 h-5" />
-              </div>
-              <div className="font-display font-extrabold text-lg">{STORE_NAME}</div>
+            <div className="bg-white rounded-lg p-3 inline-block mb-4">
+              <img src={logoFooter} alt={STORE_NAME} className="w-44 h-auto object-contain" />
             </div>
             <p className="text-sm text-primary-foreground/80 leading-relaxed mb-4">
               Qualidade que ilumina o seu projeto.
