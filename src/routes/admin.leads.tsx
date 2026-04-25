@@ -1,6 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { useEffect, useState } from 'react';
-import { Eye, Trash2, Phone, Mail, LayoutGrid, List, Search, X } from 'lucide-react';
+import { Eye, Trash2, Phone, Mail, LayoutGrid, List, Search, X, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { AdminLayout } from '@/components/admin/AdminLayout';
 import { Button } from '@/components/ui/button';
