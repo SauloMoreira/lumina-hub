@@ -76,73 +76,84 @@ function ProductForm() {
     e.preventDefault();
     setSaving(true);
 
-    // Sincroniza products.images (legado, usado em listagens/cards) com a tabela product_images
-    let imagesArray: string[] = form.images;
-    if (!isNew) {
-      const { data: imgs } = await supabase
-        .from('product_images')
-        .select('url_card, url_thumb, original_url, is_primary, sort_order')
-        .eq('product_id', id)
-        .order('is_primary', { ascending: false })
-        .order('sort_order', { ascending: true });
-      imagesArray = (imgs ?? []).map((i) => i.url_card ?? i.url_thumb ?? i.original_url);
-    }
-
-    const payload = {
-      name: form.name,
-      slug: form.slug || slugify(form.name),
-      sku: form.sku || null,
-      brand: form.brand || null,
-      description: form.description || null,
-      price: Number(form.price),
-      sale_price: form.sale_price ? Number(form.sale_price) : null,
-      cost_price: form.cost_price ? Number(form.cost_price) : null,
-      stock_qty: Number(form.stock_qty),
-      stock_min_alert: Number(form.stock_min_alert),
-      weight_kg: Number(form.weight_kg),
-      length_cm: Number(form.length_cm),
-      width_cm: Number(form.width_cm),
-      height_cm: Number(form.height_cm),
-      category_id: form.category_id || null,
-      active: form.active,
-      featured: form.featured,
-      images: imagesArray,
-      tags: form.tags.split(',').map((t) => t.trim()).filter(Boolean),
-      seo_title: form.seo_title.trim() || null,
-      seo_description: form.seo_description.trim() || null,
-      seo_keywords: form.seo_keywords.trim() || null,
-    } as any;
-    const res = isNew
-      ? await supabase.from('products').insert(payload).select('id').single()
-      : await supabase.from('products').update(payload).eq('id', id);
-    setSaving(false);
-    if (res.error) return toast.error(res.error.message);
-    toast.success(isNew ? 'Produto criado' : 'Produto atualizado');
-
-    // SEO Booster automático ao criar produto novo (sem SEO preenchido)
-    const newId = isNew ? (res.data as { id?: string } | null)?.id : id;
-    const seoEmpty = !payload.seo_title && !payload.seo_description && !payload.seo_keywords;
-    if (isNew && newId && seoEmpty) {
-      const { data: sessionData } = await supabase.auth.getSession();
-      const accessToken = sessionData.session?.access_token;
-
-      if (accessToken) {
-        toast.info('🚀 Otimizando SEO com IA em segundo plano…');
-        boostProductSeoAuto({ data: { productId: newId, accessToken } })
-          .then((r) => {
-            if (r.ok) toast.success(`SEO turbinado: título, descrição e ${r.faqCount} FAQs gerados`);
-            else toast.error(`SEO booster: ${r.error}`);
-          })
-          .catch((e: unknown) => toast.error(`SEO booster falhou: ${e instanceof Error ? e.message : 'erro'}`));
+    try {
+      let imagesArray: string[] = form.images;
+      if (!isNew) {
+        const savedImages = await imageManagerRef.current?.savePending();
+        const imgs = savedImages?.length
+          ? savedImages
+          : await supabase
+            .from('product_images')
+            .select('url_card, url_thumb, original_url, is_primary, sort_order')
+            .eq('product_id', id)
+            .order('is_primary', { ascending: false })
+            .order('sort_order', { ascending: true })
+            .then(({ data, error }) => {
+              if (error) throw error;
+              return data ?? [];
+            });
+        imagesArray = imgs.map((i) => i.url_card ?? i.url_thumb ?? i.original_url).filter(Boolean);
       }
-    }
 
-    // Após criar: vai para a tela de edição (para o usuário poder adicionar imagens)
-    // Após atualizar: volta para a lista
-    if (isNew && newId) {
-      nav({ to: '/admin/produtos/$id' as any, params: { id: newId } as any });
-    } else {
-      nav({ to: '/admin/produtos' as any });
+      const payload = {
+        name: form.name,
+        slug: form.slug || slugify(form.name),
+        sku: form.sku || null,
+        brand: form.brand || null,
+        description: form.description || null,
+        price: Number(form.price),
+        sale_price: form.sale_price ? Number(form.sale_price) : null,
+        cost_price: form.cost_price ? Number(form.cost_price) : null,
+        stock_qty: Number(form.stock_qty),
+        stock_min_alert: Number(form.stock_min_alert),
+        weight_kg: Number(form.weight_kg),
+        length_cm: Number(form.length_cm),
+        width_cm: Number(form.width_cm),
+        height_cm: Number(form.height_cm),
+        category_id: form.category_id || null,
+        active: form.active,
+        featured: form.featured,
+        images: imagesArray,
+        tags: form.tags.split(',').map((t) => t.trim()).filter(Boolean),
+        seo_title: form.seo_title.trim() || null,
+        seo_description: form.seo_description.trim() || null,
+        seo_keywords: form.seo_keywords.trim() || null,
+      } as any;
+
+      const res = isNew
+        ? await supabase.from('products').insert(payload).select('id').single()
+        : await supabase.from('products').update(payload).eq('id', id);
+      if (res.error) throw res.error;
+
+      if (!isNew) await imageManagerRef.current?.refetchImages();
+      toast.success(isNew ? 'Produto criado' : 'Produto e imagens atualizados');
+
+      const newId = isNew ? (res.data as { id?: string } | null)?.id : id;
+      const seoEmpty = !payload.seo_title && !payload.seo_description && !payload.seo_keywords;
+      if (isNew && newId && seoEmpty) {
+        const { data: sessionData } = await supabase.auth.getSession();
+        const accessToken = sessionData.session?.access_token;
+
+        if (accessToken) {
+          toast.info('🚀 Otimizando SEO com IA em segundo plano…');
+          boostProductSeoAuto({ data: { productId: newId, accessToken } })
+            .then((r) => {
+              if (r.ok) toast.success(`SEO turbinado: título, descrição e ${r.faqCount} FAQs gerados`);
+              else toast.error(`SEO booster: ${r.error}`);
+            })
+            .catch((e: unknown) => toast.error(`SEO booster falhou: ${e instanceof Error ? e.message : 'erro'}`));
+        }
+      }
+
+      if (isNew && newId) {
+        nav({ to: '/admin/produtos/$id' as any, params: { id: newId } as any });
+      } else {
+        nav({ to: '/admin/produtos' as any });
+      }
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Erro ao salvar produto ou imagens');
+    } finally {
+      setSaving(false);
     }
   };
 
