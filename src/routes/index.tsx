@@ -9,7 +9,7 @@ import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
 import type { Product, Category } from '@/lib/domain';
 import { FREE_SHIPPING_THRESHOLD, formatBRL } from '@/lib/domain';
-import logoHero from '@/assets/logo-hero.png';
+import logoHero from '@/assets/logo-hero.webp';
 
 export const Route = createFileRoute('/')({ component: HomePage });
 
@@ -70,7 +70,7 @@ function HomePage() {
       <section className="relative overflow-hidden bg-card border-b border-border">
         <div className="container mx-auto px-4 py-16 md:py-20 relative">
           <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }} className="max-w-3xl mx-auto text-center">
-            <img src={logoHero} alt="Led Maricá" loading="eager" decoding="async" className="w-full max-w-[380px] h-auto mx-auto mb-8" />
+            <img src={logoHero} alt="Led Maricá" loading="eager" decoding="async" fetchPriority="high" width={380} height={140} className="w-full max-w-[380px] h-auto mx-auto mb-8" />
             <div className="inline-flex items-center gap-2 bg-primary-tint text-primary px-3 py-1.5 rounded-full text-xs font-medium mb-5">
               <Sparkles className="w-3.5 h-3.5" /> Atendimento com IA 24h · Entrega rápida em Maricá e região
             </div>
