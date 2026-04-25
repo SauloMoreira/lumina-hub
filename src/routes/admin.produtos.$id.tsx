@@ -74,6 +74,19 @@ function ProductForm() {
   const submit = async (e: FormEvent) => {
     e.preventDefault();
     setSaving(true);
+
+    // Sincroniza products.images (legado, usado em listagens/cards) com a tabela product_images
+    let imagesArray: string[] = form.images;
+    if (!isNew) {
+      const { data: imgs } = await supabase
+        .from('product_images')
+        .select('url_card, url_thumb, original_url, is_primary, sort_order')
+        .eq('product_id', id)
+        .order('is_primary', { ascending: false })
+        .order('sort_order', { ascending: true });
+      imagesArray = (imgs ?? []).map((i) => i.url_card ?? i.url_thumb ?? i.original_url);
+    }
+
     const payload = {
       name: form.name,
       slug: form.slug || slugify(form.name),
@@ -92,7 +105,7 @@ function ProductForm() {
       category_id: form.category_id || null,
       active: form.active,
       featured: form.featured,
-      images: form.images,
+      images: imagesArray,
       tags: form.tags.split(',').map((t) => t.trim()).filter(Boolean),
       seo_title: form.seo_title.trim() || null,
       seo_description: form.seo_description.trim() || null,
@@ -120,12 +133,16 @@ function ProductForm() {
             else toast.error(`SEO booster: ${r.error}`);
           })
           .catch((e: unknown) => toast.error(`SEO booster falhou: ${e instanceof Error ? e.message : 'erro'}`));
-      } else {
-        toast.error('Sessão expirada. SEO automático não foi executado.');
       }
     }
 
-    nav({ to: '/admin/produtos' as any });
+    // Após criar: vai para a tela de edição (para o usuário poder adicionar imagens)
+    // Após atualizar: volta para a lista
+    if (isNew && newId) {
+      nav({ to: '/admin/produtos/$id' as any, params: { id: newId } });
+    } else {
+      nav({ to: '/admin/produtos' as any });
+    }
   };
 
   if (loading) return <AdminLayout title="Carregando…"><div /></AdminLayout>;
