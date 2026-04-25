@@ -45,7 +45,6 @@ export const ProductImageManager = forwardRef<ProductImageManagerHandle, Props>(
 ) {
   const queryClient = useQueryClient();
   const [pendingImages, setPendingImages] = useState<PendingImage[]>([]);
-  const pendingImagesRef = useRef<PendingImage[]>([]);
   const [uploading, setUploading] = useState(false);
   const [dragOver, setDragOver] = useState(false);
   const [optimizingId, setOptimizingId] = useState<string | null>(null);
@@ -66,16 +65,6 @@ export const ProductImageManager = forwardRef<ProductImageManagerHandle, Props>(
   const invalidate = () => refreshProductCaches();
   const totalImages = images.length + pendingImages.length;
   const unoptimizedCount = images.filter((i) => !i.optimized).length;
-
-  useEffect(() => {
-    pendingImagesRef.current = pendingImages;
-  }, [pendingImages]);
-
-  useEffect(() => {
-    return () => {
-      pendingImagesRef.current.forEach((img) => URL.revokeObjectURL(img.previewUrl));
-    };
-  }, []);
 
   async function uploadPendingImages() {
     if (!pendingImages.length) return fetchProductImages(productId);
