@@ -302,14 +302,17 @@ export const lookupBarcode = createServerFn({ method: 'POST' })
     }
 
     // Fallback: se a Cosmos não trouxe imagens, tenta Google Images por marca+nome
+    let imagesNote: string | null = null;
     if (images.length === 0) {
       const queryName = aiOut?.name || description || '';
       const queryBrand = aiOut?.brand || brand || '';
       const q = `${queryBrand} ${queryName}`.trim() || code;
-      const googleImages = await fetchGoogleImages(q);
-      if (googleImages.length > 0) {
-        images = googleImages;
-        console.log(`[barcodeLookup] google fallback found ${googleImages.length} images for "${q}"`);
+      const googleResult = await fetchGoogleImages(q);
+      imagesNote = googleResult.note;
+      if (googleResult.urls.length > 0) {
+        images = googleResult.urls;
+        imagesNote = null;
+        console.log(`[barcodeLookup] google fallback found ${googleResult.urls.length} images for "${q}"`);
       }
     }
 
