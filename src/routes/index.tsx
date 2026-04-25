@@ -73,7 +73,7 @@ function HomePage() {
           .order('featured', { ascending: false })
           .order('created_at', { ascending: false })
           .range(0, 23);
-        return { products: (data ?? []) as unknown as Product[], total: count ?? 0 };
+        return { products: (data ?? []).map((p: any) => normalizeProductImages(p)) as Product[], total: count ?? 0 };
       },
     });
   }, [queryClient]);
