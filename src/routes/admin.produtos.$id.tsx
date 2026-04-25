@@ -1,5 +1,5 @@
 import { createFileRoute, useNavigate, useParams, Link } from '@tanstack/react-router';
-import { useEffect, useState, type FormEvent } from 'react';
+import { useEffect, useRef, useState, type FormEvent } from 'react';
 import { ArrowLeft, Loader2 } from 'lucide-react';
 import { AdminLayout } from '@/components/admin/AdminLayout';
 import { Button } from '@/components/ui/button';
