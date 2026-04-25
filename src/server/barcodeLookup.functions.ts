@@ -349,6 +349,7 @@ export const lookupBarcode = createServerFn({ method: 'POST' })
       confidence: aiOut ? 'high' : 'medium',
       raw: { description, brand, category, ncm, thumbnail, avg_price, max_price, images },
       suggested,
+      imagesNote,
     };
   });
 
