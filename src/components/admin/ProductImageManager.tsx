@@ -129,6 +129,12 @@ export function ProductImageManager({ productId, productName, brand, category }:
   async function optimizeOne(img: ProductImageRow) {
     setOptimizingId(img.id);
     try {
+      const { data: sessionData } = await supabase.auth.getSession();
+      const token = sessionData.session?.access_token;
+      if (!token) {
+        toast.error('Sessão expirada. Faça login novamente.');
+        return;
+      }
       const seo = await generateImageSeo({
         data: {
           productName,
@@ -136,6 +142,7 @@ export function ProductImageManager({ productId, productName, brand, category }:
           category: category ?? null,
           index: img.sort_order,
         },
+        headers: { Authorization: `Bearer ${token}` },
       });
       if (!seo.ok) {
         toast.error(seo.error);
