@@ -72,6 +72,8 @@ export function BarcodeLookupDialog({ open, onOpenChange, categories, currentFor
   const [selectedImages, setSelectedImages] = useState<Set<string>>(new Set());
   const [resolvedCategoryId, setResolvedCategoryId] = useState<string | null>(null);
   const [manualUrl, setManualUrl] = useState('');
+  const [imageChoice, setImageChoice] = useState<'pending' | 'ai' | 'manual'>('pending');
+  const [generatingImage, setGeneratingImage] = useState(false);
 
   function addManualUrl() {
     const url = manualUrl.trim();
