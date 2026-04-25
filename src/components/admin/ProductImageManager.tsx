@@ -24,6 +24,9 @@ type PendingImage = {
   id: string;
   file: File;
   previewUrl: string;
+  originalFile?: File;
+  originalPreviewUrl?: string;
+  optimized?: boolean;
 };
 
 const MAX_IMAGES = 10;
