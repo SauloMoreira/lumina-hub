@@ -4,6 +4,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { useIsAdmin } from '@/hooks/useIsAdmin';
 import { AdminSidebar } from './AdminSidebar';
 import { Toaster } from '@/components/ui/sonner';
+import { PageSkeleton } from '@/components/layout/PageSkeleton';
 
 export function AdminLayout({ children, title, action }: { children: ReactNode; title: string; action?: ReactNode }) {
   const { user, loading } = useAuth();
@@ -16,7 +17,7 @@ export function AdminLayout({ children, title, action }: { children: ReactNode; 
   }, [user, loading, isAdmin, nav]);
 
   if (loading || isAdmin === null) {
-    return <div className="min-h-screen flex items-center justify-center text-muted-foreground">Carregando…</div>;
+    return <PageSkeleton />;
   }
   if (!user || !isAdmin) return null;
 

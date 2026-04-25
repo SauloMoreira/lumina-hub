@@ -6,10 +6,26 @@ export function useIsAdmin() {
 
   useEffect(() => {
     let mounted = true;
+    let timeout: ReturnType<typeof setTimeout>;
+
+    const startTimeout = () => {
+      clearTimeout(timeout);
+      timeout = setTimeout(() => {
+        if (mounted) setIsAdmin(false);
+      }, 5000);
+    };
+
+    const finish = (value: boolean) => {
+      if (!mounted) return;
+      clearTimeout(timeout);
+      setIsAdmin(value);
+    };
+
     const check = async () => {
+      startTimeout();
       const { data: auth } = await supabase.auth.getUser();
       if (!auth.user) {
-        if (mounted) setIsAdmin(false);
+        finish(false);
         return;
       }
       const { data, error } = await supabase
@@ -17,12 +33,22 @@ export function useIsAdmin() {
         .select('role')
         .eq('id', auth.user.id)
         .maybeSingle();
-      if (mounted) setIsAdmin(!error && data?.role === 'admin');
+      finish(!error && data?.role === 'admin');
     };
-    check();
-    const { data: sub } = supabase.auth.onAuthStateChange(() => check());
+
+    check().catch(() => finish(false));
+    const { data: sub } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (!mounted) return;
+      if (!session?.user) {
+        finish(false);
+        return;
+      }
+      setIsAdmin(null);
+      check().catch(() => finish(false));
+    });
     return () => {
       mounted = false;
+      clearTimeout(timeout);
       sub.subscription.unsubscribe();
     };
   }, []);

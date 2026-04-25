@@ -5,6 +5,7 @@ import { StoreLayout } from '@/components/layout/StoreLayout';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
+import { PageSkeleton } from '@/components/layout/PageSkeleton';
 
 export const Route = createFileRoute('/conta')({ component: AccountPage });
 
@@ -39,7 +40,7 @@ function AccountPage() {
   }, [user, loading, navigate]);
 
   if (loading || checkingRole || !user) {
-    return <StoreLayout><div className="container mx-auto px-4 py-12 text-center text-muted-foreground">Carregando...</div></StoreLayout>;
+    return <PageSkeleton />;
   }
 
   return (
