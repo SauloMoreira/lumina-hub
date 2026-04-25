@@ -113,18 +113,46 @@ export const improveProductSeo = createServerFn({ method: 'POST' })
     }
   });
 
+const BoostInputSchema = z.object({
+  productId: z.string().uuid(),
+  accessToken: z.string().min(20).max(8192),
+});
+
 /** SEO Booster automático: gera title/description/keywords + FAQ e grava direto no produto. */
 export const boostProductSeoAuto = createServerFn({ method: 'POST' })
-  .middleware([requireSupabaseAuth])
-  .inputValidator((raw: unknown) => z.object({ productId: z.string().uuid() }).parse(raw))
-  .handler(async ({ data, context }) => {
+  .inputValidator((raw: unknown) => BoostInputSchema.parse(raw))
+  .handler(async ({ data }) => {
     try {
-      // Verifica se o caller é admin (proteção extra além do RLS)
-      const { data: profile } = await context.supabase
+      const supabaseUrl = process.env.SUPABASE_URL;
+      const supabaseKey = process.env.SUPABASE_PUBLISHABLE_KEY;
+
+      if (!supabaseUrl || !supabaseKey) {
+        return { ok: false as const, error: 'Configuração de autenticação indisponível' };
+      }
+
+      const authedSupabase = createClient<Database>(supabaseUrl, supabaseKey, {
+        global: { headers: { Authorization: `Bearer ${data.accessToken}` } },
+        auth: {
+          storage: undefined,
+          persistSession: false,
+          autoRefreshToken: false,
+        },
+      });
+
+      const { data: claimsData, error: claimsError } = await authedSupabase.auth.getClaims(data.accessToken);
+      const userId = claimsData?.claims?.sub;
+
+      if (claimsError || !userId) {
+        return { ok: false as const, error: 'Sessão inválida. Faça login novamente.' };
+      }
+
+      const { data: profile, error: profileError } = await authedSupabase
         .from('profiles')
         .select('role')
-        .eq('id', context.userId)
+        .eq('id', userId)
         .maybeSingle();
+
+      if (profileError) return { ok: false as const, error: profileError.message };
       if (profile?.role !== 'admin') {
         return { ok: false as const, error: 'Acesso negado' };
       }
