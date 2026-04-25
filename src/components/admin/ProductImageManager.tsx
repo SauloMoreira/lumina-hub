@@ -399,16 +399,53 @@ export const ProductImageManager = forwardRef<ProductImageManagerHandle, Props>(
         <div>
           <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold mb-2">Pendentes para salvar ({pendingImages.length})</p>
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
-            {pendingImages.map((img) => (
-              <div key={img.id} className="relative group aspect-square rounded-lg overflow-hidden border border-border bg-surface">
-                <img src={img.previewUrl} alt={img.file.name} className="w-full h-full object-cover" />
-                <span className="absolute top-1.5 left-1.5 px-1.5 py-0.5 rounded text-[9px] font-semibold bg-primary text-primary-foreground">Novo</span>
-                <button type="button" onClick={() => removePendingImage(img.id)} title="Remover"
-                  className="absolute top-1.5 right-1.5 w-7 h-7 rounded bg-white/95 text-destructive hover:bg-white flex items-center justify-center">
-                  <X className="w-3.5 h-3.5" />
-                </button>
-              </div>
-            ))}
+            {pendingImages.map((img) => {
+              const isEnhancing = enhancingPendingId === img.id;
+              return (
+                <div key={img.id} className="relative group aspect-square rounded-lg overflow-hidden border border-border bg-surface">
+                  <img src={img.previewUrl} alt={img.file.name} className="w-full h-full object-cover" />
+                  <span className="absolute top-1.5 left-1.5 px-1.5 py-0.5 rounded text-[9px] font-semibold bg-primary text-primary-foreground">Novo</span>
+                  {img.optimized && (
+                    <span className="absolute top-1.5 left-12 px-1.5 py-0.5 rounded text-[9px] font-semibold bg-emerald-500 text-white">Otimizada</span>
+                  )}
+                  <button type="button" onClick={() => removePendingImage(img.id)} title="Remover"
+                    className="absolute top-1.5 right-1.5 w-7 h-7 rounded bg-white/95 text-destructive hover:bg-white flex items-center justify-center">
+                    <X className="w-3.5 h-3.5" />
+                  </button>
+                  {isEnhancing && (
+                    <div className="absolute inset-0 bg-black/50 flex items-center justify-center text-white text-[11px] font-medium gap-1.5">
+                      <Loader2 className="w-3.5 h-3.5 animate-spin" /> Otimizando imagem…
+                    </div>
+                  )}
+                  <div className="absolute bottom-1.5 left-1.5 right-1.5 flex gap-1">
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="secondary"
+                      className="flex-1 h-7 text-[10px] px-1.5"
+                      disabled={isEnhancing}
+                      onClick={() => enhancePending(img.id)}
+                      title="Otimizar imagem (ajusta luz, contraste, foco e centralização)"
+                    >
+                      <Wand2 className="w-3 h-3 mr-1" />
+                      {img.optimized ? 'Otimizar de novo' : 'Otimizar imagem'}
+                    </Button>
+                    {img.optimized && (
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="outline"
+                        className="h-7 px-2"
+                        onClick={() => restorePendingOriginal(img.id)}
+                        title="Restaurar imagem original"
+                      >
+                        <Undo2 className="w-3 h-3" />
+                      </Button>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
           </div>
         </div>
       )}
