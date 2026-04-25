@@ -68,6 +68,13 @@ function CheckoutPage() {
   }, [user, loading, cart.items.length, navigate]);
 
   useEffect(() => {
+    if (!loading && user && cart.items.length > 0) {
+      trackBeginCheckout(subtotal, cart.items.length);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [loading, user]);
+
+  useEffect(() => {
     if (user?.user_metadata?.name) setRecipient(user.user_metadata.name as string);
   }, [user]);
 
