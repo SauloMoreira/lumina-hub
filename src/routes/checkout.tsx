@@ -11,7 +11,7 @@ import { useCart } from '@/stores/cartStore';
 import { formatBRL } from '@/lib/domain';
 import { lookupCep, calculateShipping, applyCoupon, createOrder } from '@/server/checkout.functions';
 import { buildSeo } from '@/lib/seo';
-import { trackPurchase } from '@/lib/tracking';
+import { trackPurchase, trackBeginCheckout } from '@/lib/tracking';
 
 export const Route = createFileRoute('/checkout')({
   head: () => buildSeo({ title: 'Finalizar pedido', url: '/checkout', noindex: true }),
@@ -66,6 +66,13 @@ function CheckoutPage() {
   useEffect(() => {
     if (!loading && user && cart.items.length === 0) navigate({ to: '/carrinho' });
   }, [user, loading, cart.items.length, navigate]);
+
+  useEffect(() => {
+    if (!loading && user && cart.items.length > 0) {
+      trackBeginCheckout(subtotal, cart.items.length);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [loading, user]);
 
   useEffect(() => {
     if (user?.user_metadata?.name) setRecipient(user.user_metadata.name as string);

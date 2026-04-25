@@ -10,6 +10,7 @@ import {
 } from '@/components/auth/AuthCard';
 
 import { buildSeo } from '@/lib/seo';
+import { trackEvent } from '@/lib/tracking';
 
 export const Route = createFileRoute('/cadastro')({
   head: () => buildSeo({ title: 'Criar conta', url: '/cadastro', noindex: true }),
@@ -61,6 +62,7 @@ function SignupPage() {
         },
       });
       if (error) throw error;
+      trackEvent('sign_up', { method: 'email' });
       toast.success('Conta criada com sucesso!');
       navigate({ to: '/conta' });
     } catch (err: any) {
