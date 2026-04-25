@@ -33,6 +33,47 @@ export type BarcodeLookupResult = {
 
 const COSMOS_URL = 'https://api.cosmos.bluesoft.com.br/gtins/';
 const AI_URL = 'https://ai.gateway.lovable.dev/v1/chat/completions';
+const GOOGLE_CSE_URL = 'https://www.googleapis.com/customsearch/v1';
+
+/**
+ * Fallback de imagens via Google Custom Search (Image).
+ * Só executa se GOOGLE_CSE_API_KEY e GOOGLE_CSE_CX estiverem configurados.
+ * Retorna até 6 URLs públicas de imagem.
+ */
+async function fetchGoogleImages(query: string): Promise<string[]> {
+  const key = process.env.GOOGLE_CSE_API_KEY;
+  const cx = process.env.GOOGLE_CSE_CX;
+  if (!key || !cx) return [];
+  const q = query.trim();
+  if (!q) return [];
+  const params = new URLSearchParams({
+    key,
+    cx,
+    q,
+    searchType: 'image',
+    num: '6',
+    safe: 'active',
+    imgSize: 'medium',
+  });
+  try {
+    const res = await fetch(`${GOOGLE_CSE_URL}?${params.toString()}`);
+    if (!res.ok) {
+      const t = await res.text().catch(() => '');
+      console.error('[barcodeLookup] google cse error', res.status, t.slice(0, 200));
+      return [];
+    }
+    const data = (await res.json()) as { items?: Array<{ link?: string; mime?: string }> };
+    const out: string[] = [];
+    for (const it of data.items ?? []) {
+      const url = it.link;
+      if (typeof url === 'string' && /^https?:\/\//i.test(url)) out.push(url);
+    }
+    return Array.from(new Set(out)).slice(0, 6);
+  } catch (e) {
+    console.error('[barcodeLookup] google cse fetch failed', e);
+    return [];
+  }
+}
 
 function sanitizeBarcode(raw: string): string {
   return (raw ?? '').replace(/\D+/g, '').trim();
@@ -228,7 +269,7 @@ export const lookupBarcode = createServerFn({ method: 'POST' })
       null;
     const ncm = ((cd.ncm as Record<string, unknown> | null)?.code as string | undefined) ?? null;
     const thumbnail = (cd.thumbnail as string) ?? null;
-    const images = extractCosmosImages(cd);
+    let images = extractCosmosImages(cd);
     const avg_price = typeof cd.avg_price === 'number' ? (cd.avg_price as number) : null;
     const max_price = typeof cd.max_price === 'number' ? (cd.max_price as number) : null;
 
@@ -250,6 +291,18 @@ export const lookupBarcode = createServerFn({ method: 'POST' })
       );
     } catch (e) {
       console.error('[barcodeLookup] AI standardization failed:', e);
+    }
+
+    // Fallback: se a Cosmos não trouxe imagens, tenta Google Images por marca+nome
+    if (images.length === 0) {
+      const queryName = aiOut?.name || description || '';
+      const queryBrand = aiOut?.brand || brand || '';
+      const q = `${queryBrand} ${queryName}`.trim() || code;
+      const googleImages = await fetchGoogleImages(q);
+      if (googleImages.length > 0) {
+        images = googleImages;
+        console.log(`[barcodeLookup] google fallback found ${googleImages.length} images for "${q}"`);
+      }
     }
 
     const suggested = aiOut
