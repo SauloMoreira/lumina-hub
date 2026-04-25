@@ -2,7 +2,8 @@ import { createFileRoute, useNavigate } from '@tanstack/react-router';
 import { useEffect, useState } from 'react';
 import { zodValidator, fallback } from '@tanstack/zod-adapter';
 import { z } from 'zod';
-import { Eye, Trash2, Phone, Mail, LayoutGrid, List, Search, X, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Eye, Trash2, Phone, Mail, LayoutGrid, List, Search, X, ChevronLeft, ChevronRight, Loader2 } from 'lucide-react';
+import { Skeleton } from '@/components/ui/skeleton';
 import { Input } from '@/components/ui/input';
 import { AdminLayout } from '@/components/admin/AdminLayout';
 import { Button } from '@/components/ui/button';
@@ -92,7 +93,10 @@ function LeadsPage() {
   const setPageSize = (v: number) => updateSearch({ pageSize: v, page: 1 });
 
   const [leads, setLeads] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
   const [searchInput, setSearchInput] = useState(search);
+  const isDebouncing = searchInput !== search;
+  const isBusy = loading || isDebouncing;
 
   // Sync local input when URL changes externally (back/forward, clear filters)
   useEffect(() => { setSearchInput(search); }, [search]);
@@ -112,10 +116,12 @@ function LeadsPage() {
   const [edit, setEdit] = useState({ status: 'new', notes: '', estimated_value: '' });
 
   const load = async () => {
+    setLoading(true);
     let q = supabase.from('leads').select('*').order('created_at', { ascending: false });
     if (filterStatus && filterStatus !== 'all') q = q.eq('status', filterStatus);
     const { data } = await q;
     setLeads((data as any) ?? []);
+    setLoading(false);
   };
   useEffect(() => { load(); }, [filterStatus]);
 
@@ -235,8 +241,11 @@ function LeadsPage() {
                 value={searchInput}
                 onChange={(e) => setSearchInput(e.target.value)}
                 placeholder="Buscar por nome ou empresa..."
-                className="pl-9 h-10"
+                className="pl-9 pr-9 h-10"
               />
+              {isBusy && (
+                <Loader2 className="w-4 h-4 absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground animate-spin" />
+              )}
             </div>
             <div className="inline-flex rounded-md border border-border bg-background p-0.5">
               <button
@@ -317,8 +326,29 @@ function LeadsPage() {
           </div>
         </div>
 
-        {view === 'kanban' ? (
-          <div className="p-4 overflow-x-auto">
+        {loading && leads.length === 0 ? (
+          view === 'kanban' ? (
+            <div className="p-4 overflow-x-auto">
+              <div className="grid grid-flow-col auto-cols-[minmax(260px,1fr)] gap-3 min-w-full">
+                {STATUSES.map((s) => (
+                  <div key={s} className="bg-muted/30 border border-border rounded-lg min-h-[300px] p-2 space-y-2">
+                    <Skeleton className="h-6 w-24 mb-2" />
+                    {Array.from({ length: 3 }).map((_, i) => (
+                      <Skeleton key={i} className="h-20 w-full rounded-md" />
+                    ))}
+                  </div>
+                ))}
+              </div>
+            </div>
+          ) : (
+            <div className="p-4 space-y-2">
+              {Array.from({ length: 8 }).map((_, i) => (
+                <Skeleton key={i} className="h-12 w-full" />
+              ))}
+            </div>
+          )
+        ) : view === 'kanban' ? (
+          <div className={cn('p-4 overflow-x-auto transition-opacity', isBusy && 'opacity-60')}>
             <div className="grid grid-flow-col auto-cols-[minmax(260px,1fr)] gap-3 min-w-full">
               {STATUSES.map((s) => {
                 const allItems = leadsByStatus(s);
@@ -395,7 +425,7 @@ function LeadsPage() {
             </div>
           </div>
         ) : (
-          <>
+          <div className={cn('transition-opacity', isBusy && 'opacity-60')}>
             <table className="w-full text-sm">
               <thead className="text-left text-xs text-muted-foreground bg-muted/40">
                 <tr><th className="px-4 py-3 font-medium">Nome</th><th className="px-4 py-3 font-medium">Contato</th><th className="px-4 py-3 font-medium">Origem</th><th className="px-4 py-3 font-medium">Interesse</th><th className="px-4 py-3 font-medium">Status</th><th className="px-4 py-3 font-medium">Data</th><th></th></tr>
@@ -446,7 +476,7 @@ function LeadsPage() {
                 </div>
               </div>
             )}
-          </>
+          </div>
         )}
       </div>
 
