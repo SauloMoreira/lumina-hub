@@ -8,7 +8,12 @@ import { formatBRL } from '@/lib/domain';
 import { listMyOrders } from '@/server/checkout.functions';
 import { orderStatusLabel } from '@/lib/orderStatus';
 
-export const Route = createFileRoute('/conta/pedidos')({ component: MyOrders });
+import { buildSeo } from '@/lib/seo';
+
+export const Route = createFileRoute('/conta/pedidos')({
+  head: () => buildSeo({ title: 'Meus pedidos', url: '/conta/pedidos', noindex: true }),
+  component: MyOrders,
+});
 
 type Row = {
   id: string;

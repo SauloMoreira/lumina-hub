@@ -9,8 +9,80 @@ import { supabase } from '@/integrations/supabase/client';
 import type { Product } from '@/lib/domain';
 import { formatBRL } from '@/lib/domain';
 import { useCart } from '@/stores/cartStore';
+import { buildSeo, SITE_URL, clamp } from '@/lib/seo';
+
+type ProductWithSeo = Product & {
+  seo_title?: string | null;
+  seo_description?: string | null;
+  seo_keywords?: string | null;
+};
+
+const productQueryOptions = (slug: string) => ({
+  queryKey: ['product', slug],
+  queryFn: async () => {
+    const { data, error } = await supabase.from('products').select('*').eq('slug', slug).eq('active', true).maybeSingle();
+    if (error) throw error;
+    if (!data) throw notFound();
+    return data as ProductWithSeo;
+  },
+});
 
 export const Route = createFileRoute('/produto/$slug')({
+  loader: async ({ params, context }) => {
+    const product = await context.queryClient.ensureQueryData(productQueryOptions(params.slug));
+    return { product };
+  },
+  head: ({ loaderData }) => {
+    const p = loaderData?.product;
+    if (!p) return buildSeo({ title: 'Produto', url: '/catalogo' });
+    const finalPrice = p.sale_price ?? p.price;
+    const baseDesc = p.description?.trim() || `${p.name} — disponível na Led Maricá com entrega rápida em Maricá/RJ. Frete grátis acima de R$199.`;
+    const description = clamp(p.seo_description || baseDesc, 160);
+    const title = p.seo_title || `${p.name}${p.brand ? ' — ' + p.brand : ''}`;
+    const image = p.images?.[0];
+
+    const seo = buildSeo({
+      title,
+      description,
+      url: `/produto/${p.slug}`,
+      image,
+      type: 'product',
+      product: {
+        price: finalPrice,
+        availability: p.stock_qty > 0 ? 'InStock' : 'OutOfStock',
+        sku: p.sku,
+        brand: p.brand,
+      },
+    });
+
+    if (p.seo_keywords) seo.meta.push({ name: 'keywords', content: p.seo_keywords });
+
+    const productJsonLd = JSON.stringify({
+      '@context': 'https://schema.org',
+      '@type': 'Product',
+      name: p.name,
+      description: baseDesc,
+      sku: p.sku ?? undefined,
+      mpn: p.ncm ?? undefined,
+      brand: { '@type': 'Brand', name: p.brand || 'Led Maricá' },
+      image: p.images ?? [],
+      offers: {
+        '@type': 'Offer',
+        url: `${SITE_URL}/produto/${p.slug}`,
+        priceCurrency: 'BRL',
+        price: finalPrice,
+        priceValidUntil: new Date(Date.now() + 30 * 86400000).toISOString().split('T')[0],
+        availability: p.stock_qty > 0 ? 'https://schema.org/InStock' : 'https://schema.org/OutOfStock',
+        seller: { '@type': 'Organization', name: 'Led Maricá' },
+      },
+    });
+
+    return {
+      meta: seo.meta,
+      links: seo.links,
+      scripts: [{ type: 'application/ld+json', children: productJsonLd }],
+    };
+  },
   component: ProductPage,
   notFoundComponent: () => (
     <StoreLayout>
@@ -27,15 +99,7 @@ function ProductPage() {
   const cart = useCart();
   const [qty, setQty] = useState(1);
 
-  const { data: product, isLoading } = useQuery({
-    queryKey: ['product', slug],
-    queryFn: async () => {
-      const { data, error } = await supabase.from('products').select('*').eq('slug', slug).eq('active', true).maybeSingle();
-      if (error) throw error;
-      if (!data) throw notFound();
-      return data as Product;
-    },
-  });
+  const { data: product, isLoading } = useQuery(productQueryOptions(slug));
 
   if (isLoading) {
     return <StoreLayout><div className="container mx-auto px-4 py-12"><div className="h-96 bg-surface animate-pulse rounded-xl" /></div></StoreLayout>;

@@ -20,8 +20,15 @@ const searchSchema = z.object({
   page: z.coerce.number().int().min(1).optional(),
 });
 
+import { buildSeo } from '@/lib/seo';
+
 export const Route = createFileRoute('/catalogo')({
   validateSearch: searchSchema,
+  head: () => buildSeo({
+    title: 'Catálogo de Produtos — Material Elétrico e LED',
+    description: 'Explore nosso catálogo completo de material elétrico e iluminação LED. Filtros por categoria, preço e marca. Entrega para todo o Brasil.',
+    url: '/catalogo',
+  }),
   component: CatalogPage,
 });
 

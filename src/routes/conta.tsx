@@ -7,7 +7,12 @@ import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { PageSkeleton } from '@/components/layout/PageSkeleton';
 
-export const Route = createFileRoute('/conta')({ component: AccountPage });
+import { buildSeo } from '@/lib/seo';
+
+export const Route = createFileRoute('/conta')({
+  head: () => buildSeo({ title: 'Minha conta', url: '/conta', noindex: true }),
+  component: AccountPage,
+});
 
 function AccountPage() {
   const { user, loading, signOut } = useAuth();
