@@ -53,6 +53,11 @@ function LeadsPage() {
   const [filterOrigin, setFilterOrigin] = useState('all');
   const [filterInterest, setFilterInterest] = useState('all');
   const [view, setView] = useState<'kanban' | 'list'>('kanban');
+  const [sortBy, setSortBy] = useState<'created_desc' | 'created_asc' | 'name_asc' | 'status' | 'value_desc'>('created_desc');
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(20);
+  const [kanbanLimits, setKanbanLimits] = useState<Record<string, number>>({});
+  const KANBAN_PAGE = 20;
   const [open, setOpen] = useState(false);
   const [selected, setSelected] = useState<any>(null);
   const [edit, setEdit] = useState({ status: 'new', notes: '', estimated_value: '' });
@@ -76,16 +81,43 @@ function LeadsPage() {
   const norm = (s: string) =>
     s.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
 
-  const filteredLeads = leads.filter((l) => {
-    if (filterOrigin !== 'all' && (l.origin ?? '') !== filterOrigin) return false;
-    if (filterInterest !== 'all' && (l.interest ?? '') !== filterInterest) return false;
-    if (search.trim()) {
-      const q = norm(search.trim());
-      const hay = norm(`${l.name ?? ''} ${l.company ?? ''}`);
-      if (!hay.includes(q)) return false;
-    }
-    return true;
-  });
+  const STATUS_ORDER: Record<string, number> = {
+    new: 0, contacted: 1, qualified: 2, proposal: 3, won: 4, lost: 5,
+  };
+
+  const filteredLeads = leads
+    .filter((l) => {
+      if (filterOrigin !== 'all' && (l.origin ?? '') !== filterOrigin) return false;
+      if (filterInterest !== 'all' && (l.interest ?? '') !== filterInterest) return false;
+      if (search.trim()) {
+        const q = norm(search.trim());
+        const hay = norm(`${l.name ?? ''} ${l.company ?? ''}`);
+        if (!hay.includes(q)) return false;
+      }
+      return true;
+    })
+    .sort((a, b) => {
+      switch (sortBy) {
+        case 'created_asc':
+          return new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
+        case 'name_asc':
+          return norm(a.name ?? '').localeCompare(norm(b.name ?? ''));
+        case 'status':
+          return (STATUS_ORDER[a.status ?? 'new'] ?? 99) - (STATUS_ORDER[b.status ?? 'new'] ?? 99);
+        case 'value_desc':
+          return (Number(b.estimated_value) || 0) - (Number(a.estimated_value) || 0);
+        case 'created_desc':
+        default:
+          return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+      }
+    });
+
+  // Reset list page when filters/sort change
+  useEffect(() => { setPage(1); setKanbanLimits({}); }, [search, filterOrigin, filterInterest, filterStatus, sortBy, pageSize]);
+
+  const totalPages = Math.max(1, Math.ceil(filteredLeads.length / pageSize));
+  const safePage = Math.min(page, totalPages);
+  const pagedLeads = filteredLeads.slice((safePage - 1) * pageSize, safePage * pageSize);
 
   const hasActiveFilters =
     !!search.trim() || filterOrigin !== 'all' || filterInterest !== 'all' || !!filterStatus;
