@@ -1,21 +1,42 @@
 import { createFileRoute, Link, useNavigate } from '@tanstack/react-router';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { LogOut, User as UserIcon, Package, MapPin } from 'lucide-react';
 import { StoreLayout } from '@/components/layout/StoreLayout';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/hooks/useAuth';
+import { supabase } from '@/integrations/supabase/client';
 
 export const Route = createFileRoute('/conta')({ component: AccountPage });
 
 function AccountPage() {
   const { user, loading, signOut } = useAuth();
   const navigate = useNavigate();
+  const [checkingRole, setCheckingRole] = useState(true);
 
   useEffect(() => {
-    if (!loading && !user) navigate({ to: '/login' });
+    if (loading) return;
+    if (!user) {
+      navigate({ to: '/login' });
+      return;
+    }
+
+    let mounted = true;
+    supabase
+      .from('profiles')
+      .select('role')
+      .eq('id', user.id)
+      .maybeSingle()
+      .then(({ data }) => {
+        if (!mounted) return;
+        if (data?.role === 'admin') navigate({ to: '/admin' as any });
+        else setCheckingRole(false);
+      })
+      .catch(() => { if (mounted) setCheckingRole(false); });
+
+    return () => { mounted = false; };
   }, [user, loading, navigate]);
 
-  if (loading || !user) {
+  if (loading || checkingRole || !user) {
     return <StoreLayout><div className="container mx-auto px-4 py-12 text-center text-muted-foreground">Carregando...</div></StoreLayout>;
   }
 
