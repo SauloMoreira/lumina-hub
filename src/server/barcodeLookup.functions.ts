@@ -40,12 +40,14 @@ const GOOGLE_CSE_URL = 'https://www.googleapis.com/customsearch/v1';
  * Só executa se GOOGLE_CSE_API_KEY e GOOGLE_CSE_CX estiverem configurados.
  * Retorna até 6 URLs públicas de imagem.
  */
-async function fetchGoogleImages(query: string): Promise<string[]> {
+async function fetchGoogleImages(query: string): Promise<{ urls: string[]; note: string | null }> {
   const key = process.env.GOOGLE_CSE_API_KEY;
   const cx = process.env.GOOGLE_CSE_CX;
-  if (!key || !cx) return [];
+  if (!key || !cx) {
+    return { urls: [], note: 'Fallback de imagens (Google) não configurado.' };
+  }
   const q = query.trim();
-  if (!q) return [];
+  if (!q) return { urls: [], note: null };
   const params = new URLSearchParams({
     key,
     cx,
@@ -60,7 +62,11 @@ async function fetchGoogleImages(query: string): Promise<string[]> {
     if (!res.ok) {
       const t = await res.text().catch(() => '');
       console.error('[barcodeLookup] google cse error status=' + res.status + ' query="' + q + '" body=' + t.slice(0, 500));
-      return [];
+      let note = `Busca de imagens no Google falhou (HTTP ${res.status}).`;
+      if (res.status === 403) note += ' Verifique se a "Custom Search API" está habilitada no Google Cloud e se a chave aceita esse projeto/domínio.';
+      if (res.status === 400) note += ' CX (Search Engine ID) inválido ou sem "Image search" habilitado.';
+      if (res.status === 429) note += ' Cota diária do Google excedida.';
+      return { urls: [], note };
     }
     console.log('[barcodeLookup] google cse ok query="' + q + '"');
     const data = (await res.json()) as { items?: Array<{ link?: string; mime?: string }> };
@@ -69,10 +75,11 @@ async function fetchGoogleImages(query: string): Promise<string[]> {
       const url = it.link;
       if (typeof url === 'string' && /^https?:\/\//i.test(url)) out.push(url);
     }
-    return Array.from(new Set(out)).slice(0, 6);
+    const urls = Array.from(new Set(out)).slice(0, 6);
+    return { urls, note: urls.length === 0 ? 'Google não retornou imagens para esta busca.' : null };
   } catch (e) {
     console.error('[barcodeLookup] google cse fetch failed', e);
-    return [];
+    return { urls: [], note: 'Erro de rede ao buscar imagens no Google.' };
   }
 }
 
