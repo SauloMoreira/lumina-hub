@@ -1,5 +1,7 @@
-import { createFileRoute } from '@tanstack/react-router';
+import { createFileRoute, useNavigate } from '@tanstack/react-router';
 import { useEffect, useState } from 'react';
+import { zodValidator, fallback } from '@tanstack/zod-adapter';
+import { z } from 'zod';
 import { Eye, Trash2, Phone, Mail, LayoutGrid, List, Search, X, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { AdminLayout } from '@/components/admin/AdminLayout';
