@@ -30,6 +30,40 @@ function extractFaq(specs: Record<string, unknown> | null | undefined): FaqItem[
     .slice(0, 6);
 }
 
+function buildProductJsonLd(p: ProductWithSeo, finalPrice: number, baseDesc: string, allImageUrls: string[]) {
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'Product',
+    name: p.name,
+    description: baseDesc,
+    sku: p.sku ?? undefined,
+    mpn: p.ncm ?? undefined,
+    brand: { '@type': 'Brand', name: p.brand || 'Led Maricá' },
+    image: allImageUrls,
+    offers: {
+      '@type': 'Offer',
+      url: `${SITE_URL}/produto/${p.slug}`,
+      priceCurrency: 'BRL',
+      price: finalPrice,
+      priceValidUntil: new Date(Date.now() + 30 * 86400000).toISOString().split('T')[0],
+      availability: p.stock_qty > 0 ? 'https://schema.org/InStock' : 'https://schema.org/OutOfStock',
+      seller: { '@type': 'Organization', name: 'Led Maricá' },
+    },
+  };
+}
+
+function buildFaqJsonLd(faq: FaqItem[]) {
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'FAQPage',
+    mainEntity: faq.map((f) => ({
+      '@type': 'Question',
+      name: f.question,
+      acceptedAnswer: { '@type': 'Answer', text: f.answer },
+    })),
+  };
+}
+
 const productQueryOptions = (slug: string) => ({
   queryKey: ['product', slug],
   queryFn: async () => {
