@@ -139,7 +139,7 @@ function ProductForm() {
     // Após criar: vai para a tela de edição (para o usuário poder adicionar imagens)
     // Após atualizar: volta para a lista
     if (isNew && newId) {
-      nav({ to: '/admin/produtos/$id' as any, params: { id: newId } });
+      nav({ to: '/admin/produtos/$id' as any, params: { id: newId } as any });
     } else {
       nav({ to: '/admin/produtos' as any });
     }
