@@ -1,5 +1,6 @@
 import { createFileRoute, Link } from '@tanstack/react-router';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Sparkles, Truck, Shield, MessageSquareText, ArrowRight, Lightbulb, Zap, Cable, Plug, Sun, LayoutGrid, Wrench, Package } from 'lucide-react';
 import { StoreLayout } from '@/components/layout/StoreLayout';
@@ -14,24 +15,54 @@ export const Route = createFileRoute('/')({ component: HomePage });
 
 const ICONS: Record<string, any> = { Lightbulb, Zap, Cable, Plug, Sun, LayoutGrid, Wrench, Package };
 
+const PRODUCT_LIST_COLS = 'id, name, slug, price, sale_price, images, brand, tags, stock_qty, featured, category_id';
+
 function HomePage() {
+  const queryClient = useQueryClient();
+
   const { data: featured } = useQuery({
     queryKey: ['products', 'featured'],
+    staleTime: 1000 * 60 * 10,
     queryFn: async () => {
-      const { data, error } = await supabase.from('products').select('*').eq('active', true).eq('featured', true).limit(8);
+      const { data, error } = await supabase
+        .from('products')
+        .select(PRODUCT_LIST_COLS)
+        .eq('active', true).eq('featured', true).limit(8);
       if (error) throw error;
-      return data as Product[];
+      return data as unknown as Product[];
     },
   });
 
   const { data: categories } = useQuery({
     queryKey: ['categories'],
+    staleTime: 1000 * 60 * 60,
     queryFn: async () => {
-      const { data, error } = await supabase.from('categories').select('*').eq('active', true).order('sort_order');
+      const { data, error } = await supabase
+        .from('categories')
+        .select('id, name, slug, icon, sort_order')
+        .eq('active', true).order('sort_order');
       if (error) throw error;
       return data as Category[];
     },
   });
+
+  // Prefetch do catálogo (página 1) — usuário muito provavelmente clica em "Ver catálogo"
+  useEffect(() => {
+    queryClient.prefetchQuery({
+      queryKey: ['products', 'catalog', undefined, undefined, 1],
+      staleTime: 1000 * 60 * 10,
+      queryFn: async () => {
+        const { data, count } = await supabase
+          .from('products')
+          .select(PRODUCT_LIST_COLS, { count: 'exact' })
+          .eq('active', true)
+          .order('featured', { ascending: false })
+          .order('created_at', { ascending: false })
+          .range(0, 23);
+        return { products: (data ?? []) as unknown as Product[], total: count ?? 0 };
+      },
+    });
+  }, [queryClient]);
 
   return (
     <StoreLayout>
@@ -39,7 +70,7 @@ function HomePage() {
       <section className="relative overflow-hidden bg-card border-b border-border">
         <div className="container mx-auto px-4 py-16 md:py-20 relative">
           <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }} className="max-w-3xl mx-auto text-center">
-            <img src={logoHero} alt="Led Maricá" className="w-full max-w-[380px] h-auto mx-auto mb-8" />
+            <img src={logoHero} alt="Led Maricá" loading="eager" decoding="async" className="w-full max-w-[380px] h-auto mx-auto mb-8" />
             <div className="inline-flex items-center gap-2 bg-primary-tint text-primary px-3 py-1.5 rounded-full text-xs font-medium mb-5">
               <Sparkles className="w-3.5 h-3.5" /> Atendimento com IA 24h · Entrega rápida em Maricá e região
             </div>
