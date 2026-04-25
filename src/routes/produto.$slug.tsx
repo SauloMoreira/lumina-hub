@@ -1,17 +1,16 @@
-import { createFileRoute, Link, notFound } from '@tanstack/react-router';
+import { createFileRoute, Link, notFound, useNavigate } from '@tanstack/react-router';
 import { useQuery } from '@tanstack/react-query';
 import { useEffect, useState } from 'react';
-import { Minus, Plus, ShoppingCart, Truck, Shield, ChevronRight } from 'lucide-react';
+import { ShoppingCart, Truck, Shield, ChevronRight, Check, Zap } from 'lucide-react';
 import { toast } from 'sonner';
 import { StoreLayout } from '@/components/layout/StoreLayout';
-import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
 import type { Product } from '@/lib/domain';
 import { formatBRL } from '@/lib/domain';
 import { useCart } from '@/stores/cartStore';
 import { buildSeo, SITE_URL, clamp } from '@/lib/seo';
 import { trackViewProduct, trackAddToCart } from '@/lib/tracking';
-import { ProductImageCarousel } from '@/components/store/ProductImageCarousel';
+import { ProductGallery } from '@/components/store/ProductGallery';
 import { pickUrl, type ProductImageRow } from '@/lib/productImages';
 
 type FaqItem = { question: string; answer: string };
