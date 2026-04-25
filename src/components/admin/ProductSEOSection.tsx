@@ -82,9 +82,16 @@ export function ProductSEOSection({ productId, productCtx, seoTitle, seoDescript
             Campos para o Google. Se em branco, usamos o nome e a descrição do produto.
           </p>
         </div>
-        <Button type="button" size="sm" variant="outline" onClick={improve} disabled={loading} className="shrink-0 border-primary/40 text-primary hover:bg-primary-tint hover:text-primary">
-          {loading ? <><Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" />Gerando…</> : <><Sparkles className="w-3.5 h-3.5 mr-1.5" />Melhorar com IA</>}
-        </Button>
+        <div className="flex flex-col sm:flex-row gap-2 shrink-0">
+          <Button type="button" size="sm" variant="outline" onClick={improve} disabled={loading || boosting} className="border-primary/40 text-primary hover:bg-primary-tint hover:text-primary">
+            {loading ? <><Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" />Gerando…</> : <><Sparkles className="w-3.5 h-3.5 mr-1.5" />Melhorar com IA</>}
+          </Button>
+          {productId && (
+            <Button type="button" size="sm" onClick={boostFull} disabled={loading || boosting} className="bg-primary text-primary-foreground hover:brightness-110">
+              {boosting ? <><Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" />Turbinando…</> : <><Rocket className="w-3.5 h-3.5 mr-1.5" />Boost completo + FAQ</>}
+            </Button>
+          )}
+        </div>
       </div>
 
       <div className="space-y-1.5">
