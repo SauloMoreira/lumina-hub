@@ -97,6 +97,8 @@ export function BarcodeLookupDialog({ open, onOpenChange, categories, currentFor
     setResult(null);
     setSelectedImages(new Set());
     setResolvedCategoryId(null);
+    setImageChoice('pending');
+    setGeneratingImage(false);
   };
 
   const close = () => {
@@ -113,15 +115,17 @@ export function BarcodeLookupDialog({ open, onOpenChange, categories, currentFor
     setLoading(true);
     setResult(null);
     setSelectedImages(new Set());
+    setImageChoice('pending');
     try {
       const r = await lookupBarcode({
         data: { barcode: code, categoriesAvailable: categories.map((c) => c.name) },
       });
       setResult(r);
       if (r.ok) {
-        // pré-selecionar todas as imagens (até 6)
         setSelectedImages(new Set(r.suggested.images.slice(0, 6)));
         setResolvedCategoryId(matchCategoryId(r.suggested.categoryHint, categories));
+        // Se já veio imagem da Cosmos, considera resolvido
+        if (r.suggested.images.length > 0) setImageChoice('manual');
       } else if (r.error) {
         toast.error(r.error);
       }
@@ -129,6 +133,32 @@ export function BarcodeLookupDialog({ open, onOpenChange, categories, currentFor
       toast.error(e instanceof Error ? e.message : 'Erro ao buscar produto');
     } finally {
       setLoading(false);
+    }
+  }
+
+  async function generateAiImage() {
+    if (!result?.ok) return;
+    const s = result.suggested;
+    if (!s.name) {
+      toast.error('Sem nome do produto para gerar imagem.');
+      return;
+    }
+    setGeneratingImage(true);
+    try {
+      const { dataUrl } = await generateProductImage({
+        data: { name: s.name, brand: s.brand, category: s.categoryHint },
+      });
+      setSelectedImages((prev) => new Set(prev).add(dataUrl));
+      setResult((prev) => {
+        if (!prev || !prev.ok) return prev;
+        return { ...prev, suggested: { ...prev.suggested, images: [...prev.suggested.images, dataUrl] } };
+      });
+      setImageChoice('ai');
+      toast.success('Imagem gerada com IA. Revise antes de aplicar.');
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : 'Erro ao gerar imagem');
+    } finally {
+      setGeneratingImage(false);
     }
   }
 
