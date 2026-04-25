@@ -269,7 +269,7 @@ export const lookupBarcode = createServerFn({ method: 'POST' })
       null;
     const ncm = ((cd.ncm as Record<string, unknown> | null)?.code as string | undefined) ?? null;
     const thumbnail = (cd.thumbnail as string) ?? null;
-    const images = extractCosmosImages(cd);
+    let images = extractCosmosImages(cd);
     const avg_price = typeof cd.avg_price === 'number' ? (cd.avg_price as number) : null;
     const max_price = typeof cd.max_price === 'number' ? (cd.max_price as number) : null;
 
@@ -291,6 +291,18 @@ export const lookupBarcode = createServerFn({ method: 'POST' })
       );
     } catch (e) {
       console.error('[barcodeLookup] AI standardization failed:', e);
+    }
+
+    // Fallback: se a Cosmos não trouxe imagens, tenta Google Images por marca+nome
+    if (images.length === 0) {
+      const queryName = aiOut?.name || description || '';
+      const queryBrand = aiOut?.brand || brand || '';
+      const q = `${queryBrand} ${queryName}`.trim() || code;
+      const googleImages = await fetchGoogleImages(q);
+      if (googleImages.length > 0) {
+        images = googleImages;
+        console.log(`[barcodeLookup] google fallback found ${googleImages.length} images for "${q}"`);
+      }
     }
 
     const suggested = aiOut
