@@ -20,18 +20,30 @@ function PedidosAdmin() {
   const [orders, setOrders] = useState<any[]>([]);
   const [q, setQ] = useState('');
   const [filterStatus, setFilterStatus] = useState('');
+  const [page, setPage] = useState(1);
+  const [hasMore, setHasMore] = useState(false);
   const [open, setOpen] = useState(false);
   const [selected, setSelected] = useState<any>(null);
   const [items, setItems] = useState<any[]>([]);
   const [edit, setEdit] = useState({ status: '', payment_status: '', tracking_code: '', shipping_carrier: '', admin_notes: '' });
 
+  const PAGE_SIZE = 20;
+
   const load = async () => {
-    let query = supabase.from('orders').select('*').order('created_at', { ascending: false }).limit(200);
+    const from = (page - 1) * PAGE_SIZE;
+    const to = from + PAGE_SIZE; // pega 1 extra para detectar próxima página
+    let query = supabase
+      .from('orders')
+      .select('id, order_number, status, payment_status, total, created_at, address_snapshot')
+      .order('created_at', { ascending: false })
+      .range(from, to);
     if (filterStatus) query = query.eq('status', filterStatus);
     const { data } = await query;
-    setOrders((data as any) ?? []);
+    const rows = (data as any[]) ?? [];
+    setHasMore(rows.length > PAGE_SIZE);
+    setOrders(rows.slice(0, PAGE_SIZE));
   };
-  useEffect(() => { load(); }, [filterStatus]);
+  useEffect(() => { load(); }, [filterStatus, page]);
 
   const openDetail = async (o: any) => {
     setSelected(o);
