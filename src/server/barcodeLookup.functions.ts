@@ -29,6 +29,7 @@ export type BarcodeLookupResult = {
     referencePrice?: number | null;
   };
   error?: string;
+  imagesNote?: string | null;
 };
 
 const COSMOS_URL = 'https://api.cosmos.bluesoft.com.br/gtins/';
