@@ -1,11 +1,12 @@
 import { forwardRef, useImperativeHandle, useState, type ChangeEvent, type DragEvent } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Loader2, Upload, Star, ArrowLeft, ArrowRight, X, Sparkles, Plus } from 'lucide-react';
+import { Loader2, Upload, Star, ArrowLeft, ArrowRight, X, Sparkles, Plus, Wand2, Undo2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { generateImageSeo } from '@/server/imageSeo.functions';
 import { pickUrl, variantUrl, type ProductImageRow } from '@/lib/productImages';
+import { enhanceProductImage } from '@/lib/imageEnhance';
 
 interface Props {
   productId: string;
