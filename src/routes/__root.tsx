@@ -1,9 +1,30 @@
 import { Outlet, Link, createRootRouteWithContext, HeadContent, Scripts } from "@tanstack/react-router";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { AuthProvider } from "@/components/auth/AuthProvider";
+import { SITE_URL, SITE_NAME, SITE_DESCRIPTION } from "@/lib/seo";
 import appCss from "../styles.css?url";
 
 interface MyRouterContext { queryClient: QueryClient }
+
+const LOCAL_BUSINESS_JSONLD = JSON.stringify({
+  "@context": "https://schema.org",
+  "@type": "Store",
+  name: SITE_NAME,
+  description: SITE_DESCRIPTION,
+  url: SITE_URL,
+  telephone: "+55-21-98212-6467",
+  address: {
+    "@type": "PostalAddress",
+    addressLocality: "Maricá",
+    addressRegion: "RJ",
+    addressCountry: "BR",
+  },
+  geo: { "@type": "GeoCoordinates", latitude: "-22.9189", longitude: "-42.8186" },
+  openingHours: "Mo-Sa 08:00-18:00",
+  priceRange: "$$",
+  currenciesAccepted: "BRL",
+  paymentAccepted: "Cash, Credit Card, PIX",
+});
 
 function NotFoundComponent() {
   return (
@@ -25,13 +46,10 @@ export const Route = createRootRouteWithContext<MyRouterContext>()({
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "Led Maricá — Material Elétrico e Iluminação em Maricá/RJ" },
-      { name: "description", content: "Loja de material elétrico e iluminação LED em Maricá/RJ. Lâmpadas, disjuntores, fios, refletores. Frete grátis acima de R$199." },
-      { property: "og:title", content: "Led Maricá — Material Elétrico" },
-      { property: "og:description", content: "Qualidade que ilumina o seu projeto. Entrega rápida em todo o Brasil." },
-      { property: "og:type", content: "website" },
+      { name: "theme-color", content: "#0073E6" },
     ],
     links: [{ rel: "stylesheet", href: appCss }],
+    scripts: [{ type: "application/ld+json", children: LOCAL_BUSINESS_JSONLD }],
   }),
   shellComponent: RootShell,
   component: RootComponent,
