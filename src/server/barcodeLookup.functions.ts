@@ -29,6 +29,7 @@ export type BarcodeLookupResult = {
     referencePrice?: number | null;
   };
   error?: string;
+  imagesNote?: string | null;
 };
 
 const COSMOS_URL = 'https://api.cosmos.bluesoft.com.br/gtins/';
@@ -40,12 +41,14 @@ const GOOGLE_CSE_URL = 'https://www.googleapis.com/customsearch/v1';
  * Só executa se GOOGLE_CSE_API_KEY e GOOGLE_CSE_CX estiverem configurados.
  * Retorna até 6 URLs públicas de imagem.
  */
-async function fetchGoogleImages(query: string): Promise<string[]> {
+async function fetchGoogleImages(query: string): Promise<{ urls: string[]; note: string | null }> {
   const key = process.env.GOOGLE_CSE_API_KEY;
   const cx = process.env.GOOGLE_CSE_CX;
-  if (!key || !cx) return [];
+  if (!key || !cx) {
+    return { urls: [], note: 'Fallback de imagens (Google) não configurado.' };
+  }
   const q = query.trim();
-  if (!q) return [];
+  if (!q) return { urls: [], note: null };
   const params = new URLSearchParams({
     key,
     cx,
@@ -59,19 +62,25 @@ async function fetchGoogleImages(query: string): Promise<string[]> {
     const res = await fetch(`${GOOGLE_CSE_URL}?${params.toString()}`);
     if (!res.ok) {
       const t = await res.text().catch(() => '');
-      console.error('[barcodeLookup] google cse error', res.status, t.slice(0, 200));
-      return [];
+      console.error('[barcodeLookup] google cse error status=' + res.status + ' query="' + q + '" body=' + t.slice(0, 500));
+      let note = `Busca de imagens no Google falhou (HTTP ${res.status}).`;
+      if (res.status === 403) note += ' Verifique se a "Custom Search API" está habilitada no Google Cloud e se a chave aceita esse projeto/domínio.';
+      if (res.status === 400) note += ' CX (Search Engine ID) inválido ou sem "Image search" habilitado.';
+      if (res.status === 429) note += ' Cota diária do Google excedida.';
+      return { urls: [], note };
     }
+    console.log('[barcodeLookup] google cse ok query="' + q + '"');
     const data = (await res.json()) as { items?: Array<{ link?: string; mime?: string }> };
     const out: string[] = [];
     for (const it of data.items ?? []) {
       const url = it.link;
       if (typeof url === 'string' && /^https?:\/\//i.test(url)) out.push(url);
     }
-    return Array.from(new Set(out)).slice(0, 6);
+    const urls = Array.from(new Set(out)).slice(0, 6);
+    return { urls, note: urls.length === 0 ? 'Google não retornou imagens para esta busca.' : null };
   } catch (e) {
     console.error('[barcodeLookup] google cse fetch failed', e);
-    return [];
+    return { urls: [], note: 'Erro de rede ao buscar imagens no Google.' };
   }
 }
 
@@ -294,14 +303,17 @@ export const lookupBarcode = createServerFn({ method: 'POST' })
     }
 
     // Fallback: se a Cosmos não trouxe imagens, tenta Google Images por marca+nome
+    let imagesNote: string | null = null;
     if (images.length === 0) {
       const queryName = aiOut?.name || description || '';
       const queryBrand = aiOut?.brand || brand || '';
       const q = `${queryBrand} ${queryName}`.trim() || code;
-      const googleImages = await fetchGoogleImages(q);
-      if (googleImages.length > 0) {
-        images = googleImages;
-        console.log(`[barcodeLookup] google fallback found ${googleImages.length} images for "${q}"`);
+      const googleResult = await fetchGoogleImages(q);
+      imagesNote = googleResult.note;
+      if (googleResult.urls.length > 0) {
+        images = googleResult.urls;
+        imagesNote = null;
+        console.log(`[barcodeLookup] google fallback found ${googleResult.urls.length} images for "${q}"`);
       }
     }
 
@@ -337,6 +349,7 @@ export const lookupBarcode = createServerFn({ method: 'POST' })
       confidence: aiOut ? 'high' : 'medium',
       raw: { description, brand, category, ncm, thumbnail, avg_price, max_price, images },
       suggested,
+      imagesNote,
     };
   });
 

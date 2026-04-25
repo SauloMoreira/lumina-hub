@@ -71,6 +71,24 @@ export function BarcodeLookupDialog({ open, onOpenChange, categories, currentFor
   const [result, setResult] = useState<BarcodeLookupResult | null>(null);
   const [selectedImages, setSelectedImages] = useState<Set<string>>(new Set());
   const [resolvedCategoryId, setResolvedCategoryId] = useState<string | null>(null);
+  const [manualUrl, setManualUrl] = useState('');
+
+  function addManualUrl() {
+    const url = manualUrl.trim();
+    if (!url) return;
+    if (!/^https?:\/\//i.test(url)) {
+      toast.error('URL inválida. Deve começar com http:// ou https://');
+      return;
+    }
+    setSelectedImages((prev) => new Set(prev).add(url));
+    // também acrescenta na lista visível, se ainda não estiver
+    setResult((prev) => {
+      if (!prev || !prev.ok) return prev;
+      if (prev.suggested.images.includes(url)) return prev;
+      return { ...prev, suggested: { ...prev.suggested, images: [...prev.suggested.images, url] } };
+    });
+    setManualUrl('');
+  }
 
   const reset = () => {
     setBarcode('');
@@ -247,12 +265,17 @@ export function BarcodeLookupDialog({ open, onOpenChange, categories, currentFor
               </div>
               <Field label="SEO Keywords" value={result.suggested.seo_keywords} />
 
-              {result.suggested.images.length > 0 && (
-                <div>
-                  <Label className="text-xs flex items-center gap-1.5 mb-2">
-                    <ImageIcon className="w-3.5 h-3.5" />
-                    Imagens encontradas ({selectedImages.size}/{result.suggested.images.length} selecionadas)
-                  </Label>
+              <div>
+                <Label className="text-xs flex items-center gap-1.5 mb-2">
+                  <ImageIcon className="w-3.5 h-3.5" />
+                  Imagens encontradas ({selectedImages.size}/{result.suggested.images.length} selecionadas)
+                </Label>
+                {result.imagesNote && result.suggested.images.length === 0 && (
+                  <div className="mb-2 rounded-md border border-amber-200 bg-amber-50 dark:bg-amber-950/30 dark:border-amber-900 px-3 py-2 text-[11px] text-amber-800 dark:text-amber-200">
+                    {result.imagesNote}
+                  </div>
+                )}
+                {result.suggested.images.length > 0 ? (
                   <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
                     {result.suggested.images.map((url) => {
                       const selected = selectedImages.has(url);
@@ -283,11 +306,35 @@ export function BarcodeLookupDialog({ open, onOpenChange, categories, currentFor
                       );
                     })}
                   </div>
-                  <p className="text-[11px] text-muted-foreground mt-2">
-                    As imagens selecionadas serão baixadas e adicionadas como pendentes. Você poderá otimizá-las antes de salvar.
-                  </p>
+                ) : (
+                  <div className="rounded-lg border border-dashed border-border bg-muted/20 p-3 text-xs text-muted-foreground">
+                    Nenhuma imagem encontrada na base GTIN nem no fallback de busca. Você pode colar URLs de imagens manualmente abaixo, ou fazer upload depois pelo gerenciador de imagens do produto.
+                  </div>
+                )}
+
+                {/* Adicionar URL manual */}
+                <div className="mt-2 flex gap-2">
+                  <Input
+                    placeholder="Cole uma URL de imagem (https://...) e pressione Enter"
+                    value={manualUrl}
+                    onChange={(e) => setManualUrl(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        e.preventDefault();
+                        addManualUrl();
+                      }
+                    }}
+                    className="text-xs h-8"
+                  />
+                  <Button type="button" variant="outline" size="sm" onClick={addManualUrl} disabled={!manualUrl.trim()}>
+                    Adicionar
+                  </Button>
                 </div>
-              )}
+
+                <p className="text-[11px] text-muted-foreground mt-2">
+                  As imagens selecionadas serão baixadas e adicionadas como pendentes. Você poderá otimizá-las antes de salvar.
+                </p>
+              </div>
 
               <div className="rounded-lg border border-border bg-muted/30 p-3 text-xs text-muted-foreground">
                 <strong className="text-foreground">Importante:</strong> preço de venda, custo interno e estoque
