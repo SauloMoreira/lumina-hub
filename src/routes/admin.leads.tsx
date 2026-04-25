@@ -247,6 +247,18 @@ function LeadsPage() {
               ))}
             </select>
 
+            <select
+              value={sortBy}
+              onChange={(e) => setSortBy(e.target.value as typeof sortBy)}
+              className="h-9 rounded-md border border-input bg-background px-2 text-xs"
+            >
+              <option value="created_desc">Mais recentes</option>
+              <option value="created_asc">Mais antigos</option>
+              <option value="name_asc">Nome (A–Z)</option>
+              <option value="status">Status</option>
+              <option value="value_desc">Maior valor</option>
+            </select>
+
             <span className="text-xs text-muted-foreground ml-auto">
               {filteredLeads.length} de {leads.length} {leads.length === 1 ? 'lead' : 'leads'}
             </span>
