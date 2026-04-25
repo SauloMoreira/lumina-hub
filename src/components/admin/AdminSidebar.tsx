@@ -14,7 +14,7 @@ import { supabase } from '@/integrations/supabase/client';
 import logo from '@/assets/logo-navbar.png';
 import { cn } from '@/lib/utils';
 
-const items = [
+const items: { to: string; label: string; icon: typeof LayoutDashboard; exact?: boolean }[] = [
   { to: '/admin', label: 'Dashboard', icon: LayoutDashboard, exact: true },
   { to: '/admin/produtos', label: 'Produtos', icon: Package },
   { to: '/admin/categorias', label: 'Categorias', icon: Tags },
@@ -22,7 +22,7 @@ const items = [
   { to: '/admin/cupons', label: 'Cupons', icon: Ticket },
   { to: '/admin/leads', label: 'Leads', icon: Users },
   { to: '/admin/campanhas', label: 'Campanhas', icon: Megaphone },
-] as const;
+];
 
 export function AdminSidebar() {
   const loc = useLocation();
@@ -49,7 +49,7 @@ export function AdminSidebar() {
           return (
             <Link
               key={it.to}
-              to={it.to}
+              to={it.to as any}
               className={cn(
                 'flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors',
                 active
