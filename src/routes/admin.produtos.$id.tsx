@@ -295,6 +295,22 @@ function ProductForm() {
           </Button>
         </div>
       </form>
+      <BarcodeLookupDialog
+        open={barcodeOpen}
+        onOpenChange={setBarcodeOpen}
+        categories={cats}
+        currentForm={{
+          name: form.name,
+          brand: form.brand,
+          description: form.description,
+          tags: form.tags,
+          category_id: form.category_id,
+          seo_title: form.seo_title,
+          seo_description: form.seo_description,
+          seo_keywords: form.seo_keywords,
+        }}
+        onApply={applyBarcodeData}
+      />
     </AdminLayout>
   );
 }
