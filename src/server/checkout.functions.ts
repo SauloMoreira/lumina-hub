@@ -127,7 +127,9 @@ export const applyCoupon = createServerFn({ method: 'POST' })
       _subtotal: data.subtotal,
     } as never);
     if (error) return { valid: false, discount: 0, message: 'Erro ao validar cupom' };
-    const row = Array.isArray(rows) ? rows[0] : rows;
+    const row = (Array.isArray(rows) ? rows[0] : rows) as
+      | { valid: boolean; discount: number; message: string }
+      | null;
     return {
       valid: Boolean(row?.valid),
       discount: Number(row?.discount ?? 0),
