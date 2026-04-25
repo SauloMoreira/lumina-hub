@@ -5,7 +5,12 @@ import { Button } from '@/components/ui/button';
 import { useCart } from '@/stores/cartStore';
 import { formatBRL, FREE_SHIPPING_THRESHOLD } from '@/lib/domain';
 
-export const Route = createFileRoute('/carrinho')({ component: CartPage });
+import { buildSeo } from '@/lib/seo';
+
+export const Route = createFileRoute('/carrinho')({
+  head: () => buildSeo({ title: 'Carrinho de compras', url: '/carrinho', noindex: true }),
+  component: CartPage,
+});
 
 function CartPage() {
   const cart = useCart();

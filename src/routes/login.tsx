@@ -9,7 +9,10 @@ import {
   PrimaryButton, GoogleButton, Divider,
 } from '@/components/auth/AuthCard';
 
+import { buildSeo } from '@/lib/seo';
+
 export const Route = createFileRoute('/login')({
+  head: () => buildSeo({ title: 'Entrar na sua conta', url: '/login', noindex: true }),
   beforeLoad: async () => {
     const { data } = await supabase.auth.getSession();
     if (data.session) {

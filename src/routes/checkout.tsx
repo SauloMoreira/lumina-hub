@@ -11,7 +11,12 @@ import { useCart } from '@/stores/cartStore';
 import { formatBRL } from '@/lib/domain';
 import { lookupCep, calculateShipping, applyCoupon, createOrder } from '@/server/checkout.functions';
 
-export const Route = createFileRoute('/checkout')({ component: CheckoutPage });
+import { buildSeo } from '@/lib/seo';
+
+export const Route = createFileRoute('/checkout')({
+  head: () => buildSeo({ title: 'Finalizar pedido', url: '/checkout', noindex: true }),
+  component: CheckoutPage,
+});
 
 type ShippingService = { id: string; name: string; carrier: string; price: number; days: number };
 

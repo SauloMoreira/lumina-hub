@@ -11,7 +11,16 @@ import type { Product, Category } from '@/lib/domain';
 import { FREE_SHIPPING_THRESHOLD, formatBRL } from '@/lib/domain';
 import logoHero from '@/assets/logo-hero.webp';
 
-export const Route = createFileRoute('/')({ component: HomePage });
+import { buildSeo } from '@/lib/seo';
+
+export const Route = createFileRoute('/')({
+  head: () => buildSeo({
+    title: 'Material Elétrico e Iluminação LED em Maricá/RJ',
+    description: 'Lâmpadas LED, disjuntores, cabos, refletores e tomadas com entrega rápida. Atendimento com IA 24h. Frete grátis acima de R$199.',
+    url: '/',
+  }),
+  component: HomePage,
+});
 
 const ICONS: Record<string, any> = { Lightbulb, Zap, Cable, Plug, Sun, LayoutGrid, Wrench, Package };
 

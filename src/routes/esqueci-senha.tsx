@@ -8,7 +8,12 @@ import {
   AuthCard, FieldLabel, FieldError, inputClass, inputStyle, inputFocusHandlers, PrimaryButton,
 } from '@/components/auth/AuthCard';
 
-export const Route = createFileRoute('/esqueci-senha')({ component: ForgotPage });
+import { buildSeo } from '@/lib/seo';
+
+export const Route = createFileRoute('/esqueci-senha')({
+  head: () => buildSeo({ title: 'Recuperar senha', url: '/esqueci-senha', noindex: true }),
+  component: ForgotPage,
+});
 
 const schema = z.object({ email: z.string().trim().email('E-mail inválido').max(255) });
 
