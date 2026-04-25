@@ -270,6 +270,11 @@ export function BarcodeLookupDialog({ open, onOpenChange, categories, currentFor
                   <ImageIcon className="w-3.5 h-3.5" />
                   Imagens encontradas ({selectedImages.size}/{result.suggested.images.length} selecionadas)
                 </Label>
+                {result.imagesNote && result.suggested.images.length === 0 && (
+                  <div className="mb-2 rounded-md border border-amber-200 bg-amber-50 dark:bg-amber-950/30 dark:border-amber-900 px-3 py-2 text-[11px] text-amber-800 dark:text-amber-200">
+                    {result.imagesNote}
+                  </div>
+                )}
                 {result.suggested.images.length > 0 ? (
                   <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
                     {result.suggested.images.map((url) => {
