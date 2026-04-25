@@ -4,6 +4,7 @@ import { DollarSign, ShoppingBag, Users, AlertTriangle, TrendingUp, Package } fr
 import { AdminLayout } from '@/components/admin/AdminLayout';
 import { supabase } from '@/integrations/supabase/client';
 import { Link } from '@tanstack/react-router';
+import { orderStatusLabel } from '@/lib/orderStatus';
 
 export const Route = createFileRoute('/admin/')({ component: AdminDashboard });
 
@@ -98,10 +99,11 @@ function AdminDashboard() {
           <div className="space-y-2">
             {recent.length === 0 && <p className="text-sm text-muted-foreground">Nenhum pedido ainda.</p>}
             {recent.map((o) => (
-              <Link key={o.id} to={'/admin/pedidos' as any} className="flex items-center justify-between p-2 rounded hover:bg-muted text-sm">
+              <Link key={o.id} to={'/admin/pedidos' as any} className="flex items-center justify-between gap-2 p-2 rounded hover:bg-muted text-sm">
                 <span className="font-mono text-xs">#{o.order_number}</span>
-                <span className="text-muted-foreground truncate flex-1 px-2">{(o.address_snapshot as any)?.recipient ?? '—'}</span>
-                <span className="font-medium">{fmt(Number(o.total))}</span>
+                <span className="text-muted-foreground truncate flex-1 px-1">{(o.address_snapshot as any)?.recipient ?? '—'}</span>
+                <span className="text-[10px] px-1.5 py-0.5 rounded bg-muted text-muted-foreground whitespace-nowrap">{orderStatusLabel(o.status)}</span>
+                <span className="font-medium whitespace-nowrap">{fmt(Number(o.total))}</span>
               </Link>
             ))}
           </div>
