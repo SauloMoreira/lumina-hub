@@ -144,7 +144,7 @@ function LeadsPage() {
     updateStatus(id, status);
   };
 
-  const leadsByStatus = (s: Status) => leads.filter((l) => (l.status ?? 'new') === s);
+  const leadsByStatus = (s: Status) => filteredLeads.filter((l) => (l.status ?? 'new') === s);
 
   return (
     <AdminLayout title="Leads">
