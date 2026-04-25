@@ -231,6 +231,7 @@ function ProductForm() {
               </p>
             ) : (
               <ProductImageManager
+                ref={imageManagerRef}
                 productId={id}
                 productName={form.name}
                 brand={form.brand}
