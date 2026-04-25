@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
 import type { Product, Category } from '@/lib/domain';
 import { FREE_SHIPPING_THRESHOLD, formatBRL } from '@/lib/domain';
+import logoHero from '@/assets/logo-hero.png';
 
 export const Route = createFileRoute('/')({ component: HomePage });
 
@@ -35,26 +36,26 @@ function HomePage() {
   return (
     <StoreLayout>
       {/* HERO */}
-      <section className="relative overflow-hidden bg-gradient-to-br from-primary via-primary to-[oklch(0.42_0.21_268)] text-primary-foreground">
-        <div className="absolute inset-0 opacity-10" style={{ backgroundImage: 'radial-gradient(circle at 25% 25%, white 1px, transparent 1px)', backgroundSize: '32px 32px' }} />
-        <div className="container mx-auto px-4 py-20 md:py-28 relative">
-          <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }} className="max-w-2xl">
-            <div className="inline-flex items-center gap-2 bg-primary-foreground/10 backdrop-blur px-3 py-1.5 rounded-full text-xs font-medium mb-6">
+      <section className="relative overflow-hidden bg-card border-b border-border">
+        <div className="container mx-auto px-4 py-16 md:py-20 relative">
+          <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }} className="max-w-3xl mx-auto text-center">
+            <img src={logoHero} alt="Led Maricá" className="w-full max-w-[380px] h-auto mx-auto mb-8" />
+            <div className="inline-flex items-center gap-2 bg-primary-tint text-primary px-3 py-1.5 rounded-full text-xs font-medium mb-5">
               <Sparkles className="w-3.5 h-3.5" /> Atendimento com IA 24h · Entrega rápida em Maricá e região
             </div>
-            <h1 className="font-display font-extrabold text-4xl md:text-5xl leading-tight mb-5 tracking-tight">
+            <h1 className="font-display font-extrabold text-3xl md:text-5xl leading-tight mb-5 tracking-tight text-foreground">
               Material elétrico e iluminação<br />
-              <span className="text-accent-tint">com qualidade que ilumina.</span>
+              <span className="text-primary">com qualidade que ilumina.</span>
             </h1>
-            <p className="text-lg text-primary-foreground/85 mb-8 max-w-xl leading-relaxed">
+            <p className="text-base md:text-lg text-muted-foreground mb-8 max-w-xl mx-auto leading-relaxed">
               Lâmpadas LED, disjuntores, fios, refletores e tudo que seu projeto precisa.
               Nota fiscal garantida e suporte técnico de verdade.
             </p>
-            <div className="flex flex-wrap gap-3">
-              <Button asChild size="lg" className="bg-card text-primary hover:bg-card/90 h-12 px-6 font-semibold">
+            <div className="flex flex-wrap gap-3 justify-center">
+              <Button asChild size="lg" className="h-12 px-6 font-semibold">
                 <Link to="/catalogo">Ver catálogo <ArrowRight className="w-4 h-4 ml-1.5" /></Link>
               </Button>
-              <Button asChild size="lg" variant="outline" className="h-12 px-6 border-primary-foreground/40 bg-transparent text-primary-foreground hover:bg-primary-foreground/10 hover:text-primary-foreground font-semibold">
+              <Button asChild size="lg" variant="outline" className="h-12 px-6 border-primary/30 text-primary hover:bg-primary-tint hover:text-primary font-semibold">
                 <Link to="/catalogo"><MessageSquareText className="w-4 h-4 mr-1.5" /> Falar com IA</Link>
               </Button>
             </div>
