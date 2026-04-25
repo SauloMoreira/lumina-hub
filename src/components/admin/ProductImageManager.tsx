@@ -1,11 +1,12 @@
 import { forwardRef, useImperativeHandle, useState, type ChangeEvent, type DragEvent } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Loader2, Upload, Star, ArrowLeft, ArrowRight, X, Sparkles, Plus } from 'lucide-react';
+import { Loader2, Upload, Star, ArrowLeft, ArrowRight, X, Sparkles, Plus, Wand2, Undo2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { generateImageSeo } from '@/server/imageSeo.functions';
 import { pickUrl, variantUrl, type ProductImageRow } from '@/lib/productImages';
+import { enhanceProductImage } from '@/lib/imageEnhance';
 
 interface Props {
   productId: string;
@@ -23,6 +24,9 @@ type PendingImage = {
   id: string;
   file: File;
   previewUrl: string;
+  originalFile?: File;
+  originalPreviewUrl?: string;
+  optimized?: boolean;
 };
 
 const MAX_IMAGES = 10;
@@ -49,6 +53,7 @@ export const ProductImageManager = forwardRef<ProductImageManagerHandle, Props>(
   const [dragOver, setDragOver] = useState(false);
   const [optimizingId, setOptimizingId] = useState<string | null>(null);
   const [optimizingAll, setOptimizingAll] = useState(false);
+  const [enhancingPendingId, setEnhancingPendingId] = useState<string | null>(null);
 
   const { data: images = [], isLoading, refetch } = useQuery<ProductImageRow[]>({
     queryKey: ['product-images', productId],
@@ -145,10 +150,65 @@ export const ProductImageManager = forwardRef<ProductImageManagerHandle, Props>(
   const removePendingImage = (id: string) => {
     setPendingImages((current) => {
       const target = current.find((img) => img.id === id);
-      if (target) URL.revokeObjectURL(target.previewUrl);
+      if (target) {
+        URL.revokeObjectURL(target.previewUrl);
+        if (target.originalPreviewUrl) URL.revokeObjectURL(target.originalPreviewUrl);
+      }
       return current.filter((img) => img.id !== id);
     });
   };
+
+  async function enhancePending(id: string) {
+    const target = pendingImages.find((img) => img.id === id);
+    if (!target) return;
+    setEnhancingPendingId(id);
+    try {
+      const enhanced = await enhanceProductImage(target.originalFile ?? target.file);
+      const newPreview = URL.createObjectURL(enhanced);
+      setPendingImages((current) =>
+        current.map((img) => {
+          if (img.id !== id) return img;
+          // guarda original na 1ª otimização
+          const originalFile = img.originalFile ?? img.file;
+          const originalPreviewUrl = img.originalPreviewUrl ?? img.previewUrl;
+          // só revoga preview anterior se já era uma versão otimizada
+          if (img.optimized) URL.revokeObjectURL(img.previewUrl);
+          return {
+            ...img,
+            file: enhanced,
+            previewUrl: newPreview,
+            originalFile,
+            originalPreviewUrl,
+            optimized: true,
+          };
+        }),
+      );
+      toast.success('Imagem otimizada com sucesso');
+    } catch (e) {
+      toast.error(e instanceof Error
+        ? `Não foi possível otimizar a imagem. A imagem original foi mantida. (${e.message})`
+        : 'Não foi possível otimizar a imagem. A imagem original foi mantida.');
+    } finally {
+      setEnhancingPendingId(null);
+    }
+  }
+
+  function restorePendingOriginal(id: string) {
+    setPendingImages((current) =>
+      current.map((img) => {
+        if (img.id !== id || !img.optimized || !img.originalFile || !img.originalPreviewUrl) return img;
+        URL.revokeObjectURL(img.previewUrl);
+        return {
+          ...img,
+          file: img.originalFile,
+          previewUrl: img.originalPreviewUrl,
+          originalFile: undefined,
+          originalPreviewUrl: undefined,
+          optimized: false,
+        };
+      }),
+    );
+  }
 
   const setPrimary = useMutation({
     mutationFn: async (imageId: string) => {
@@ -339,16 +399,53 @@ export const ProductImageManager = forwardRef<ProductImageManagerHandle, Props>(
         <div>
           <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold mb-2">Pendentes para salvar ({pendingImages.length})</p>
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
-            {pendingImages.map((img) => (
-              <div key={img.id} className="relative group aspect-square rounded-lg overflow-hidden border border-border bg-surface">
-                <img src={img.previewUrl} alt={img.file.name} className="w-full h-full object-cover" />
-                <span className="absolute top-1.5 left-1.5 px-1.5 py-0.5 rounded text-[9px] font-semibold bg-primary text-primary-foreground">Novo</span>
-                <button type="button" onClick={() => removePendingImage(img.id)} title="Remover"
-                  className="absolute top-1.5 right-1.5 w-7 h-7 rounded bg-white/95 text-destructive hover:bg-white flex items-center justify-center">
-                  <X className="w-3.5 h-3.5" />
-                </button>
-              </div>
-            ))}
+            {pendingImages.map((img) => {
+              const isEnhancing = enhancingPendingId === img.id;
+              return (
+                <div key={img.id} className="relative group aspect-square rounded-lg overflow-hidden border border-border bg-surface">
+                  <img src={img.previewUrl} alt={img.file.name} className="w-full h-full object-cover" />
+                  <span className="absolute top-1.5 left-1.5 px-1.5 py-0.5 rounded text-[9px] font-semibold bg-primary text-primary-foreground">Novo</span>
+                  {img.optimized && (
+                    <span className="absolute top-1.5 left-12 px-1.5 py-0.5 rounded text-[9px] font-semibold bg-emerald-500 text-white">Otimizada</span>
+                  )}
+                  <button type="button" onClick={() => removePendingImage(img.id)} title="Remover"
+                    className="absolute top-1.5 right-1.5 w-7 h-7 rounded bg-white/95 text-destructive hover:bg-white flex items-center justify-center">
+                    <X className="w-3.5 h-3.5" />
+                  </button>
+                  {isEnhancing && (
+                    <div className="absolute inset-0 bg-black/50 flex items-center justify-center text-white text-[11px] font-medium gap-1.5">
+                      <Loader2 className="w-3.5 h-3.5 animate-spin" /> Otimizando imagem…
+                    </div>
+                  )}
+                  <div className="absolute bottom-1.5 left-1.5 right-1.5 flex gap-1">
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="secondary"
+                      className="flex-1 h-7 text-[10px] px-1.5"
+                      disabled={isEnhancing}
+                      onClick={() => enhancePending(img.id)}
+                      title="Otimizar imagem (ajusta luz, contraste, foco e centralização)"
+                    >
+                      <Wand2 className="w-3 h-3 mr-1" />
+                      {img.optimized ? 'Otimizar de novo' : 'Otimizar imagem'}
+                    </Button>
+                    {img.optimized && (
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="outline"
+                        className="h-7 px-2"
+                        onClick={() => restorePendingOriginal(img.id)}
+                        title="Restaurar imagem original"
+                      >
+                        <Undo2 className="w-3 h-3" />
+                      </Button>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
           </div>
         </div>
       )}
