@@ -1,0 +1,70 @@
+/**
+ * Helpers para construir variantes de imagem do Supabase Storage usando
+ * transformações on-the-fly (?width=...&format=webp&quality=...).
+ *
+ * Tamanhos:
+ *  - full:  1200px (galeria/zoom)
+ *  - card:  600px  (catálogo)
+ *  - thumb: 300px  (thumbnails / mini)
+ *  - og:    1200x630 (Open Graph)
+ */
+
+export type ImageVariant = 'full' | 'card' | 'thumb' | 'og';
+
+const SIZE_MAP: Record<ImageVariant, { width: number; height?: number; quality: number }> = {
+  full: { width: 1200, quality: 82 },
+  card: { width: 600, quality: 80 },
+  thumb: { width: 300, quality: 78 },
+  og: { width: 1200, height: 630, quality: 85 },
+};
+
+/**
+ * Recebe a URL pública original (Supabase Storage) e devolve a versão
+ * transformada. Se a URL não for de Storage, devolve a original.
+ */
+export function variantUrl(originalUrl: string | null | undefined, variant: ImageVariant): string | null {
+  if (!originalUrl) return null;
+  // O endpoint público é /storage/v1/object/public/<bucket>/<path>
+  // O endpoint de transformação é /storage/v1/render/image/public/<bucket>/<path>?width=&format=webp
+  const transformed = originalUrl.replace('/storage/v1/object/public/', '/storage/v1/render/image/public/');
+  if (transformed === originalUrl) return originalUrl; // não é storage
+  const cfg = SIZE_MAP[variant];
+  const params = new URLSearchParams();
+  params.set('width', String(cfg.width));
+  if (cfg.height) params.set('height', String(cfg.height));
+  params.set('quality', String(cfg.quality));
+  params.set('format', 'webp');
+  params.set('resize', 'cover');
+  return `${transformed}?${params.toString()}`;
+}
+
+export interface ProductImageRow {
+  id: string;
+  product_id: string;
+  sort_order: number;
+  is_primary: boolean;
+  original_url: string;
+  url_full: string | null;
+  url_card: string | null;
+  url_thumb: string | null;
+  url_og: string | null;
+  optimized: boolean;
+  alt_text: string | null;
+  title_text: string | null;
+  caption: string | null;
+  seo_filename: string | null;
+}
+
+export function pickUrl(img: Partial<ProductImageRow> | null | undefined, variant: ImageVariant): string | null {
+  if (!img) return null;
+  const stored = (() => {
+    switch (variant) {
+      case 'full': return img.url_full;
+      case 'card': return img.url_card;
+      case 'thumb': return img.url_thumb;
+      case 'og': return img.url_og;
+    }
+  })();
+  if (stored) return stored;
+  return variantUrl(img.original_url ?? null, variant);
+}
