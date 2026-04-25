@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
 import type { Product, Category } from '@/lib/domain';
 import { FREE_SHIPPING_THRESHOLD, formatBRL } from '@/lib/domain';
+import { imageUrlsFromProductImages } from '@/lib/productImages';
 import logoHero from '@/assets/logo-hero.webp';
 
 import { buildSeo } from '@/lib/seo';
