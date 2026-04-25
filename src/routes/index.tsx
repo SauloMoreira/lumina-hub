@@ -43,7 +43,7 @@ function HomePage() {
         .select(PRODUCT_LIST_COLS)
         .eq('active', true).eq('featured', true).limit(8);
       if (error) throw error;
-      return data as unknown as Product[];
+      return (data ?? []).map((p: any) => normalizeProductImages(p)) as Product[];
     },
   });
 
