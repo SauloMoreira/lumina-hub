@@ -68,10 +68,14 @@ export const ProductImageManager = forwardRef<ProductImageManagerHandle, Props>(
   const unoptimizedCount = images.filter((i) => !i.optimized).length;
 
   useEffect(() => {
-    return () => {
-      pendingImages.forEach((img) => URL.revokeObjectURL(img.previewUrl));
-    };
+    pendingImagesRef.current = pendingImages;
   }, [pendingImages]);
+
+  useEffect(() => {
+    return () => {
+      pendingImagesRef.current.forEach((img) => URL.revokeObjectURL(img.previewUrl));
+    };
+  }, []);
 
   async function uploadPendingImages() {
     if (!pendingImages.length) return fetchProductImages(productId);
