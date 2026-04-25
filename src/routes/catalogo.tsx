@@ -62,7 +62,7 @@ function CatalogPage() {
       const to = from + PAGE_SIZE - 1;
       let query = supabase
         .from('products')
-        .select('id, name, slug, price, sale_price, images, brand, tags, stock_qty, featured, category_id', { count: 'exact' })
+        .select('id, name, slug, price, sale_price, images, brand, tags, stock_qty, featured, category_id, product_images(url_thumb, url_card, original_url, is_primary, sort_order)', { count: 'exact' })
         .eq('active', true);
       if (search.cat) {
         const cat = categories?.find((c) => c.slug === search.cat);
