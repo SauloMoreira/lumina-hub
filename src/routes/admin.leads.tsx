@@ -263,7 +263,10 @@ function LeadsPage() {
           <div className="p-4 overflow-x-auto">
             <div className="grid grid-flow-col auto-cols-[minmax(260px,1fr)] gap-3 min-w-full">
               {STATUSES.map((s) => {
-                const items = leadsByStatus(s);
+                const allItems = leadsByStatus(s);
+                const limit = kanbanLimits[s] ?? KANBAN_PAGE;
+                const items = allItems.slice(0, limit);
+                const hasMore = allItems.length > items.length;
                 return (
                   <div
                     key={s}
@@ -275,10 +278,10 @@ function LeadsPage() {
                       <div className="flex items-center gap-2">
                         <StatusBadge status={s} />
                       </div>
-                      <Badge variant="secondary" className="text-[10px] px-1.5 py-0">{items.length}</Badge>
+                      <Badge variant="secondary" className="text-[10px] px-1.5 py-0">{allItems.length}</Badge>
                     </div>
                     <div className="p-2 space-y-2 flex-1">
-                      {items.length === 0 && (
+                      {allItems.length === 0 && (
                         <p className="text-xs text-muted-foreground text-center py-6">Nenhum lead</p>
                       )}
                       {items.map((l) => (
@@ -319,6 +322,14 @@ function LeadsPage() {
                           </div>
                         </div>
                       ))}
+                      {hasMore && (
+                        <button
+                          onClick={() => setKanbanLimits((prev) => ({ ...prev, [s]: limit + KANBAN_PAGE }))}
+                          className="w-full text-xs text-muted-foreground hover:text-foreground py-2 border border-dashed border-border rounded-md hover:bg-muted/50 transition-colors"
+                        >
+                          Carregar mais ({allItems.length - items.length})
+                        </button>
+                      )}
                     </div>
                   </div>
                 );
