@@ -165,6 +165,21 @@ function ProductForm() {
               <Field label="Alt. (cm)"><Input type="number" value={form.height_cm} onChange={(e) => setForm({ ...form, height_cm: e.target.value })} /></Field>
             </div>
           </Section>
+
+          <ProductSEOSection
+            productCtx={{
+              name: form.name,
+              description: form.description,
+              brand: form.brand,
+              category: cats.find((c) => c.id === form.category_id)?.name,
+              price: Number(form.price) || 0,
+            }}
+            slug={form.slug || slugify(form.name)}
+            seoTitle={form.seo_title}
+            seoDescription={form.seo_description}
+            seoKeywords={form.seo_keywords}
+            onChange={(field, value) => setForm((f) => ({ ...f, [field]: value }))}
+          />
         </div>
 
         <div className="space-y-4">
