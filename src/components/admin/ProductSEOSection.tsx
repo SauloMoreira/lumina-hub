@@ -26,7 +26,14 @@ export function ProductSEOSection({ productId, productCtx, seoTitle, seoDescript
     if (!productId) return;
     setBoosting(true);
     try {
-      const r = await boostProductSeoAuto({ data: { productId } });
+      const { data: sessionData } = await supabase.auth.getSession();
+      const accessToken = sessionData.session?.access_token;
+      if (!accessToken) {
+        toast.error('Sessão expirada. Faça login novamente.');
+        return;
+      }
+
+      const r = await boostProductSeoAuto({ data: { productId, accessToken } });
       if (!r.ok) {
         toast.error(r.error);
       } else {
@@ -35,6 +42,8 @@ export function ProductSEOSection({ productId, productCtx, seoTitle, seoDescript
         onChange('seo_keywords', r.keywords);
         toast.success(`SEO turbinado: título, descrição e ${r.faqCount} FAQs salvos`);
       }
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : 'Erro ao turbinar SEO');
     } finally {
       setBoosting(false);
     }
