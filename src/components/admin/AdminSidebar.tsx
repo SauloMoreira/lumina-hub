@@ -37,7 +37,7 @@ export function AdminSidebar() {
   return (
     <aside className="w-60 shrink-0 bg-card border-r border-border flex flex-col h-screen sticky top-0">
       <div className="h-16 px-4 flex items-center border-b border-border">
-        <Link to="/admin" className="flex items-center gap-2">
+        <Link to={'/admin' as any} className="flex items-center gap-2">
           <img src={logo} alt="Led Maricá" className="h-8 w-auto" />
           <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Admin</span>
         </Link>
