@@ -175,14 +175,11 @@ function ProductPage() {
         </nav>
 
         <div className="grid lg:grid-cols-2 gap-10">
-          {/* Imagem */}
-          <div className="bg-card border border-border rounded-xl aspect-square flex items-center justify-center overflow-hidden">
-            {product.images[0] ? (
-              <img src={product.images[0]} alt={product.name} className="w-full h-full object-cover" />
-            ) : (
-              <Zap className="w-32 h-32 text-primary/15" strokeWidth={1.2} />
-            )}
-          </div>
+          {/* Galeria de imagens */}
+          <ProductImageCarousel
+            images={(product as ProductWithSeo & { product_images?: ProductImageRow[] }).product_images ?? []}
+            productName={product.name}
+          />
 
           {/* Detalhes */}
           <div>
