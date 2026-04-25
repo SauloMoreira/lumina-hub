@@ -549,6 +549,9 @@ export type Database = {
           ncm: string | null
           price: number
           sale_price: number | null
+          seo_description: string | null
+          seo_keywords: string | null
+          seo_title: string | null
           sku: string | null
           slug: string
           specs: Json | null
@@ -575,6 +578,9 @@ export type Database = {
           ncm?: string | null
           price: number
           sale_price?: number | null
+          seo_description?: string | null
+          seo_keywords?: string | null
+          seo_title?: string | null
           sku?: string | null
           slug: string
           specs?: Json | null
@@ -601,6 +607,9 @@ export type Database = {
           ncm?: string | null
           price?: number
           sale_price?: number | null
+          seo_description?: string | null
+          seo_keywords?: string | null
+          seo_title?: string | null
           sku?: string | null
           slug?: string
           specs?: Json | null
