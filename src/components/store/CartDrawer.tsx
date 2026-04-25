@@ -1,0 +1,114 @@
+import { Link } from '@tanstack/react-router';
+import { motion, AnimatePresence } from 'framer-motion';
+import { X, Trash2, Plus, Minus, ShoppingBag } from 'lucide-react';
+import { useCart } from '@/stores/cartStore';
+import { Button } from '@/components/ui/button';
+import { formatBRL, FREE_SHIPPING_THRESHOLD } from '@/lib/domain';
+
+export function CartDrawer() {
+  const cart = useCart();
+  const subtotal = cart.subtotal();
+  const remainingForFree = Math.max(0, FREE_SHIPPING_THRESHOLD - subtotal);
+  const progress = Math.min(100, (subtotal / FREE_SHIPPING_THRESHOLD) * 100);
+
+  return (
+    <AnimatePresence>
+      {cart.isOpen && (
+        <>
+          <motion.div
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            transition={{ duration: 0.18 }}
+            onClick={cart.close}
+            className="fixed inset-0 bg-foreground/40 backdrop-blur-sm z-[60]"
+          />
+          <motion.aside
+            initial={{ x: '100%' }} animate={{ x: 0 }} exit={{ x: '100%' }}
+            transition={{ type: 'tween', duration: 0.22, ease: 'easeOut' }}
+            className="fixed top-0 right-0 h-full w-full max-w-md bg-card z-[61] flex flex-col shadow-floating"
+          >
+            <div className="px-5 py-4 border-b border-border flex items-center justify-between">
+              <h2 className="font-display font-bold text-lg">Seu carrinho</h2>
+              <button onClick={cart.close} className="w-8 h-8 rounded-md hover:bg-surface flex items-center justify-center">
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            {cart.items.length === 0 ? (
+              <div className="flex-1 flex flex-col items-center justify-center px-6 text-center">
+                <div className="w-16 h-16 rounded-full bg-primary-tint flex items-center justify-center mb-4">
+                  <ShoppingBag className="w-7 h-7 text-primary" />
+                </div>
+                <p className="font-medium text-foreground mb-1">Seu carrinho está vazio</p>
+                <p className="text-sm text-muted-foreground mb-6">Que tal explorar o catálogo?</p>
+                <Button onClick={cart.close} asChild>
+                  <Link to="/catalogo">Ver catálogo</Link>
+                </Button>
+              </div>
+            ) : (
+              <>
+                {/* Progress frete grátis */}
+                <div className="px-5 py-3 bg-primary-tint border-b border-primary-border">
+                  {remainingForFree > 0 ? (
+                    <p className="text-xs text-primary font-medium mb-1.5">
+                      Faltam <strong>{formatBRL(remainingForFree)}</strong> para frete grátis
+                    </p>
+                  ) : (
+                    <p className="text-xs text-success font-medium mb-1.5">🎉 Você ganhou frete grátis!</p>
+                  )}
+                  <div className="h-1.5 bg-primary-foreground/40 rounded-full overflow-hidden">
+                    <div className="h-full bg-primary transition-all" style={{ width: `${progress}%` }} />
+                  </div>
+                </div>
+
+                <div className="flex-1 overflow-y-auto px-5 py-4 space-y-4">
+                  {cart.items.map((item) => (
+                    <div key={item.productId} className="flex gap-3 pb-4 border-b border-border last:border-0">
+                      <div className="w-16 h-16 rounded-md bg-surface flex items-center justify-center shrink-0 overflow-hidden">
+                        {item.image ? (
+                          <img src={item.image} alt={item.name} className="w-full h-full object-cover" />
+                        ) : (
+                          <ShoppingBag className="w-6 h-6 text-text-faint" />
+                        )}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium line-clamp-2 mb-1">{item.name}</p>
+                        <div className="font-display font-bold text-primary text-sm mb-2">{formatBRL(item.price)}</div>
+                        <div className="flex items-center justify-between">
+                          <div className="inline-flex items-center border border-border rounded-md">
+                            <button onClick={() => cart.updateQty(item.productId, item.qty - 1)} className="w-7 h-7 flex items-center justify-center hover:bg-surface">
+                              <Minus className="w-3 h-3" />
+                            </button>
+                            <span className="w-8 text-center text-xs font-medium">{item.qty}</span>
+                            <button onClick={() => cart.updateQty(item.productId, item.qty + 1)} className="w-7 h-7 flex items-center justify-center hover:bg-surface">
+                              <Plus className="w-3 h-3" />
+                            </button>
+                          </div>
+                          <button onClick={() => cart.removeItem(item.productId)} className="text-text-faint hover:text-destructive p-1">
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                <div className="border-t border-border p-5 space-y-3 bg-card">
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="text-muted-foreground">Subtotal</span>
+                    <span className="font-display font-bold text-lg text-foreground">{formatBRL(subtotal)}</span>
+                  </div>
+                  <Button asChild className="w-full h-11" onClick={cart.close}>
+                    <Link to="/carrinho">Ir para o carrinho</Link>
+                  </Button>
+                  <button onClick={cart.close} className="w-full text-xs text-muted-foreground hover:text-foreground py-1">
+                    Continuar comprando
+                  </button>
+                </div>
+              </>
+            )}
+          </motion.aside>
+        </>
+      )}
+    </AnimatePresence>
+  );
+}
