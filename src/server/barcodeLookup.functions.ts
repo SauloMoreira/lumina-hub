@@ -254,20 +254,12 @@ export const lookupBarcode = createServerFn({ method: 'POST' })
       console.error('[barcodeLookup] AI standardization failed:', e);
     }
 
-    // Fallback: se a Cosmos não trouxe imagens, tenta Google Images por marca+nome
-    let imagesNote: string | null = null;
-    if (images.length === 0) {
-      const queryName = aiOut?.name || description || '';
-      const queryBrand = aiOut?.brand || brand || '';
-      const q = `${queryBrand} ${queryName}`.trim() || code;
-      const googleResult = await fetchGoogleImages(q);
-      imagesNote = googleResult.note;
-      if (googleResult.urls.length > 0) {
-        images = googleResult.urls;
-        imagesNote = null;
-        console.log(`[barcodeLookup] google fallback found ${googleResult.urls.length} images for "${q}"`);
-      }
-    }
+    // Sem fallback de busca externa: se a Cosmos não trouxe imagens, o usuário decide no diálogo
+    // entre gerar com IA ou subir manualmente.
+    const imagesNote: string | null =
+      images.length === 0
+        ? 'Nenhuma imagem encontrada na base GTIN. Você pode gerar uma imagem com IA ou subir manualmente.'
+        : null;
 
     const suggested = aiOut
       ? {
