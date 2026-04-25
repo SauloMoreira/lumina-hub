@@ -336,3 +336,57 @@ export const fetchExternalImage = createServerFn({ method: 'POST' })
     const base64 = btoa(String.fromCharCode(...new Uint8Array(buf)));
     return { base64, contentType, size: buf.byteLength };
   });
+
+/**
+ * Gera uma imagem do produto usando Lovable AI (Gemini image preview).
+ */
+export const generateProductImage = createServerFn({ method: 'POST' })
+  .inputValidator((input: { name: string; brand?: string | null; category?: string | null; extraHint?: string | null }) => input)
+  .handler(async ({ data }) => {
+    const apiKey = process.env.LOVABLE_API_KEY;
+    if (!apiKey) throw new Error('LOVABLE_API_KEY não configurada');
+
+    const name = (data.name ?? '').trim();
+    if (!name) throw new Error('Nome do produto é obrigatório para gerar imagem');
+    const brand = (data.brand ?? '').trim();
+    const category = (data.category ?? '').trim();
+    const hint = (data.extraHint ?? '').trim();
+
+    const prompt =
+      `Foto de produto realista de e-commerce: ${name}` +
+      (brand ? `, marca ${brand}` : '') +
+      (category ? `, categoria ${category}` : '') +
+      (hint ? `. ${hint}` : '') +
+      `. Iluminação de estúdio, fundo branco puro, ângulo frontal levemente em perspectiva, ` +
+      `nitidez alta, sombra suave, sem texto, sem logo inventado, sem marca d'água, sem pessoas. ` +
+      `Estilo catálogo profissional para loja de iluminação e materiais elétricos.`;
+
+    const res = await fetch(AI_IMAGE_URL, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        model: 'google/gemini-3-flash-image-preview',
+        messages: [{ role: 'user', content: prompt }],
+        modalities: ['image', 'text'],
+      }),
+    });
+
+    if (res.status === 429) throw new Error('Limite de requisições da IA atingido. Aguarde alguns instantes.');
+    if (res.status === 402) throw new Error('Créditos da IA esgotados. Adicione créditos no workspace.');
+    if (!res.ok) {
+      const t = await res.text().catch(() => '');
+      console.error('[generateProductImage] error', res.status, t.slice(0, 500));
+      throw new Error(`Falha ao gerar imagem (${res.status})`);
+    }
+
+    const json = await res.json();
+    const url: string | undefined = json?.choices?.[0]?.message?.images?.[0]?.image_url?.url;
+    if (!url || !url.startsWith('data:image/')) {
+      console.error('[generateProductImage] resposta sem imagem:', JSON.stringify(json).slice(0, 500));
+      throw new Error('IA não retornou imagem');
+    }
+    return { dataUrl: url };
+  });
