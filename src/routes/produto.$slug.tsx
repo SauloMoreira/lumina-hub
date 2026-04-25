@@ -159,11 +159,13 @@ function ProductPage() {
 
   const finalPrice = product.sale_price ?? product.price;
   const hasDiscount = product.sale_price != null && product.sale_price < product.price;
+  const productImages = (product as ProductWithSeo & { product_images?: ProductImageRow[] }).product_images ?? [];
+  const cartImage = productImages[0] ? pickUrl(productImages[0], 'thumb') ?? productImages[0].original_url : product.images[0] ?? null;
 
   const addToCart = () => {
     cart.addItem({
       productId: product.id, name: product.name, slug: product.slug,
-      price: finalPrice, image: product.images[0] ?? null, stock: product.stock_qty,
+      price: finalPrice, image: cartImage, stock: product.stock_qty,
     }, qty);
     trackAddToCart(product, qty);
     toast.success('Adicionado ao carrinho');
