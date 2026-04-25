@@ -149,33 +149,81 @@ function LeadsPage() {
   return (
     <AdminLayout title="Leads">
       <div className="bg-card border border-border rounded-xl">
-        <div className="p-4 border-b border-border flex items-center justify-between gap-3 flex-wrap">
-          <select
-            value={filterStatus || 'all'}
-            onChange={(e) => setFilterStatus(e.target.value === 'all' ? '' : e.target.value)}
-            className="h-10 rounded-md border border-input bg-background px-3 text-sm"
-          >
-            {LEAD_STATUS_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
-          </select>
-          <div className="inline-flex rounded-md border border-border bg-background p-0.5">
-            <button
-              onClick={() => setView('kanban')}
-              className={cn(
-                'inline-flex items-center gap-1.5 px-3 h-8 text-xs rounded-sm transition-colors',
-                view === 'kanban' ? 'bg-muted text-foreground' : 'text-muted-foreground hover:text-foreground'
-              )}
+        <div className="p-4 border-b border-border space-y-3">
+          <div className="flex items-center justify-between gap-3 flex-wrap">
+            <div className="relative flex-1 min-w-[220px] max-w-md">
+              <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none" />
+              <Input
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="Buscar por nome ou empresa..."
+                className="pl-9 h-10"
+              />
+            </div>
+            <div className="inline-flex rounded-md border border-border bg-background p-0.5">
+              <button
+                onClick={() => setView('kanban')}
+                className={cn(
+                  'inline-flex items-center gap-1.5 px-3 h-8 text-xs rounded-sm transition-colors',
+                  view === 'kanban' ? 'bg-muted text-foreground' : 'text-muted-foreground hover:text-foreground'
+                )}
+              >
+                <LayoutGrid className="w-3.5 h-3.5" /> Kanban
+              </button>
+              <button
+                onClick={() => setView('list')}
+                className={cn(
+                  'inline-flex items-center gap-1.5 px-3 h-8 text-xs rounded-sm transition-colors',
+                  view === 'list' ? 'bg-muted text-foreground' : 'text-muted-foreground hover:text-foreground'
+                )}
+              >
+                <List className="w-3.5 h-3.5" /> Lista
+              </button>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2 flex-wrap">
+            <select
+              value={filterStatus || 'all'}
+              onChange={(e) => setFilterStatus(e.target.value === 'all' ? '' : e.target.value)}
+              className="h-9 rounded-md border border-input bg-background px-2 text-xs"
             >
-              <LayoutGrid className="w-3.5 h-3.5" /> Kanban
-            </button>
-            <button
-              onClick={() => setView('list')}
-              className={cn(
-                'inline-flex items-center gap-1.5 px-3 h-8 text-xs rounded-sm transition-colors',
-                view === 'list' ? 'bg-muted text-foreground' : 'text-muted-foreground hover:text-foreground'
-              )}
+              {LEAD_STATUS_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
+            </select>
+
+            <select
+              value={filterOrigin}
+              onChange={(e) => setFilterOrigin(e.target.value)}
+              className="h-9 rounded-md border border-input bg-background px-2 text-xs"
             >
-              <List className="w-3.5 h-3.5" /> Lista
-            </button>
+              <option value="all">Todas as origens</option>
+              {originOptions.map((o) => (
+                <option key={o} value={o}>{leadOriginLabel(o)}</option>
+              ))}
+            </select>
+
+            <select
+              value={filterInterest}
+              onChange={(e) => setFilterInterest(e.target.value)}
+              className="h-9 rounded-md border border-input bg-background px-2 text-xs max-w-[240px]"
+            >
+              <option value="all">Todos os interesses</option>
+              {interestOptions.map((o) => (
+                <option key={o} value={o}>
+                  {o.length > 40 ? o.slice(0, 40) + '…' : o}
+                </option>
+              ))}
+            </select>
+
+            <span className="text-xs text-muted-foreground ml-auto">
+              {filteredLeads.length} de {leads.length} {leads.length === 1 ? 'lead' : 'leads'}
+            </span>
+
+            {hasActiveFilters && (
+              <Button variant="ghost" size="sm" onClick={clearFilters} className="h-9 text-xs">
+                <X className="w-3 h-3 mr-1" /> Limpar
+              </Button>
+            )}
           </div>
         </div>
 
