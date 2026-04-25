@@ -182,6 +182,7 @@ function ProductForm() {
           </Section>
 
           <ProductSEOSection
+            productId={isNew ? undefined : id}
             productCtx={{
               name: form.name,
               description: form.description,
