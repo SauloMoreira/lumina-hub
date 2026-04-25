@@ -1,6 +1,6 @@
 import { createFileRoute, useNavigate, useParams, Link } from '@tanstack/react-router';
 import { useEffect, useRef, useState, type FormEvent } from 'react';
-import { ArrowLeft, Loader2 } from 'lucide-react';
+import { ArrowLeft, Loader2, ScanBarcode } from 'lucide-react';
 import { AdminLayout } from '@/components/admin/AdminLayout';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -12,6 +12,8 @@ import { toast } from 'sonner';
 import { ProductSEOSection } from '@/components/admin/ProductSEOSection';
 import { ProductImageManager, type ProductImageManagerHandle } from '@/components/admin/ProductImageManager';
 import { boostProductSeoAuto } from '@/server/seo.functions';
+import { BarcodeLookupDialog, type BarcodeApplyChoice } from '@/components/admin/BarcodeLookupDialog';
+import type { BarcodeLookupResult } from '@/server/barcodeLookup.functions';
 
 export const Route = createFileRoute('/admin/produtos/$id')({ component: ProductForm });
 
@@ -35,6 +37,7 @@ function ProductForm() {
   const [saving, setSaving] = useState(false);
   const [cats, setCats] = useState<Cat[]>([]);
   const imageManagerRef = useRef<ProductImageManagerHandle>(null);
+  const [barcodeOpen, setBarcodeOpen] = useState(false);
 
   const [form, setForm] = useState({
     name: '', slug: '', sku: '', brand: '', description: '',
@@ -69,6 +72,41 @@ function ProductForm() {
       });
     }
   }, [id, isNew, nav]);
+
+  async function applyBarcodeData(choice: BarcodeApplyChoice, suggested: BarcodeLookupResult['suggested']) {
+    setForm((f) => {
+      const next = { ...f };
+      if (choice.fields.name && suggested.name) {
+        next.name = suggested.name;
+        if (!f.slug.trim()) next.slug = slugify(suggested.name);
+      }
+      if (choice.fields.brand && suggested.brand) next.brand = suggested.brand;
+      if (choice.fields.description && suggested.description) next.description = suggested.description;
+      if (choice.fields.tags && suggested.tags.length) next.tags = suggested.tags.join(', ');
+      if (choice.fields.seo_title && suggested.seo_title) next.seo_title = suggested.seo_title;
+      if (choice.fields.seo_description && suggested.seo_description) next.seo_description = suggested.seo_description;
+      if (choice.fields.seo_keywords && suggested.seo_keywords) next.seo_keywords = suggested.seo_keywords;
+      if (choice.fields.category_id) next.category_id = choice.fields.category_id;
+      return next;
+    });
+
+    if (choice.images.length && !isNew) {
+      toast.info(`Importando ${choice.images.length} imagem(ns)…`);
+      try {
+        const r = await imageManagerRef.current?.addExternalImages(choice.images);
+        if (r) {
+          if (r.added > 0) toast.success(`${r.added} imagem(ns) adicionada(s) como pendentes`);
+          if (r.failed > 0) toast.warning(`${r.failed} imagem(ns) não puderam ser baixadas`);
+        }
+      } catch (e) {
+        toast.error(e instanceof Error ? e.message : 'Erro ao importar imagens');
+      }
+    } else if (choice.images.length && isNew) {
+      toast.info('Salve o produto primeiro para importar as imagens.');
+    }
+
+    toast.success('Dados aplicados. Revise e salve.');
+  }
 
 
 
@@ -167,6 +205,12 @@ function ProductForm() {
       <form onSubmit={submit} className="grid lg:grid-cols-3 gap-6 max-w-6xl">
         <div className="lg:col-span-2 space-y-4">
           <Section title="Informações básicas">
+            <div className="flex justify-end -mt-1">
+              <Button type="button" variant="outline" size="sm" onClick={() => setBarcodeOpen(true)}>
+                <ScanBarcode className="w-4 h-4 mr-1.5" />
+                Buscar por código de barras
+              </Button>
+            </div>
             <Field label="Nome *"><Input required value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value, slug: form.slug || slugify(e.target.value) })} /></Field>
             <div className="grid sm:grid-cols-2 gap-3">
               <Field label="Slug"><Input value={form.slug} onChange={(e) => setForm({ ...form, slug: e.target.value })} /></Field>
@@ -251,6 +295,22 @@ function ProductForm() {
           </Button>
         </div>
       </form>
+      <BarcodeLookupDialog
+        open={barcodeOpen}
+        onOpenChange={setBarcodeOpen}
+        categories={cats}
+        currentForm={{
+          name: form.name,
+          brand: form.brand,
+          description: form.description,
+          tags: form.tags,
+          category_id: form.category_id,
+          seo_title: form.seo_title,
+          seo_description: form.seo_description,
+          seo_keywords: form.seo_keywords,
+        }}
+        onApply={applyBarcodeData}
+      />
     </AdminLayout>
   );
 }
