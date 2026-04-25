@@ -100,15 +100,8 @@ export const Route = createFileRoute('/produto/$slug')({
         seller: { '@type': 'Organization', name: 'Led Maricá' },
       },
     });
-        '@type': 'Offer',
-        url: `${SITE_URL}/produto/${p.slug}`,
-        priceCurrency: 'BRL',
-        price: finalPrice,
-        priceValidUntil: new Date(Date.now() + 30 * 86400000).toISOString().split('T')[0],
-        availability: p.stock_qty > 0 ? 'https://schema.org/InStock' : 'https://schema.org/OutOfStock',
-        seller: { '@type': 'Organization', name: 'Led Maricá' },
-      },
-    });
+
+
 
     const faq = extractFaq(p.specs);
     const scripts: Array<{ type: string; children: string }> = [
