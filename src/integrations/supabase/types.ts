@@ -532,6 +532,74 @@ export type Database = {
           },
         ]
       }
+      product_images: {
+        Row: {
+          alt_text: string | null
+          caption: string | null
+          created_at: string
+          id: string
+          is_primary: boolean
+          optimized: boolean
+          original_format: string | null
+          original_size: number | null
+          original_url: string
+          product_id: string
+          seo_filename: string | null
+          sort_order: number
+          title_text: string | null
+          url_card: string | null
+          url_full: string | null
+          url_og: string | null
+          url_thumb: string | null
+        }
+        Insert: {
+          alt_text?: string | null
+          caption?: string | null
+          created_at?: string
+          id?: string
+          is_primary?: boolean
+          optimized?: boolean
+          original_format?: string | null
+          original_size?: number | null
+          original_url: string
+          product_id: string
+          seo_filename?: string | null
+          sort_order?: number
+          title_text?: string | null
+          url_card?: string | null
+          url_full?: string | null
+          url_og?: string | null
+          url_thumb?: string | null
+        }
+        Update: {
+          alt_text?: string | null
+          caption?: string | null
+          created_at?: string
+          id?: string
+          is_primary?: boolean
+          optimized?: boolean
+          original_format?: string | null
+          original_size?: number | null
+          original_url?: string
+          product_id?: string
+          seo_filename?: string | null
+          sort_order?: number
+          title_text?: string | null
+          url_card?: string | null
+          url_full?: string | null
+          url_og?: string | null
+          url_thumb?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "product_images_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       products: {
         Row: {
           active: boolean | null

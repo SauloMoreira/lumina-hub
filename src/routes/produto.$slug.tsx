@@ -1,7 +1,7 @@
 import { createFileRoute, Link, notFound } from '@tanstack/react-router';
 import { useQuery } from '@tanstack/react-query';
 import { useEffect, useState } from 'react';
-import { Minus, Plus, ShoppingCart, Truck, Shield, Zap, ChevronRight } from 'lucide-react';
+import { Minus, Plus, ShoppingCart, Truck, Shield, ChevronRight } from 'lucide-react';
 import { toast } from 'sonner';
 import { StoreLayout } from '@/components/layout/StoreLayout';
 import { Button } from '@/components/ui/button';
@@ -11,6 +11,8 @@ import { formatBRL } from '@/lib/domain';
 import { useCart } from '@/stores/cartStore';
 import { buildSeo, SITE_URL, clamp } from '@/lib/seo';
 import { trackViewProduct, trackAddToCart } from '@/lib/tracking';
+import { ProductImageCarousel } from '@/components/store/ProductImageCarousel';
+import { pickUrl, type ProductImageRow } from '@/lib/productImages';
 
 type FaqItem = { question: string; answer: string };
 type ProductWithSeo = Product & {
@@ -34,7 +36,13 @@ const productQueryOptions = (slug: string) => ({
     const { data, error } = await supabase.from('products').select('*').eq('slug', slug).eq('active', true).maybeSingle();
     if (error) throw error;
     if (!data) throw notFound();
-    return data as ProductWithSeo;
+    const { data: imgs } = await supabase
+      .from('product_images')
+      .select('*')
+      .eq('product_id', (data as { id: string }).id)
+      .order('is_primary', { ascending: false })
+      .order('sort_order', { ascending: true });
+    return { ...(data as ProductWithSeo), product_images: (imgs ?? []) as ProductImageRow[] };
   },
 });
 
@@ -50,13 +58,18 @@ export const Route = createFileRoute('/produto/$slug')({
     const baseDesc = p.description?.trim() || `${p.name} — disponível na Led Maricá com entrega rápida em Maricá/RJ. Frete grátis acima de R$199.`;
     const description = clamp(p.seo_description || baseDesc, 160);
     const title = p.seo_title || `${p.name}${p.brand ? ' — ' + p.brand : ''}`;
-    const image = p.images?.[0];
+    const productImages = p.product_images ?? [];
+    const allImageUrls = productImages.length
+      ? productImages.map((i) => pickUrl(i, 'full') ?? i.original_url).filter((u): u is string => !!u)
+      : (p.images ?? []);
+    const ogPrimary = productImages.find((i) => i.is_primary) ?? productImages[0];
+    const image = ogPrimary ? pickUrl(ogPrimary, 'og') ?? ogPrimary.original_url : allImageUrls[0];
 
     const seo = buildSeo({
       title,
       description,
       url: `/produto/${p.slug}`,
-      image,
+      image: image ?? undefined,
       type: 'product',
       product: {
         price: finalPrice,
@@ -76,7 +89,7 @@ export const Route = createFileRoute('/produto/$slug')({
       sku: p.sku ?? undefined,
       mpn: p.ncm ?? undefined,
       brand: { '@type': 'Brand', name: p.brand || 'Led Maricá' },
-      image: p.images ?? [],
+      image: allImageUrls,
       offers: {
         '@type': 'Offer',
         url: `${SITE_URL}/produto/${p.slug}`,
@@ -87,6 +100,8 @@ export const Route = createFileRoute('/produto/$slug')({
         seller: { '@type': 'Organization', name: 'Led Maricá' },
       },
     });
+
+
 
     const faq = extractFaq(p.specs);
     const scripts: Array<{ type: string; children: string }> = [
@@ -160,14 +175,11 @@ function ProductPage() {
         </nav>
 
         <div className="grid lg:grid-cols-2 gap-10">
-          {/* Imagem */}
-          <div className="bg-card border border-border rounded-xl aspect-square flex items-center justify-center overflow-hidden">
-            {product.images[0] ? (
-              <img src={product.images[0]} alt={product.name} className="w-full h-full object-cover" />
-            ) : (
-              <Zap className="w-32 h-32 text-primary/15" strokeWidth={1.2} />
-            )}
-          </div>
+          {/* Galeria de imagens */}
+          <ProductImageCarousel
+            images={(product as ProductWithSeo & { product_images?: ProductImageRow[] }).product_images ?? []}
+            productName={product.name}
+          />
 
           {/* Detalhes */}
           <div>

@@ -1,6 +1,6 @@
 import { createFileRoute, useNavigate, useParams, Link } from '@tanstack/react-router';
 import { useEffect, useState, type FormEvent } from 'react';
-import { ArrowLeft, Upload, X, Loader2 } from 'lucide-react';
+import { ArrowLeft, Loader2 } from 'lucide-react';
 import { AdminLayout } from '@/components/admin/AdminLayout';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -10,6 +10,7 @@ import { Label } from '@/components/ui/label';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { ProductSEOSection } from '@/components/admin/ProductSEOSection';
+import { ProductImageManager } from '@/components/admin/ProductImageManager';
 import { boostProductSeoAuto } from '@/server/seo.functions';
 
 export const Route = createFileRoute('/admin/produtos/$id')({ component: ProductForm });
@@ -32,7 +33,6 @@ function ProductForm() {
   const nav = useNavigate();
   const [loading, setLoading] = useState(!isNew);
   const [saving, setSaving] = useState(false);
-  const [uploading, setUploading] = useState(false);
   const [cats, setCats] = useState<Cat[]>([]);
 
   const [form, setForm] = useState({
@@ -69,18 +69,7 @@ function ProductForm() {
     }
   }, [id, isNew, nav]);
 
-  const handleUpload = async (file: File) => {
-    setUploading(true);
-    const ext = file.name.split('.').pop() ?? 'jpg';
-    const path = `${crypto.randomUUID()}.${ext}`;
-    const { error } = await supabase.storage.from('product-images').upload(path, file, { contentType: file.type });
-    if (error) { toast.error(error.message); setUploading(false); return; }
-    const { data } = supabase.storage.from('product-images').getPublicUrl(path);
-    setForm((f) => ({ ...f, images: [...f.images, data.publicUrl] }));
-    setUploading(false);
-  };
 
-  const removeImage = (url: string) => setForm((f) => ({ ...f, images: f.images.filter((i) => i !== url) }));
 
   const submit = async (e: FormEvent) => {
     e.preventDefault();
@@ -200,21 +189,18 @@ function ProductForm() {
 
         <div className="space-y-4">
           <Section title="Imagens">
-            <div className="grid grid-cols-3 gap-2">
-              {form.images.map((url) => (
-                <div key={url} className="relative aspect-square rounded border border-border overflow-hidden group">
-                  <img src={url} alt="" className="w-full h-full object-cover" />
-                  <button type="button" onClick={() => removeImage(url)} className="absolute top-1 right-1 bg-destructive text-destructive-foreground rounded-full p-0.5 opacity-0 group-hover:opacity-100">
-                    <X className="w-3 h-3" />
-                  </button>
-                </div>
-              ))}
-              <label className="aspect-square border-2 border-dashed border-border rounded flex flex-col items-center justify-center cursor-pointer hover:border-primary text-muted-foreground hover:text-primary text-xs">
-                {uploading ? <Loader2 className="w-5 h-5 animate-spin" /> : <><Upload className="w-5 h-5 mb-1" />Enviar</>}
-                <input type="file" accept="image/*" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if (f) handleUpload(f); e.target.value = ''; }} disabled={uploading} />
-              </label>
-            </div>
-            <p className="text-xs text-muted-foreground mt-2">A primeira imagem é a principal.</p>
+            {isNew ? (
+              <p className="text-xs text-muted-foreground bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-900 rounded p-3">
+                💡 Salve o produto primeiro para poder adicionar imagens.
+              </p>
+            ) : (
+              <ProductImageManager
+                productId={id}
+                productName={form.name}
+                brand={form.brand}
+                category={cats.find((c) => c.id === form.category_id)?.name}
+              />
+            )}
           </Section>
 
           <Section title="Visibilidade">
