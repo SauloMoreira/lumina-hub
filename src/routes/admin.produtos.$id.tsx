@@ -205,6 +205,12 @@ function ProductForm() {
       <form onSubmit={submit} className="grid lg:grid-cols-3 gap-6 max-w-6xl">
         <div className="lg:col-span-2 space-y-4">
           <Section title="Informações básicas">
+            <div className="flex justify-end -mt-1">
+              <Button type="button" variant="outline" size="sm" onClick={() => setBarcodeOpen(true)}>
+                <ScanBarcode className="w-4 h-4 mr-1.5" />
+                Buscar por código de barras
+              </Button>
+            </div>
             <Field label="Nome *"><Input required value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value, slug: form.slug || slugify(e.target.value) })} /></Field>
             <div className="grid sm:grid-cols-2 gap-3">
               <Field label="Slug"><Input value={form.slug} onChange={(e) => setForm({ ...form, slug: e.target.value })} /></Field>
