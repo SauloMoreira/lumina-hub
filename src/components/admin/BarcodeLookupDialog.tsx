@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Loader2, Search, Sparkles, ImageIcon, AlertCircle, CheckCircle2 } from 'lucide-react';
+import { Loader2, Search, Sparkles, ImageIcon, AlertCircle, CheckCircle2, Wand2, Upload } from 'lucide-react';
 import { toast } from 'sonner';
 import {
   Dialog,
@@ -12,7 +12,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { lookupBarcode, type BarcodeLookupResult } from '@/server/barcodeLookup.functions';
+import { lookupBarcode, generateProductImage, type BarcodeLookupResult } from '@/server/barcodeLookup.functions';
 
 interface Cat {
   id: string;
