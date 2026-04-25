@@ -71,6 +71,24 @@ export function BarcodeLookupDialog({ open, onOpenChange, categories, currentFor
   const [result, setResult] = useState<BarcodeLookupResult | null>(null);
   const [selectedImages, setSelectedImages] = useState<Set<string>>(new Set());
   const [resolvedCategoryId, setResolvedCategoryId] = useState<string | null>(null);
+  const [manualUrl, setManualUrl] = useState('');
+
+  function addManualUrl() {
+    const url = manualUrl.trim();
+    if (!url) return;
+    if (!/^https?:\/\//i.test(url)) {
+      toast.error('URL inválida. Deve começar com http:// ou https://');
+      return;
+    }
+    setSelectedImages((prev) => new Set(prev).add(url));
+    // também acrescenta na lista visível, se ainda não estiver
+    setResult((prev) => {
+      if (!prev || !prev.ok) return prev;
+      if (prev.suggested.images.includes(url)) return prev;
+      return { ...prev, suggested: { ...prev.suggested, images: [...prev.suggested.images, url] } };
+    });
+    setManualUrl('');
+  }
 
   const reset = () => {
     setBarcode('');
