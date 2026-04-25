@@ -21,7 +21,7 @@ export function Header() {
       <div className="container mx-auto px-4 h-16 flex items-center gap-6">
         {/* Logo */}
         <Link to="/" className="flex items-center shrink-0" aria-label={STORE_NAME}>
-          <img src={logoNavbar} alt={STORE_NAME} className="h-11 w-auto object-contain" />
+          <img src={logoNavbar} alt={STORE_NAME} loading="eager" decoding="async" className="h-11 w-auto object-contain" />
         </Link>
 
         {/* Busca */}

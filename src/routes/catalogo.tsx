@@ -1,18 +1,23 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { useQuery } from '@tanstack/react-query';
 import { useState, useMemo } from 'react';
-import { Search, SlidersHorizontal } from 'lucide-react';
+import { Search, SlidersHorizontal, ChevronLeft, ChevronRight } from 'lucide-react';
 import { z } from 'zod';
 import { StoreLayout } from '@/components/layout/StoreLayout';
 import { ProductCard } from '@/components/store/ProductCard';
+import { ProductCardSkeleton } from '@/components/ui/shimmer';
 import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
 import type { Product, Category } from '@/lib/domain';
+
+const PAGE_SIZE = 24;
 
 const searchSchema = z.object({
   cat: z.string().optional(),
   q: z.string().optional(),
   sort: z.enum(['featured', 'price_asc', 'price_desc', 'newest']).optional(),
+  page: z.coerce.number().int().min(1).optional(),
 });
 
 export const Route = createFileRoute('/catalogo')({
@@ -24,19 +29,32 @@ function CatalogPage() {
   const search = Route.useSearch();
   const navigate = Route.useNavigate();
   const [q, setQ] = useState(search.q ?? '');
+  const page = search.page ?? 1;
 
   const { data: categories } = useQuery({
     queryKey: ['categories'],
+    staleTime: 1000 * 60 * 60, // 1h
     queryFn: async () => {
-      const { data } = await supabase.from('categories').select('*').eq('active', true).order('sort_order');
+      const { data } = await supabase
+        .from('categories')
+        .select('id, name, slug, icon, sort_order')
+        .eq('active', true)
+        .order('sort_order');
       return (data ?? []) as Category[];
     },
   });
 
-  const { data: products, isLoading } = useQuery({
-    queryKey: ['products', search.cat, search.sort],
+  const { data, isLoading } = useQuery({
+    queryKey: ['products', 'catalog', search.cat, search.sort, page],
+    staleTime: 1000 * 60 * 10, // 10min
+    enabled: !search.cat || !!categories,
     queryFn: async () => {
-      let query = supabase.from('products').select('*, categories(slug)').eq('active', true);
+      const from = (page - 1) * PAGE_SIZE;
+      const to = from + PAGE_SIZE - 1;
+      let query = supabase
+        .from('products')
+        .select('id, name, slug, price, sale_price, images, brand, tags, stock_qty, featured, category_id', { count: 'exact' })
+        .eq('active', true);
       if (search.cat) {
         const cat = categories?.find((c) => c.slug === search.cat);
         if (cat) query = query.eq('category_id', cat.id);
@@ -45,15 +63,17 @@ function CatalogPage() {
       else if (search.sort === 'price_desc') query = query.order('price', { ascending: false });
       else if (search.sort === 'newest') query = query.order('created_at', { ascending: false });
       else query = query.order('featured', { ascending: false }).order('created_at', { ascending: false });
-      const { data, error } = await query;
+      const { data, error, count } = await query.range(from, to);
       if (error) throw error;
-      return data as Product[];
+      return { products: (data ?? []) as unknown as Product[], total: count ?? 0 };
     },
-    enabled: !search.cat || !!categories,
   });
 
+  const products = data?.products ?? [];
+  const total = data?.total ?? 0;
+  const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
+
   const filtered = useMemo(() => {
-    if (!products) return [];
     const term = (search.q ?? '').toLowerCase().trim();
     if (!term) return products;
     return products.filter(
@@ -61,9 +81,10 @@ function CatalogPage() {
     );
   }, [products, search.q]);
 
+  const goPage = (p: number) => navigate({ search: (s: any) => ({ ...s, page: p }) as any });
+
   return (
     <StoreLayout>
-      {/* Cabeçalho */}
       <div className="bg-card border-b border-border">
         <div className="container mx-auto px-4 py-8">
           <div className="label-meta mb-2">Catálogo completo</div>
@@ -71,7 +92,7 @@ function CatalogPage() {
             {search.cat ? categories?.find((c) => c.slug === search.cat)?.name ?? 'Produtos' : 'Todos os produtos'}
           </h1>
           <form
-            onSubmit={(e) => { e.preventDefault(); navigate({ search: (s: any) => ({ ...s, q: q || undefined }) as any }); }}
+            onSubmit={(e) => { e.preventDefault(); navigate({ search: (s: any) => ({ ...s, q: q || undefined, page: 1 }) as any }); }}
             className="max-w-md"
           >
             <div className="relative">
@@ -84,7 +105,6 @@ function CatalogPage() {
 
       <div className="container mx-auto px-4 py-8">
         <div className="flex flex-col lg:flex-row gap-8">
-          {/* Sidebar */}
           <aside className="lg:w-64 shrink-0">
             <div className="bg-card border border-border rounded-xl p-5 sticky top-20">
               <div className="flex items-center gap-2 mb-4">
@@ -94,7 +114,7 @@ function CatalogPage() {
               <ul className="space-y-1">
                 <li>
                   <button
-                    onClick={() => navigate({ search: (s: any) => ({ ...s, cat: undefined }) as any })}
+                    onClick={() => navigate({ search: (s: any) => ({ ...s, cat: undefined, page: 1 }) as any })}
                     className={`w-full text-left text-sm px-3 py-2 rounded-md transition-colors ${!search.cat ? 'bg-primary-tint text-primary font-medium' : 'hover:bg-surface text-muted-foreground'}`}
                   >
                     Todas
@@ -103,7 +123,7 @@ function CatalogPage() {
                 {categories?.map((c) => (
                   <li key={c.id}>
                     <button
-                      onClick={() => navigate({ search: (s: any) => ({ ...s, cat: c.slug }) as any })}
+                      onClick={() => navigate({ search: (s: any) => ({ ...s, cat: c.slug, page: 1 }) as any })}
                       className={`w-full text-left text-sm px-3 py-2 rounded-md transition-colors ${search.cat === c.slug ? 'bg-primary-tint text-primary font-medium' : 'hover:bg-surface text-muted-foreground'}`}
                     >
                       {c.name}
@@ -114,13 +134,14 @@ function CatalogPage() {
             </div>
           </aside>
 
-          {/* Grid */}
           <div className="flex-1">
             <div className="flex items-center justify-between mb-5">
-              <p className="text-sm text-muted-foreground">{isLoading ? 'Carregando...' : `${filtered.length} produtos`}</p>
+              <p className="text-sm text-muted-foreground">
+                {isLoading ? 'Carregando...' : `${total} produtos · página ${page} de ${totalPages}`}
+              </p>
               <select
                 value={search.sort ?? 'featured'}
-                onChange={(e) => navigate({ search: (s: any) => ({ ...s, sort: e.target.value as any }) as any })}
+                onChange={(e) => navigate({ search: (s: any) => ({ ...s, sort: e.target.value as any, page: 1 }) as any })}
                 className="text-sm border border-border rounded-md px-3 py-1.5 bg-card focus:outline-none focus:ring-2 focus:ring-primary/20"
               >
                 <option value="featured">Mais relevantes</option>
@@ -132,18 +153,36 @@ function CatalogPage() {
 
             {isLoading ? (
               <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                {Array.from({ length: 9 }).map((_, i) => (
-                  <div key={i} className="aspect-[3/4] bg-surface rounded-lg animate-pulse" />
-                ))}
+                {Array.from({ length: 8 }).map((_, i) => <ProductCardSkeleton key={i} />)}
               </div>
             ) : filtered.length === 0 ? (
-              <div className="text-center py-16 text-muted-foreground">
-                <p>Nenhum produto encontrado.</p>
-              </div>
+              <div className="text-center py-16 text-muted-foreground"><p>Nenhum produto encontrado.</p></div>
             ) : (
-              <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                {filtered.map((p, i) => <ProductCard key={p.id} product={p} index={i} />)}
-              </div>
+              <>
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                  {filtered.map((p, i) => <ProductCard key={p.id} product={p} index={i} />)}
+                </div>
+
+                {totalPages > 1 && (
+                  <div className="flex items-center justify-center gap-2 mt-8">
+                    <Button
+                      variant="outline" size="sm"
+                      disabled={page <= 1}
+                      onClick={() => goPage(page - 1)}
+                    >
+                      <ChevronLeft className="w-4 h-4" /> Anterior
+                    </Button>
+                    <span className="text-sm text-muted-foreground px-3">{page} / {totalPages}</span>
+                    <Button
+                      variant="outline" size="sm"
+                      disabled={page >= totalPages}
+                      onClick={() => goPage(page + 1)}
+                    >
+                      Próxima <ChevronRight className="w-4 h-4" />
+                    </Button>
+                  </div>
+                )}
+              </>
             )}
           </div>
         </div>
