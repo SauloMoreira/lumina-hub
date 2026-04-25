@@ -25,7 +25,11 @@ export const Route = createFileRoute('/')({
 
 const ICONS: Record<string, any> = { Lightbulb, Zap, Cable, Plug, Sun, LayoutGrid, Wrench, Package };
 
-const PRODUCT_LIST_COLS = 'id, name, slug, price, sale_price, images, brand, tags, stock_qty, featured, category_id';
+const PRODUCT_LIST_COLS = 'id, name, slug, price, sale_price, images, brand, tags, stock_qty, featured, category_id, product_images(url_thumb, url_card, original_url, is_primary, sort_order)';
+
+function normalizeProductImages<T extends { images?: string[] | null; product_images?: any[] }>(product: T) {
+  return { ...product, images: imageUrlsFromProductImages(product.product_images, product.images) };
+}
 
 function HomePage() {
   const queryClient = useQueryClient();
