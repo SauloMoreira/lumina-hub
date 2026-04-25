@@ -338,9 +338,65 @@ export function BarcodeLookupDialog({ open, onOpenChange, categories, currentFor
                       );
                     })}
                   </div>
+                ) : imageChoice === 'pending' ? (
+                  <div className="rounded-lg border border-dashed border-border bg-muted/20 p-4 space-y-3">
+                    <p className="text-xs text-muted-foreground">
+                      Não encontramos imagens deste produto na base GTIN. Como deseja proceder?
+                    </p>
+                    <div className="grid sm:grid-cols-2 gap-2">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={generateAiImage}
+                        disabled={generatingImage || !result.suggested.name}
+                        className="h-auto py-3 flex-col gap-1.5 items-start text-left"
+                      >
+                        <span className="flex items-center gap-2 font-medium">
+                          {generatingImage ? <Loader2 className="w-4 h-4 animate-spin" /> : <Wand2 className="w-4 h-4" />}
+                          Gerar com IA
+                        </span>
+                        <span className="text-[11px] font-normal text-muted-foreground whitespace-normal">
+                          Foto realista de catálogo, fundo branco. Revise antes de aplicar.
+                        </span>
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={() => setImageChoice('manual')}
+                        className="h-auto py-3 flex-col gap-1.5 items-start text-left"
+                      >
+                        <span className="flex items-center gap-2 font-medium">
+                          <Upload className="w-4 h-4" />
+                          Vou subir manualmente
+                        </span>
+                        <span className="text-[11px] font-normal text-muted-foreground whitespace-normal">
+                          Pula esta etapa. Faça upload depois pelo gerenciador de imagens do produto.
+                        </span>
+                      </Button>
+                    </div>
+                  </div>
                 ) : (
-                  <div className="rounded-lg border border-dashed border-border bg-muted/20 p-3 text-xs text-muted-foreground">
-                    Nenhuma imagem encontrada na base GTIN nem no fallback de busca. Você pode colar URLs de imagens manualmente abaixo, ou fazer upload depois pelo gerenciador de imagens do produto.
+                  <div className="rounded-lg border border-dashed border-border bg-muted/20 p-3 text-xs text-muted-foreground space-y-2">
+                    <p>
+                      {imageChoice === 'ai'
+                        ? 'Você optou por gerar com IA, mas nenhuma imagem foi gerada ainda.'
+                        : 'Você optou por subir manualmente. Faça upload depois pelo gerenciador de imagens do produto.'}
+                    </p>
+                    <div className="flex gap-2">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={generateAiImage}
+                        disabled={generatingImage || !result.suggested.name}
+                      >
+                        {generatingImage ? <Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" /> : <Wand2 className="w-3.5 h-3.5 mr-1.5" />}
+                        Gerar com IA
+                      </Button>
+                      <Button type="button" variant="ghost" size="sm" onClick={() => setImageChoice('pending')}>
+                        Voltar
+                      </Button>
+                    </div>
                   </div>
                 )}
 
