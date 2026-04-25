@@ -10,6 +10,7 @@ import { Label } from '@/components/ui/label';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { ProductSEOSection } from '@/components/admin/ProductSEOSection';
+import { boostProductSeoAuto } from '@/server/seo.functions';
 
 export const Route = createFileRoute('/admin/produtos/$id')({ component: ProductForm });
 
@@ -114,6 +115,20 @@ function ProductForm() {
     setSaving(false);
     if (res.error) return toast.error(res.error.message);
     toast.success(isNew ? 'Produto criado' : 'Produto atualizado');
+
+    // SEO Booster automático ao criar produto novo (sem SEO preenchido)
+    const newId = isNew ? (res.data as { id?: string } | null)?.id : id;
+    const seoEmpty = !payload.seo_title && !payload.seo_description && !payload.seo_keywords;
+    if (isNew && newId && seoEmpty) {
+      toast.info('🚀 Otimizando SEO com IA em segundo plano…');
+      boostProductSeoAuto({ data: { productId: newId } })
+        .then((r) => {
+          if (r.ok) toast.success(`SEO turbinado: título, descrição e ${r.faqCount} FAQs gerados`);
+          else toast.error(`SEO booster: ${r.error}`);
+        })
+        .catch((e) => toast.error(`SEO booster falhou: ${e instanceof Error ? e.message : 'erro'}`));
+    }
+
     nav({ to: '/admin/produtos' as any });
   };
 
@@ -167,6 +182,7 @@ function ProductForm() {
           </Section>
 
           <ProductSEOSection
+            productId={isNew ? undefined : id}
             productCtx={{
               name: form.name,
               description: form.description,

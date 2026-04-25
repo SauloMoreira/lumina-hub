@@ -12,11 +12,21 @@ import { useCart } from '@/stores/cartStore';
 import { buildSeo, SITE_URL, clamp } from '@/lib/seo';
 import { trackViewProduct, trackAddToCart } from '@/lib/tracking';
 
+type FaqItem = { question: string; answer: string };
 type ProductWithSeo = Product & {
   seo_title?: string | null;
   seo_description?: string | null;
   seo_keywords?: string | null;
+  specs?: Record<string, unknown> | null;
 };
+
+function extractFaq(specs: Record<string, unknown> | null | undefined): FaqItem[] {
+  const raw = specs && typeof specs === 'object' ? (specs as Record<string, unknown>).seo_faq : null;
+  if (!Array.isArray(raw)) return [];
+  return raw
+    .filter((x): x is FaqItem => !!x && typeof x === 'object' && typeof (x as FaqItem).question === 'string' && typeof (x as FaqItem).answer === 'string')
+    .slice(0, 6);
+}
 
 const productQueryOptions = (slug: string) => ({
   queryKey: ['product', slug],
@@ -78,11 +88,26 @@ export const Route = createFileRoute('/produto/$slug')({
       },
     });
 
-    return {
-      meta: seo.meta,
-      links: seo.links,
-      scripts: [{ type: 'application/ld+json', children: productJsonLd }],
-    };
+    const faq = extractFaq(p.specs);
+    const scripts: Array<{ type: string; children: string }> = [
+      { type: 'application/ld+json', children: productJsonLd },
+    ];
+    if (faq.length > 0) {
+      scripts.push({
+        type: 'application/ld+json',
+        children: JSON.stringify({
+          '@context': 'https://schema.org',
+          '@type': 'FAQPage',
+          mainEntity: faq.map((f) => ({
+            '@type': 'Question',
+            name: f.question,
+            acceptedAnswer: { '@type': 'Answer', text: f.answer },
+          })),
+        }),
+      });
+    }
+
+    return { meta: seo.meta, links: seo.links, scripts };
   },
   component: ProductPage,
   notFoundComponent: () => (
@@ -202,6 +227,28 @@ function ProductPage() {
             )}
           </div>
         </div>
+
+        {/* FAQ gerado por IA — bom para SEO (FAQPage schema) */}
+        {(() => {
+          const faq = extractFaq(product.specs);
+          if (faq.length === 0) return null;
+          return (
+            <section className="mt-12 max-w-3xl">
+              <h2 className="font-display font-bold text-2xl mb-4">Perguntas frequentes</h2>
+              <div className="divide-y divide-border border border-border rounded-xl bg-card">
+                {faq.map((f, i) => (
+                  <details key={i} className="group p-4">
+                    <summary className="flex justify-between items-center cursor-pointer font-medium text-sm list-none">
+                      <span>{f.question}</span>
+                      <ChevronRight className="w-4 h-4 text-muted-foreground transition-transform group-open:rotate-90" />
+                    </summary>
+                    <p className="mt-2 text-sm text-muted-foreground leading-relaxed">{f.answer}</p>
+                  </details>
+                ))}
+              </div>
+            </section>
+          );
+        })()}
       </div>
     </StoreLayout>
   );
