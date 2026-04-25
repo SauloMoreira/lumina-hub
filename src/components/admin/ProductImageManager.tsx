@@ -1,4 +1,4 @@
-import { useState, type ChangeEvent, type DragEvent } from 'react';
+import { forwardRef, useEffect, useImperativeHandle, useState, type ChangeEvent, type DragEvent } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Loader2, Upload, Star, ArrowLeft, ArrowRight, X, Sparkles, Plus } from 'lucide-react';
 import { toast } from 'sonner';
@@ -14,80 +14,148 @@ interface Props {
   category?: string | null;
 }
 
+export interface ProductImageManagerHandle {
+  savePending: () => Promise<ProductImageRow[]>;
+  refetchImages: () => Promise<ProductImageRow[]>;
+}
+
+type PendingImage = {
+  id: string;
+  file: File;
+  previewUrl: string;
+};
+
 const MAX_IMAGES = 10;
 const MAX_FILE_BYTES = 10 * 1024 * 1024;
 
-export function ProductImageManager({ productId, productName, brand, category }: Props) {
+async function fetchProductImages(productId: string) {
+  const { data, error } = await supabase
+    .from('product_images')
+    .select('*')
+    .eq('product_id', productId)
+    .order('is_primary', { ascending: false })
+    .order('sort_order', { ascending: true });
+  if (error) throw error;
+  return (data ?? []) as ProductImageRow[];
+}
+
+export const ProductImageManager = forwardRef<ProductImageManagerHandle, Props>(function ProductImageManager(
+  { productId, productName, brand, category },
+  ref,
+) {
   const queryClient = useQueryClient();
+  const [pendingImages, setPendingImages] = useState<PendingImage[]>([]);
   const [uploading, setUploading] = useState(false);
   const [dragOver, setDragOver] = useState(false);
   const [optimizingId, setOptimizingId] = useState<string | null>(null);
   const [optimizingAll, setOptimizingAll] = useState(false);
 
-  const { data: images = [], isLoading } = useQuery<ProductImageRow[]>({
+  const { data: images = [], isLoading, refetch } = useQuery<ProductImageRow[]>({
     queryKey: ['product-images', productId],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('product_images')
-        .select('*')
-        .eq('product_id', productId)
-        .order('is_primary', { ascending: false })
-        .order('sort_order', { ascending: true });
-      if (error) throw error;
-      return (data ?? []) as ProductImageRow[];
-    },
+    queryFn: () => fetchProductImages(productId),
     enabled: !!productId,
   });
 
-  const invalidate = () => queryClient.invalidateQueries({ queryKey: ['product-images', productId] });
+  const refreshProductCaches = () => {
+    queryClient.invalidateQueries({ queryKey: ['product-images', productId] });
+    queryClient.invalidateQueries({ queryKey: ['products'] });
+    queryClient.invalidateQueries({ queryKey: ['product'] });
+  };
+
+  const invalidate = () => refreshProductCaches();
+  const totalImages = images.length + pendingImages.length;
   const unoptimizedCount = images.filter((i) => !i.optimized).length;
 
-  async function handleFiles(fileList: FileList | File[]) {
+  useEffect(() => {
+    return () => {
+      pendingImages.forEach((img) => URL.revokeObjectURL(img.previewUrl));
+    };
+  }, [pendingImages]);
+
+  async function uploadPendingImages() {
+    if (!pendingImages.length) return fetchProductImages(productId);
+
+    setUploading(true);
+    try {
+      const existingCount = images.length;
+      for (let i = 0; i < pendingImages.length; i++) {
+        const pending = pendingImages[i];
+        const f = pending.file;
+        const ext = (f.name.split('.').pop() || 'jpg').toLowerCase().replace(/[^a-z0-9]/g, '') || 'jpg';
+        const unique = typeof crypto !== 'undefined' && 'randomUUID' in crypto ? crypto.randomUUID() : `${Date.now()}-${i}`;
+        const path = `${productId}/${Date.now()}-${unique}.${ext}`;
+
+        const { error: upErr } = await supabase.storage
+          .from('product-images')
+          .upload(path, f, { contentType: f.type, cacheControl: '31536000', upsert: false });
+        if (upErr) throw new Error(`Falha ao enviar "${f.name}": ${upErr.message}`);
+
+        const { data: pub } = supabase.storage.from('product-images').getPublicUrl(path);
+        const originalUrl = pub.publicUrl;
+        if (!originalUrl) throw new Error(`Não foi possível gerar a URL pública de "${f.name}".`);
+
+        const { error: dbErr } = await supabase.from('product_images').insert({
+          product_id: productId,
+          sort_order: existingCount + i,
+          is_primary: existingCount === 0 && i === 0,
+          original_url: originalUrl,
+          original_size: f.size,
+          original_format: ext,
+          url_full: variantUrl(originalUrl, 'full'),
+          url_card: variantUrl(originalUrl, 'card'),
+          url_thumb: variantUrl(originalUrl, 'thumb'),
+          url_og: variantUrl(originalUrl, 'og'),
+          optimized: false,
+        });
+        if (dbErr) throw new Error(`Falha ao salvar "${f.name}" no produto: ${dbErr.message}`);
+      }
+
+      pendingImages.forEach((img) => URL.revokeObjectURL(img.previewUrl));
+      setPendingImages([]);
+      const saved = await fetchProductImages(productId);
+      refreshProductCaches();
+      toast.success(`${pendingImages.length} imagem(ns) salva(s)`);
+      return saved;
+    } finally {
+      setUploading(false);
+    }
+  }
+
+  useImperativeHandle(ref, () => ({
+    savePending: uploadPendingImages,
+    refetchImages: async () => {
+      const result = await refetch();
+      return result.data ?? [];
+    },
+  }), [pendingImages, images, productId]);
+
+  function handleFiles(fileList: FileList | File[]) {
     const files = Array.from(fileList);
     if (!files.length) return;
-    if (images.length + files.length > MAX_IMAGES) {
-      toast.error(`Máximo de ${MAX_IMAGES} imagens. Você tem ${images.length} e está enviando ${files.length}.`);
+    if (totalImages + files.length > MAX_IMAGES) {
+      toast.error(`Máximo de ${MAX_IMAGES} imagens. Você tem ${totalImages} e está adicionando ${files.length}.`);
       return;
     }
     for (const f of files) {
       if (!f.type.startsWith('image/')) return toast.error(`"${f.name}" não é uma imagem`);
       if (f.size > MAX_FILE_BYTES) return toast.error(`"${f.name}" excede 10MB`);
     }
-    setUploading(true);
-    try {
-      for (let i = 0; i < files.length; i++) {
-        const f = files[i];
-        const ext = (f.name.split('.').pop() || 'jpg').toLowerCase();
-        const path = `${productId}/${Date.now()}-${i}.${ext}`;
-        const { error: upErr } = await supabase.storage
-          .from('product-images')
-          .upload(path, f, { contentType: f.type, cacheControl: '31536000' });
-        if (upErr) throw upErr;
-        const { data: pub } = supabase.storage.from('product-images').getPublicUrl(path);
-        const originalUrl = pub.publicUrl;
-        const { error: dbErr } = await supabase.from('product_images').insert({
-          product_id: productId,
-          sort_order: images.length + i,
-          original_url: originalUrl,
-          original_size: f.size,
-          original_format: ext,
-          // URLs transformadas pelo CDN do Supabase Storage (sem processamento server-side)
-          url_full: variantUrl(originalUrl, 'full'),
-          url_card: variantUrl(originalUrl, 'card'),
-          url_thumb: variantUrl(originalUrl, 'thumb'),
-          url_og: variantUrl(originalUrl, 'og'),
-          optimized: false, // marcado true após gerar SEO via IA
-        });
-        if (dbErr) throw dbErr;
-      }
-      toast.success(`${files.length} imagem(ns) enviada(s)`);
-      invalidate();
-    } catch (e) {
-      toast.error(e instanceof Error ? e.message : 'Erro no upload');
-    } finally {
-      setUploading(false);
-    }
+
+    const next = files.map((file, i) => ({
+      id: `${Date.now()}-${i}-${file.name}`,
+      file,
+      previewUrl: URL.createObjectURL(file),
+    }));
+    setPendingImages((current) => [...current, ...next]);
   }
+
+  const removePendingImage = (id: string) => {
+    setPendingImages((current) => {
+      const target = current.find((img) => img.id === id);
+      if (target) URL.revokeObjectURL(target.previewUrl);
+      return current.filter((img) => img.id !== id);
+    });
+  };
 
   const setPrimary = useMutation({
     mutationFn: async (imageId: string) => {
@@ -100,7 +168,6 @@ export function ProductImageManager({ productId, productName, brand, category }:
 
   const removeImage = useMutation({
     mutationFn: async (img: ProductImageRow) => {
-      // Tenta apagar do storage (apenas o original; variantes são geradas on-the-fly)
       const idx = img.original_url.indexOf('/product-images/');
       if (idx >= 0) {
         const path = img.original_url.substring(idx + '/product-images/'.length).split('?')[0];
@@ -151,7 +218,6 @@ export function ProductImageManager({ productId, productName, brand, category }:
       const { error } = await supabase
         .from('product_images')
         .update({
-          // Garantir que as variantes do CDN estejam preenchidas
           url_full: img.url_full ?? variantUrl(img.original_url, 'full'),
           url_card: img.url_card ?? variantUrl(img.original_url, 'card'),
           url_thumb: img.url_thumb ?? variantUrl(img.original_url, 'thumb'),
@@ -201,7 +267,7 @@ export function ProductImageManager({ productId, productName, brand, category }:
       <div className="flex items-start justify-between gap-3">
         <div>
           <h3 className="font-display font-semibold text-sm">Imagens do produto</h3>
-          <p className="text-xs text-muted-foreground">{images.length}/{MAX_IMAGES} • A estrela define a principal</p>
+          <p className="text-xs text-muted-foreground">{totalImages}/{MAX_IMAGES} • A estrela define a principal</p>
         </div>
         <div className="flex flex-wrap gap-2">
           {unoptimizedCount > 0 && (
@@ -210,7 +276,7 @@ export function ProductImageManager({ productId, productName, brand, category }:
               SEO em todas ({unoptimizedCount})
             </Button>
           )}
-          <label className={`inline-flex items-center gap-1.5 cursor-pointer text-xs font-medium px-3 h-8 rounded-md border border-input bg-background hover:bg-accent ${images.length >= MAX_IMAGES ? 'opacity-50 pointer-events-none' : ''}`}>
+          <label className={`inline-flex items-center gap-1.5 cursor-pointer text-xs font-medium px-3 h-8 rounded-md border border-input bg-background hover:bg-accent ${totalImages >= MAX_IMAGES ? 'opacity-50 pointer-events-none' : ''}`}>
             {uploading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Plus className="w-3.5 h-3.5" />}
             Adicionar
             <input
@@ -218,7 +284,7 @@ export function ProductImageManager({ productId, productName, brand, category }:
               accept="image/*"
               multiple
               className="hidden"
-              disabled={uploading || images.length >= MAX_IMAGES}
+              disabled={uploading || totalImages >= MAX_IMAGES}
               onChange={(e: ChangeEvent<HTMLInputElement>) => {
                 if (e.target.files) handleFiles(e.target.files);
                 e.target.value = '';
@@ -228,7 +294,7 @@ export function ProductImageManager({ productId, productName, brand, category }:
         </div>
       </div>
 
-      {images.length === 0 && (
+      {totalImages === 0 && (
         <div
           onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
           onDragLeave={() => setDragOver(false)}
@@ -272,6 +338,24 @@ export function ProductImageManager({ productId, productName, brand, category }:
                 </Button>
               </div>
             </div>
+          </div>
+        </div>
+      )}
+
+      {pendingImages.length > 0 && (
+        <div>
+          <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold mb-2">Pendentes para salvar ({pendingImages.length})</p>
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
+            {pendingImages.map((img) => (
+              <div key={img.id} className="relative group aspect-square rounded-lg overflow-hidden border border-border bg-surface">
+                <img src={img.previewUrl} alt={img.file.name} className="w-full h-full object-cover" />
+                <span className="absolute top-1.5 left-1.5 px-1.5 py-0.5 rounded text-[9px] font-semibold bg-primary text-primary-foreground">Novo</span>
+                <button type="button" onClick={() => removePendingImage(img.id)} title="Remover"
+                  className="absolute top-1.5 right-1.5 w-7 h-7 rounded bg-white/95 text-destructive hover:bg-white flex items-center justify-center">
+                  <X className="w-3.5 h-3.5" />
+                </button>
+              </div>
+            ))}
           </div>
         </div>
       )}
@@ -320,16 +404,16 @@ export function ProductImageManager({ productId, productName, brand, category }:
         </div>
       )}
 
-      {images.length > 0 && images.length < MAX_IMAGES && (
+      {totalImages > 0 && totalImages < MAX_IMAGES && (
         <div
           onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
           onDragLeave={() => setDragOver(false)}
           onDrop={onDrop}
           className={`text-center text-xs py-3 border border-dashed rounded-lg transition ${dragOver ? 'border-primary bg-primary/5 text-primary' : 'border-border text-muted-foreground'}`}
         >
-          Arraste mais imagens aqui ({images.length}/{MAX_IMAGES})
+          Arraste mais imagens aqui ({totalImages}/{MAX_IMAGES})
         </div>
       )}
     </div>
   );
-}
+});
