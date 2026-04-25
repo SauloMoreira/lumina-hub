@@ -10,7 +10,7 @@ import { Label } from '@/components/ui/label';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { ProductSEOSection } from '@/components/admin/ProductSEOSection';
-import { ProductImageManager } from '@/components/admin/ProductImageManager';
+import { ProductImageManager, type ProductImageManagerHandle } from '@/components/admin/ProductImageManager';
 import { boostProductSeoAuto } from '@/server/seo.functions';
 
 export const Route = createFileRoute('/admin/produtos/$id')({ component: ProductForm });
