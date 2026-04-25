@@ -246,6 +246,7 @@ function LeadsPage() {
               {isBusy && (
                 <Loader2 className="w-4 h-4 absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground animate-spin" />
               )}
+            </div>
             <div className="inline-flex rounded-md border border-border bg-background p-0.5">
               <button
                 onClick={() => setView('kanban')}
