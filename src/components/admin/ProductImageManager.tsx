@@ -1,4 +1,4 @@
-import { forwardRef, useEffect, useImperativeHandle, useState, type ChangeEvent, type DragEvent } from 'react';
+import { forwardRef, useEffect, useImperativeHandle, useRef, useState, type ChangeEvent, type DragEvent } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Loader2, Upload, Star, ArrowLeft, ArrowRight, X, Sparkles, Plus } from 'lucide-react';
 import { toast } from 'sonner';
