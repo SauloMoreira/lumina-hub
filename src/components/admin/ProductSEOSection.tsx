@@ -1,13 +1,14 @@
 import { useState } from 'react';
-import { Sparkles, Loader2 } from 'lucide-react';
+import { Sparkles, Loader2, Rocket } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
-import { improveProductSeo } from '@/server/seo.functions';
+import { improveProductSeo, boostProductSeoAuto } from '@/server/seo.functions';
 import { toast } from 'sonner';
 
 interface Props {
+  productId?: string; // se presente, habilita o "Boost completo" (grava direto no DB + FAQ)
   productCtx: { name: string; description: string; brand?: string; category?: string; price: number };
   seoTitle: string;
   seoDescription: string;
@@ -16,8 +17,27 @@ interface Props {
   onChange: (field: 'seo_title' | 'seo_description' | 'seo_keywords', value: string) => void;
 }
 
-export function ProductSEOSection({ productCtx, seoTitle, seoDescription, seoKeywords, slug, onChange }: Props) {
+export function ProductSEOSection({ productId, productCtx, seoTitle, seoDescription, seoKeywords, slug, onChange }: Props) {
   const [loading, setLoading] = useState(false);
+  const [boosting, setBoosting] = useState(false);
+
+  async function boostFull() {
+    if (!productId) return;
+    setBoosting(true);
+    try {
+      const r = await boostProductSeoAuto({ data: { productId } });
+      if (!r.ok) {
+        toast.error(r.error);
+      } else {
+        onChange('seo_title', r.title);
+        onChange('seo_description', r.description);
+        onChange('seo_keywords', r.keywords);
+        toast.success(`SEO turbinado: título, descrição e ${r.faqCount} FAQs salvos`);
+      }
+    } finally {
+      setBoosting(false);
+    }
+  }
 
   async function improve() {
     if (!productCtx.name.trim()) {
