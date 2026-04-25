@@ -746,6 +746,10 @@ export type Database = {
       }
       increment_coupon_usage: { Args: { _code: string }; Returns: undefined }
       is_admin: { Args: { _user_id: string }; Returns: boolean }
+      sync_product_images_array: {
+        Args: { _product_id: string }
+        Returns: undefined
+      }
     }
     Enums: {
       [_ in never]: never
