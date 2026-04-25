@@ -34,55 +34,7 @@ export type BarcodeLookupResult = {
 
 const COSMOS_URL = 'https://api.cosmos.bluesoft.com.br/gtins/';
 const AI_URL = 'https://ai.gateway.lovable.dev/v1/chat/completions';
-const GOOGLE_CSE_URL = 'https://www.googleapis.com/customsearch/v1';
-
-/**
- * Fallback de imagens via Google Custom Search (Image).
- * Só executa se GOOGLE_CSE_API_KEY e GOOGLE_CSE_CX estiverem configurados.
- * Retorna até 6 URLs públicas de imagem.
- */
-async function fetchGoogleImages(query: string): Promise<{ urls: string[]; note: string | null }> {
-  const key = process.env.GOOGLE_CSE_API_KEY;
-  const cx = process.env.GOOGLE_CSE_CX;
-  if (!key || !cx) {
-    return { urls: [], note: 'Fallback de imagens (Google) não configurado.' };
-  }
-  const q = query.trim();
-  if (!q) return { urls: [], note: null };
-  const params = new URLSearchParams({
-    key,
-    cx,
-    q,
-    searchType: 'image',
-    num: '6',
-    safe: 'active',
-    imgSize: 'medium',
-  });
-  try {
-    const res = await fetch(`${GOOGLE_CSE_URL}?${params.toString()}`);
-    if (!res.ok) {
-      const t = await res.text().catch(() => '');
-      console.error('[barcodeLookup] google cse error status=' + res.status + ' query="' + q + '" body=' + t.slice(0, 500));
-      let note = `Busca de imagens no Google falhou (HTTP ${res.status}).`;
-      if (res.status === 403) note += ' Verifique se a "Custom Search API" está habilitada no Google Cloud e se a chave aceita esse projeto/domínio.';
-      if (res.status === 400) note += ' CX (Search Engine ID) inválido ou sem "Image search" habilitado.';
-      if (res.status === 429) note += ' Cota diária do Google excedida.';
-      return { urls: [], note };
-    }
-    console.log('[barcodeLookup] google cse ok query="' + q + '"');
-    const data = (await res.json()) as { items?: Array<{ link?: string; mime?: string }> };
-    const out: string[] = [];
-    for (const it of data.items ?? []) {
-      const url = it.link;
-      if (typeof url === 'string' && /^https?:\/\//i.test(url)) out.push(url);
-    }
-    const urls = Array.from(new Set(out)).slice(0, 6);
-    return { urls, note: urls.length === 0 ? 'Google não retornou imagens para esta busca.' : null };
-  } catch (e) {
-    console.error('[barcodeLookup] google cse fetch failed', e);
-    return { urls: [], note: 'Erro de rede ao buscar imagens no Google.' };
-  }
-}
+const AI_IMAGE_URL = 'https://ai.gateway.lovable.dev/v1/chat/completions';
 
 function sanitizeBarcode(raw: string): string {
   return (raw ?? '').replace(/\D+/g, '').trim();
