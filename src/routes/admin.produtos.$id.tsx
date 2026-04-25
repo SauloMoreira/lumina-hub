@@ -189,21 +189,18 @@ function ProductForm() {
 
         <div className="space-y-4">
           <Section title="Imagens">
-            <div className="grid grid-cols-3 gap-2">
-              {form.images.map((url) => (
-                <div key={url} className="relative aspect-square rounded border border-border overflow-hidden group">
-                  <img src={url} alt="" className="w-full h-full object-cover" />
-                  <button type="button" onClick={() => removeImage(url)} className="absolute top-1 right-1 bg-destructive text-destructive-foreground rounded-full p-0.5 opacity-0 group-hover:opacity-100">
-                    <X className="w-3 h-3" />
-                  </button>
-                </div>
-              ))}
-              <label className="aspect-square border-2 border-dashed border-border rounded flex flex-col items-center justify-center cursor-pointer hover:border-primary text-muted-foreground hover:text-primary text-xs">
-                {uploading ? <Loader2 className="w-5 h-5 animate-spin" /> : <><Upload className="w-5 h-5 mb-1" />Enviar</>}
-                <input type="file" accept="image/*" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if (f) handleUpload(f); e.target.value = ''; }} disabled={uploading} />
-              </label>
-            </div>
-            <p className="text-xs text-muted-foreground mt-2">A primeira imagem é a principal.</p>
+            {isNew ? (
+              <p className="text-xs text-muted-foreground bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-900 rounded p-3">
+                💡 Salve o produto primeiro para poder adicionar imagens.
+              </p>
+            ) : (
+              <ProductImageManager
+                productId={id}
+                productName={form.name}
+                brand={form.brand}
+                category={cats.find((c) => c.id === form.category_id)?.name}
+              />
+            )}
           </Section>
 
           <Section title="Visibilidade">
