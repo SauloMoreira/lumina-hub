@@ -92,7 +92,10 @@ function LeadsPage() {
   const setPageSize = (v: number) => updateSearch({ pageSize: v, page: 1 });
 
   const [leads, setLeads] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
   const [searchInput, setSearchInput] = useState(search);
+  const isDebouncing = searchInput !== search;
+  const isBusy = loading || isDebouncing;
 
   // Sync local input when URL changes externally (back/forward, clear filters)
   useEffect(() => { setSearchInput(search); }, [search]);
@@ -112,10 +115,12 @@ function LeadsPage() {
   const [edit, setEdit] = useState({ status: 'new', notes: '', estimated_value: '' });
 
   const load = async () => {
+    setLoading(true);
     let q = supabase.from('leads').select('*').order('created_at', { ascending: false });
     if (filterStatus && filterStatus !== 'all') q = q.eq('status', filterStatus);
     const { data } = await q;
     setLeads((data as any) ?? []);
+    setLoading(false);
   };
   useEffect(() => { load(); }, [filterStatus]);
 
