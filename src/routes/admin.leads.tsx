@@ -1,5 +1,7 @@
-import { createFileRoute } from '@tanstack/react-router';
+import { createFileRoute, useNavigate } from '@tanstack/react-router';
 import { useEffect, useState } from 'react';
+import { zodValidator, fallback } from '@tanstack/zod-adapter';
+import { z } from 'zod';
 import { Eye, Trash2, Phone, Mail, LayoutGrid, List, Search, X, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { AdminLayout } from '@/components/admin/AdminLayout';
@@ -18,7 +20,23 @@ import {
 } from '@/lib/constants/leadStatus';
 import { cn } from '@/lib/utils';
 
-export const Route = createFileRoute('/admin/leads')({ component: LeadsPage });
+const SORT_VALUES = ['created_desc', 'created_asc', 'name_asc', 'status', 'value_desc'] as const;
+
+const searchSchema = z.object({
+  view: fallback(z.enum(['kanban', 'list']), 'kanban').default('kanban'),
+  sort: fallback(z.enum(SORT_VALUES), 'created_desc').default('created_desc'),
+  status: fallback(z.string(), '').default(''),
+  origin: fallback(z.string(), 'all').default('all'),
+  interest: fallback(z.string(), 'all').default('all'),
+  q: fallback(z.string(), '').default(''),
+  page: fallback(z.number().int().min(1), 1).default(1),
+  pageSize: fallback(z.number().int().min(1).max(100), 20).default(20),
+});
+
+export const Route = createFileRoute('/admin/leads')({
+  validateSearch: zodValidator(searchSchema),
+  component: LeadsPage,
+});
 
 const STATUSES = ['new', 'contacted', 'qualified', 'proposal', 'won', 'lost'] as const;
 type Status = (typeof STATUSES)[number];
@@ -47,15 +65,33 @@ const StatusBadge = ({ status }: { status?: string | null }) => {
 };
 
 function LeadsPage() {
+  const sp = Route.useSearch();
+  const navigate = useNavigate({ from: '/admin/leads' });
+
+  // Pull URL-persisted state
+  const filterStatus = sp.status;
+  const search = sp.q;
+  const filterOrigin = sp.origin;
+  const filterInterest = sp.interest;
+  const view = sp.view;
+  const sortBy = sp.sort;
+  const page = sp.page;
+  const pageSize = sp.pageSize;
+
+  // Setters write to URL (preserving other params)
+  const updateSearch = (patch: Partial<typeof sp>) =>
+    navigate({ search: (prev) => ({ ...prev, ...patch }), replace: true });
+
+  const setFilterStatus = (v: string) => updateSearch({ status: v, page: 1 });
+  const setSearchQ = (v: string) => updateSearch({ q: v, page: 1 });
+  const setFilterOrigin = (v: string) => updateSearch({ origin: v, page: 1 });
+  const setFilterInterest = (v: string) => updateSearch({ interest: v, page: 1 });
+  const setView = (v: 'kanban' | 'list') => updateSearch({ view: v });
+  const setSortBy = (v: typeof sortBy) => updateSearch({ sort: v, page: 1 });
+  const setPage = (v: number) => updateSearch({ page: v });
+  const setPageSize = (v: number) => updateSearch({ pageSize: v, page: 1 });
+
   const [leads, setLeads] = useState<any[]>([]);
-  const [filterStatus, setFilterStatus] = useState('');
-  const [search, setSearch] = useState('');
-  const [filterOrigin, setFilterOrigin] = useState('all');
-  const [filterInterest, setFilterInterest] = useState('all');
-  const [view, setView] = useState<'kanban' | 'list'>('kanban');
-  const [sortBy, setSortBy] = useState<'created_desc' | 'created_asc' | 'name_asc' | 'status' | 'value_desc'>('created_desc');
-  const [page, setPage] = useState(1);
-  const [pageSize, setPageSize] = useState(20);
   const [kanbanLimits, setKanbanLimits] = useState<Record<string, number>>({});
   const KANBAN_PAGE = 20;
   const [open, setOpen] = useState(false);
@@ -112,8 +148,8 @@ function LeadsPage() {
       }
     });
 
-  // Reset list page when filters/sort change
-  useEffect(() => { setPage(1); setKanbanLimits({}); }, [search, filterOrigin, filterInterest, filterStatus, sortBy, pageSize]);
+  // Reset kanban "load more" limits when filters/sort change
+  useEffect(() => { setKanbanLimits({}); }, [search, filterOrigin, filterInterest, filterStatus, sortBy]);
 
   const totalPages = Math.max(1, Math.ceil(filteredLeads.length / pageSize));
   const safePage = Math.min(page, totalPages);
@@ -123,10 +159,7 @@ function LeadsPage() {
     !!search.trim() || filterOrigin !== 'all' || filterInterest !== 'all' || !!filterStatus;
 
   const clearFilters = () => {
-    setSearch('');
-    setFilterOrigin('all');
-    setFilterInterest('all');
-    setFilterStatus('');
+    updateSearch({ q: '', origin: 'all', interest: 'all', status: '', page: 1 });
   };
 
   const openDetail = (l: any) => {
@@ -187,7 +220,7 @@ function LeadsPage() {
               <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none" />
               <Input
                 value={search}
-                onChange={(e) => setSearch(e.target.value)}
+                onChange={(e) => setSearchQ(e.target.value)}
                 placeholder="Buscar por nome ou empresa..."
                 className="pl-9 h-10"
               />
