@@ -185,7 +185,7 @@ function ProductPage() {
         <div className="grid lg:grid-cols-2 gap-10">
           {/* Galeria de imagens */}
           <ProductImageCarousel
-            images={(product as ProductWithSeo & { product_images?: ProductImageRow[] }).product_images ?? []}
+            images={productImages}
             productName={product.name}
           />
 
