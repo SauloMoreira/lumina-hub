@@ -114,7 +114,7 @@ function ProdutosList() {
                   </td>
                   <td className="px-4 py-3">
                     <div className="flex justify-end gap-1">
-                      <Link to={'/admin/produtos/$id' as any} params={{ id: p.id }}>
+                      <Link to={'/admin/produtos/$id' as any} params={{ id: p.id } as any}>
                         <Button variant="ghost" size="icon" className="h-8 w-8"><Pencil className="w-4 h-4" /></Button>
                       </Link>
                       <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive" onClick={() => handleDelete(p.id)}>
