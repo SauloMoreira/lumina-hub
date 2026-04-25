@@ -425,7 +425,7 @@ function LeadsPage() {
             </div>
           </div>
         ) : (
-          <>
+          <div className={cn('transition-opacity', isBusy && 'opacity-60')}>
             <table className="w-full text-sm">
               <thead className="text-left text-xs text-muted-foreground bg-muted/40">
                 <tr><th className="px-4 py-3 font-medium">Nome</th><th className="px-4 py-3 font-medium">Contato</th><th className="px-4 py-3 font-medium">Origem</th><th className="px-4 py-3 font-medium">Interesse</th><th className="px-4 py-3 font-medium">Status</th><th className="px-4 py-3 font-medium">Data</th><th></th></tr>
