@@ -11,6 +11,7 @@ import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
 import type { Product, Category } from '@/lib/domain';
 import { trackSearch } from '@/lib/tracking';
+import { imageUrlsFromProductImages } from '@/lib/productImages';
 
 const PAGE_SIZE = 24;
 
