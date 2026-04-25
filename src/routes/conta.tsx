@@ -21,17 +21,19 @@ function AccountPage() {
     }
 
     let mounted = true;
-    supabase
-      .from('profiles')
-      .select('role')
-      .eq('id', user.id)
-      .maybeSingle()
-      .then(({ data }) => {
-        if (!mounted) return;
-        if (data?.role === 'admin') navigate({ to: '/admin' as any });
-        else setCheckingRole(false);
-      })
-      .catch(() => { if (mounted) setCheckingRole(false); });
+    const checkRole = async () => {
+      const { data } = await supabase
+        .from('profiles')
+        .select('role')
+        .eq('id', user.id)
+        .maybeSingle();
+
+      if (!mounted) return;
+      if (data?.role === 'admin') navigate({ to: '/admin' as any });
+      else setCheckingRole(false);
+    };
+
+    checkRole().catch(() => { if (mounted) setCheckingRole(false); });
 
     return () => { mounted = false; };
   }, [user, loading, navigate]);
