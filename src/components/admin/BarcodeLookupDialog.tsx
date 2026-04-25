@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Loader2, Search, Sparkles, ImageIcon, AlertCircle, CheckCircle2 } from 'lucide-react';
+import { Loader2, Search, Sparkles, ImageIcon, AlertCircle, CheckCircle2, Wand2, Upload } from 'lucide-react';
 import { toast } from 'sonner';
 import {
   Dialog,
@@ -12,7 +12,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { lookupBarcode, type BarcodeLookupResult } from '@/server/barcodeLookup.functions';
+import { lookupBarcode, generateProductImage, type BarcodeLookupResult } from '@/server/barcodeLookup.functions';
 
 interface Cat {
   id: string;
@@ -72,6 +72,8 @@ export function BarcodeLookupDialog({ open, onOpenChange, categories, currentFor
   const [selectedImages, setSelectedImages] = useState<Set<string>>(new Set());
   const [resolvedCategoryId, setResolvedCategoryId] = useState<string | null>(null);
   const [manualUrl, setManualUrl] = useState('');
+  const [imageChoice, setImageChoice] = useState<'pending' | 'ai' | 'manual'>('pending');
+  const [generatingImage, setGeneratingImage] = useState(false);
 
   function addManualUrl() {
     const url = manualUrl.trim();
@@ -95,6 +97,8 @@ export function BarcodeLookupDialog({ open, onOpenChange, categories, currentFor
     setResult(null);
     setSelectedImages(new Set());
     setResolvedCategoryId(null);
+    setImageChoice('pending');
+    setGeneratingImage(false);
   };
 
   const close = () => {
@@ -111,15 +115,17 @@ export function BarcodeLookupDialog({ open, onOpenChange, categories, currentFor
     setLoading(true);
     setResult(null);
     setSelectedImages(new Set());
+    setImageChoice('pending');
     try {
       const r = await lookupBarcode({
         data: { barcode: code, categoriesAvailable: categories.map((c) => c.name) },
       });
       setResult(r);
       if (r.ok) {
-        // pré-selecionar todas as imagens (até 6)
         setSelectedImages(new Set(r.suggested.images.slice(0, 6)));
         setResolvedCategoryId(matchCategoryId(r.suggested.categoryHint, categories));
+        // Se já veio imagem da Cosmos, considera resolvido
+        if (r.suggested.images.length > 0) setImageChoice('manual');
       } else if (r.error) {
         toast.error(r.error);
       }
@@ -127,6 +133,32 @@ export function BarcodeLookupDialog({ open, onOpenChange, categories, currentFor
       toast.error(e instanceof Error ? e.message : 'Erro ao buscar produto');
     } finally {
       setLoading(false);
+    }
+  }
+
+  async function generateAiImage() {
+    if (!result?.ok) return;
+    const s = result.suggested;
+    if (!s.name) {
+      toast.error('Sem nome do produto para gerar imagem.');
+      return;
+    }
+    setGeneratingImage(true);
+    try {
+      const { dataUrl } = await generateProductImage({
+        data: { name: s.name, brand: s.brand, category: s.categoryHint },
+      });
+      setSelectedImages((prev) => new Set(prev).add(dataUrl));
+      setResult((prev) => {
+        if (!prev || !prev.ok) return prev;
+        return { ...prev, suggested: { ...prev.suggested, images: [...prev.suggested.images, dataUrl] } };
+      });
+      setImageChoice('ai');
+      toast.success('Imagem gerada com IA. Revise antes de aplicar.');
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : 'Erro ao gerar imagem');
+    } finally {
+      setGeneratingImage(false);
     }
   }
 
@@ -306,9 +338,65 @@ export function BarcodeLookupDialog({ open, onOpenChange, categories, currentFor
                       );
                     })}
                   </div>
+                ) : imageChoice === 'pending' ? (
+                  <div className="rounded-lg border border-dashed border-border bg-muted/20 p-4 space-y-3">
+                    <p className="text-xs text-muted-foreground">
+                      Não encontramos imagens deste produto na base GTIN. Como deseja proceder?
+                    </p>
+                    <div className="grid sm:grid-cols-2 gap-2">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={generateAiImage}
+                        disabled={generatingImage || !result.suggested.name}
+                        className="h-auto py-3 flex-col gap-1.5 items-start text-left"
+                      >
+                        <span className="flex items-center gap-2 font-medium">
+                          {generatingImage ? <Loader2 className="w-4 h-4 animate-spin" /> : <Wand2 className="w-4 h-4" />}
+                          Gerar com IA
+                        </span>
+                        <span className="text-[11px] font-normal text-muted-foreground whitespace-normal">
+                          Foto realista de catálogo, fundo branco. Revise antes de aplicar.
+                        </span>
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={() => setImageChoice('manual')}
+                        className="h-auto py-3 flex-col gap-1.5 items-start text-left"
+                      >
+                        <span className="flex items-center gap-2 font-medium">
+                          <Upload className="w-4 h-4" />
+                          Vou subir manualmente
+                        </span>
+                        <span className="text-[11px] font-normal text-muted-foreground whitespace-normal">
+                          Pula esta etapa. Faça upload depois pelo gerenciador de imagens do produto.
+                        </span>
+                      </Button>
+                    </div>
+                  </div>
                 ) : (
-                  <div className="rounded-lg border border-dashed border-border bg-muted/20 p-3 text-xs text-muted-foreground">
-                    Nenhuma imagem encontrada na base GTIN nem no fallback de busca. Você pode colar URLs de imagens manualmente abaixo, ou fazer upload depois pelo gerenciador de imagens do produto.
+                  <div className="rounded-lg border border-dashed border-border bg-muted/20 p-3 text-xs text-muted-foreground space-y-2">
+                    <p>
+                      {imageChoice === 'ai'
+                        ? 'Você optou por gerar com IA, mas nenhuma imagem foi gerada ainda.'
+                        : 'Você optou por subir manualmente. Faça upload depois pelo gerenciador de imagens do produto.'}
+                    </p>
+                    <div className="flex gap-2">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={generateAiImage}
+                        disabled={generatingImage || !result.suggested.name}
+                      >
+                        {generatingImage ? <Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" /> : <Wand2 className="w-3.5 h-3.5 mr-1.5" />}
+                        Gerar com IA
+                      </Button>
+                      <Button type="button" variant="ghost" size="sm" onClick={() => setImageChoice('pending')}>
+                        Voltar
+                      </Button>
+                    </div>
                   </div>
                 )}
 

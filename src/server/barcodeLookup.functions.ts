@@ -34,55 +34,7 @@ export type BarcodeLookupResult = {
 
 const COSMOS_URL = 'https://api.cosmos.bluesoft.com.br/gtins/';
 const AI_URL = 'https://ai.gateway.lovable.dev/v1/chat/completions';
-const GOOGLE_CSE_URL = 'https://www.googleapis.com/customsearch/v1';
-
-/**
- * Fallback de imagens via Google Custom Search (Image).
- * Só executa se GOOGLE_CSE_API_KEY e GOOGLE_CSE_CX estiverem configurados.
- * Retorna até 6 URLs públicas de imagem.
- */
-async function fetchGoogleImages(query: string): Promise<{ urls: string[]; note: string | null }> {
-  const key = process.env.GOOGLE_CSE_API_KEY;
-  const cx = process.env.GOOGLE_CSE_CX;
-  if (!key || !cx) {
-    return { urls: [], note: 'Fallback de imagens (Google) não configurado.' };
-  }
-  const q = query.trim();
-  if (!q) return { urls: [], note: null };
-  const params = new URLSearchParams({
-    key,
-    cx,
-    q,
-    searchType: 'image',
-    num: '6',
-    safe: 'active',
-    imgSize: 'medium',
-  });
-  try {
-    const res = await fetch(`${GOOGLE_CSE_URL}?${params.toString()}`);
-    if (!res.ok) {
-      const t = await res.text().catch(() => '');
-      console.error('[barcodeLookup] google cse error status=' + res.status + ' query="' + q + '" body=' + t.slice(0, 500));
-      let note = `Busca de imagens no Google falhou (HTTP ${res.status}).`;
-      if (res.status === 403) note += ' Verifique se a "Custom Search API" está habilitada no Google Cloud e se a chave aceita esse projeto/domínio.';
-      if (res.status === 400) note += ' CX (Search Engine ID) inválido ou sem "Image search" habilitado.';
-      if (res.status === 429) note += ' Cota diária do Google excedida.';
-      return { urls: [], note };
-    }
-    console.log('[barcodeLookup] google cse ok query="' + q + '"');
-    const data = (await res.json()) as { items?: Array<{ link?: string; mime?: string }> };
-    const out: string[] = [];
-    for (const it of data.items ?? []) {
-      const url = it.link;
-      if (typeof url === 'string' && /^https?:\/\//i.test(url)) out.push(url);
-    }
-    const urls = Array.from(new Set(out)).slice(0, 6);
-    return { urls, note: urls.length === 0 ? 'Google não retornou imagens para esta busca.' : null };
-  } catch (e) {
-    console.error('[barcodeLookup] google cse fetch failed', e);
-    return { urls: [], note: 'Erro de rede ao buscar imagens no Google.' };
-  }
-}
+const AI_IMAGE_URL = 'https://ai.gateway.lovable.dev/v1/chat/completions';
 
 function sanitizeBarcode(raw: string): string {
   return (raw ?? '').replace(/\D+/g, '').trim();
@@ -302,20 +254,12 @@ export const lookupBarcode = createServerFn({ method: 'POST' })
       console.error('[barcodeLookup] AI standardization failed:', e);
     }
 
-    // Fallback: se a Cosmos não trouxe imagens, tenta Google Images por marca+nome
-    let imagesNote: string | null = null;
-    if (images.length === 0) {
-      const queryName = aiOut?.name || description || '';
-      const queryBrand = aiOut?.brand || brand || '';
-      const q = `${queryBrand} ${queryName}`.trim() || code;
-      const googleResult = await fetchGoogleImages(q);
-      imagesNote = googleResult.note;
-      if (googleResult.urls.length > 0) {
-        images = googleResult.urls;
-        imagesNote = null;
-        console.log(`[barcodeLookup] google fallback found ${googleResult.urls.length} images for "${q}"`);
-      }
-    }
+    // Sem fallback de busca externa: se a Cosmos não trouxe imagens, o usuário decide no diálogo
+    // entre gerar com IA ou subir manualmente.
+    const imagesNote: string | null =
+      images.length === 0
+        ? 'Nenhuma imagem encontrada na base GTIN. Você pode gerar uma imagem com IA ou subir manualmente.'
+        : null;
 
     const suggested = aiOut
       ? {
@@ -391,4 +335,58 @@ export const fetchExternalImage = createServerFn({ method: 'POST' })
     // base64 para devolver pelo JSON do server fn
     const base64 = btoa(String.fromCharCode(...new Uint8Array(buf)));
     return { base64, contentType, size: buf.byteLength };
+  });
+
+/**
+ * Gera uma imagem do produto usando Lovable AI (Gemini image preview).
+ */
+export const generateProductImage = createServerFn({ method: 'POST' })
+  .inputValidator((input: { name: string; brand?: string | null; category?: string | null; extraHint?: string | null }) => input)
+  .handler(async ({ data }) => {
+    const apiKey = process.env.LOVABLE_API_KEY;
+    if (!apiKey) throw new Error('LOVABLE_API_KEY não configurada');
+
+    const name = (data.name ?? '').trim();
+    if (!name) throw new Error('Nome do produto é obrigatório para gerar imagem');
+    const brand = (data.brand ?? '').trim();
+    const category = (data.category ?? '').trim();
+    const hint = (data.extraHint ?? '').trim();
+
+    const prompt =
+      `Foto de produto realista de e-commerce: ${name}` +
+      (brand ? `, marca ${brand}` : '') +
+      (category ? `, categoria ${category}` : '') +
+      (hint ? `. ${hint}` : '') +
+      `. Iluminação de estúdio, fundo branco puro, ângulo frontal levemente em perspectiva, ` +
+      `nitidez alta, sombra suave, sem texto, sem logo inventado, sem marca d'água, sem pessoas. ` +
+      `Estilo catálogo profissional para loja de iluminação e materiais elétricos.`;
+
+    const res = await fetch(AI_IMAGE_URL, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        model: 'google/gemini-3-flash-image-preview',
+        messages: [{ role: 'user', content: prompt }],
+        modalities: ['image', 'text'],
+      }),
+    });
+
+    if (res.status === 429) throw new Error('Limite de requisições da IA atingido. Aguarde alguns instantes.');
+    if (res.status === 402) throw new Error('Créditos da IA esgotados. Adicione créditos no workspace.');
+    if (!res.ok) {
+      const t = await res.text().catch(() => '');
+      console.error('[generateProductImage] error', res.status, t.slice(0, 500));
+      throw new Error(`Falha ao gerar imagem (${res.status})`);
+    }
+
+    const json = await res.json();
+    const url: string | undefined = json?.choices?.[0]?.message?.images?.[0]?.image_url?.url;
+    if (!url || !url.startsWith('data:image/')) {
+      console.error('[generateProductImage] resposta sem imagem:', JSON.stringify(json).slice(0, 500));
+      throw new Error('IA não retornou imagem');
+    }
+    return { dataUrl: url };
   });
