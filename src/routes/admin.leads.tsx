@@ -20,7 +20,23 @@ import {
 } from '@/lib/constants/leadStatus';
 import { cn } from '@/lib/utils';
 
-export const Route = createFileRoute('/admin/leads')({ component: LeadsPage });
+const SORT_VALUES = ['created_desc', 'created_asc', 'name_asc', 'status', 'value_desc'] as const;
+
+const searchSchema = z.object({
+  view: fallback(z.enum(['kanban', 'list']), 'kanban').default('kanban'),
+  sort: fallback(z.enum(SORT_VALUES), 'created_desc').default('created_desc'),
+  status: fallback(z.string(), '').default(''),
+  origin: fallback(z.string(), 'all').default('all'),
+  interest: fallback(z.string(), 'all').default('all'),
+  q: fallback(z.string(), '').default(''),
+  page: fallback(z.number().int().min(1), 1).default(1),
+  pageSize: fallback(z.number().int().min(1).max(100), 20).default(20),
+});
+
+export const Route = createFileRoute('/admin/leads')({
+  validateSearch: zodValidator(searchSchema),
+  component: LeadsPage,
+});
 
 const STATUSES = ['new', 'contacted', 'qualified', 'proposal', 'won', 'lost'] as const;
 type Status = (typeof STATUSES)[number];
