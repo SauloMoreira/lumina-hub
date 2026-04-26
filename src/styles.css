@@ -126,12 +126,12 @@
   /* Sidebar (admin) */
   --sidebar: oklch(1 0 0);
   --sidebar-foreground: oklch(0.165 0.04 264);
-  --sidebar-primary: oklch(0.503 0.215 268);
+  --sidebar-primary: oklch(0.525 0.198 270);
   --sidebar-primary-foreground: oklch(1 0 0);
   --sidebar-accent: oklch(0.951 0.008 247);
   --sidebar-accent-foreground: oklch(0.22 0.04 264);
   --sidebar-border: oklch(0.91 0.012 250);
-  --sidebar-ring: oklch(0.503 0.215 268);
+  --sidebar-ring: oklch(0.525 0.198 270);
 }
 
 @layer base {
