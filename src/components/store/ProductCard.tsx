@@ -1,5 +1,4 @@
 import { Link } from '@tanstack/react-router';
-import { motion } from 'framer-motion';
 import { ShoppingCart, Zap } from 'lucide-react';
 import type { Product } from '@/lib/domain';
 import { formatBRL } from '@/lib/domain';
@@ -23,12 +22,9 @@ export function ProductCard({ product, index = 0 }: { product: Product; index?: 
     });
   };
 
+  void index;
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 10 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.2, delay: Math.min(index * 0.04, 0.4) }}
-    >
+    <div>
       <Link
         to="/produto/$slug"
         params={{ slug: product.slug }}
@@ -88,6 +84,6 @@ export function ProductCard({ product, index = 0 }: { product: Product; index?: 
           )}
         </div>
       </Link>
-    </motion.div>
+    </div>
   );
 }
