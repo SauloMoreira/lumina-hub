@@ -28,6 +28,7 @@ import { Route as AdminLeadsRouteImport } from './routes/admin.leads'
 import { Route as AdminCuponsRouteImport } from './routes/admin.cupons'
 import { Route as AdminCategoriasRouteImport } from './routes/admin.categorias'
 import { Route as AdminCampanhasRouteImport } from './routes/admin.campanhas'
+import { Route as AdminBannersRouteImport } from './routes/admin.banners'
 import { Route as AdminProdutosIndexRouteImport } from './routes/admin.produtos.index'
 import { Route as PedidoIdConfirmacaoRouteImport } from './routes/pedido.$id.confirmacao'
 import { Route as AdminProdutosIdRouteImport } from './routes/admin.produtos.$id'
@@ -127,6 +128,11 @@ const AdminCampanhasRoute = AdminCampanhasRouteImport.update({
   path: '/admin/campanhas',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AdminBannersRoute = AdminBannersRouteImport.update({
+  id: '/admin/banners',
+  path: '/admin/banners',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AdminProdutosIndexRoute = AdminProdutosIndexRouteImport.update({
   id: '/admin/produtos/',
   path: '/admin/produtos/',
@@ -155,6 +161,7 @@ export interface FileRoutesByFullPath {
   '/privacidade': typeof PrivacidadeRoute
   '/robots.txt': typeof RobotsDottxtRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/admin/banners': typeof AdminBannersRoute
   '/admin/campanhas': typeof AdminCampanhasRoute
   '/admin/categorias': typeof AdminCategoriasRoute
   '/admin/cupons': typeof AdminCuponsRoute
@@ -179,6 +186,7 @@ export interface FileRoutesByTo {
   '/privacidade': typeof PrivacidadeRoute
   '/robots.txt': typeof RobotsDottxtRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/admin/banners': typeof AdminBannersRoute
   '/admin/campanhas': typeof AdminCampanhasRoute
   '/admin/categorias': typeof AdminCategoriasRoute
   '/admin/cupons': typeof AdminCuponsRoute
@@ -204,6 +212,7 @@ export interface FileRoutesById {
   '/privacidade': typeof PrivacidadeRoute
   '/robots.txt': typeof RobotsDottxtRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/admin/banners': typeof AdminBannersRoute
   '/admin/campanhas': typeof AdminCampanhasRoute
   '/admin/categorias': typeof AdminCategoriasRoute
   '/admin/cupons': typeof AdminCuponsRoute
@@ -230,6 +239,7 @@ export interface FileRouteTypes {
     | '/privacidade'
     | '/robots.txt'
     | '/sitemap.xml'
+    | '/admin/banners'
     | '/admin/campanhas'
     | '/admin/categorias'
     | '/admin/cupons'
@@ -254,6 +264,7 @@ export interface FileRouteTypes {
     | '/privacidade'
     | '/robots.txt'
     | '/sitemap.xml'
+    | '/admin/banners'
     | '/admin/campanhas'
     | '/admin/categorias'
     | '/admin/cupons'
@@ -278,6 +289,7 @@ export interface FileRouteTypes {
     | '/privacidade'
     | '/robots.txt'
     | '/sitemap.xml'
+    | '/admin/banners'
     | '/admin/campanhas'
     | '/admin/categorias'
     | '/admin/cupons'
@@ -303,6 +315,7 @@ export interface RootRouteChildren {
   PrivacidadeRoute: typeof PrivacidadeRoute
   RobotsDottxtRoute: typeof RobotsDottxtRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
+  AdminBannersRoute: typeof AdminBannersRoute
   AdminCampanhasRoute: typeof AdminCampanhasRoute
   AdminCategoriasRoute: typeof AdminCategoriasRoute
   AdminCuponsRoute: typeof AdminCuponsRoute
@@ -450,6 +463,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminCampanhasRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/admin/banners': {
+      id: '/admin/banners'
+      path: '/admin/banners'
+      fullPath: '/admin/banners'
+      preLoaderRoute: typeof AdminBannersRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/admin/produtos/': {
       id: '/admin/produtos/'
       path: '/admin/produtos'
@@ -496,6 +516,7 @@ const rootRouteChildren: RootRouteChildren = {
   PrivacidadeRoute: PrivacidadeRoute,
   RobotsDottxtRoute: RobotsDottxtRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
+  AdminBannersRoute: AdminBannersRoute,
   AdminCampanhasRoute: AdminCampanhasRoute,
   AdminCategoriasRoute: AdminCategoriasRoute,
   AdminCuponsRoute: AdminCuponsRoute,
