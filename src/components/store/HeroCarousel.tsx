@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link } from '@tanstack/react-router';
 import { ChevronLeft, ChevronRight, ArrowRight } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { optimizeBannerUrl } from '@/lib/bannerImages';
 
 export type HeroBanner = {
   id: string;
@@ -22,6 +22,7 @@ const AUTOPLAY_MS = 6000;
 export function HeroCarousel({ banners }: { banners: HeroBanner[] }) {
   const [idx, setIdx] = useState(0);
   const [paused, setPaused] = useState(false);
+  const [interacted, setInteracted] = useState(false);
   const total = banners.length;
   const touchStartX = useRef<number | null>(null);
 
@@ -33,17 +34,19 @@ export function HeroCarousel({ banners }: { banners: HeroBanner[] }) {
 
   if (!total) return null;
 
-  const go = (dir: 1 | -1) => setIdx((i) => (i + dir + total) % total);
-
-  const current = banners[idx];
-  const isInternal = current.cta_link?.startsWith('/');
+  const go = (dir: 1 | -1) => {
+    setInteracted(true);
+    setIdx((i) => (i + dir + total) % total);
+  };
 
   return (
     <section
       className="relative w-full overflow-hidden bg-card border-b border-border"
       onMouseEnter={() => setPaused(true)}
       onMouseLeave={() => setPaused(false)}
-      onTouchStart={(e) => { touchStartX.current = e.touches[0].clientX; }}
+      onTouchStart={(e) => {
+        touchStartX.current = e.touches[0].clientX;
+      }}
       onTouchEnd={(e) => {
         if (touchStartX.current == null) return;
         const dx = e.changedTouches[0].clientX - touchStartX.current;
@@ -54,95 +57,96 @@ export function HeroCarousel({ banners }: { banners: HeroBanner[] }) {
       aria-label="Promoções e destaques"
     >
       <div className="relative h-[320px] sm:h-[380px] md:h-[440px] lg:h-[480px]">
-        <AnimatePresence mode="wait">
-          <motion.div
-            key={current.id}
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.5 }}
-            className="absolute inset-0"
-            style={{ backgroundColor: current.bg_color ?? 'hsl(var(--card))' }}
-            role="group"
-            aria-roledescription="slide"
-            aria-label={`${idx + 1} de ${total}`}
-          >
-            {/* Imagem de fundo */}
-            <picture className="absolute inset-0">
-              {current.image_mobile && (
-                <source media="(max-width: 640px)" srcSet={current.image_mobile} />
-              )}
-              <img
-                src={current.image_desktop}
-                alt={current.title}
-                loading={idx === 0 ? 'eager' : 'lazy'}
-                fetchPriority={idx === 0 ? 'high' : 'auto'}
-                decoding="async"
-                className="w-full h-full object-cover"
-              />
-            </picture>
-
-            {/* Gradiente para legibilidade do texto à esquerda */}
+        {banners.map((b, i) => {
+          const active = i === idx;
+          const isInternal = b.cta_link?.startsWith('/');
+          // Só montamos imagens dos demais slides após autoplay/interação
+          const shouldRender = i === 0 || interacted || idx !== 0;
+          const desktopSrc = optimizeBannerUrl(b.image_desktop, { width: 1600, quality: 80 });
+          const mobileSrc = optimizeBannerUrl(b.image_mobile ?? b.image_desktop, { width: 768, quality: 78 });
+          return (
             <div
-              className="absolute inset-0 pointer-events-none"
+              key={b.id}
+              className="absolute inset-0 transition-opacity duration-500"
               style={{
-                background:
-                  'linear-gradient(90deg, rgba(0,0,0,.55) 0%, rgba(0,0,0,.35) 40%, rgba(0,0,0,0) 70%)',
+                opacity: active ? 1 : 0,
+                pointerEvents: active ? 'auto' : 'none',
+                backgroundColor: b.bg_color ?? undefined,
               }}
-            />
+              role="group"
+              aria-roledescription="slide"
+              aria-label={`${i + 1} de ${total}`}
+              aria-hidden={!active}
+            >
+              {shouldRender && (
+                <picture className="absolute inset-0">
+                  <source media="(max-width: 640px)" srcSet={mobileSrc} />
+                  <img
+                    src={desktopSrc}
+                    alt={b.title}
+                    width={1600}
+                    height={640}
+                    loading={i === 0 ? 'eager' : 'lazy'}
+                    fetchPriority={i === 0 ? 'high' : 'auto'}
+                    decoding="async"
+                    className="w-full h-full object-cover"
+                  />
+                </picture>
+              )}
 
-            {/* Conteúdo */}
-            <div className="relative h-full container mx-auto px-4 md:px-8 flex items-center">
-              <motion.div
-                initial={{ opacity: 0, x: -16 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ duration: 0.5, delay: 0.1 }}
-                className="max-w-xl"
-                style={{ color: current.text_color ?? '#FFFFFF' }}
-              >
-                {current.badge && (
-                  <span className="inline-flex items-center px-3 py-1 rounded-full bg-accent text-accent-foreground text-xs font-bold uppercase tracking-wider mb-4 shadow-md">
-                    {current.badge}
-                  </span>
-                )}
-                <h2 className="font-display font-extrabold text-3xl md:text-5xl leading-tight tracking-tight mb-3 drop-shadow-lg">
-                  {current.title}
-                </h2>
-                {current.subtitle && (
-                  <p className="text-lg md:text-2xl font-medium mb-3 opacity-95 drop-shadow">
-                    {current.subtitle}
-                  </p>
-                )}
-                {current.description && (
-                  <p className="text-sm md:text-base mb-6 opacity-85 max-w-md leading-relaxed">
-                    {current.description}
-                  </p>
-                )}
-                {current.cta_label && current.cta_link && (
-                  isInternal ? (
-                    <Link
-                      to={current.cta_link as any}
-                      className="inline-flex items-center gap-2 h-12 px-6 rounded-pill bg-accent text-accent-foreground font-semibold text-sm shadow-elevated hover:brightness-110 transition"
-                    >
-                      {current.cta_label}
-                      <ArrowRight className="w-4 h-4" />
-                    </Link>
-                  ) : (
-                    <a
-                      href={current.cta_link}
-                      className="inline-flex items-center gap-2 h-12 px-6 rounded-pill bg-accent text-accent-foreground font-semibold text-sm shadow-elevated hover:brightness-110 transition"
-                    >
-                      {current.cta_label}
-                      <ArrowRight className="w-4 h-4" />
-                    </a>
-                  )
-                )}
-              </motion.div>
+              <div
+                className="absolute inset-0 pointer-events-none"
+                style={{
+                  background:
+                    'linear-gradient(90deg, rgba(0,0,0,.55) 0%, rgba(0,0,0,.35) 40%, rgba(0,0,0,0) 70%)',
+                }}
+              />
+
+              <div className="relative h-full container mx-auto px-4 md:px-8 flex items-center">
+                <div className="max-w-xl" style={{ color: b.text_color ?? '#FFFFFF' }}>
+                  {b.badge && (
+                    <span className="inline-flex items-center px-3 py-1 rounded-full bg-accent text-accent-foreground text-xs font-bold uppercase tracking-wider mb-4 shadow-md">
+                      {b.badge}
+                    </span>
+                  )}
+                  <h2 className="font-display font-extrabold text-3xl md:text-5xl leading-tight tracking-tight mb-3 drop-shadow-lg">
+                    {b.title}
+                  </h2>
+                  {b.subtitle && (
+                    <p className="text-lg md:text-2xl font-medium mb-3 opacity-95 drop-shadow">
+                      {b.subtitle}
+                    </p>
+                  )}
+                  {b.description && (
+                    <p className="text-sm md:text-base mb-6 opacity-85 max-w-md leading-relaxed">
+                      {b.description}
+                    </p>
+                  )}
+                  {b.cta_label && b.cta_link && active && (
+                    isInternal ? (
+                      <Link
+                        to={b.cta_link as any}
+                        className="inline-flex items-center gap-2 h-12 px-6 rounded-pill bg-accent text-accent-foreground font-semibold text-sm shadow-elevated hover:brightness-110 transition"
+                      >
+                        {b.cta_label}
+                        <ArrowRight className="w-4 h-4" />
+                      </Link>
+                    ) : (
+                      <a
+                        href={b.cta_link}
+                        className="inline-flex items-center gap-2 h-12 px-6 rounded-pill bg-accent text-accent-foreground font-semibold text-sm shadow-elevated hover:brightness-110 transition"
+                      >
+                        {b.cta_label}
+                        <ArrowRight className="w-4 h-4" />
+                      </a>
+                    )
+                  )}
+                </div>
+              </div>
             </div>
-          </motion.div>
-        </AnimatePresence>
+          );
+        })}
 
-        {/* Setas */}
         {total > 1 && (
           <>
             <button
@@ -164,14 +168,16 @@ export function HeroCarousel({ banners }: { banners: HeroBanner[] }) {
           </>
         )}
 
-        {/* Dots */}
         {total > 1 && (
           <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-10 flex items-center gap-2">
             {banners.map((b, i) => (
               <button
                 key={b.id}
                 type="button"
-                onClick={() => setIdx(i)}
+                onClick={() => {
+                  setInteracted(true);
+                  setIdx(i);
+                }}
                 aria-label={`Ir para slide ${i + 1}`}
                 aria-current={i === idx}
                 className={`h-1.5 rounded-full transition-all ${
