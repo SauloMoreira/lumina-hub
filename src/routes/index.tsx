@@ -147,17 +147,17 @@ function HomePage() {
 
       {/* HERO INSTITUCIONAL (abaixo do carrossel, conforme escolhido) */}
       <section className="relative overflow-hidden bg-card border-y border-border">
-        <div className="container mx-auto px-4 py-10 md:py-14 relative">
+        <div className="container mx-auto px-4 py-6 md:py-8 relative">
           <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }} className="max-w-3xl mx-auto text-center">
-            <img src={logoHero} alt="Led Maricá" loading="lazy" decoding="async" width={300} height={110} className="w-full max-w-[300px] h-auto mx-auto mb-6" />
-            <div className="inline-flex items-center gap-2 bg-primary-tint text-primary px-3 py-1.5 rounded-full text-xs font-medium mb-4">
+            <img src={logoHero} alt="Led Maricá" loading="lazy" decoding="async" width={240} height={88} className="w-full max-w-[200px] md:max-w-[240px] h-auto mx-auto mb-3" />
+            <div className="inline-flex items-center gap-2 bg-primary-tint text-primary px-3 py-1 rounded-full text-xs font-medium mb-3">
               <Sparkles className="w-3.5 h-3.5" /> Atendimento com IA 24h · Entrega rápida em Maricá e região
             </div>
-            <h1 className="font-display font-extrabold text-2xl md:text-4xl leading-tight mb-4 tracking-tight text-foreground">
+            <h1 className="font-display font-extrabold text-xl md:text-3xl leading-tight mb-2 tracking-tight text-foreground">
               Material elétrico e iluminação<br />
               <span className="text-primary">com qualidade que ilumina.</span>
             </h1>
-            <p className="text-sm md:text-base text-muted-foreground mb-6 max-w-xl mx-auto leading-relaxed">
+            <p className="text-sm md:text-base text-muted-foreground mb-4 max-w-xl mx-auto leading-relaxed">
               Lâmpadas LED, disjuntores, fios, refletores e tudo que seu projeto precisa.
               Nota fiscal garantida e suporte técnico de verdade.
             </p>
