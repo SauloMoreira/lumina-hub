@@ -78,11 +78,13 @@
   --muted-foreground:  oklch(0.43 0.025 257);    /* #475569 */
   --text-faint:        oklch(0.665 0.025 257);   /* #94A3B8 */
 
-  /* Primary — Azul corporativo #1A56DB */
-  --primary:            oklch(0.503 0.215 268);
+  /* Primary — Azul intermediário premium #3F5AE0 */
+  --primary:            oklch(0.525 0.198 270);  /* #3F5AE0 */
+  --primary-hover:      oklch(0.495 0.205 270);  /* #3550D4 */
   --primary-foreground: oklch(1 0 0);
-  --primary-tint:       oklch(0.96 0.025 263);   /* #EBF0FD */
-  --primary-border:     oklch(0.87 0.05 264);    /* #C7D7FA */
+  --primary-soft:       oklch(0.68 0.145 268);   /* #6C83F1 — secundário */
+  --primary-tint:       oklch(0.955 0.028 268);  /* #E9EEFF — fundo suave */
+  --primary-border:     oklch(0.86 0.06 268);    /* borda suave */
 
   /* Accent — Âmbar #D97706 */
   --accent:             oklch(0.69 0.165 56);
