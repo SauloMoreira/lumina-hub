@@ -105,7 +105,7 @@
   --input:  oklch(0.91 0.012 250);
   --ring:   oklch(0.525 0.198 270);
 
-  /* Shadow do primário (atualizado) */
+  /* Semânticas */
   --success:            oklch(0.62 0.135 158);
   --success-foreground: oklch(1 0 0);
   --success-tint:       oklch(0.96 0.04 158);
