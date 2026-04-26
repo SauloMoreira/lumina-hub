@@ -244,16 +244,15 @@ function BannersPage() {
   };
 
   return (
-    <AdminLayout>
-      <div className="flex items-center justify-between mb-6">
-        <div>
-          <h1 className="font-display font-bold text-2xl">Banners da Home</h1>
-          <p className="text-sm text-muted-foreground">Gerencie o carrossel principal e campanhas promocionais</p>
-        </div>
+    <AdminLayout
+      title="Banners da Home"
+      action={
         <Button onClick={openNew}>
           <Plus className="w-4 h-4 mr-2" /> Novo banner
         </Button>
-      </div>
+      }
+    >
+      <p className="text-sm text-muted-foreground mb-6 -mt-4">Gerencie o carrossel principal e campanhas promocionais</p>
 
       <div className="bg-card border border-border rounded-xl overflow-hidden">
         <table className="w-full text-sm">
