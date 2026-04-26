@@ -236,6 +236,69 @@ export type Database = {
         }
         Relationships: []
       }
+      home_banners: {
+        Row: {
+          active: boolean
+          badge: string | null
+          bg_color: string | null
+          campaign_type: string
+          created_at: string
+          cta_label: string | null
+          cta_link: string | null
+          description: string | null
+          ends_at: string | null
+          id: string
+          image_desktop: string
+          image_mobile: string | null
+          sort_order: number
+          starts_at: string | null
+          subtitle: string | null
+          text_color: string | null
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          badge?: string | null
+          bg_color?: string | null
+          campaign_type?: string
+          created_at?: string
+          cta_label?: string | null
+          cta_link?: string | null
+          description?: string | null
+          ends_at?: string | null
+          id?: string
+          image_desktop: string
+          image_mobile?: string | null
+          sort_order?: number
+          starts_at?: string | null
+          subtitle?: string | null
+          text_color?: string | null
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          badge?: string | null
+          bg_color?: string | null
+          campaign_type?: string
+          created_at?: string
+          cta_label?: string | null
+          cta_link?: string | null
+          description?: string | null
+          ends_at?: string | null
+          id?: string
+          image_desktop?: string
+          image_mobile?: string | null
+          sort_order?: number
+          starts_at?: string | null
+          subtitle?: string | null
+          text_color?: string | null
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       lead_interactions: {
         Row: {
           content: string

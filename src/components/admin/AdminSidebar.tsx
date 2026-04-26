@@ -7,6 +7,7 @@ import {
   Ticket,
   Users,
   Megaphone,
+  Image as ImageIcon,
   LogOut,
   Store,
 } from 'lucide-react';
@@ -22,6 +23,7 @@ const items: { to: string; label: string; icon: typeof LayoutDashboard; exact?: 
   { to: '/admin/cupons', label: 'Cupons', icon: Ticket },
   { to: '/admin/leads', label: 'Leads', icon: Users },
   { to: '/admin/campanhas', label: 'Campanhas', icon: Megaphone },
+  { to: '/admin/banners', label: 'Banners', icon: ImageIcon },
 ];
 
 export function AdminSidebar() {
