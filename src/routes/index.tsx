@@ -1,7 +1,6 @@
 import { createFileRoute, Link } from '@tanstack/react-router';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useEffect } from 'react';
-import { motion } from 'framer-motion';
 import { Sparkles, Truck, Shield, MessageSquareText, ArrowRight, Lightbulb, Zap, Cable, Plug, Sun, LayoutGrid, Wrench, Package, Tag, Flame, Star } from 'lucide-react';
 import { StoreLayout } from '@/components/layout/StoreLayout';
 import { ProductCard } from '@/components/store/ProductCard';
@@ -93,22 +92,32 @@ function HomePage() {
     },
   });
 
-  // Prefetch do catálogo
+  // Prefetch do catálogo (adiado até idle para não competir com LCP)
   useEffect(() => {
-    queryClient.prefetchQuery({
-      queryKey: ['products', 'catalog', undefined, undefined, 1],
-      staleTime: 1000 * 60 * 10,
-      queryFn: async () => {
-        const { data, count } = await supabase
-          .from('products')
-          .select(PRODUCT_LIST_COLS, { count: 'exact' })
-          .eq('active', true)
-          .order('featured', { ascending: false })
-          .order('created_at', { ascending: false })
-          .range(0, 23);
-        return { products: (data ?? []).map((p: any) => normalizeProductImages(p)) as Product[], total: count ?? 0 };
-      },
-    });
+    const run = () => {
+      queryClient.prefetchQuery({
+        queryKey: ['products', 'catalog', undefined, undefined, 1],
+        staleTime: 1000 * 60 * 10,
+        queryFn: async () => {
+          const { data, count } = await supabase
+            .from('products')
+            .select(PRODUCT_LIST_COLS, { count: 'exact' })
+            .eq('active', true)
+            .order('featured', { ascending: false })
+            .order('created_at', { ascending: false })
+            .range(0, 23);
+          return { products: (data ?? []).map((p: any) => normalizeProductImages(p)) as Product[], total: count ?? 0 };
+        },
+      });
+    };
+    const ric = (window as any).requestIdleCallback as undefined | ((cb: () => void, opts?: { timeout: number }) => number);
+    const cic = (window as any).cancelIdleCallback as undefined | ((id: number) => void);
+    if (ric) {
+      const id = ric(run, { timeout: 3000 });
+      return () => cic && cic(id);
+    }
+    const t = window.setTimeout(run, 1500);
+    return () => clearTimeout(t);
   }, [queryClient]);
 
   const PROMO_CARDS = [
