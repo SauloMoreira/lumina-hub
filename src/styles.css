@@ -33,6 +33,8 @@
   --color-popover-foreground: var(--popover-foreground);
   --color-primary: var(--primary);
   --color-primary-foreground: var(--primary-foreground);
+  --color-primary-hover: var(--primary-hover);
+  --color-primary-soft: var(--primary-soft);
   --color-primary-tint: var(--primary-tint);
   --color-primary-border: var(--primary-border);
   --color-secondary: var(--secondary);
