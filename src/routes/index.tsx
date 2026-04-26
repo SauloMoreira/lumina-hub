@@ -157,8 +157,8 @@ function HomePage() {
       {/* HERO INSTITUCIONAL (abaixo do carrossel, conforme escolhido) */}
       <section className="relative overflow-hidden bg-card border-y border-border">
         <div className="container mx-auto px-4 py-6 md:py-8 relative">
-          <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }} className="max-w-3xl mx-auto text-center">
-            <img src={logoHero} alt="Led Maricá" loading="lazy" decoding="async" width={240} height={88} className="w-full max-w-[200px] md:max-w-[240px] h-auto mx-auto mb-3" />
+          <div className="max-w-3xl mx-auto text-center">
+            <img src={logoHero} alt="Led Maricá" loading="eager" fetchPriority="high" decoding="async" width={240} height={88} className="w-full max-w-[200px] md:max-w-[240px] h-auto mx-auto mb-3" />
             <div className="inline-flex items-center gap-2 bg-primary-tint text-primary px-3 py-1 rounded-full text-xs font-medium mb-3">
               <Sparkles className="w-3.5 h-3.5" /> Atendimento com IA 24h · Entrega rápida em Maricá e região
             </div>
@@ -178,7 +178,7 @@ function HomePage() {
                 <Link to="/catalogo"><MessageSquareText className="w-4 h-4 mr-1.5" /> Falar com IA</Link>
               </Button>
             </div>
-          </motion.div>
+          </div>
         </div>
 
         {/* Banner frete grátis */}
@@ -239,21 +239,20 @@ function HomePage() {
           </div>
         </div>
         <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-3">
-          {categories?.map((c, i) => {
+          {categories?.map((c) => {
             const Icon = ICONS[c.icon ?? 'Package'] ?? Package;
             return (
-              <motion.div key={c.id} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.04 }}>
-                <Link
-                  to="/catalogo"
-                  search={{ cat: c.slug } as any}
-                  className="group flex flex-col items-center text-center p-5 bg-card border border-border rounded-xl hover:border-primary hover:shadow-elevated transition-all"
-                >
-                  <div className="w-12 h-12 rounded-full bg-primary-tint flex items-center justify-center mb-3 group-hover:bg-primary group-hover:text-primary-foreground transition-colors">
-                    <Icon className="w-5 h-5 text-primary group-hover:text-primary-foreground" />
-                  </div>
-                  <div className="text-xs font-medium leading-tight">{c.name}</div>
-                </Link>
-              </motion.div>
+              <Link
+                key={c.id}
+                to="/catalogo"
+                search={{ cat: c.slug } as any}
+                className="group flex flex-col items-center text-center p-5 bg-card border border-border rounded-xl hover:border-primary hover:shadow-elevated transition-all"
+              >
+                <div className="w-12 h-12 rounded-full bg-primary-tint flex items-center justify-center mb-3 group-hover:bg-primary group-hover:text-primary-foreground transition-colors">
+                  <Icon className="w-5 h-5 text-primary group-hover:text-primary-foreground" />
+                </div>
+                <div className="text-xs font-medium leading-tight">{c.name}</div>
+              </Link>
             );
           })}
         </div>
