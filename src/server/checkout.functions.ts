@@ -7,7 +7,14 @@ import { requireSupabaseAuth } from '@/integrations/supabase/auth-middleware';
 // ============================================================
 export const lookupCep = createServerFn({ method: 'POST' })
   .inputValidator((input: unknown) =>
-    z.object({ cep: z.string().regex(/^\d{8}$/) }).parse(input)
+    z
+      .object({
+        cep: z
+          .string()
+          .transform((v) => v.replace(/\D/g, ''))
+          .pipe(z.string().regex(/^\d{8}$/, 'CEP deve ter 8 dígitos')),
+      })
+      .parse(input)
   )
   .handler(async ({ data }) => {
     try {
@@ -41,7 +48,10 @@ export const calculateShipping = createServerFn({ method: 'POST' })
   .inputValidator((input: unknown) =>
     z
       .object({
-        zipCode: z.string().regex(/^\d{8}$/),
+        zipCode: z
+          .string()
+          .transform((v) => v.replace(/\D/g, ''))
+          .pipe(z.string().regex(/^\d{8}$/, 'CEP deve ter 8 dígitos')),
         subtotal: z.number().min(0),
         weightKg: z.number().min(0).default(1),
       })
