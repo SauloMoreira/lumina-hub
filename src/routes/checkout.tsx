@@ -99,8 +99,13 @@ function CheckoutPage() {
   }
 
   async function goToShipping() {
-    if (!recipient || !zip || !street || !number || !city || !state) {
+    const cleanZip = zip.replace(/\D/g, '');
+    if (!recipient || !cleanZip || !street || !number || !city || !state) {
       toast.error('Preencha todos os campos obrigatórios');
+      return;
+    }
+    if (cleanZip.length !== 8) {
+      toast.error('CEP deve ter 8 dígitos');
       return;
     }
     setStep(2);
@@ -108,8 +113,15 @@ function CheckoutPage() {
     try {
       const weight = cart.items.reduce((s, i) => s + i.qty * 0.5, 0);
       const r = await calculateShipping({
-        data: { zipCode: zip.replace(/\D/g, ''), subtotal, weightKg: Math.max(0.5, weight) },
+        data: { zipCode: cleanZip, subtotal, weightKg: Math.max(0.5, weight) },
       });
+      if ('error' in r && r.error) {
+        toast.error(r.error);
+        setShippingOptions([]);
+        setSelectedShipping(null);
+        setStep(1);
+        return;
+      }
       setShippingOptions(r.services);
       setSelectedShipping(r.services[0] ?? null);
     } catch {
