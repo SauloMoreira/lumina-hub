@@ -134,10 +134,11 @@ export const adminUpdateCompanySettings = createServerFn({ method: 'POST' })
       .order('created_at', { ascending: true })
       .limit(1)
       .maybeSingle();
-    const cleaned: Record<string, unknown> = {};
+    const cleaned: Record<string, string | null> = {};
     for (const [k, v] of Object.entries(data)) {
-      cleaned[k] = v === '' ? null : v;
+      cleaned[k] = v === '' || v === undefined ? null : (v as string | null);
     }
+    const payload = cleaned as typeof data;
     if (existing?.id) {
       const { error } = await supabaseAdmin.from('company_settings').update(cleaned).eq('id', existing.id);
       if (error) throw new Error(error.message);
