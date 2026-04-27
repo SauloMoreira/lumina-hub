@@ -88,12 +88,13 @@ export const createMercadoPagoPreference = createServerFn({ method: 'POST' })
 
     const externalReference = order.id;
     const siteUrl = getSiteUrl();
+    const externalReference = order.id;
+    const siteUrl = getSiteUrl();
     const sandbox = isSandboxToken(accessToken);
-    const payer = buildPayerPayload({
-      sandbox,
-      email: profile?.email,
-      name: profile?.name ?? addr.recipient,
-    });
+    // Nunca enviamos payer: evita o erro "uma das partes é de teste"
+    // quando o token e a conta logada estão em ambientes diferentes.
+    // O comprador informa os dados diretamente no checkout do MP.
+    const payer = undefined;
 
     // Build items para MP. Adiciona um item virtual de frete/desconto se necessário.
     const mpItems: Array<Record<string, unknown>> = items.map((i) => ({
