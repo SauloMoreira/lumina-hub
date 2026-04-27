@@ -310,6 +310,24 @@ export const Route = createFileRoute('/api/public/mercadopago/webhook')({
           }
         }
 
+        // E-mail transacional ao cliente — idempotente, não bloqueia resposta ao MP
+        try {
+          const { sendOrderEmail } = await import('@/server/email/orderEmails');
+          let emailType:
+            | 'payment_approved'
+            | 'payment_pending'
+            | 'payment_failed'
+            | null = null;
+          if (willBePaid) emailType = 'payment_approved';
+          else if (mappedStatus === 'pending' || mappedStatus === 'in_process') emailType = 'payment_pending';
+          else if (mappedStatus === 'rejected' || mappedStatus === 'cancelled') emailType = 'payment_failed';
+          if (emailType) {
+            void sendOrderEmail({ orderId: order.id, type: emailType });
+          }
+        } catch (e) {
+          console.error('[MP webhook] falha ao agendar e-mail', e);
+        }
+
         if (auditId) {
           await supabaseAdmin
             .from('payment_webhook_events')

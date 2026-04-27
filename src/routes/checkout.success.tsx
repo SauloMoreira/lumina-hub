@@ -79,10 +79,13 @@ function CheckoutSuccessPage() {
         {orderNumber && (
           <p className="text-muted-foreground mb-1">Pedido <strong className="text-foreground">#{orderNumber}</strong></p>
         )}
-        <p className="text-muted-foreground mb-6">
+        <p className="text-muted-foreground mb-2">
           {approved
             ? 'Recebemos a confirmação do Mercado Pago. Vamos preparar seu pedido.'
             : 'Estamos confirmando seu pagamento com o Mercado Pago. Você será avisado quando for aprovado.'}
+        </p>
+        <p className="text-xs text-muted-foreground mb-6">
+          Enviamos as atualizações do pedido para o seu e-mail cadastrado.
         </p>
         {polling && !approved && (
           <p className="text-xs text-muted-foreground mb-6 inline-flex items-center"><Loader2 className="w-3.5 h-3.5 animate-spin mr-1.5" />Aguardando confirmação...</p>
