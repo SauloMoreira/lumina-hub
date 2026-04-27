@@ -236,6 +236,51 @@ export type Database = {
         }
         Relationships: []
       }
+      email_events: {
+        Row: {
+          created_at: string
+          customer_email: string
+          error_message: string | null
+          id: string
+          order_id: string | null
+          payload: Json | null
+          provider: string
+          provider_message_id: string | null
+          sent_at: string | null
+          status: string
+          subject: string
+          type: string
+        }
+        Insert: {
+          created_at?: string
+          customer_email: string
+          error_message?: string | null
+          id?: string
+          order_id?: string | null
+          payload?: Json | null
+          provider?: string
+          provider_message_id?: string | null
+          sent_at?: string | null
+          status?: string
+          subject: string
+          type: string
+        }
+        Update: {
+          created_at?: string
+          customer_email?: string
+          error_message?: string | null
+          id?: string
+          order_id?: string | null
+          payload?: Json | null
+          provider?: string
+          provider_message_id?: string | null
+          sent_at?: string | null
+          status?: string
+          subject?: string
+          type?: string
+        }
+        Relationships: []
+      }
       home_banners: {
         Row: {
           active: boolean
