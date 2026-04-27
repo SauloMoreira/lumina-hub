@@ -16,6 +16,25 @@ function getSiteUrl(): string {
   return `${proto}://${host}`;
 }
 
+// Para back_urls do Mercado Pago: o domínio id-preview--*.lovable.app
+// bloqueia requests externos com referer (retorna "Forbidden" no redirect
+// vindo do MP). Convertemos para a URL estável project--{id}-dev.lovable.app
+// que aceita esses redirects.
+function getPublicReturnUrl(siteUrl: string): string {
+  try {
+    const u = new URL(siteUrl);
+    const host = u.hostname;
+    // id-preview--<projectId>.lovable.app  -> project--<projectId>-dev.lovable.app
+    const m = host.match(/^id-preview--([0-9a-f-]+)\.lovable\.app$/i);
+    if (m) {
+      return `https://project--${m[1]}-dev.lovable.app`;
+    }
+    return siteUrl;
+  } catch {
+    return siteUrl;
+  }
+}
+
 function isSandboxToken(token: string): boolean {
   // No Brasil, credenciais de TESTE também usam o prefixo APP_USR-.
   // Por isso não dá para distinguir produção/teste apenas pelo prefixo.
@@ -140,14 +159,15 @@ export const createMercadoPagoPreference = createServerFn({ method: 'POST' })
     }
 
     const orderIdParam = encodeURIComponent(order.id);
+    const returnBaseUrl = getPublicReturnUrl(siteUrl);
     const preferencePayload = {
       items: mpItems,
       ...(payer ? { payer } : {}),
       external_reference: externalReference,
       back_urls: {
-        success: `${siteUrl}/checkout/success?order_id=${orderIdParam}`,
-        failure: `${siteUrl}/checkout/failure?order_id=${orderIdParam}`,
-        pending: `${siteUrl}/checkout/pending?order_id=${orderIdParam}`,
+        success: `${returnBaseUrl}/checkout/success?order_id=${orderIdParam}`,
+        failure: `${returnBaseUrl}/checkout/failure?order_id=${orderIdParam}`,
+        pending: `${returnBaseUrl}/checkout/pending?order_id=${orderIdParam}`,
       },
       auto_return: 'approved',
       notification_url: `${siteUrl}/api/public/mercadopago/webhook`,
