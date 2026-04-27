@@ -1,0 +1,10 @@
+CREATE INDEX IF NOT EXISTS idx_orders_created_at ON public.orders (created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_orders_paid_at ON public.orders (paid_at DESC) WHERE paid_at IS NOT NULL;
+CREATE INDEX IF NOT EXISTS idx_orders_payment_status ON public.orders (payment_status);
+CREATE INDEX IF NOT EXISTS idx_orders_status ON public.orders (status);
+CREATE INDEX IF NOT EXISTS idx_order_items_order_id ON public.order_items (order_id);
+CREATE INDEX IF NOT EXISTS idx_order_items_product_id ON public.order_items (product_id);
+CREATE INDEX IF NOT EXISTS idx_email_events_created_at ON public.email_events (created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_email_events_status ON public.email_events (status);
+CREATE INDEX IF NOT EXISTS idx_payment_webhook_events_created_at ON public.payment_webhook_events (created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_payment_webhook_events_processed ON public.payment_webhook_events (processed);
