@@ -9,6 +9,7 @@ import { formatBRL } from '@/lib/domain';
 import { getOrderById } from '@/server/checkout.functions';
 import { createMercadoPagoPreference } from '@/server/payment.functions';
 import { orderStatusLabel } from '@/lib/orderStatus';
+import { closeReservedCheckoutWindow, redirectToExternalCheckout, reserveExternalCheckoutWindow } from '@/lib/externalCheckout';
 
 export const Route = createFileRoute('/pedido/$id/confirmacao')({ component: OrderConfirmation });
 
@@ -46,15 +47,18 @@ function OrderConfirmation() {
   async function startPayment() {
     if (!order) return;
     setPayRedirecting(true);
+    const checkoutWindow = reserveExternalCheckoutWindow();
     try {
       const r = await createMercadoPagoPreference({ data: { orderId: order.id } });
       if (r.ok && r.checkoutUrl) {
-        window.location.href = r.checkoutUrl;
+        redirectToExternalCheckout(r.checkoutUrl, checkoutWindow);
       } else {
+        closeReservedCheckoutWindow(checkoutWindow);
         toast.error(r.ok ? 'Não foi possível abrir o pagamento' : r.error);
         setPayRedirecting(false);
       }
     } catch (e) {
+      closeReservedCheckoutWindow(checkoutWindow);
       toast.error(e instanceof Error ? e.message : 'Erro ao iniciar pagamento');
       setPayRedirecting(false);
     }
