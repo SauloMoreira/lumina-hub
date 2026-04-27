@@ -13,6 +13,7 @@ import { lookupCep, calculateShipping, applyCoupon, createOrder } from '@/server
 import { createMercadoPagoPreference } from '@/server/payment.functions';
 import { buildSeo } from '@/lib/seo';
 import { trackPurchase, trackBeginCheckout } from '@/lib/tracking';
+import { closeReservedCheckoutWindow, redirectToExternalCheckout, reserveExternalCheckoutWindow } from '@/lib/externalCheckout';
 
 export const Route = createFileRoute('/checkout')({
   head: () => buildSeo({ title: 'Finalizar pedido', url: '/checkout', noindex: true }),
@@ -159,6 +160,7 @@ function CheckoutPage() {
   async function handleSubmit() {
     if (!selectedShipping) return;
     setSubmitting(true);
+    const checkoutWindow = reserveExternalCheckoutWindow();
     try {
       const r = await createOrder({
         data: {
@@ -196,20 +198,24 @@ function CheckoutPage() {
           const pref = await createMercadoPagoPreference({ data: { orderId: r.orderId } });
           if (pref.ok && pref.checkoutUrl) {
             cart.clear();
-            window.location.href = pref.checkoutUrl;
+            redirectToExternalCheckout(pref.checkoutUrl, checkoutWindow);
             return;
           }
+          closeReservedCheckoutWindow(checkoutWindow);
           toast.error(pref.ok ? 'Não foi possível abrir o pagamento' : pref.error);
         } catch (err) {
+          closeReservedCheckoutWindow(checkoutWindow);
           toast.error(err instanceof Error ? err.message : 'Erro ao iniciar pagamento');
         }
         // Fallback: leva para a página do pedido onde há botão para retomar
         cart.clear();
         navigate({ to: '/pedido/$id/confirmacao', params: { id: r.orderId } });
       } else {
+        closeReservedCheckoutWindow(checkoutWindow);
         toast.error(r.error);
       }
     } catch (e) {
+      closeReservedCheckoutWindow(checkoutWindow);
       toast.error(e instanceof Error ? e.message : 'Erro ao finalizar pedido');
     } finally {
       setSubmitting(false);
