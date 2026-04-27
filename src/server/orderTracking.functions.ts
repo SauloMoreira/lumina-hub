@@ -60,28 +60,7 @@ export const getOrderForCustomer = createServerFn({ method: 'POST' })
     const { data: order, error } = await supabaseAdmin
       .from('orders')
       .select(
-        [
-          'id',
-          'order_number',
-          'user_id',
-          'status',
-          'payment_status',
-          'payment_method',
-          'subtotal',
-          'discount',
-          'shipping_cost',
-          'total',
-          'coupon_code',
-          'shipping_carrier',
-          'shipping_service',
-          'tracking_code',
-          'estimated_delivery',
-          'address_snapshot',
-          'created_at',
-          'paid_at',
-          'public_access_token',
-          'order_items(id, product_name, product_image, qty, unit_price, total_price)',
-        ].join(', ')
+        'id, order_number, user_id, status, payment_status, payment_method, subtotal, discount, shipping_cost, total, coupon_code, shipping_carrier, shipping_service, tracking_code, estimated_delivery, address_snapshot, created_at, paid_at, public_access_token, order_items(id, product_name, product_image, qty, unit_price, total_price)'
       )
       .eq('id', data.id)
       .single();
