@@ -273,6 +273,14 @@ export const createOrder = createServerFn({ method: 'POST' })
       return { ok: false as const, error: itemsErr.message };
     }
 
+    // Disparar e-mail "pedido recebido" — não bloqueia retorno; falhas são logadas
+    try {
+      const { sendOrderEmail } = await import('@/server/email/orderEmails');
+      void sendOrderEmail({ orderId: order.id, type: 'order_created' });
+    } catch (e) {
+      console.error('[checkout] falha ao agendar e-mail order_created', e);
+    }
+
     return {
       ok: true as const,
       orderId: order.id,
