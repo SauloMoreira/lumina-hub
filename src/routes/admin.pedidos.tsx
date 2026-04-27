@@ -1,20 +1,15 @@
-import { createFileRoute } from '@tanstack/react-router';
+import { createFileRoute, Link } from '@tanstack/react-router';
 import { useEffect, useState } from 'react';
 import { Search, Eye } from 'lucide-react';
 import { AdminLayout } from '@/components/admin/AdminLayout';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
 import { supabase } from '@/integrations/supabase/client';
-import { toast } from 'sonner';
-import { ORDER_STATUS_OPTIONS, PAYMENT_STATUS_OPTIONS, orderStatusLabel } from '@/lib/orderStatus';
+import { ORDER_STATUS_OPTIONS, orderStatusLabel } from '@/lib/orderStatus';
 
 export const Route = createFileRoute('/admin/pedidos')({ component: PedidosAdmin });
 
 const STATUSES = ORDER_STATUS_OPTIONS;
-const PAYMENT_STATUSES = PAYMENT_STATUS_OPTIONS;
 
 function PedidosAdmin() {
   const [orders, setOrders] = useState<any[]>([]);
@@ -22,16 +17,12 @@ function PedidosAdmin() {
   const [filterStatus, setFilterStatus] = useState('');
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(false);
-  const [open, setOpen] = useState(false);
-  const [selected, setSelected] = useState<any>(null);
-  const [items, setItems] = useState<any[]>([]);
-  const [edit, setEdit] = useState({ status: '', payment_status: '', tracking_code: '', shipping_carrier: '', admin_notes: '' });
 
   const PAGE_SIZE = 20;
 
   const load = async () => {
     const from = (page - 1) * PAGE_SIZE;
-    const to = from + PAGE_SIZE; // pega 1 extra para detectar próxima página
+    const to = from + PAGE_SIZE;
     let query = supabase
       .from('orders')
       .select('id, order_number, status, payment_status, total, created_at, address_snapshot')
@@ -44,21 +35,6 @@ function PedidosAdmin() {
     setOrders(rows.slice(0, PAGE_SIZE));
   };
   useEffect(() => { load(); }, [filterStatus, page]);
-
-  const openDetail = async (o: any) => {
-    setSelected(o);
-    setEdit({ status: o.status, payment_status: o.payment_status ?? 'pending', tracking_code: o.tracking_code ?? '', shipping_carrier: o.shipping_carrier ?? '', admin_notes: o.admin_notes ?? '' });
-    const { data } = await supabase.from('order_items').select('*').eq('order_id', o.id);
-    setItems((data as any) ?? []);
-    setOpen(true);
-  };
-
-  const save = async () => {
-    if (!selected) return;
-    const { error } = await supabase.from('orders').update(edit).eq('id', selected.id);
-    if (error) return toast.error(error.message);
-    toast.success('Pedido atualizado'); setOpen(false); load();
-  };
 
   const fmt = (n: number) => Number(n).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
   const filtered = orders.filter((o) => {
@@ -95,7 +71,7 @@ function PedidosAdmin() {
                   <td className="px-4 py-3 font-medium">{fmt(Number(o.total))}</td>
                   <td className="px-4 py-3"><Badge value={o.payment_status} kind="payment" /></td>
                   <td className="px-4 py-3"><Badge value={o.status} kind="order" /></td>
-                  <td className="px-4 py-3 text-right"><Button variant="ghost" size="sm" onClick={() => openDetail(o)}><Eye className="w-4 h-4 mr-1" /> Detalhes</Button></td>
+                  <td className="px-4 py-3 text-right"><Button asChild variant="ghost" size="sm"><Link to="/admin/pedidos/$orderId" params={{ orderId: o.id }}><Eye className="w-4 h-4 mr-1" /> Detalhes</Link></Button></td>
                 </tr>
               ))}
             </tbody>
