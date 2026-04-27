@@ -21,6 +21,12 @@ export const Route = createFileRoute('/checkout')({
 
 type ShippingService = { id: string; name: string; carrier: string; price: number; days: number };
 
+function formatCep(value: string) {
+  const digits = value.replace(/\D/g, '').slice(0, 8);
+  if (digits.length <= 5) return digits;
+  return `${digits.slice(0, 5)}-${digits.slice(5)}`;
+}
+
 function CheckoutPage() {
   const { user, loading } = useAuth();
   const navigate = useNavigate();
@@ -260,10 +266,12 @@ function CheckoutPage() {
                       <Input
                         id="zip"
                         value={zip}
-                        onChange={(e) => setZip(e.target.value.replace(/\D/g, '').slice(0, 8))}
+                        onChange={(e) => setZip(formatCep(e.target.value))}
                         onBlur={handleZipBlur}
-                        placeholder="00000000"
-                        maxLength={8}
+                        placeholder="00000-000"
+                        maxLength={9}
+                        inputMode="numeric"
+                        autoComplete="postal-code"
                       />
                       {zipLoading && <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 animate-spin text-muted-foreground" />}
                     </div>
