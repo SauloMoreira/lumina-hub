@@ -17,24 +17,11 @@ function getSiteUrl(): string {
 }
 
 function isSandboxToken(token: string): boolean {
+  // No Brasil, credenciais de TESTE também usam o prefixo APP_USR-.
+  // Por isso não dá para distinguir produção/teste apenas pelo prefixo.
+  // Tratamos como "modo seguro" sempre: nunca enviamos payer (evita
+  // o erro "uma das partes é de teste" quando há mistura de ambientes).
   return token.startsWith('TEST-');
-}
-
-function buildPayerPayload({
-  sandbox,
-  email,
-  name,
-}: {
-  sandbox: boolean;
-  email?: string | null;
-  name?: string | null;
-}) {
-  if (sandbox) return undefined;
-
-  return {
-    email: email ?? undefined,
-    name: name ?? undefined,
-  };
 }
 
 // ============================================================
