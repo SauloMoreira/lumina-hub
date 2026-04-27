@@ -9,13 +9,18 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as TrocaRouteImport } from './routes/troca'
 import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as RobotsDottxtRouteImport } from './routes/robots[.]txt'
+import { Route as ReembolsoRouteImport } from './routes/reembolso'
 import { Route as PrivacidadeRouteImport } from './routes/privacidade'
+import { Route as MeiosDePagamentoRouteImport } from './routes/meios-de-pagamento'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as EsqueciSenhaRouteImport } from './routes/esqueci-senha'
+import { Route as DevolucaoRouteImport } from './routes/devolucao'
 import { Route as ContatoRouteImport } from './routes/contato'
 import { Route as ContaRouteImport } from './routes/conta'
+import { Route as CondicoesDeUsoRouteImport } from './routes/condicoes-de-uso'
 import { Route as CheckoutRouteImport } from './routes/checkout'
 import { Route as CatalogoRouteImport } from './routes/catalogo'
 import { Route as CarrinhoRouteImport } from './routes/carrinho'
@@ -35,11 +40,18 @@ import { Route as AdminCategoriasRouteImport } from './routes/admin.categorias'
 import { Route as AdminCampanhasRouteImport } from './routes/admin.campanhas'
 import { Route as AdminBannersRouteImport } from './routes/admin.banners'
 import { Route as AdminProdutosIndexRouteImport } from './routes/admin.produtos.index'
+import { Route as AdminInstitutionalPagesIndexRouteImport } from './routes/admin.institutional-pages.index'
 import { Route as PedidoIdConfirmacaoRouteImport } from './routes/pedido.$id.confirmacao'
+import { Route as AdminSettingsCompanyRouteImport } from './routes/admin.settings.company'
 import { Route as AdminProdutosIdRouteImport } from './routes/admin.produtos.$id'
 import { Route as AdminPedidosOrderIdRouteImport } from './routes/admin.pedidos.$orderId'
 import { Route as ApiPublicMercadopagoWebhookRouteImport } from './routes/api/public/mercadopago.webhook'
 
+const TrocaRoute = TrocaRouteImport.update({
+  id: '/troca',
+  path: '/troca',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
   id: '/sitemap.xml',
   path: '/sitemap.xml',
@@ -50,9 +62,19 @@ const RobotsDottxtRoute = RobotsDottxtRouteImport.update({
   path: '/robots.txt',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ReembolsoRoute = ReembolsoRouteImport.update({
+  id: '/reembolso',
+  path: '/reembolso',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const PrivacidadeRoute = PrivacidadeRouteImport.update({
   id: '/privacidade',
   path: '/privacidade',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MeiosDePagamentoRoute = MeiosDePagamentoRouteImport.update({
+  id: '/meios-de-pagamento',
+  path: '/meios-de-pagamento',
   getParentRoute: () => rootRouteImport,
 } as any)
 const LoginRoute = LoginRouteImport.update({
@@ -65,6 +87,11 @@ const EsqueciSenhaRoute = EsqueciSenhaRouteImport.update({
   path: '/esqueci-senha',
   getParentRoute: () => rootRouteImport,
 } as any)
+const DevolucaoRoute = DevolucaoRouteImport.update({
+  id: '/devolucao',
+  path: '/devolucao',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ContatoRoute = ContatoRouteImport.update({
   id: '/contato',
   path: '/contato',
@@ -73,6 +100,11 @@ const ContatoRoute = ContatoRouteImport.update({
 const ContaRoute = ContaRouteImport.update({
   id: '/conta',
   path: '/conta',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CondicoesDeUsoRoute = CondicoesDeUsoRouteImport.update({
+  id: '/condicoes-de-uso',
+  path: '/condicoes-de-uso',
   getParentRoute: () => rootRouteImport,
 } as any)
 const CheckoutRoute = CheckoutRouteImport.update({
@@ -170,9 +202,20 @@ const AdminProdutosIndexRoute = AdminProdutosIndexRouteImport.update({
   path: '/admin/produtos/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AdminInstitutionalPagesIndexRoute =
+  AdminInstitutionalPagesIndexRouteImport.update({
+    id: '/admin/institutional-pages/',
+    path: '/admin/institutional-pages/',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const PedidoIdConfirmacaoRoute = PedidoIdConfirmacaoRouteImport.update({
   id: '/pedido/$id/confirmacao',
   path: '/pedido/$id/confirmacao',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminSettingsCompanyRoute = AdminSettingsCompanyRouteImport.update({
+  id: '/admin/settings/company',
+  path: '/admin/settings/company',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AdminProdutosIdRoute = AdminProdutosIdRouteImport.update({
@@ -198,13 +241,18 @@ export interface FileRoutesByFullPath {
   '/carrinho': typeof CarrinhoRoute
   '/catalogo': typeof CatalogoRoute
   '/checkout': typeof CheckoutRouteWithChildren
+  '/condicoes-de-uso': typeof CondicoesDeUsoRoute
   '/conta': typeof ContaRouteWithChildren
   '/contato': typeof ContatoRoute
+  '/devolucao': typeof DevolucaoRoute
   '/esqueci-senha': typeof EsqueciSenhaRoute
   '/login': typeof LoginRoute
+  '/meios-de-pagamento': typeof MeiosDePagamentoRoute
   '/privacidade': typeof PrivacidadeRoute
+  '/reembolso': typeof ReembolsoRoute
   '/robots.txt': typeof RobotsDottxtRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/troca': typeof TrocaRoute
   '/admin/banners': typeof AdminBannersRoute
   '/admin/campanhas': typeof AdminCampanhasRoute
   '/admin/categorias': typeof AdminCategoriasRoute
@@ -220,7 +268,9 @@ export interface FileRoutesByFullPath {
   '/admin/': typeof AdminIndexRoute
   '/admin/pedidos/$orderId': typeof AdminPedidosOrderIdRoute
   '/admin/produtos/$id': typeof AdminProdutosIdRoute
+  '/admin/settings/company': typeof AdminSettingsCompanyRoute
   '/pedido/$id/confirmacao': typeof PedidoIdConfirmacaoRoute
+  '/admin/institutional-pages/': typeof AdminInstitutionalPagesIndexRoute
   '/admin/produtos/': typeof AdminProdutosIndexRoute
   '/api/public/mercadopago/webhook': typeof ApiPublicMercadopagoWebhookRoute
 }
@@ -230,13 +280,18 @@ export interface FileRoutesByTo {
   '/carrinho': typeof CarrinhoRoute
   '/catalogo': typeof CatalogoRoute
   '/checkout': typeof CheckoutRouteWithChildren
+  '/condicoes-de-uso': typeof CondicoesDeUsoRoute
   '/conta': typeof ContaRouteWithChildren
   '/contato': typeof ContatoRoute
+  '/devolucao': typeof DevolucaoRoute
   '/esqueci-senha': typeof EsqueciSenhaRoute
   '/login': typeof LoginRoute
+  '/meios-de-pagamento': typeof MeiosDePagamentoRoute
   '/privacidade': typeof PrivacidadeRoute
+  '/reembolso': typeof ReembolsoRoute
   '/robots.txt': typeof RobotsDottxtRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/troca': typeof TrocaRoute
   '/admin/banners': typeof AdminBannersRoute
   '/admin/campanhas': typeof AdminCampanhasRoute
   '/admin/categorias': typeof AdminCategoriasRoute
@@ -252,7 +307,9 @@ export interface FileRoutesByTo {
   '/admin': typeof AdminIndexRoute
   '/admin/pedidos/$orderId': typeof AdminPedidosOrderIdRoute
   '/admin/produtos/$id': typeof AdminProdutosIdRoute
+  '/admin/settings/company': typeof AdminSettingsCompanyRoute
   '/pedido/$id/confirmacao': typeof PedidoIdConfirmacaoRoute
+  '/admin/institutional-pages': typeof AdminInstitutionalPagesIndexRoute
   '/admin/produtos': typeof AdminProdutosIndexRoute
   '/api/public/mercadopago/webhook': typeof ApiPublicMercadopagoWebhookRoute
 }
@@ -263,13 +320,18 @@ export interface FileRoutesById {
   '/carrinho': typeof CarrinhoRoute
   '/catalogo': typeof CatalogoRoute
   '/checkout': typeof CheckoutRouteWithChildren
+  '/condicoes-de-uso': typeof CondicoesDeUsoRoute
   '/conta': typeof ContaRouteWithChildren
   '/contato': typeof ContatoRoute
+  '/devolucao': typeof DevolucaoRoute
   '/esqueci-senha': typeof EsqueciSenhaRoute
   '/login': typeof LoginRoute
+  '/meios-de-pagamento': typeof MeiosDePagamentoRoute
   '/privacidade': typeof PrivacidadeRoute
+  '/reembolso': typeof ReembolsoRoute
   '/robots.txt': typeof RobotsDottxtRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/troca': typeof TrocaRoute
   '/admin/banners': typeof AdminBannersRoute
   '/admin/campanhas': typeof AdminCampanhasRoute
   '/admin/categorias': typeof AdminCategoriasRoute
@@ -285,7 +347,9 @@ export interface FileRoutesById {
   '/admin/': typeof AdminIndexRoute
   '/admin/pedidos/$orderId': typeof AdminPedidosOrderIdRoute
   '/admin/produtos/$id': typeof AdminProdutosIdRoute
+  '/admin/settings/company': typeof AdminSettingsCompanyRoute
   '/pedido/$id/confirmacao': typeof PedidoIdConfirmacaoRoute
+  '/admin/institutional-pages/': typeof AdminInstitutionalPagesIndexRoute
   '/admin/produtos/': typeof AdminProdutosIndexRoute
   '/api/public/mercadopago/webhook': typeof ApiPublicMercadopagoWebhookRoute
 }
@@ -297,13 +361,18 @@ export interface FileRouteTypes {
     | '/carrinho'
     | '/catalogo'
     | '/checkout'
+    | '/condicoes-de-uso'
     | '/conta'
     | '/contato'
+    | '/devolucao'
     | '/esqueci-senha'
     | '/login'
+    | '/meios-de-pagamento'
     | '/privacidade'
+    | '/reembolso'
     | '/robots.txt'
     | '/sitemap.xml'
+    | '/troca'
     | '/admin/banners'
     | '/admin/campanhas'
     | '/admin/categorias'
@@ -319,7 +388,9 @@ export interface FileRouteTypes {
     | '/admin/'
     | '/admin/pedidos/$orderId'
     | '/admin/produtos/$id'
+    | '/admin/settings/company'
     | '/pedido/$id/confirmacao'
+    | '/admin/institutional-pages/'
     | '/admin/produtos/'
     | '/api/public/mercadopago/webhook'
   fileRoutesByTo: FileRoutesByTo
@@ -329,13 +400,18 @@ export interface FileRouteTypes {
     | '/carrinho'
     | '/catalogo'
     | '/checkout'
+    | '/condicoes-de-uso'
     | '/conta'
     | '/contato'
+    | '/devolucao'
     | '/esqueci-senha'
     | '/login'
+    | '/meios-de-pagamento'
     | '/privacidade'
+    | '/reembolso'
     | '/robots.txt'
     | '/sitemap.xml'
+    | '/troca'
     | '/admin/banners'
     | '/admin/campanhas'
     | '/admin/categorias'
@@ -351,7 +427,9 @@ export interface FileRouteTypes {
     | '/admin'
     | '/admin/pedidos/$orderId'
     | '/admin/produtos/$id'
+    | '/admin/settings/company'
     | '/pedido/$id/confirmacao'
+    | '/admin/institutional-pages'
     | '/admin/produtos'
     | '/api/public/mercadopago/webhook'
   id:
@@ -361,13 +439,18 @@ export interface FileRouteTypes {
     | '/carrinho'
     | '/catalogo'
     | '/checkout'
+    | '/condicoes-de-uso'
     | '/conta'
     | '/contato'
+    | '/devolucao'
     | '/esqueci-senha'
     | '/login'
+    | '/meios-de-pagamento'
     | '/privacidade'
+    | '/reembolso'
     | '/robots.txt'
     | '/sitemap.xml'
+    | '/troca'
     | '/admin/banners'
     | '/admin/campanhas'
     | '/admin/categorias'
@@ -383,7 +466,9 @@ export interface FileRouteTypes {
     | '/admin/'
     | '/admin/pedidos/$orderId'
     | '/admin/produtos/$id'
+    | '/admin/settings/company'
     | '/pedido/$id/confirmacao'
+    | '/admin/institutional-pages/'
     | '/admin/produtos/'
     | '/api/public/mercadopago/webhook'
   fileRoutesById: FileRoutesById
@@ -394,13 +479,18 @@ export interface RootRouteChildren {
   CarrinhoRoute: typeof CarrinhoRoute
   CatalogoRoute: typeof CatalogoRoute
   CheckoutRoute: typeof CheckoutRouteWithChildren
+  CondicoesDeUsoRoute: typeof CondicoesDeUsoRoute
   ContaRoute: typeof ContaRouteWithChildren
   ContatoRoute: typeof ContatoRoute
+  DevolucaoRoute: typeof DevolucaoRoute
   EsqueciSenhaRoute: typeof EsqueciSenhaRoute
   LoginRoute: typeof LoginRoute
+  MeiosDePagamentoRoute: typeof MeiosDePagamentoRoute
   PrivacidadeRoute: typeof PrivacidadeRoute
+  ReembolsoRoute: typeof ReembolsoRoute
   RobotsDottxtRoute: typeof RobotsDottxtRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
+  TrocaRoute: typeof TrocaRoute
   AdminBannersRoute: typeof AdminBannersRoute
   AdminCampanhasRoute: typeof AdminCampanhasRoute
   AdminCategoriasRoute: typeof AdminCategoriasRoute
@@ -411,13 +501,22 @@ export interface RootRouteChildren {
   ProdutoSlugRoute: typeof ProdutoSlugRoute
   AdminIndexRoute: typeof AdminIndexRoute
   AdminProdutosIdRoute: typeof AdminProdutosIdRoute
+  AdminSettingsCompanyRoute: typeof AdminSettingsCompanyRoute
   PedidoIdConfirmacaoRoute: typeof PedidoIdConfirmacaoRoute
+  AdminInstitutionalPagesIndexRoute: typeof AdminInstitutionalPagesIndexRoute
   AdminProdutosIndexRoute: typeof AdminProdutosIndexRoute
   ApiPublicMercadopagoWebhookRoute: typeof ApiPublicMercadopagoWebhookRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/troca': {
+      id: '/troca'
+      path: '/troca'
+      fullPath: '/troca'
+      preLoaderRoute: typeof TrocaRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/sitemap.xml': {
       id: '/sitemap.xml'
       path: '/sitemap.xml'
@@ -432,11 +531,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof RobotsDottxtRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/reembolso': {
+      id: '/reembolso'
+      path: '/reembolso'
+      fullPath: '/reembolso'
+      preLoaderRoute: typeof ReembolsoRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/privacidade': {
       id: '/privacidade'
       path: '/privacidade'
       fullPath: '/privacidade'
       preLoaderRoute: typeof PrivacidadeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/meios-de-pagamento': {
+      id: '/meios-de-pagamento'
+      path: '/meios-de-pagamento'
+      fullPath: '/meios-de-pagamento'
+      preLoaderRoute: typeof MeiosDePagamentoRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/login': {
@@ -453,6 +566,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof EsqueciSenhaRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/devolucao': {
+      id: '/devolucao'
+      path: '/devolucao'
+      fullPath: '/devolucao'
+      preLoaderRoute: typeof DevolucaoRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/contato': {
       id: '/contato'
       path: '/contato'
@@ -465,6 +585,13 @@ declare module '@tanstack/react-router' {
       path: '/conta'
       fullPath: '/conta'
       preLoaderRoute: typeof ContaRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/condicoes-de-uso': {
+      id: '/condicoes-de-uso'
+      path: '/condicoes-de-uso'
+      fullPath: '/condicoes-de-uso'
+      preLoaderRoute: typeof CondicoesDeUsoRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/checkout': {
@@ -600,11 +727,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminProdutosIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/admin/institutional-pages/': {
+      id: '/admin/institutional-pages/'
+      path: '/admin/institutional-pages'
+      fullPath: '/admin/institutional-pages/'
+      preLoaderRoute: typeof AdminInstitutionalPagesIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/pedido/$id/confirmacao': {
       id: '/pedido/$id/confirmacao'
       path: '/pedido/$id/confirmacao'
       fullPath: '/pedido/$id/confirmacao'
       preLoaderRoute: typeof PedidoIdConfirmacaoRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin/settings/company': {
+      id: '/admin/settings/company'
+      path: '/admin/settings/company'
+      fullPath: '/admin/settings/company'
+      preLoaderRoute: typeof AdminSettingsCompanyRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/admin/produtos/$id': {
@@ -675,13 +816,18 @@ const rootRouteChildren: RootRouteChildren = {
   CarrinhoRoute: CarrinhoRoute,
   CatalogoRoute: CatalogoRoute,
   CheckoutRoute: CheckoutRouteWithChildren,
+  CondicoesDeUsoRoute: CondicoesDeUsoRoute,
   ContaRoute: ContaRouteWithChildren,
   ContatoRoute: ContatoRoute,
+  DevolucaoRoute: DevolucaoRoute,
   EsqueciSenhaRoute: EsqueciSenhaRoute,
   LoginRoute: LoginRoute,
+  MeiosDePagamentoRoute: MeiosDePagamentoRoute,
   PrivacidadeRoute: PrivacidadeRoute,
+  ReembolsoRoute: ReembolsoRoute,
   RobotsDottxtRoute: RobotsDottxtRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
+  TrocaRoute: TrocaRoute,
   AdminBannersRoute: AdminBannersRoute,
   AdminCampanhasRoute: AdminCampanhasRoute,
   AdminCategoriasRoute: AdminCategoriasRoute,
@@ -692,10 +838,21 @@ const rootRouteChildren: RootRouteChildren = {
   ProdutoSlugRoute: ProdutoSlugRoute,
   AdminIndexRoute: AdminIndexRoute,
   AdminProdutosIdRoute: AdminProdutosIdRoute,
+  AdminSettingsCompanyRoute: AdminSettingsCompanyRoute,
   PedidoIdConfirmacaoRoute: PedidoIdConfirmacaoRoute,
+  AdminInstitutionalPagesIndexRoute: AdminInstitutionalPagesIndexRoute,
   AdminProdutosIndexRoute: AdminProdutosIndexRoute,
   ApiPublicMercadopagoWebhookRoute: ApiPublicMercadopagoWebhookRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { createStart } from '@tanstack/react-start'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+  }
+}
