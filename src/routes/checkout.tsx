@@ -361,10 +361,10 @@ function CheckoutPage() {
 
                 <section className="mb-5">
                   <h3 className="font-semibold text-sm mb-2 text-muted-foreground uppercase tracking-wide">Pagamento</h3>
-                  <div className="p-4 bg-warning/10 border border-warning/30 rounded-lg text-sm">
-                    <p className="font-medium mb-1">⚠️ Mercado Pago em configuração</p>
+                  <div className="p-4 bg-primary-tint border border-primary/30 rounded-lg text-sm">
+                    <p className="font-medium mb-1">Pagamento via Mercado Pago</p>
                     <p className="text-muted-foreground text-xs">
-                      Seu pedido será criado com pagamento pendente. O link Mercado Pago será gerado assim que a integração estiver ativa.
+                      Ao confirmar, você será redirecionado para o checkout seguro do Mercado Pago (Pix, cartão ou boleto).
                     </p>
                   </div>
                 </section>
