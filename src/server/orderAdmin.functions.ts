@@ -93,17 +93,7 @@ export const getOrderDetail = createServerFn({ method: 'POST' })
       .single();
 
     // Filtrar webhooks ligados a este pedido (via mp_payment_id ou external_reference no payload)
-    const allWebhooks = (webhookRes.data ?? []) as Array<{
-      id: string;
-      type: string | null;
-      action: string | null;
-      processed: boolean;
-      processing_error: string | null;
-      live_mode: boolean | null;
-      created_at: string;
-      payload: unknown;
-      data_id: string | null;
-    }>;
+    const allWebhooks = webhookRes.data ?? [];
     const webhooks = allWebhooks.filter((w) => {
       if (!w) return false;
       const payload = (w.payload ?? {}) as Record<string, unknown>;
@@ -251,14 +241,22 @@ export const updateOrderStatus = createServerFn({ method: 'POST' })
       }
     }
 
-    const patch: Record<string, unknown> = {};
+    type OrderUpdate = {
+      status?: OrderStatus;
+      payment_status?: PaymentStatus;
+      tracking_code?: string | null;
+      shipping_carrier?: string | null;
+      admin_notes?: string | null;
+      cancelled_reason?: string | null;
+      updated_at?: string;
+    };
+    const patch: OrderUpdate = { updated_at: new Date().toISOString() };
     if (data.status) patch.status = data.status;
     if (data.paymentStatus) patch.payment_status = data.paymentStatus;
     if (typeof data.trackingCode === 'string') patch.tracking_code = data.trackingCode || null;
     if (typeof data.shippingCarrier === 'string') patch.shipping_carrier = data.shippingCarrier || null;
     if (typeof data.adminNotes === 'string') patch.admin_notes = data.adminNotes;
     if (data.status === 'cancelled' && data.cancelledReason) patch.cancelled_reason = data.cancelledReason;
-    patch.updated_at = new Date().toISOString();
 
     const { error: updErr } = await supabaseAdmin
       .from('orders')
@@ -344,8 +342,8 @@ export const resendOrderEmail = createServerFn({ method: 'POST' })
           'payment_approved',
           'payment_pending',
           'payment_failed',
+          'order_processing',
           'order_shipped',
-          'order_delivered',
         ]),
       })
       .parse(input),
