@@ -14,6 +14,7 @@ import { Route as RobotsDottxtRouteImport } from './routes/robots[.]txt'
 import { Route as PrivacidadeRouteImport } from './routes/privacidade'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as EsqueciSenhaRouteImport } from './routes/esqueci-senha'
+import { Route as ContatoRouteImport } from './routes/contato'
 import { Route as ContaRouteImport } from './routes/conta'
 import { Route as CheckoutRouteImport } from './routes/checkout'
 import { Route as CatalogoRouteImport } from './routes/catalogo'
@@ -22,6 +23,7 @@ import { Route as CadastroRouteImport } from './routes/cadastro'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AdminIndexRouteImport } from './routes/admin.index'
 import { Route as ProdutoSlugRouteImport } from './routes/produto.$slug'
+import { Route as InstitucionalSlugRouteImport } from './routes/institucional.$slug'
 import { Route as ContaPedidosRouteImport } from './routes/conta.pedidos'
 import { Route as CheckoutSuccessRouteImport } from './routes/checkout.success'
 import { Route as CheckoutPendingRouteImport } from './routes/checkout.pending'
@@ -63,6 +65,11 @@ const EsqueciSenhaRoute = EsqueciSenhaRouteImport.update({
   path: '/esqueci-senha',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ContatoRoute = ContatoRouteImport.update({
+  id: '/contato',
+  path: '/contato',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ContaRoute = ContaRouteImport.update({
   id: '/conta',
   path: '/conta',
@@ -101,6 +108,11 @@ const AdminIndexRoute = AdminIndexRouteImport.update({
 const ProdutoSlugRoute = ProdutoSlugRouteImport.update({
   id: '/produto/$slug',
   path: '/produto/$slug',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const InstitucionalSlugRoute = InstitucionalSlugRouteImport.update({
+  id: '/institucional/$slug',
+  path: '/institucional/$slug',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ContaPedidosRoute = ContaPedidosRouteImport.update({
@@ -187,6 +199,7 @@ export interface FileRoutesByFullPath {
   '/catalogo': typeof CatalogoRoute
   '/checkout': typeof CheckoutRouteWithChildren
   '/conta': typeof ContaRouteWithChildren
+  '/contato': typeof ContatoRoute
   '/esqueci-senha': typeof EsqueciSenhaRoute
   '/login': typeof LoginRoute
   '/privacidade': typeof PrivacidadeRoute
@@ -202,6 +215,7 @@ export interface FileRoutesByFullPath {
   '/checkout/pending': typeof CheckoutPendingRoute
   '/checkout/success': typeof CheckoutSuccessRoute
   '/conta/pedidos': typeof ContaPedidosRoute
+  '/institucional/$slug': typeof InstitucionalSlugRoute
   '/produto/$slug': typeof ProdutoSlugRoute
   '/admin/': typeof AdminIndexRoute
   '/admin/pedidos/$orderId': typeof AdminPedidosOrderIdRoute
@@ -217,6 +231,7 @@ export interface FileRoutesByTo {
   '/catalogo': typeof CatalogoRoute
   '/checkout': typeof CheckoutRouteWithChildren
   '/conta': typeof ContaRouteWithChildren
+  '/contato': typeof ContatoRoute
   '/esqueci-senha': typeof EsqueciSenhaRoute
   '/login': typeof LoginRoute
   '/privacidade': typeof PrivacidadeRoute
@@ -232,6 +247,7 @@ export interface FileRoutesByTo {
   '/checkout/pending': typeof CheckoutPendingRoute
   '/checkout/success': typeof CheckoutSuccessRoute
   '/conta/pedidos': typeof ContaPedidosRoute
+  '/institucional/$slug': typeof InstitucionalSlugRoute
   '/produto/$slug': typeof ProdutoSlugRoute
   '/admin': typeof AdminIndexRoute
   '/admin/pedidos/$orderId': typeof AdminPedidosOrderIdRoute
@@ -248,6 +264,7 @@ export interface FileRoutesById {
   '/catalogo': typeof CatalogoRoute
   '/checkout': typeof CheckoutRouteWithChildren
   '/conta': typeof ContaRouteWithChildren
+  '/contato': typeof ContatoRoute
   '/esqueci-senha': typeof EsqueciSenhaRoute
   '/login': typeof LoginRoute
   '/privacidade': typeof PrivacidadeRoute
@@ -263,6 +280,7 @@ export interface FileRoutesById {
   '/checkout/pending': typeof CheckoutPendingRoute
   '/checkout/success': typeof CheckoutSuccessRoute
   '/conta/pedidos': typeof ContaPedidosRoute
+  '/institucional/$slug': typeof InstitucionalSlugRoute
   '/produto/$slug': typeof ProdutoSlugRoute
   '/admin/': typeof AdminIndexRoute
   '/admin/pedidos/$orderId': typeof AdminPedidosOrderIdRoute
@@ -280,6 +298,7 @@ export interface FileRouteTypes {
     | '/catalogo'
     | '/checkout'
     | '/conta'
+    | '/contato'
     | '/esqueci-senha'
     | '/login'
     | '/privacidade'
@@ -295,6 +314,7 @@ export interface FileRouteTypes {
     | '/checkout/pending'
     | '/checkout/success'
     | '/conta/pedidos'
+    | '/institucional/$slug'
     | '/produto/$slug'
     | '/admin/'
     | '/admin/pedidos/$orderId'
@@ -310,6 +330,7 @@ export interface FileRouteTypes {
     | '/catalogo'
     | '/checkout'
     | '/conta'
+    | '/contato'
     | '/esqueci-senha'
     | '/login'
     | '/privacidade'
@@ -325,6 +346,7 @@ export interface FileRouteTypes {
     | '/checkout/pending'
     | '/checkout/success'
     | '/conta/pedidos'
+    | '/institucional/$slug'
     | '/produto/$slug'
     | '/admin'
     | '/admin/pedidos/$orderId'
@@ -340,6 +362,7 @@ export interface FileRouteTypes {
     | '/catalogo'
     | '/checkout'
     | '/conta'
+    | '/contato'
     | '/esqueci-senha'
     | '/login'
     | '/privacidade'
@@ -355,6 +378,7 @@ export interface FileRouteTypes {
     | '/checkout/pending'
     | '/checkout/success'
     | '/conta/pedidos'
+    | '/institucional/$slug'
     | '/produto/$slug'
     | '/admin/'
     | '/admin/pedidos/$orderId'
@@ -371,6 +395,7 @@ export interface RootRouteChildren {
   CatalogoRoute: typeof CatalogoRoute
   CheckoutRoute: typeof CheckoutRouteWithChildren
   ContaRoute: typeof ContaRouteWithChildren
+  ContatoRoute: typeof ContatoRoute
   EsqueciSenhaRoute: typeof EsqueciSenhaRoute
   LoginRoute: typeof LoginRoute
   PrivacidadeRoute: typeof PrivacidadeRoute
@@ -382,6 +407,7 @@ export interface RootRouteChildren {
   AdminCuponsRoute: typeof AdminCuponsRoute
   AdminLeadsRoute: typeof AdminLeadsRoute
   AdminPedidosRoute: typeof AdminPedidosRouteWithChildren
+  InstitucionalSlugRoute: typeof InstitucionalSlugRoute
   ProdutoSlugRoute: typeof ProdutoSlugRoute
   AdminIndexRoute: typeof AdminIndexRoute
   AdminProdutosIdRoute: typeof AdminProdutosIdRoute
@@ -425,6 +451,13 @@ declare module '@tanstack/react-router' {
       path: '/esqueci-senha'
       fullPath: '/esqueci-senha'
       preLoaderRoute: typeof EsqueciSenhaRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/contato': {
+      id: '/contato'
+      path: '/contato'
+      fullPath: '/contato'
+      preLoaderRoute: typeof ContatoRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/conta': {
@@ -481,6 +514,13 @@ declare module '@tanstack/react-router' {
       path: '/produto/$slug'
       fullPath: '/produto/$slug'
       preLoaderRoute: typeof ProdutoSlugRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/institucional/$slug': {
+      id: '/institucional/$slug'
+      path: '/institucional/$slug'
+      fullPath: '/institucional/$slug'
+      preLoaderRoute: typeof InstitucionalSlugRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/conta/pedidos': {
@@ -636,6 +676,7 @@ const rootRouteChildren: RootRouteChildren = {
   CatalogoRoute: CatalogoRoute,
   CheckoutRoute: CheckoutRouteWithChildren,
   ContaRoute: ContaRouteWithChildren,
+  ContatoRoute: ContatoRoute,
   EsqueciSenhaRoute: EsqueciSenhaRoute,
   LoginRoute: LoginRoute,
   PrivacidadeRoute: PrivacidadeRoute,
@@ -647,6 +688,7 @@ const rootRouteChildren: RootRouteChildren = {
   AdminCuponsRoute: AdminCuponsRoute,
   AdminLeadsRoute: AdminLeadsRoute,
   AdminPedidosRoute: AdminPedidosRouteWithChildren,
+  InstitucionalSlugRoute: InstitucionalSlugRoute,
   ProdutoSlugRoute: ProdutoSlugRoute,
   AdminIndexRoute: AdminIndexRoute,
   AdminProdutosIdRoute: AdminProdutosIdRoute,
