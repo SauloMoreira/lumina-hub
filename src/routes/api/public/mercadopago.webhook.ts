@@ -253,7 +253,16 @@ export const Route = createFileRoute('/api/public/mercadopago/webhook')({
         }
 
         // 6) Atualizar pedido
-        const updates: Record<string, unknown> = {
+        type OrderUpdate = {
+          payment_status: string;
+          mp_payment_id: string;
+          payment_provider: string;
+          mp_merchant_order_id?: string;
+          paid_at?: string;
+          status?: string;
+          cancelled_reason?: string;
+        };
+        const updates: OrderUpdate = {
           payment_status: mappedStatus,
           mp_payment_id: String(payment.id),
           payment_provider: 'mercadopago',
@@ -261,10 +270,7 @@ export const Route = createFileRoute('/api/public/mercadopago/webhook')({
         if (payment.order?.id) updates.mp_merchant_order_id = String(payment.order.id);
         if (willBePaid) {
           updates.paid_at = payment.date_approved ?? new Date().toISOString();
-          // mantém status logístico em 'pending' se ainda for; deixa o admin fluir depois
-          if (order.status === 'pending') {
-            updates.status = 'confirmed';
-          }
+          if (order.status === 'pending') updates.status = 'confirmed';
         } else if (mappedStatus === 'cancelled' || mappedStatus === 'rejected') {
           if (order.status === 'pending') updates.status = 'cancelled';
           updates.cancelled_reason = `Pagamento ${mappedStatus} (${payment.status_detail ?? ''})`.trim();
