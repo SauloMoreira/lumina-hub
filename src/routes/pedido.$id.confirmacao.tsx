@@ -1,194 +1,346 @@
-import { createFileRoute, Link, useNavigate } from '@tanstack/react-router';
-import { useEffect, useState } from 'react';
-import { CheckCircle2, Package, Truck, Clock, ShoppingBag, ArrowRight, Loader2, CreditCard } from 'lucide-react';
+import { createFileRoute, Link, useNavigate, useSearch } from '@tanstack/react-router';
+import { useCallback, useEffect, useState } from 'react';
+import { z } from 'zod';
+import { CheckCircle2, Package, Truck, Clock, ShoppingBag, ArrowRight, Loader2, CreditCard, RefreshCw, MapPin, AlertCircle, MessageCircle } from 'lucide-react';
 import { toast } from 'sonner';
 import { StoreLayout } from '@/components/layout/StoreLayout';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/hooks/useAuth';
 import { formatBRL } from '@/lib/domain';
-import { getOrderById } from '@/server/checkout.functions';
+import { getOrderForCustomer } from '@/server/orderTracking.functions';
 import { createMercadoPagoPreference } from '@/server/payment.functions';
 import { orderStatusLabel } from '@/lib/orderStatus';
 import { redirectToExternalCheckout } from '@/lib/externalCheckout';
+import { buildSeo } from '@/lib/seo';
 
-export const Route = createFileRoute('/pedido/$id/confirmacao')({ component: OrderConfirmation });
+const SearchSchema = z.object({
+  token: z.string().min(16).max(128).optional(),
+});
 
-type OrderRow = {
+export const Route = createFileRoute('/pedido/$id/confirmacao')({
+  validateSearch: (s) => SearchSchema.parse(s),
+  head: () => buildSeo({ title: 'Acompanhar pedido', url: '/pedido', noindex: true }),
+  component: OrderTrackingPage,
+});
+
+type CustomerOrder = {
   id: string;
-  order_number: number;
+  orderNumber: number;
   status: string;
-  payment_status: string | null;
+  paymentStatus: string | null;
+  paymentMethod: string | null;
   subtotal: number;
   discount: number;
-  shipping_cost: number;
+  shippingCost: number;
   total: number;
-  shipping_carrier: string | null;
-  shipping_service: string | null;
-  address_snapshot: Record<string, unknown> | null;
-  created_at: string | null;
-  order_items: Array<{
-    id: string;
-    product_name: string;
-    product_image: string | null;
-    qty: number;
-    unit_price: number;
-    total_price: number;
-  }>;
+  couponCode: string | null;
+  shippingCarrier: string | null;
+  shippingService: string | null;
+  trackingCode: string | null;
+  estimatedDelivery: string | null;
+  createdAt: string | null;
+  paidAt: string | null;
+  address: {
+    recipient: string | null;
+    street: string | null;
+    number: string | null;
+    complement: string | null;
+    neighborhood: string | null;
+    city: string | null;
+    state: string | null;
+    zipCode: string | null;
+  } | null;
+  items: Array<{ id: string; name: string; image: string | null; qty: number; unitPrice: number; totalPrice: number }>;
 };
 
-function OrderConfirmation() {
+function statusMessage(status: string, paymentStatus: string | null) {
+  if (status === 'shipped' || status === 'out_for_delivery') {
+    return { tone: 'info' as const, title: 'Seu pedido foi enviado', text: 'Acompanhe a entrega pelo código de rastreio.' };
+  }
+  if (status === 'delivered' || status === 'completed') {
+    return { tone: 'success' as const, title: 'Pedido concluído', text: 'Obrigado pela compra!' };
+  }
+  if (status === 'cancelled') {
+    return { tone: 'error' as const, title: 'Pedido cancelado', text: 'Este pedido foi cancelado.' };
+  }
+  if (paymentStatus === 'paid' || paymentStatus === 'approved') {
+    return { tone: 'success' as const, title: 'Pagamento aprovado!', text: 'Seu pedido está sendo preparado.' };
+  }
+  if (paymentStatus === 'pending' || paymentStatus === 'in_process') {
+    return { tone: 'warn' as const, title: 'Pagamento em análise', text: 'Assim que for aprovado, seu pedido seguirá para processamento.' };
+  }
+  if (paymentStatus === 'rejected' || paymentStatus === 'failed') {
+    return { tone: 'error' as const, title: 'Pagamento não aprovado', text: 'Você pode tentar realizar o pagamento novamente.' };
+  }
+  return { tone: 'info' as const, title: 'Pedido recebido', text: 'Acompanhe aqui o status do seu pedido.' };
+}
+
+function timelineSteps(status: string, paymentStatus: string | null) {
+  const isPaid = paymentStatus === 'paid' || paymentStatus === 'approved';
+  const isPreparing = ['preparing', 'shipped', 'out_for_delivery', 'delivered', 'completed'].includes(status);
+  const isShipped = ['shipped', 'out_for_delivery', 'delivered', 'completed'].includes(status);
+  const isDelivered = ['delivered', 'completed'].includes(status);
+  return [
+    { icon: CheckCircle2, label: 'Recebido', active: true },
+    { icon: CreditCard, label: 'Pagamento', active: isPaid },
+    { icon: Package, label: 'Preparando', active: isPreparing },
+    { icon: Truck, label: 'Enviado', active: isShipped },
+    { icon: CheckCircle2, label: 'Entregue', active: isDelivered },
+  ];
+}
+
+function trackingUrlFor(carrier: string | null, code: string | null): string | null {
+  if (!code) return null;
+  const c = (carrier ?? '').toLowerCase();
+  if (c.includes('correio')) return `https://rastreamento.correios.com.br/app/index.php?objeto=${encodeURIComponent(code)}`;
+  return null;
+}
+
+function OrderTrackingPage() {
   const { id } = Route.useParams();
+  const { token } = useSearch({ from: Route.id });
   const { user, loading } = useAuth();
   const navigate = useNavigate();
-  const [order, setOrder] = useState<OrderRow | null>(null);
+  const [order, setOrder] = useState<CustomerOrder | null>(null);
   const [fetching, setFetching] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [payRedirecting, setPayRedirecting] = useState(false);
+  const [notFound, setNotFound] = useState(false);
+
+  const load = useCallback(async (silent = false) => {
+    if (!silent) setFetching(true);
+    else setRefreshing(true);
+    try {
+      const r = await getOrderForCustomer({ data: { id, token: token ?? null } });
+      if (r.ok) {
+        setOrder(r.order);
+        setNotFound(false);
+      } else {
+        setNotFound(true);
+      }
+    } finally {
+      setFetching(false);
+      setRefreshing(false);
+    }
+  }, [id, token]);
+
+  // Aguarda saber se há sessão (envia Authorization header) ou se há token
+  useEffect(() => {
+    if (loading) return;
+    if (!user && !token) {
+      navigate({ to: '/login' });
+      return;
+    }
+    load(false);
+  }, [user, loading, token, load, navigate]);
 
   async function startPayment() {
-    if (!order) return;
-    if (payRedirecting) return;
+    if (!order || payRedirecting) return;
+    if (!user) {
+      toast.error('Faça login para pagar este pedido novamente.');
+      return;
+    }
     setPayRedirecting(true);
     try {
       const r = await createMercadoPagoPreference({ data: { orderId: order.id } });
       if (r.ok && r.checkoutUrl) {
         redirectToExternalCheckout(r.checkoutUrl);
-        return; // navegação em curso, mantém botão desabilitado
+        return;
       }
-      toast.error('Não foi possível iniciar o pagamento pelo Mercado Pago. Tente novamente em alguns instantes.');
+      toast.error('Não foi possível iniciar o pagamento. Tente novamente.');
       setPayRedirecting(false);
-    } catch (e) {
-      if (import.meta.env.DEV) console.error('[MP startPayment]', e);
-      toast.error('Não foi possível iniciar o pagamento pelo Mercado Pago. Tente novamente em alguns instantes.');
+    } catch {
+      toast.error('Não foi possível iniciar o pagamento. Tente novamente.');
       setPayRedirecting(false);
     }
   }
 
-  useEffect(() => {
-    if (!loading && !user) navigate({ to: '/login' });
-  }, [user, loading, navigate]);
-
-  useEffect(() => {
-    if (!user) return;
-    (async () => {
-      const r = await getOrderById({ data: { id } });
-      if (r.ok) setOrder(r.order as unknown as OrderRow);
-      setFetching(false);
-    })();
-  }, [user, id]);
-
-  if (loading || fetching) {
-    return <StoreLayout><div className="container mx-auto px-4 py-12 text-center text-muted-foreground"><Loader2 className="w-5 h-5 animate-spin inline mr-2" />Carregando pedido...</div></StoreLayout>;
+  async function handleRefresh() {
+    await load(true);
+    toast.success('Status atualizado');
   }
 
-  if (!order) {
+  if (loading || fetching) {
     return (
       <StoreLayout>
-        <div className="container mx-auto px-4 py-20 text-center">
+        <div className="container mx-auto px-4 py-12 text-center text-muted-foreground">
+          <Loader2 className="w-5 h-5 animate-spin inline mr-2" />Carregando pedido...
+        </div>
+      </StoreLayout>
+    );
+  }
+
+  if (notFound || !order) {
+    return (
+      <StoreLayout>
+        <div className="container mx-auto px-4 py-20 text-center max-w-md">
+          <AlertCircle className="w-12 h-12 mx-auto mb-3 text-muted-foreground" />
           <h1 className="font-display font-bold text-2xl mb-2">Pedido não encontrado</h1>
+          <p className="text-sm text-muted-foreground mb-5">
+            Verifique se o link está completo. Se você fez login com outra conta, a visualização pode estar restrita.
+          </p>
           <Button asChild><Link to="/conta/pedidos">Ver meus pedidos</Link></Button>
         </div>
       </StoreLayout>
     );
   }
 
-  const addr = (order.address_snapshot ?? {}) as {
-    recipient?: string;
-    street?: string;
-    number?: string;
-    complement?: string;
-    neighborhood?: string;
-    city?: string;
-    state?: string;
-    zipCode?: string;
-  };
+  const msg = statusMessage(order.status, order.paymentStatus);
+  const steps = timelineSteps(order.status, order.paymentStatus);
+  const trackUrl = trackingUrlFor(order.shippingCarrier, order.trackingCode);
+  const isPaymentPending = order.paymentStatus === 'pending' || order.paymentStatus === 'in_process';
+  const isPaymentRejected = order.paymentStatus === 'rejected' || order.paymentStatus === 'failed';
+  const supportPhone = (import.meta.env.VITE_SUPPORT_WHATSAPP ?? '').toString().replace(/\D/g, '');
+  const whatsUrl = supportPhone ? `https://wa.me/${supportPhone}?text=${encodeURIComponent(`Olá! Sobre o pedido #${order.orderNumber}.`)}` : null;
+
+  const toneClass = {
+    success: 'bg-success/10 border-success/30 text-success',
+    warn: 'bg-warning/10 border-warning/30 text-warning',
+    error: 'bg-destructive/10 border-destructive/30 text-destructive',
+    info: 'bg-primary-tint border-primary/30 text-primary',
+  }[msg.tone];
 
   return (
     <StoreLayout>
       <div className="container mx-auto px-4 py-8 max-w-3xl">
-        <div className="text-center mb-8">
-          <div className="w-16 h-16 rounded-full bg-success/15 flex items-center justify-center mx-auto mb-4">
-            <CheckCircle2 className="w-9 h-9 text-success" />
+        {/* Cabeçalho */}
+        <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3 mb-6">
+          <div>
+            <p className="text-xs text-muted-foreground uppercase tracking-wide font-medium">Pedido</p>
+            <h1 className="font-display font-bold text-3xl tracking-tight">#{order.orderNumber}</h1>
+            <p className="text-sm text-muted-foreground mt-1">
+              {order.createdAt && new Date(order.createdAt).toLocaleString('pt-BR')} · {orderStatusLabel(order.status)}
+            </p>
           </div>
-          <h1 className="font-display font-bold text-3xl mb-2">Pedido recebido!</h1>
-          <p className="text-muted-foreground">Pedido <strong className="text-foreground">#{order.order_number}</strong> · {order.created_at && new Date(order.created_at).toLocaleString('pt-BR')}</p>
-          <p className="mt-2 inline-block text-xs px-2 py-1 rounded-full bg-primary-tint text-primary font-medium">{orderStatusLabel(order.status)}</p>
+          <Button variant="outline" size="sm" onClick={handleRefresh} disabled={refreshing}>
+            {refreshing ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4" />}
+            Atualizar status
+          </Button>
         </div>
 
-        {/* Status timeline */}
+        {/* Mensagem principal */}
+        <div className={`rounded-xl border p-5 mb-6 ${toneClass}`}>
+          <p className="font-semibold">{msg.title}</p>
+          <p className="text-sm mt-1 opacity-90 text-foreground/80">{msg.text}</p>
+
+          {isPaymentPending && user && (
+            <Button onClick={startPayment} disabled={payRedirecting} className="mt-4 h-10">
+              {payRedirecting ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Abrindo...</> : <><CreditCard className="w-4 h-4 mr-2" />Pagar com Mercado Pago</>}
+            </Button>
+          )}
+          {isPaymentRejected && user && (
+            <Button onClick={startPayment} disabled={payRedirecting} className="mt-4 h-10">
+              {payRedirecting ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Abrindo...</> : <><CreditCard className="w-4 h-4 mr-2" />Tentar pagar novamente</>}
+            </Button>
+          )}
+        </div>
+
+        {/* Timeline */}
         <div className="bg-card border border-border rounded-xl p-6 mb-6">
-          <h2 className="font-display font-semibold mb-5">Status do pedido</h2>
-          <div className="grid grid-cols-4 gap-2">
-            {[
-              { icon: CheckCircle2, label: 'Recebido', active: true },
-              { icon: Clock, label: 'Pagamento', active: order.payment_status === 'paid' },
-              { icon: Package, label: 'Preparando', active: order.status === 'preparing' || order.status === 'shipped' || order.status === 'delivered' },
-              { icon: Truck, label: 'Enviado', active: order.status === 'shipped' || order.status === 'delivered' },
-            ].map((s) => (
+          <h2 className="font-display font-semibold mb-5">Linha do tempo</h2>
+          <div className="grid grid-cols-5 gap-2">
+            {steps.map((s) => (
               <div key={s.label} className="flex flex-col items-center text-center">
                 <div className={`w-10 h-10 rounded-full flex items-center justify-center mb-1.5 ${s.active ? 'bg-primary text-primary-foreground' : 'bg-surface text-text-faint'}`}>
                   <s.icon className="w-4 h-4" />
                 </div>
-                <span className={`text-xs ${s.active ? 'font-medium text-foreground' : 'text-muted-foreground'}`}>{s.label}</span>
+                <span className={`text-[11px] sm:text-xs ${s.active ? 'font-medium text-foreground' : 'text-muted-foreground'}`}>{s.label}</span>
               </div>
             ))}
           </div>
-
-          {order.payment_status === 'approved' || order.payment_status === 'paid' ? (
-            <div className="mt-5 p-4 bg-success/10 border border-success/30 rounded-lg text-sm">
-              <p className="font-medium mb-1 text-success">Pagamento aprovado</p>
-              <p className="text-muted-foreground text-xs">Recebemos a confirmação. Vamos preparar seu pedido.</p>
-            </div>
-          ) : order.payment_status === 'pending' || order.payment_status === 'in_process' ? (
-            <div className="mt-5 p-4 bg-warning/10 border border-warning/30 rounded-lg text-sm">
-              <p className="font-medium mb-1">Pagamento em análise</p>
-              <p className="text-muted-foreground text-xs">Estamos confirmando seu pagamento com o Mercado Pago.</p>
-            </div>
-          ) : (
-            <div className="mt-5 p-4 bg-primary-tint border border-primary/30 rounded-lg">
-              <p className="font-medium mb-1 text-sm">Pagamento pendente</p>
-              <p className="text-muted-foreground text-xs mb-3">Finalize o pagamento de forma segura via Mercado Pago.</p>
-              <Button onClick={startPayment} disabled={payRedirecting} className="w-full sm:w-auto h-10">
-                {payRedirecting ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Abrindo...</> : <><CreditCard className="w-4 h-4 mr-2" />Pagar com Mercado Pago</>}
-              </Button>
-            </div>
-          )}
         </div>
 
-        {/* Itens */}
+        {/* Itens + resumo */}
         <div className="bg-card border border-border rounded-xl p-6 mb-6">
           <h2 className="font-display font-semibold mb-4">Itens</h2>
           <div className="divide-y divide-border">
-            {order.order_items.map((it) => (
+            {order.items.map((it) => (
               <div key={it.id} className="py-3 flex items-center gap-3">
                 <div className="w-12 h-12 rounded bg-surface overflow-hidden flex items-center justify-center shrink-0">
-                  {it.product_image ? <img src={it.product_image} alt={it.product_name} className="w-full h-full object-cover" /> : <ShoppingBag className="w-5 h-5 text-text-faint" />}
+                  {it.image ? <img src={it.image} alt={it.name} className="w-full h-full object-cover" /> : <ShoppingBag className="w-5 h-5 text-text-faint" />}
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="font-medium text-sm line-clamp-1">{it.product_name}</p>
-                  <p className="text-xs text-muted-foreground">{it.qty}× {formatBRL(it.unit_price)}</p>
+                  <p className="font-medium text-sm line-clamp-1">{it.name}</p>
+                  <p className="text-xs text-muted-foreground">{it.qty}× {formatBRL(it.unitPrice)}</p>
                 </div>
-                <div className="font-medium text-sm">{formatBRL(it.total_price)}</div>
+                <div className="font-medium text-sm">{formatBRL(it.totalPrice)}</div>
               </div>
             ))}
           </div>
           <div className="mt-4 pt-4 border-t border-border space-y-1.5 text-sm">
             <div className="flex justify-between"><span className="text-muted-foreground">Subtotal</span><span>{formatBRL(order.subtotal)}</span></div>
-            {order.discount > 0 && <div className="flex justify-between text-success"><span>Desconto</span><span>−{formatBRL(order.discount)}</span></div>}
-            <div className="flex justify-between"><span className="text-muted-foreground">Frete ({order.shipping_service})</span><span>{order.shipping_cost === 0 ? 'Grátis' : formatBRL(order.shipping_cost)}</span></div>
+            {order.discount > 0 && <div className="flex justify-between text-success"><span>Desconto{order.couponCode ? ` (${order.couponCode})` : ''}</span><span>−{formatBRL(order.discount)}</span></div>}
+            <div className="flex justify-between"><span className="text-muted-foreground">Frete{order.shippingService ? ` (${order.shippingService})` : ''}</span><span>{order.shippingCost === 0 ? 'Grátis' : formatBRL(order.shippingCost)}</span></div>
             <div className="flex justify-between font-display font-bold text-lg pt-2 border-t border-border"><span>Total</span><span className="text-primary">{formatBRL(order.total)}</span></div>
           </div>
         </div>
 
-        {/* Endereço */}
+        {/* Entrega */}
         <div className="bg-card border border-border rounded-xl p-6 mb-6">
-          <h2 className="font-display font-semibold mb-3">Entrega</h2>
-          <p className="text-sm">{addr.recipient}</p>
-          <p className="text-sm text-muted-foreground">{addr.street}, {addr.number}{addr.complement ? `, ${addr.complement}` : ''}</p>
-          <p className="text-sm text-muted-foreground">{addr.neighborhood} · {addr.city}/{addr.state} · CEP {addr.zipCode}</p>
+          <div className="flex items-center gap-2 mb-3">
+            <MapPin className="w-4 h-4 text-primary" />
+            <h2 className="font-display font-semibold">Entrega</h2>
+          </div>
+          {order.address ? (
+            <div className="text-sm space-y-0.5">
+              {order.address.recipient && <p className="font-medium">{order.address.recipient}</p>}
+              <p className="text-muted-foreground">
+                {order.address.street}{order.address.number ? `, ${order.address.number}` : ''}{order.address.complement ? `, ${order.address.complement}` : ''}
+              </p>
+              <p className="text-muted-foreground">
+                {[order.address.neighborhood, order.address.city && `${order.address.city}/${order.address.state ?? ''}`].filter(Boolean).join(' · ')}
+                {order.address.zipCode ? ` · CEP ${order.address.zipCode}` : ''}
+              </p>
+            </div>
+          ) : (
+            <p className="text-sm text-muted-foreground">Endereço não disponível.</p>
+          )}
+
+          {(order.shippingCarrier || order.shippingService || order.estimatedDelivery) && (
+            <div className="mt-3 pt-3 border-t border-border text-xs text-muted-foreground space-y-0.5">
+              {order.shippingCarrier && <p>Transportadora: <span className="text-foreground">{order.shippingCarrier}</span></p>}
+              {order.estimatedDelivery && <p>Previsão: <span className="text-foreground">{new Date(order.estimatedDelivery).toLocaleDateString('pt-BR')}</span></p>}
+              {order.trackingCode && <p>Código: <span className="text-foreground font-mono">{order.trackingCode}</span></p>}
+            </div>
+          )}
+
+          {trackUrl && (
+            <Button asChild variant="outline" size="sm" className="mt-3">
+              <a href={trackUrl} target="_blank" rel="noopener noreferrer"><Truck className="w-4 h-4" />Rastrear pedido</a>
+            </Button>
+          )}
         </div>
 
-        <div className="flex gap-3">
-          <Button asChild variant="outline" className="flex-1"><Link to="/conta/pedidos">Meus pedidos</Link></Button>
+        {/* Pagamento */}
+        <div className="bg-card border border-border rounded-xl p-6 mb-6">
+          <div className="flex items-center gap-2 mb-3">
+            <CreditCard className="w-4 h-4 text-primary" />
+            <h2 className="font-display font-semibold">Pagamento</h2>
+          </div>
+          <div className="text-sm space-y-1">
+            <p className="text-muted-foreground">Método: <span className="text-foreground">Mercado Pago</span></p>
+            <p className="text-muted-foreground">
+              Status: <span className="text-foreground">
+                {order.paymentStatus === 'paid' || order.paymentStatus === 'approved' ? 'Aprovado'
+                  : order.paymentStatus === 'pending' || order.paymentStatus === 'in_process' ? 'Pendente'
+                  : order.paymentStatus === 'rejected' || order.paymentStatus === 'failed' ? 'Recusado'
+                  : order.paymentStatus === 'refunded' ? 'Reembolsado'
+                  : '—'}
+              </span>
+            </p>
+            {order.paidAt && <p className="text-muted-foreground">Aprovado em: <span className="text-foreground">{new Date(order.paidAt).toLocaleString('pt-BR')}</span></p>}
+          </div>
+        </div>
+
+        <div className="flex flex-col sm:flex-row gap-3">
+          {whatsUrl && (
+            <Button asChild variant="outline" className="flex-1">
+              <a href={whatsUrl} target="_blank" rel="noopener noreferrer"><MessageCircle className="w-4 h-4" />Falar com atendimento</a>
+            </Button>
+          )}
+          {user && (
+            <Button asChild variant="outline" className="flex-1"><Link to="/conta/pedidos">Meus pedidos</Link></Button>
+          )}
           <Button asChild className="flex-1"><Link to="/catalogo">Continuar comprando <ArrowRight className="w-4 h-4 ml-1.5" /></Link></Button>
         </div>
       </div>

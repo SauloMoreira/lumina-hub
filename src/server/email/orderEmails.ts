@@ -37,7 +37,7 @@ export async function sendOrderEmail(opts: SendOrderEmailOptions): Promise<{
     const { data: order, error: orderErr } = await supabaseAdmin
       .from('orders')
       .select(
-        'id, order_number, user_id, status, payment_status, subtotal, discount, shipping_cost, total, tracking_code, address_snapshot, order_items(product_name, qty, unit_price, total_price)'
+        'id, order_number, user_id, status, payment_status, subtotal, discount, shipping_cost, total, tracking_code, address_snapshot, public_access_token, order_items(product_name, qty, unit_price, total_price)'
       )
       .eq('id', opts.orderId)
       .single();
@@ -80,8 +80,11 @@ export async function sendOrderEmail(opts: SendOrderEmailOptions): Promise<{
       }
     }
 
-    // 4) Renderizar template
-    const orderUrl = `${getSiteUrl()}/pedido/${order.id}/confirmacao`;
+    // 4) Renderizar template — link inclui token público para acesso sem login
+    const tokenQuery = order.public_access_token
+      ? `?token=${encodeURIComponent(order.public_access_token)}`
+      : '';
+    const orderUrl = `${getSiteUrl()}/pedido/${order.id}/confirmacao${tokenQuery}`;
     const retryUrl =
       opts.type === 'payment_failed'
         ? `${getSiteUrl()}/checkout/failure?order_id=${order.id}`
