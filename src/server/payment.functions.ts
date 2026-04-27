@@ -19,9 +19,12 @@ function getSiteUrl(): string {
 function isSandboxToken(token: string): boolean {
   // No Brasil, credenciais de TESTE também usam o prefixo APP_USR-.
   // Por isso não dá para distinguir produção/teste apenas pelo prefixo.
-  // Tratamos como "modo seguro" sempre: nunca enviamos payer (evita
-  // o erro "uma das partes é de teste" quando há mistura de ambientes).
   return token.startsWith('TEST-');
+}
+
+function shouldUseSandboxCheckout(siteUrl: string, accessToken: string): boolean {
+  const host = new URL(siteUrl).hostname;
+  return isSandboxToken(accessToken) || host === 'localhost' || host.startsWith('id-preview--') || host.endsWith('-dev.lovable.app');
 }
 
 // ============================================================
@@ -79,20 +82,16 @@ export const createMercadoPagoPreference = createServerFn({ method: 'POST' })
     }
 
     // 3) Dados do pagador
-    const addr = (order.address_snapshot ?? {}) as { recipient?: string };
-    const { data: profile } = await supabase
-      .from('profiles')
-      .select('email, name')
-      .eq('id', userId)
-      .single();
-
     const externalReference = order.id;
     const siteUrl = getSiteUrl();
-    const sandbox = isSandboxToken(accessToken);
-    // Nunca enviamos payer: evita o erro "uma das partes é de teste"
-    // quando o token e a conta logada estão em ambientes diferentes.
-    // O comprador informa os dados diretamente no checkout do MP.
-    const payer = undefined;
+    const sandbox = shouldUseSandboxCheckout(siteUrl, accessToken);
+    const payer = sandbox
+      ? {
+          email: 'test_payer_7835120424@testuser.com',
+          first_name: 'APRO',
+          last_name: 'Teste',
+        }
+      : undefined;
 
     // Build items para MP. Adiciona um item virtual de frete/desconto se necessário.
     const mpItems: Array<Record<string, unknown>> = items.map((i) => ({
