@@ -10,6 +10,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { useCart } from '@/stores/cartStore';
 import { formatBRL } from '@/lib/domain';
 import { lookupCep, calculateShipping, applyCoupon, createOrder } from '@/server/checkout.functions';
+import { createMercadoPagoPreference } from '@/server/payment.functions';
 import { buildSeo } from '@/lib/seo';
 import { trackPurchase, trackBeginCheckout } from '@/lib/tracking';
 
@@ -172,6 +173,19 @@ function CheckoutPage() {
       });
       if (r.ok) {
         trackPurchase({ order_number: r.orderId, total: cart.subtotal(), items: cart.items });
+        // Criar preference do Mercado Pago e redirecionar
+        try {
+          const pref = await createMercadoPagoPreference({ data: { orderId: r.orderId } });
+          if (pref.ok && pref.checkoutUrl) {
+            cart.clear();
+            window.location.href = pref.checkoutUrl;
+            return;
+          }
+          toast.error(pref.ok ? 'Não foi possível abrir o pagamento' : pref.error);
+        } catch (err) {
+          toast.error(err instanceof Error ? err.message : 'Erro ao iniciar pagamento');
+        }
+        // Fallback: leva para a página do pedido onde há botão para retomar
         cart.clear();
         navigate({ to: '/pedido/$id/confirmacao', params: { id: r.orderId } });
       } else {
