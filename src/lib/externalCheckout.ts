@@ -1,61 +1,18 @@
-export function reserveExternalCheckoutWindow(): Window | null {
-  if (typeof window === 'undefined') return null;
-
-  const popup = window.open('', '_blank');
-  if (!popup) return null;
-
-  try {
-    popup.document.title = 'Abrindo Mercado Pago';
-    popup.document.body.textContent = 'Abrindo Mercado Pago...';
-  } catch {
-    // Ignore browser restrictions and still use the reserved tab if available.
-  }
-
-  return popup;
-}
-
-export function redirectToExternalCheckout(url: string, popup?: Window | null) {
+// Redireciona o usuário para o checkout externo (Mercado Pago) na MESMA aba.
+// Evita fluxos com window.open que causavam abertura duplicada de janela.
+export function redirectToExternalCheckout(url: string) {
   if (typeof window === 'undefined') return;
+  if (!url) return;
 
-  if (popup && !popup.closed) {
-    try {
-      popup.opener = null;
-      popup.location.assign(url);
-      popup.focus();
-      return;
-    } catch {
-      // Fall through to a regular external open.
-    }
-  }
-
-  const opened = window.open(url, '_blank', 'noopener,noreferrer');
-  if (opened) {
-    try {
-      opened.opener = null;
-      opened.focus();
-    } catch {
-      // No-op.
-    }
-    return;
-  }
-
+  // Se a app estiver dentro de um iframe (ex.: preview), tenta navegar o top.
   try {
     if (window.top && window.top !== window.self) {
-      window.top.location.href = url;
+      window.top.location.assign(url);
       return;
     }
   } catch {
-    // Cross-origin frame restrictions can block top navigation.
+    // Restrições cross-origin: cai para navegação local.
   }
 
-  window.location.href = url;
-}
-
-export function closeReservedCheckoutWindow(popup?: Window | null) {
-  if (!popup || popup.closed) return;
-  try {
-    popup.close();
-  } catch {
-    // No-op.
-  }
+  window.location.assign(url);
 }
