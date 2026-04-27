@@ -140,11 +140,11 @@ export const adminUpdateCompanySettings = createServerFn({ method: 'POST' })
     }
     const payload = cleaned as typeof data;
     if (existing?.id) {
-      const { error } = await supabaseAdmin.from('company_settings').update(cleaned).eq('id', existing.id);
+      const { error } = await supabaseAdmin.from('company_settings').update(payload).eq('id', existing.id);
       if (error) throw new Error(error.message);
       return { ok: true };
     }
-    const { error } = await supabaseAdmin.from('company_settings').insert(cleaned);
+    const { error } = await supabaseAdmin.from('company_settings').insert(payload);
     if (error) throw new Error(error.message);
     return { ok: true };
   });
