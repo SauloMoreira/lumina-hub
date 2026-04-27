@@ -68,6 +68,17 @@ export const createMercadoPagoPreference = createServerFn({ method: 'POST' })
     if (order.payment_status === 'approved' || order.payment_status === 'paid') {
       return { ok: false as const, error: 'Pedido já está pago' };
     }
+
+    // Idempotência: se já existe preference válida para este pedido, reaproveita.
+    if (order.mp_preference_id && order.checkout_url) {
+      console.log('[MP] reaproveitando preference existente', { orderId: order.id, preferenceId: order.mp_preference_id });
+      return {
+        ok: true as const,
+        checkoutUrl: order.checkout_url,
+        preferenceId: order.mp_preference_id,
+      };
+    }
+
     const items = order.order_items ?? [];
     if (!items.length) {
       return { ok: false as const, error: 'Pedido sem itens' };
