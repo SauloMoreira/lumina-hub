@@ -148,7 +148,7 @@ export const createMercadoPagoPreference = createServerFn({ method: 'POST' })
       hasPayer: !!payer,
     });
 
-    let mpJson: { id?: string; init_point?: string; sandbox_init_point?: string; message?: string; error?: string; cause?: unknown } = {};
+    let mpJson: { id?: string; init_point?: string; sandbox_init_point?: string; message?: string; error?: string } = {};
     let mpRawText = '';
     let mpStatus = 0;
     try {
