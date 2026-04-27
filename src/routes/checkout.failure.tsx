@@ -7,7 +7,7 @@ import { StoreLayout } from '@/components/layout/StoreLayout';
 import { Button } from '@/components/ui/button';
 import { createMercadoPagoPreference } from '@/server/payment.functions';
 import { buildSeo } from '@/lib/seo';
-import { closeReservedCheckoutWindow, redirectToExternalCheckout, reserveExternalCheckoutWindow } from '@/lib/externalCheckout';
+import { redirectToExternalCheckout } from '@/lib/externalCheckout';
 
 const searchSchema = z.object({
   order_id: z.string().uuid().optional(),
@@ -27,20 +27,19 @@ function FailurePage() {
 
   async function retry() {
     if (!order_id) return;
+    if (retrying) return;
     setRetrying(true);
-    const checkoutWindow = reserveExternalCheckoutWindow();
     try {
       const r = await createMercadoPagoPreference({ data: { orderId: order_id } });
       if (r.ok && r.checkoutUrl) {
-        redirectToExternalCheckout(r.checkoutUrl, checkoutWindow);
-      } else {
-        closeReservedCheckoutWindow(checkoutWindow);
-        toast.error(r.ok ? 'Não foi possível obter o link de pagamento' : r.error);
+        redirectToExternalCheckout(r.checkoutUrl);
+        return; // não reabilita botão; navegação em curso
       }
+      toast.error('Não foi possível iniciar o pagamento pelo Mercado Pago. Tente novamente em alguns instantes.');
+      setRetrying(false);
     } catch (e) {
-      closeReservedCheckoutWindow(checkoutWindow);
-      toast.error(e instanceof Error ? e.message : 'Erro ao recriar pagamento');
-    } finally {
+      if (import.meta.env.DEV) console.error('[MP retry]', e);
+      toast.error('Não foi possível iniciar o pagamento pelo Mercado Pago. Tente novamente em alguns instantes.');
       setRetrying(false);
     }
   }

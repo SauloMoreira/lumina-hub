@@ -9,7 +9,7 @@ import { formatBRL } from '@/lib/domain';
 import { getOrderById } from '@/server/checkout.functions';
 import { createMercadoPagoPreference } from '@/server/payment.functions';
 import { orderStatusLabel } from '@/lib/orderStatus';
-import { closeReservedCheckoutWindow, redirectToExternalCheckout, reserveExternalCheckoutWindow } from '@/lib/externalCheckout';
+import { redirectToExternalCheckout } from '@/lib/externalCheckout';
 
 export const Route = createFileRoute('/pedido/$id/confirmacao')({ component: OrderConfirmation });
 
@@ -46,20 +46,19 @@ function OrderConfirmation() {
 
   async function startPayment() {
     if (!order) return;
+    if (payRedirecting) return;
     setPayRedirecting(true);
-    const checkoutWindow = reserveExternalCheckoutWindow();
     try {
       const r = await createMercadoPagoPreference({ data: { orderId: order.id } });
       if (r.ok && r.checkoutUrl) {
-        redirectToExternalCheckout(r.checkoutUrl, checkoutWindow);
-      } else {
-        closeReservedCheckoutWindow(checkoutWindow);
-        toast.error(r.ok ? 'Não foi possível abrir o pagamento' : r.error);
-        setPayRedirecting(false);
+        redirectToExternalCheckout(r.checkoutUrl);
+        return; // navegação em curso, mantém botão desabilitado
       }
+      toast.error('Não foi possível iniciar o pagamento pelo Mercado Pago. Tente novamente em alguns instantes.');
+      setPayRedirecting(false);
     } catch (e) {
-      closeReservedCheckoutWindow(checkoutWindow);
-      toast.error(e instanceof Error ? e.message : 'Erro ao iniciar pagamento');
+      if (import.meta.env.DEV) console.error('[MP startPayment]', e);
+      toast.error('Não foi possível iniciar o pagamento pelo Mercado Pago. Tente novamente em alguns instantes.');
       setPayRedirecting(false);
     }
   }

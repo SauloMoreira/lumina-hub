@@ -13,7 +13,7 @@ import { lookupCep, calculateShipping, applyCoupon, createOrder } from '@/server
 import { createMercadoPagoPreference } from '@/server/payment.functions';
 import { buildSeo } from '@/lib/seo';
 import { trackPurchase, trackBeginCheckout } from '@/lib/tracking';
-import { closeReservedCheckoutWindow, redirectToExternalCheckout, reserveExternalCheckoutWindow } from '@/lib/externalCheckout';
+import { redirectToExternalCheckout } from '@/lib/externalCheckout';
 
 export const Route = createFileRoute('/checkout')({
   head: () => buildSeo({ title: 'Finalizar pedido', url: '/checkout', noindex: true }),
@@ -159,8 +159,8 @@ function CheckoutPage() {
 
   async function handleSubmit() {
     if (!selectedShipping) return;
+    if (submitting) return;
     setSubmitting(true);
-    const checkoutWindow = reserveExternalCheckoutWindow();
     try {
       const r = await createOrder({
         data: {
@@ -193,29 +193,27 @@ function CheckoutPage() {
       });
       if (r.ok) {
         trackPurchase({ order_number: r.orderId, total: cart.subtotal(), items: cart.items });
-        // Criar preference do Mercado Pago e redirecionar
+        // Criar preference do Mercado Pago e redirecionar (mesma aba)
         try {
           const pref = await createMercadoPagoPreference({ data: { orderId: r.orderId } });
           if (pref.ok && pref.checkoutUrl) {
             cart.clear();
-            redirectToExternalCheckout(pref.checkoutUrl, checkoutWindow);
-            return;
+            redirectToExternalCheckout(pref.checkoutUrl);
+            return; // navegação em curso, mantém botão desabilitado
           }
-          closeReservedCheckoutWindow(checkoutWindow);
-          toast.error(pref.ok ? 'Não foi possível abrir o pagamento' : pref.error);
+          toast.error('Não foi possível iniciar o pagamento pelo Mercado Pago. Tente novamente em alguns instantes.');
         } catch (err) {
-          closeReservedCheckoutWindow(checkoutWindow);
-          toast.error(err instanceof Error ? err.message : 'Erro ao iniciar pagamento');
+          if (import.meta.env.DEV) console.error('[MP createPreference]', err);
+          toast.error('Não foi possível iniciar o pagamento pelo Mercado Pago. Tente novamente em alguns instantes.');
         }
         // Fallback: leva para a página do pedido onde há botão para retomar
         cart.clear();
         navigate({ to: '/pedido/$id/confirmacao', params: { id: r.orderId } });
       } else {
-        closeReservedCheckoutWindow(checkoutWindow);
         toast.error(r.error);
       }
     } catch (e) {
-      closeReservedCheckoutWindow(checkoutWindow);
+      if (import.meta.env.DEV) console.error('[checkout]', e);
       toast.error(e instanceof Error ? e.message : 'Erro ao finalizar pedido');
     } finally {
       setSubmitting(false);
