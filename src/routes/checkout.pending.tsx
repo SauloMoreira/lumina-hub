@@ -26,9 +26,12 @@ function PendingPage() {
           <Clock className="w-9 h-9 text-warning" />
         </div>
         <h1 className="font-display font-bold text-3xl mb-2">Pagamento em análise</h1>
-        <p className="text-muted-foreground mb-6">
+        <p className="text-muted-foreground mb-2">
           Seu pagamento está em processamento. Isso é normal para boleto, Pix com aprovação manual ou análise antifraude.
           Assim que for aprovado, atualizaremos o status do seu pedido automaticamente.
+        </p>
+        <p className="text-xs text-muted-foreground mb-6">
+          Enviamos as atualizações do pedido para o seu e-mail cadastrado.
         </p>
         <div className="flex gap-3 justify-center">
           {order_id && (
