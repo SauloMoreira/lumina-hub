@@ -291,6 +291,25 @@ export const Route = createFileRoute('/api/public/mercadopago/webhook')({
           return new Response('ok', { status: 200 });
         }
 
+        // Baixa de estoque idempotente quando aprovado
+        if (willBePaid) {
+          const { data: stockRes, error: stockErr } = await supabaseAdmin.rpc(
+            'decrement_stock_for_order',
+            { _order_id: order.id }
+          );
+          if (stockErr) {
+            console.error('[MP webhook] erro decrement_stock_for_order', stockErr);
+            if (auditId) {
+              await supabaseAdmin
+                .from('payment_webhook_events')
+                .update({ processing_error: `stock decrement: ${stockErr.message}` })
+                .eq('id', auditId);
+            }
+          } else {
+            console.log('[MP webhook] estoque', { orderId: order.id, result: stockRes });
+          }
+        }
+
         if (auditId) {
           await supabaseAdmin
             .from('payment_webhook_events')
