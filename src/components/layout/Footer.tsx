@@ -64,27 +64,17 @@ export function Footer() {
               Links
             </h4>
             <ul className="space-y-3 text-sm text-slate-300">
+              <li><Link to="/catalogo" className="hover:text-[#60A5FA] transition-colors">Catálogo</Link></li>
+              <li><Link to="/contato" className="hover:text-[#60A5FA] transition-colors">Contato</Link></li>
+              <li><Link to="/condicoes-de-uso" className="hover:text-[#60A5FA] transition-colors">Condições de Uso</Link></li>
+              <li><Link to="/meios-de-pagamento" className="hover:text-[#60A5FA] transition-colors">Meios de Pagamento</Link></li>
+              <li><Link to="/reembolso" className="hover:text-[#60A5FA] transition-colors">Reembolso</Link></li>
+              <li><Link to="/troca" className="hover:text-[#60A5FA] transition-colors">Troca</Link></li>
+              <li><Link to="/devolucao" className="hover:text-[#60A5FA] transition-colors">Devolução</Link></li>
+              <li><Link to="/privacidade" className="hover:text-[#60A5FA] transition-colors">Política de Privacidade</Link></li>
               <li>
-                <Link to="/catalogo" className="hover:text-[#60A5FA] transition-colors">
-                  Catálogo
-                </Link>
-              </li>
-              <li>
-                <Link to="/" className="hover:text-[#60A5FA] transition-colors">
-                  Promoções
-                </Link>
-              </li>
-              <li>
-                <Link to="/privacidade" className="hover:text-[#60A5FA] transition-colors">
-                  Política de Privacidade
-                </Link>
-              </li>
-              <li>
-                <button
-                  type="button"
-                  onClick={() => useCookieStore.getState().openPreferences()}
-                  className="hover:text-[#60A5FA] transition-colors text-left"
-                >
+                <button type="button" onClick={() => useCookieStore.getState().openPreferences()}
+                  className="hover:text-[#60A5FA] transition-colors text-left">
                   Gerenciar cookies
                 </button>
               </li>

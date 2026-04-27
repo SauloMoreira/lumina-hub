@@ -194,6 +194,132 @@ export type Database = {
           },
         ]
       }
+      company_settings: {
+        Row: {
+          address_city: string | null
+          address_complement: string | null
+          address_neighborhood: string | null
+          address_number: string | null
+          address_state: string | null
+          address_street: string | null
+          address_zipcode: string | null
+          business_hours: string | null
+          cnpj: string | null
+          created_at: string
+          facebook_url: string | null
+          id: string
+          instagram_url: string | null
+          legal_name: string | null
+          linkedin_url: string | null
+          logo_url: string | null
+          municipal_registration: string | null
+          state_registration: string | null
+          support_email: string | null
+          support_phone: string | null
+          support_whatsapp: string | null
+          tiktok_url: string | null
+          trade_name: string | null
+          updated_at: string
+          website_url: string | null
+        }
+        Insert: {
+          address_city?: string | null
+          address_complement?: string | null
+          address_neighborhood?: string | null
+          address_number?: string | null
+          address_state?: string | null
+          address_street?: string | null
+          address_zipcode?: string | null
+          business_hours?: string | null
+          cnpj?: string | null
+          created_at?: string
+          facebook_url?: string | null
+          id?: string
+          instagram_url?: string | null
+          legal_name?: string | null
+          linkedin_url?: string | null
+          logo_url?: string | null
+          municipal_registration?: string | null
+          state_registration?: string | null
+          support_email?: string | null
+          support_phone?: string | null
+          support_whatsapp?: string | null
+          tiktok_url?: string | null
+          trade_name?: string | null
+          updated_at?: string
+          website_url?: string | null
+        }
+        Update: {
+          address_city?: string | null
+          address_complement?: string | null
+          address_neighborhood?: string | null
+          address_number?: string | null
+          address_state?: string | null
+          address_street?: string | null
+          address_zipcode?: string | null
+          business_hours?: string | null
+          cnpj?: string | null
+          created_at?: string
+          facebook_url?: string | null
+          id?: string
+          instagram_url?: string | null
+          legal_name?: string | null
+          linkedin_url?: string | null
+          logo_url?: string | null
+          municipal_registration?: string | null
+          state_registration?: string | null
+          support_email?: string | null
+          support_phone?: string | null
+          support_whatsapp?: string | null
+          tiktok_url?: string | null
+          trade_name?: string | null
+          updated_at?: string
+          website_url?: string | null
+        }
+        Relationships: []
+      }
+      contact_messages: {
+        Row: {
+          created_at: string
+          email: string
+          id: string
+          message: string
+          metadata: Json | null
+          name: string
+          phone: string | null
+          source: string
+          status: string
+          subject: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          id?: string
+          message: string
+          metadata?: Json | null
+          name: string
+          phone?: string | null
+          source?: string
+          status?: string
+          subject?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          id?: string
+          message?: string
+          metadata?: Json | null
+          name?: string
+          phone?: string | null
+          source?: string
+          status?: string
+          subject?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       coupons: {
         Row: {
           active: boolean | null
@@ -341,6 +467,63 @@ export type Database = {
           text_color?: string | null
           title?: string
           updated_at?: string
+        }
+        Relationships: []
+      }
+      institutional_pages: {
+        Row: {
+          content: string
+          created_at: string
+          excerpt: string | null
+          id: string
+          is_required: boolean
+          published_at: string | null
+          seo_description: string | null
+          seo_title: string | null
+          show_in_footer: boolean
+          show_in_header: boolean
+          slug: string
+          sort_order: number
+          status: string
+          title: string
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          content?: string
+          created_at?: string
+          excerpt?: string | null
+          id?: string
+          is_required?: boolean
+          published_at?: string | null
+          seo_description?: string | null
+          seo_title?: string | null
+          show_in_footer?: boolean
+          show_in_header?: boolean
+          slug: string
+          sort_order?: number
+          status?: string
+          title: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          excerpt?: string | null
+          id?: string
+          is_required?: boolean
+          published_at?: string | null
+          seo_description?: string | null
+          seo_title?: string | null
+          show_in_footer?: boolean
+          show_in_header?: boolean
+          slug?: string
+          sort_order?: number
+          status?: string
+          title?: string
+          updated_at?: string
+          updated_by?: string | null
         }
         Relationships: []
       }
