@@ -88,8 +88,6 @@ export const createMercadoPagoPreference = createServerFn({ method: 'POST' })
 
     const externalReference = order.id;
     const siteUrl = getSiteUrl();
-    const externalReference = order.id;
-    const siteUrl = getSiteUrl();
     const sandbox = isSandboxToken(accessToken);
     // Nunca enviamos payer: evita o erro "uma das partes é de teste"
     // quando o token e a conta logada estão em ambientes diferentes.
