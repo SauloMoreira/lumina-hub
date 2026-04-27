@@ -866,6 +866,33 @@ export type Database = {
         }
         Relationships: []
       }
+      stock_decrement_audit: {
+        Row: {
+          created_at: string
+          id: string
+          items: Json
+          note: string | null
+          order_id: string
+          result: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          items?: Json
+          note?: string | null
+          order_id: string
+          result: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          items?: Json
+          note?: string | null
+          order_id?: string
+          result?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
