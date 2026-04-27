@@ -130,10 +130,23 @@ function OrderConfirmation() {
             ))}
           </div>
 
-          {order.payment_status !== 'paid' && (
+          {order.payment_status === 'approved' || order.payment_status === 'paid' ? (
+            <div className="mt-5 p-4 bg-success/10 border border-success/30 rounded-lg text-sm">
+              <p className="font-medium mb-1 text-success">Pagamento aprovado</p>
+              <p className="text-muted-foreground text-xs">Recebemos a confirmação. Vamos preparar seu pedido.</p>
+            </div>
+          ) : order.payment_status === 'pending' || order.payment_status === 'in_process' ? (
             <div className="mt-5 p-4 bg-warning/10 border border-warning/30 rounded-lg text-sm">
-              <p className="font-medium mb-1">Aguardando pagamento</p>
-              <p className="text-muted-foreground text-xs">Assim que a integração com Mercado Pago for ativada, o link de pagamento aparecerá aqui automaticamente.</p>
+              <p className="font-medium mb-1">Pagamento em análise</p>
+              <p className="text-muted-foreground text-xs">Estamos confirmando seu pagamento com o Mercado Pago.</p>
+            </div>
+          ) : (
+            <div className="mt-5 p-4 bg-primary-tint border border-primary/30 rounded-lg">
+              <p className="font-medium mb-1 text-sm">Pagamento pendente</p>
+              <p className="text-muted-foreground text-xs mb-3">Finalize o pagamento de forma segura via Mercado Pago.</p>
+              <Button onClick={startPayment} disabled={payRedirecting} className="w-full sm:w-auto h-10">
+                {payRedirecting ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Abrindo...</> : <><CreditCard className="w-4 h-4 mr-2" />Pagar com Mercado Pago</>}
+              </Button>
             </div>
           )}
         </div>
