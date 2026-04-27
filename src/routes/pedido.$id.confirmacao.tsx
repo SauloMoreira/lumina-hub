@@ -1,11 +1,13 @@
 import { createFileRoute, Link, useNavigate } from '@tanstack/react-router';
 import { useEffect, useState } from 'react';
-import { CheckCircle2, Package, Truck, Clock, ShoppingBag, ArrowRight, Loader2 } from 'lucide-react';
+import { CheckCircle2, Package, Truck, Clock, ShoppingBag, ArrowRight, Loader2, CreditCard } from 'lucide-react';
+import { toast } from 'sonner';
 import { StoreLayout } from '@/components/layout/StoreLayout';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/hooks/useAuth';
 import { formatBRL } from '@/lib/domain';
 import { getOrderById } from '@/server/checkout.functions';
+import { createMercadoPagoPreference } from '@/server/payment.functions';
 import { orderStatusLabel } from '@/lib/orderStatus';
 
 export const Route = createFileRoute('/pedido/$id/confirmacao')({ component: OrderConfirmation });
