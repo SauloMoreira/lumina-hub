@@ -159,14 +159,15 @@ export const createMercadoPagoPreference = createServerFn({ method: 'POST' })
     }
 
     const orderIdParam = encodeURIComponent(order.id);
+    const returnBaseUrl = getPublicReturnUrl(siteUrl);
     const preferencePayload = {
       items: mpItems,
       ...(payer ? { payer } : {}),
       external_reference: externalReference,
       back_urls: {
-        success: `${siteUrl}/checkout/success?order_id=${orderIdParam}`,
-        failure: `${siteUrl}/checkout/failure?order_id=${orderIdParam}`,
-        pending: `${siteUrl}/checkout/pending?order_id=${orderIdParam}`,
+        success: `${returnBaseUrl}/checkout/success?order_id=${orderIdParam}`,
+        failure: `${returnBaseUrl}/checkout/failure?order_id=${orderIdParam}`,
+        pending: `${returnBaseUrl}/checkout/pending?order_id=${orderIdParam}`,
       },
       auto_return: 'approved',
       notification_url: `${siteUrl}/api/public/mercadopago/webhook`,
