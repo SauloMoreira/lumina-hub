@@ -41,6 +41,24 @@ function OrderConfirmation() {
   const navigate = useNavigate();
   const [order, setOrder] = useState<OrderRow | null>(null);
   const [fetching, setFetching] = useState(true);
+  const [payRedirecting, setPayRedirecting] = useState(false);
+
+  async function startPayment() {
+    if (!order) return;
+    setPayRedirecting(true);
+    try {
+      const r = await createMercadoPagoPreference({ data: { orderId: order.id } });
+      if (r.ok && r.checkoutUrl) {
+        window.location.href = r.checkoutUrl;
+      } else {
+        toast.error(r.ok ? 'Não foi possível abrir o pagamento' : r.error);
+        setPayRedirecting(false);
+      }
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : 'Erro ao iniciar pagamento');
+      setPayRedirecting(false);
+    }
+  }
 
   useEffect(() => {
     if (!loading && !user) navigate({ to: '/login' });
