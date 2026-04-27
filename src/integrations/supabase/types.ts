@@ -524,6 +524,7 @@ export type Database = {
           shipping_cost: number
           shipping_service: string | null
           status: string
+          stock_decremented_at: string | null
           subtotal: number
           total: number
           tracking_code: string | null
@@ -560,6 +561,7 @@ export type Database = {
           shipping_cost?: number
           shipping_service?: string | null
           status?: string
+          stock_decremented_at?: string | null
           subtotal?: number
           total?: number
           tracking_code?: string | null
@@ -596,6 +598,7 @@ export type Database = {
           shipping_cost?: number
           shipping_service?: string | null
           status?: string
+          stock_decremented_at?: string | null
           subtotal?: number
           total?: number
           tracking_code?: string | null
@@ -874,6 +877,13 @@ export type Database = {
           discount: number
           message: string
           valid: boolean
+        }[]
+      }
+      decrement_stock_for_order: {
+        Args: { _order_id: string }
+        Returns: {
+          decremented: boolean
+          reason: string
         }[]
       }
       increment_coupon_usage: { Args: { _code: string }; Returns: undefined }
