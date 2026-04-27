@@ -87,59 +87,6 @@ function PedidosAdmin() {
         </div>
       </div>
 
-      <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader><DialogTitle>Pedido #{selected?.order_number}</DialogTitle></DialogHeader>
-          {selected && (
-            <div className="space-y-4">
-              <div className="grid grid-cols-2 gap-3 text-sm">
-                <div><Label>Status do pedido</Label>
-                  <select value={edit.status} onChange={(e) => setEdit({ ...edit, status: e.target.value })} className="mt-1 h-9 w-full rounded-md border border-input bg-background px-2 text-sm">
-                    {STATUSES.map((s) => <option key={s} value={s}>{orderStatusLabel(s)}</option>)}
-                  </select>
-                </div>
-                <div><Label>Status do pagamento</Label>
-                  <select value={edit.payment_status} onChange={(e) => setEdit({ ...edit, payment_status: e.target.value })} className="mt-1 h-9 w-full rounded-md border border-input bg-background px-2 text-sm">
-                    {PAYMENT_STATUSES.map((s) => <option key={s} value={s}>{orderStatusLabel(s)}</option>)}
-                  </select>
-                </div>
-                <div><Label>Transportadora</Label><Input value={edit.shipping_carrier} onChange={(e) => setEdit({ ...edit, shipping_carrier: e.target.value })} /></div>
-                <div><Label>Código de rastreio</Label><Input value={edit.tracking_code} onChange={(e) => setEdit({ ...edit, tracking_code: e.target.value })} /></div>
-              </div>
-
-              <div><Label>Notas internas</Label><Textarea rows={2} value={edit.admin_notes} onChange={(e) => setEdit({ ...edit, admin_notes: e.target.value })} /></div>
-
-              <div className="bg-muted/30 rounded-lg p-3 text-sm">
-                <p className="font-semibold mb-1">Endereço</p>
-                {selected.address_snapshot ? (
-                  <p className="text-muted-foreground text-xs">
-                    {selected.address_snapshot.recipient} — {selected.address_snapshot.street}, {selected.address_snapshot.number} {selected.address_snapshot.complement && `(${selected.address_snapshot.complement})`} — {selected.address_snapshot.neighborhood}, {selected.address_snapshot.city}/{selected.address_snapshot.state} — CEP {selected.address_snapshot.zip_code}
-                  </p>
-                ) : <p className="text-muted-foreground">—</p>}
-              </div>
-
-              <div>
-                <p className="font-semibold mb-2 text-sm">Itens</p>
-                <div className="space-y-1">
-                  {items.map((it) => (
-                    <div key={it.id} className="flex justify-between text-sm border-b border-border py-1.5">
-                      <span>{it.qty}× {it.product_name}</span>
-                      <span className="font-medium">{fmt(Number(it.total_price))}</span>
-                    </div>
-                  ))}
-                </div>
-                <div className="mt-3 space-y-1 text-sm">
-                  <div className="flex justify-between"><span className="text-muted-foreground">Subtotal</span><span>{fmt(Number(selected.subtotal))}</span></div>
-                  <div className="flex justify-between"><span className="text-muted-foreground">Frete</span><span>{fmt(Number(selected.shipping_cost))}</span></div>
-                  {Number(selected.discount) > 0 && <div className="flex justify-between text-emerald-600"><span>Desconto</span><span>-{fmt(Number(selected.discount))}</span></div>}
-                  <div className="flex justify-between font-bold text-base pt-1 border-t border-border"><span>Total</span><span>{fmt(Number(selected.total))}</span></div>
-                </div>
-              </div>
-            </div>
-          )}
-          <DialogFooter><Button onClick={save}>Salvar alterações</Button></DialogFooter>
-        </DialogContent>
-      </Dialog>
     </AdminLayout>
   );
 }
