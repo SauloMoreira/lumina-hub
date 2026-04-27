@@ -65,7 +65,7 @@ function AdminCompanyPage() {
   const qc = useQueryClient();
   const { data, isLoading } = useQuery({
     queryKey: ['admin-company'],
-    queryFn: () => adminGetCompanySettings({ data: {} }),
+    queryFn: () => adminGetCompanySettings({ data: undefined as never }),
   });
 
   const [form, setForm] = useState<Record<string, string>>({});

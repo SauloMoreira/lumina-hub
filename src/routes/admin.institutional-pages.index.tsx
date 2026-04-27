@@ -28,7 +28,7 @@ function AdminPagesList() {
   const qc = useQueryClient();
   const { data, isLoading } = useQuery({
     queryKey: ['admin-pages'],
-    queryFn: () => adminListInstitutionalPages({ data: {} }),
+    queryFn: () => adminListInstitutionalPages({ data: undefined as never }),
   });
 
   const del = useMutation({
@@ -66,7 +66,7 @@ function AdminPagesList() {
       title="Páginas Institucionais"
       action={
         <Button asChild>
-          <Link to="/admin/institutional-pages/new"><Plus className="w-4 h-4" /> Nova página</Link>
+          <Link to="/admin/institutional-pages/$id" params={{ id: 'new' }}><Plus className="w-4 h-4" /> Nova página</Link>
         </Button>
       }
     >

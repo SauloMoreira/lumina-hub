@@ -36,6 +36,7 @@ import { Route as CheckoutFailureRouteImport } from './routes/checkout.failure'
 import { Route as AdminPedidosRouteImport } from './routes/admin.pedidos'
 import { Route as AdminLeadsRouteImport } from './routes/admin.leads'
 import { Route as AdminCuponsRouteImport } from './routes/admin.cupons'
+import { Route as AdminContactMessagesRouteImport } from './routes/admin.contact-messages'
 import { Route as AdminCategoriasRouteImport } from './routes/admin.categorias'
 import { Route as AdminCampanhasRouteImport } from './routes/admin.campanhas'
 import { Route as AdminBannersRouteImport } from './routes/admin.banners'
@@ -45,6 +46,7 @@ import { Route as PedidoIdConfirmacaoRouteImport } from './routes/pedido.$id.con
 import { Route as AdminSettingsCompanyRouteImport } from './routes/admin.settings.company'
 import { Route as AdminProdutosIdRouteImport } from './routes/admin.produtos.$id'
 import { Route as AdminPedidosOrderIdRouteImport } from './routes/admin.pedidos.$orderId'
+import { Route as AdminInstitutionalPagesIdRouteImport } from './routes/admin.institutional-pages.$id'
 import { Route as ApiPublicMercadopagoWebhookRouteImport } from './routes/api/public/mercadopago.webhook'
 
 const TrocaRoute = TrocaRouteImport.update({
@@ -182,6 +184,11 @@ const AdminCuponsRoute = AdminCuponsRouteImport.update({
   path: '/admin/cupons',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AdminContactMessagesRoute = AdminContactMessagesRouteImport.update({
+  id: '/admin/contact-messages',
+  path: '/admin/contact-messages',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AdminCategoriasRoute = AdminCategoriasRouteImport.update({
   id: '/admin/categorias',
   path: '/admin/categorias',
@@ -228,6 +235,12 @@ const AdminPedidosOrderIdRoute = AdminPedidosOrderIdRouteImport.update({
   path: '/$orderId',
   getParentRoute: () => AdminPedidosRoute,
 } as any)
+const AdminInstitutionalPagesIdRoute =
+  AdminInstitutionalPagesIdRouteImport.update({
+    id: '/admin/institutional-pages/$id',
+    path: '/admin/institutional-pages/$id',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicMercadopagoWebhookRoute =
   ApiPublicMercadopagoWebhookRouteImport.update({
     id: '/api/public/mercadopago/webhook',
@@ -256,6 +269,7 @@ export interface FileRoutesByFullPath {
   '/admin/banners': typeof AdminBannersRoute
   '/admin/campanhas': typeof AdminCampanhasRoute
   '/admin/categorias': typeof AdminCategoriasRoute
+  '/admin/contact-messages': typeof AdminContactMessagesRoute
   '/admin/cupons': typeof AdminCuponsRoute
   '/admin/leads': typeof AdminLeadsRoute
   '/admin/pedidos': typeof AdminPedidosRouteWithChildren
@@ -266,6 +280,7 @@ export interface FileRoutesByFullPath {
   '/institucional/$slug': typeof InstitucionalSlugRoute
   '/produto/$slug': typeof ProdutoSlugRoute
   '/admin/': typeof AdminIndexRoute
+  '/admin/institutional-pages/$id': typeof AdminInstitutionalPagesIdRoute
   '/admin/pedidos/$orderId': typeof AdminPedidosOrderIdRoute
   '/admin/produtos/$id': typeof AdminProdutosIdRoute
   '/admin/settings/company': typeof AdminSettingsCompanyRoute
@@ -295,6 +310,7 @@ export interface FileRoutesByTo {
   '/admin/banners': typeof AdminBannersRoute
   '/admin/campanhas': typeof AdminCampanhasRoute
   '/admin/categorias': typeof AdminCategoriasRoute
+  '/admin/contact-messages': typeof AdminContactMessagesRoute
   '/admin/cupons': typeof AdminCuponsRoute
   '/admin/leads': typeof AdminLeadsRoute
   '/admin/pedidos': typeof AdminPedidosRouteWithChildren
@@ -305,6 +321,7 @@ export interface FileRoutesByTo {
   '/institucional/$slug': typeof InstitucionalSlugRoute
   '/produto/$slug': typeof ProdutoSlugRoute
   '/admin': typeof AdminIndexRoute
+  '/admin/institutional-pages/$id': typeof AdminInstitutionalPagesIdRoute
   '/admin/pedidos/$orderId': typeof AdminPedidosOrderIdRoute
   '/admin/produtos/$id': typeof AdminProdutosIdRoute
   '/admin/settings/company': typeof AdminSettingsCompanyRoute
@@ -335,6 +352,7 @@ export interface FileRoutesById {
   '/admin/banners': typeof AdminBannersRoute
   '/admin/campanhas': typeof AdminCampanhasRoute
   '/admin/categorias': typeof AdminCategoriasRoute
+  '/admin/contact-messages': typeof AdminContactMessagesRoute
   '/admin/cupons': typeof AdminCuponsRoute
   '/admin/leads': typeof AdminLeadsRoute
   '/admin/pedidos': typeof AdminPedidosRouteWithChildren
@@ -345,6 +363,7 @@ export interface FileRoutesById {
   '/institucional/$slug': typeof InstitucionalSlugRoute
   '/produto/$slug': typeof ProdutoSlugRoute
   '/admin/': typeof AdminIndexRoute
+  '/admin/institutional-pages/$id': typeof AdminInstitutionalPagesIdRoute
   '/admin/pedidos/$orderId': typeof AdminPedidosOrderIdRoute
   '/admin/produtos/$id': typeof AdminProdutosIdRoute
   '/admin/settings/company': typeof AdminSettingsCompanyRoute
@@ -376,6 +395,7 @@ export interface FileRouteTypes {
     | '/admin/banners'
     | '/admin/campanhas'
     | '/admin/categorias'
+    | '/admin/contact-messages'
     | '/admin/cupons'
     | '/admin/leads'
     | '/admin/pedidos'
@@ -386,6 +406,7 @@ export interface FileRouteTypes {
     | '/institucional/$slug'
     | '/produto/$slug'
     | '/admin/'
+    | '/admin/institutional-pages/$id'
     | '/admin/pedidos/$orderId'
     | '/admin/produtos/$id'
     | '/admin/settings/company'
@@ -415,6 +436,7 @@ export interface FileRouteTypes {
     | '/admin/banners'
     | '/admin/campanhas'
     | '/admin/categorias'
+    | '/admin/contact-messages'
     | '/admin/cupons'
     | '/admin/leads'
     | '/admin/pedidos'
@@ -425,6 +447,7 @@ export interface FileRouteTypes {
     | '/institucional/$slug'
     | '/produto/$slug'
     | '/admin'
+    | '/admin/institutional-pages/$id'
     | '/admin/pedidos/$orderId'
     | '/admin/produtos/$id'
     | '/admin/settings/company'
@@ -454,6 +477,7 @@ export interface FileRouteTypes {
     | '/admin/banners'
     | '/admin/campanhas'
     | '/admin/categorias'
+    | '/admin/contact-messages'
     | '/admin/cupons'
     | '/admin/leads'
     | '/admin/pedidos'
@@ -464,6 +488,7 @@ export interface FileRouteTypes {
     | '/institucional/$slug'
     | '/produto/$slug'
     | '/admin/'
+    | '/admin/institutional-pages/$id'
     | '/admin/pedidos/$orderId'
     | '/admin/produtos/$id'
     | '/admin/settings/company'
@@ -494,12 +519,14 @@ export interface RootRouteChildren {
   AdminBannersRoute: typeof AdminBannersRoute
   AdminCampanhasRoute: typeof AdminCampanhasRoute
   AdminCategoriasRoute: typeof AdminCategoriasRoute
+  AdminContactMessagesRoute: typeof AdminContactMessagesRoute
   AdminCuponsRoute: typeof AdminCuponsRoute
   AdminLeadsRoute: typeof AdminLeadsRoute
   AdminPedidosRoute: typeof AdminPedidosRouteWithChildren
   InstitucionalSlugRoute: typeof InstitucionalSlugRoute
   ProdutoSlugRoute: typeof ProdutoSlugRoute
   AdminIndexRoute: typeof AdminIndexRoute
+  AdminInstitutionalPagesIdRoute: typeof AdminInstitutionalPagesIdRoute
   AdminProdutosIdRoute: typeof AdminProdutosIdRoute
   AdminSettingsCompanyRoute: typeof AdminSettingsCompanyRoute
   PedidoIdConfirmacaoRoute: typeof PedidoIdConfirmacaoRoute
@@ -699,6 +726,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminCuponsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/admin/contact-messages': {
+      id: '/admin/contact-messages'
+      path: '/admin/contact-messages'
+      fullPath: '/admin/contact-messages'
+      preLoaderRoute: typeof AdminContactMessagesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/admin/categorias': {
       id: '/admin/categorias'
       path: '/admin/categorias'
@@ -761,6 +795,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/admin/pedidos/$orderId'
       preLoaderRoute: typeof AdminPedidosOrderIdRouteImport
       parentRoute: typeof AdminPedidosRoute
+    }
+    '/admin/institutional-pages/$id': {
+      id: '/admin/institutional-pages/$id'
+      path: '/admin/institutional-pages/$id'
+      fullPath: '/admin/institutional-pages/$id'
+      preLoaderRoute: typeof AdminInstitutionalPagesIdRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/api/public/mercadopago/webhook': {
       id: '/api/public/mercadopago/webhook'
@@ -831,12 +872,14 @@ const rootRouteChildren: RootRouteChildren = {
   AdminBannersRoute: AdminBannersRoute,
   AdminCampanhasRoute: AdminCampanhasRoute,
   AdminCategoriasRoute: AdminCategoriasRoute,
+  AdminContactMessagesRoute: AdminContactMessagesRoute,
   AdminCuponsRoute: AdminCuponsRoute,
   AdminLeadsRoute: AdminLeadsRoute,
   AdminPedidosRoute: AdminPedidosRouteWithChildren,
   InstitucionalSlugRoute: InstitucionalSlugRoute,
   ProdutoSlugRoute: ProdutoSlugRoute,
   AdminIndexRoute: AdminIndexRoute,
+  AdminInstitutionalPagesIdRoute: AdminInstitutionalPagesIdRoute,
   AdminProdutosIdRoute: AdminProdutosIdRoute,
   AdminSettingsCompanyRoute: AdminSettingsCompanyRoute,
   PedidoIdConfirmacaoRoute: PedidoIdConfirmacaoRoute,
