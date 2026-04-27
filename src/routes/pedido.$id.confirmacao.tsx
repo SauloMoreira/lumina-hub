@@ -23,7 +23,35 @@ export const Route = createFileRoute('/pedido/$id/confirmacao')({
   component: OrderTrackingPage,
 });
 
-type CustomerOrder = Awaited<ReturnType<typeof getOrderForCustomer>> extends { ok: true; order: infer O } ? O : never;
+type CustomerOrder = {
+  id: string;
+  orderNumber: number;
+  status: string;
+  paymentStatus: string | null;
+  paymentMethod: string | null;
+  subtotal: number;
+  discount: number;
+  shippingCost: number;
+  total: number;
+  couponCode: string | null;
+  shippingCarrier: string | null;
+  shippingService: string | null;
+  trackingCode: string | null;
+  estimatedDelivery: string | null;
+  createdAt: string | null;
+  paidAt: string | null;
+  address: {
+    recipient: string | null;
+    street: string | null;
+    number: string | null;
+    complement: string | null;
+    neighborhood: string | null;
+    city: string | null;
+    state: string | null;
+    zipCode: string | null;
+  } | null;
+  items: Array<{ id: string; name: string; image: string | null; qty: number; unitPrice: number; totalPrice: number }>;
+};
 
 function statusMessage(status: string, paymentStatus: string | null) {
   if (status === 'shipped' || status === 'out_for_delivery') {
