@@ -18,7 +18,7 @@ export const Route = createFileRoute('/login')({
     if (data.session) {
       const { data: profile } = await supabase
         .from('profiles').select('role').eq('id', data.session.user.id).maybeSingle();
-      throw redirect({ to: profile?.role === 'admin' ? ('/admin' as any) : '/conta' });
+      throw redirect({ to: profile?.role === 'admin' ? '/admin' : '/conta' });
     }
   },
   component: LoginPage,
@@ -58,7 +58,7 @@ function LoginPage() {
       const { data: profile } = await supabase
         .from('profiles').select('role').eq('id', userId).maybeSingle();
       toast.success('Bem-vindo de volta!');
-      navigate({ to: profile?.role === 'admin' ? ('/admin' as any) : '/conta' });
+      navigate({ to: profile?.role === 'admin' ? '/admin' : '/conta' });
     } catch {
       toast.error('E-mail ou senha incorretos. Tente novamente.');
     } finally {
