@@ -598,6 +598,7 @@ export type Database = {
           payment_method: string | null
           payment_provider: string
           payment_status: string | null
+          public_access_token: string | null
           shipping_carrier: string | null
           shipping_cost: number
           shipping_service: string | null
@@ -635,6 +636,7 @@ export type Database = {
           payment_method?: string | null
           payment_provider?: string
           payment_status?: string | null
+          public_access_token?: string | null
           shipping_carrier?: string | null
           shipping_cost?: number
           shipping_service?: string | null
@@ -672,6 +674,7 @@ export type Database = {
           payment_method?: string | null
           payment_provider?: string
           payment_status?: string | null
+          public_access_token?: string | null
           shipping_carrier?: string | null
           shipping_cost?: number
           shipping_service?: string | null
