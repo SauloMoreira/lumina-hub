@@ -48,16 +48,17 @@ export const calculateShipping = createServerFn({ method: 'POST' })
   .inputValidator((input: unknown) =>
     z
       .object({
-        zipCode: z
-          .string()
-          .transform((v) => v.replace(/\D/g, ''))
-          .pipe(z.string().regex(/^\d{8}$/, 'CEP deve ter 8 dígitos')),
+        zipCode: z.string().transform((v) => v.replace(/\D/g, '')),
         subtotal: z.number().min(0),
         weightKg: z.number().min(0).default(1),
       })
       .parse(input)
   )
   .handler(async ({ data }) => {
+    if (!/^\d{8}$/.test(data.zipCode)) {
+      return { services: [], estimated: true as const, error: 'CEP deve ter 8 dígitos' };
+    }
+
     // Estimativa local por região (DDD do CEP)
     const prefix = parseInt(data.zipCode.slice(0, 2), 10);
     let basePac = 22;
@@ -170,7 +171,10 @@ const CreateOrderInput = z.object({
   }),
   address: z.object({
     recipient: z.string().min(1),
-    zipCode: z.string().regex(/^\d{8}$/),
+    zipCode: z
+      .string()
+      .transform((v) => v.replace(/\D/g, ''))
+      .pipe(z.string().regex(/^\d{8}$/, 'CEP deve ter 8 dígitos')),
     street: z.string().min(1),
     number: z.string().min(1),
     complement: z.string().optional().nullable(),
