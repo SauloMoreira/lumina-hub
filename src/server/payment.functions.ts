@@ -20,6 +20,23 @@ function isSandboxToken(token: string): boolean {
   return token.startsWith('TEST-');
 }
 
+function buildPayerPayload({
+  sandbox,
+  email,
+  name,
+}: {
+  sandbox: boolean;
+  email?: string | null;
+  name?: string | null;
+}) {
+  if (sandbox) return undefined;
+
+  return {
+    email: email ?? undefined,
+    name: name ?? undefined,
+  };
+}
+
 // ============================================================
 // Criar preference do Mercado Pago para um pedido existente
 // ============================================================
@@ -84,6 +101,12 @@ export const createMercadoPagoPreference = createServerFn({ method: 'POST' })
 
     const externalReference = order.id;
     const siteUrl = getSiteUrl();
+    const sandbox = isSandboxToken(accessToken);
+    const payer = buildPayerPayload({
+      sandbox,
+      email: profile?.email,
+      name: profile?.name ?? addr.recipient,
+    });
 
     // Build items para MP. Adiciona um item virtual de frete/desconto se necessário.
     const mpItems: Array<Record<string, unknown>> = items.map((i) => ({
@@ -116,10 +139,7 @@ export const createMercadoPagoPreference = createServerFn({ method: 'POST' })
     const orderIdParam = encodeURIComponent(order.id);
     const preferencePayload = {
       items: mpItems,
-      payer: {
-        email: profile?.email ?? undefined,
-        name: profile?.name ?? addr.recipient ?? undefined,
-      },
+      ...(payer ? { payer } : {}),
       external_reference: externalReference,
       back_urls: {
         success: `${siteUrl}/checkout/success?order_id=${orderIdParam}`,
@@ -157,7 +177,6 @@ export const createMercadoPagoPreference = createServerFn({ method: 'POST' })
       return { ok: false as const, error: 'Erro de comunicação com Mercado Pago' };
     }
 
-    const sandbox = isSandboxToken(accessToken);
     const checkoutUrl = (sandbox ? mpJson.sandbox_init_point : mpJson.init_point) ?? mpJson.init_point ?? mpJson.sandbox_init_point;
 
     // 5) Persistir no pedido (via admin para garantir gravação independente da RLS de update)
