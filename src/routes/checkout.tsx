@@ -10,6 +10,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { useCart } from '@/stores/cartStore';
 import { formatBRL } from '@/lib/domain';
 import { lookupCep, calculateShipping, applyCoupon, createOrder } from '@/server/checkout.functions';
+import { createMercadoPagoPreference } from '@/server/payment.functions';
 import { buildSeo } from '@/lib/seo';
 import { trackPurchase, trackBeginCheckout } from '@/lib/tracking';
 
@@ -172,6 +173,19 @@ function CheckoutPage() {
       });
       if (r.ok) {
         trackPurchase({ order_number: r.orderId, total: cart.subtotal(), items: cart.items });
+        // Criar preference do Mercado Pago e redirecionar
+        try {
+          const pref = await createMercadoPagoPreference({ data: { orderId: r.orderId } });
+          if (pref.ok && pref.checkoutUrl) {
+            cart.clear();
+            window.location.href = pref.checkoutUrl;
+            return;
+          }
+          toast.error(pref.ok ? 'Não foi possível abrir o pagamento' : pref.error);
+        } catch (err) {
+          toast.error(err instanceof Error ? err.message : 'Erro ao iniciar pagamento');
+        }
+        // Fallback: leva para a página do pedido onde há botão para retomar
         cart.clear();
         navigate({ to: '/pedido/$id/confirmacao', params: { id: r.orderId } });
       } else {
@@ -347,10 +361,10 @@ function CheckoutPage() {
 
                 <section className="mb-5">
                   <h3 className="font-semibold text-sm mb-2 text-muted-foreground uppercase tracking-wide">Pagamento</h3>
-                  <div className="p-4 bg-warning/10 border border-warning/30 rounded-lg text-sm">
-                    <p className="font-medium mb-1">⚠️ Mercado Pago em configuração</p>
+                  <div className="p-4 bg-primary-tint border border-primary/30 rounded-lg text-sm">
+                    <p className="font-medium mb-1">Pagamento via Mercado Pago</p>
                     <p className="text-muted-foreground text-xs">
-                      Seu pedido será criado com pagamento pendente. O link Mercado Pago será gerado assim que a integração estiver ativa.
+                      Ao confirmar, você será redirecionado para o checkout seguro do Mercado Pago (Pix, cartão ou boleto).
                     </p>
                   </div>
                 </section>

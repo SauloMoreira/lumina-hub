@@ -23,6 +23,9 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as AdminIndexRouteImport } from './routes/admin.index'
 import { Route as ProdutoSlugRouteImport } from './routes/produto.$slug'
 import { Route as ContaPedidosRouteImport } from './routes/conta.pedidos'
+import { Route as CheckoutSuccessRouteImport } from './routes/checkout.success'
+import { Route as CheckoutPendingRouteImport } from './routes/checkout.pending'
+import { Route as CheckoutFailureRouteImport } from './routes/checkout.failure'
 import { Route as AdminPedidosRouteImport } from './routes/admin.pedidos'
 import { Route as AdminLeadsRouteImport } from './routes/admin.leads'
 import { Route as AdminCuponsRouteImport } from './routes/admin.cupons'
@@ -32,6 +35,7 @@ import { Route as AdminBannersRouteImport } from './routes/admin.banners'
 import { Route as AdminProdutosIndexRouteImport } from './routes/admin.produtos.index'
 import { Route as PedidoIdConfirmacaoRouteImport } from './routes/pedido.$id.confirmacao'
 import { Route as AdminProdutosIdRouteImport } from './routes/admin.produtos.$id'
+import { Route as ApiPublicMercadopagoWebhookRouteImport } from './routes/api/public/mercadopago.webhook'
 
 const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
   id: '/sitemap.xml',
@@ -103,6 +107,21 @@ const ContaPedidosRoute = ContaPedidosRouteImport.update({
   path: '/pedidos',
   getParentRoute: () => ContaRoute,
 } as any)
+const CheckoutSuccessRoute = CheckoutSuccessRouteImport.update({
+  id: '/success',
+  path: '/success',
+  getParentRoute: () => CheckoutRoute,
+} as any)
+const CheckoutPendingRoute = CheckoutPendingRouteImport.update({
+  id: '/pending',
+  path: '/pending',
+  getParentRoute: () => CheckoutRoute,
+} as any)
+const CheckoutFailureRoute = CheckoutFailureRouteImport.update({
+  id: '/failure',
+  path: '/failure',
+  getParentRoute: () => CheckoutRoute,
+} as any)
 const AdminPedidosRoute = AdminPedidosRouteImport.update({
   id: '/admin/pedidos',
   path: '/admin/pedidos',
@@ -148,13 +167,19 @@ const AdminProdutosIdRoute = AdminProdutosIdRouteImport.update({
   path: '/admin/produtos/$id',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicMercadopagoWebhookRoute =
+  ApiPublicMercadopagoWebhookRouteImport.update({
+    id: '/api/public/mercadopago/webhook',
+    path: '/api/public/mercadopago/webhook',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/cadastro': typeof CadastroRoute
   '/carrinho': typeof CarrinhoRoute
   '/catalogo': typeof CatalogoRoute
-  '/checkout': typeof CheckoutRoute
+  '/checkout': typeof CheckoutRouteWithChildren
   '/conta': typeof ContaRouteWithChildren
   '/esqueci-senha': typeof EsqueciSenhaRoute
   '/login': typeof LoginRoute
@@ -167,19 +192,23 @@ export interface FileRoutesByFullPath {
   '/admin/cupons': typeof AdminCuponsRoute
   '/admin/leads': typeof AdminLeadsRoute
   '/admin/pedidos': typeof AdminPedidosRoute
+  '/checkout/failure': typeof CheckoutFailureRoute
+  '/checkout/pending': typeof CheckoutPendingRoute
+  '/checkout/success': typeof CheckoutSuccessRoute
   '/conta/pedidos': typeof ContaPedidosRoute
   '/produto/$slug': typeof ProdutoSlugRoute
   '/admin/': typeof AdminIndexRoute
   '/admin/produtos/$id': typeof AdminProdutosIdRoute
   '/pedido/$id/confirmacao': typeof PedidoIdConfirmacaoRoute
   '/admin/produtos/': typeof AdminProdutosIndexRoute
+  '/api/public/mercadopago/webhook': typeof ApiPublicMercadopagoWebhookRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/cadastro': typeof CadastroRoute
   '/carrinho': typeof CarrinhoRoute
   '/catalogo': typeof CatalogoRoute
-  '/checkout': typeof CheckoutRoute
+  '/checkout': typeof CheckoutRouteWithChildren
   '/conta': typeof ContaRouteWithChildren
   '/esqueci-senha': typeof EsqueciSenhaRoute
   '/login': typeof LoginRoute
@@ -192,12 +221,16 @@ export interface FileRoutesByTo {
   '/admin/cupons': typeof AdminCuponsRoute
   '/admin/leads': typeof AdminLeadsRoute
   '/admin/pedidos': typeof AdminPedidosRoute
+  '/checkout/failure': typeof CheckoutFailureRoute
+  '/checkout/pending': typeof CheckoutPendingRoute
+  '/checkout/success': typeof CheckoutSuccessRoute
   '/conta/pedidos': typeof ContaPedidosRoute
   '/produto/$slug': typeof ProdutoSlugRoute
   '/admin': typeof AdminIndexRoute
   '/admin/produtos/$id': typeof AdminProdutosIdRoute
   '/pedido/$id/confirmacao': typeof PedidoIdConfirmacaoRoute
   '/admin/produtos': typeof AdminProdutosIndexRoute
+  '/api/public/mercadopago/webhook': typeof ApiPublicMercadopagoWebhookRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -205,7 +238,7 @@ export interface FileRoutesById {
   '/cadastro': typeof CadastroRoute
   '/carrinho': typeof CarrinhoRoute
   '/catalogo': typeof CatalogoRoute
-  '/checkout': typeof CheckoutRoute
+  '/checkout': typeof CheckoutRouteWithChildren
   '/conta': typeof ContaRouteWithChildren
   '/esqueci-senha': typeof EsqueciSenhaRoute
   '/login': typeof LoginRoute
@@ -218,12 +251,16 @@ export interface FileRoutesById {
   '/admin/cupons': typeof AdminCuponsRoute
   '/admin/leads': typeof AdminLeadsRoute
   '/admin/pedidos': typeof AdminPedidosRoute
+  '/checkout/failure': typeof CheckoutFailureRoute
+  '/checkout/pending': typeof CheckoutPendingRoute
+  '/checkout/success': typeof CheckoutSuccessRoute
   '/conta/pedidos': typeof ContaPedidosRoute
   '/produto/$slug': typeof ProdutoSlugRoute
   '/admin/': typeof AdminIndexRoute
   '/admin/produtos/$id': typeof AdminProdutosIdRoute
   '/pedido/$id/confirmacao': typeof PedidoIdConfirmacaoRoute
   '/admin/produtos/': typeof AdminProdutosIndexRoute
+  '/api/public/mercadopago/webhook': typeof ApiPublicMercadopagoWebhookRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -245,12 +282,16 @@ export interface FileRouteTypes {
     | '/admin/cupons'
     | '/admin/leads'
     | '/admin/pedidos'
+    | '/checkout/failure'
+    | '/checkout/pending'
+    | '/checkout/success'
     | '/conta/pedidos'
     | '/produto/$slug'
     | '/admin/'
     | '/admin/produtos/$id'
     | '/pedido/$id/confirmacao'
     | '/admin/produtos/'
+    | '/api/public/mercadopago/webhook'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -270,12 +311,16 @@ export interface FileRouteTypes {
     | '/admin/cupons'
     | '/admin/leads'
     | '/admin/pedidos'
+    | '/checkout/failure'
+    | '/checkout/pending'
+    | '/checkout/success'
     | '/conta/pedidos'
     | '/produto/$slug'
     | '/admin'
     | '/admin/produtos/$id'
     | '/pedido/$id/confirmacao'
     | '/admin/produtos'
+    | '/api/public/mercadopago/webhook'
   id:
     | '__root__'
     | '/'
@@ -295,12 +340,16 @@ export interface FileRouteTypes {
     | '/admin/cupons'
     | '/admin/leads'
     | '/admin/pedidos'
+    | '/checkout/failure'
+    | '/checkout/pending'
+    | '/checkout/success'
     | '/conta/pedidos'
     | '/produto/$slug'
     | '/admin/'
     | '/admin/produtos/$id'
     | '/pedido/$id/confirmacao'
     | '/admin/produtos/'
+    | '/api/public/mercadopago/webhook'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -308,7 +357,7 @@ export interface RootRouteChildren {
   CadastroRoute: typeof CadastroRoute
   CarrinhoRoute: typeof CarrinhoRoute
   CatalogoRoute: typeof CatalogoRoute
-  CheckoutRoute: typeof CheckoutRoute
+  CheckoutRoute: typeof CheckoutRouteWithChildren
   ContaRoute: typeof ContaRouteWithChildren
   EsqueciSenhaRoute: typeof EsqueciSenhaRoute
   LoginRoute: typeof LoginRoute
@@ -326,6 +375,7 @@ export interface RootRouteChildren {
   AdminProdutosIdRoute: typeof AdminProdutosIdRoute
   PedidoIdConfirmacaoRoute: typeof PedidoIdConfirmacaoRoute
   AdminProdutosIndexRoute: typeof AdminProdutosIndexRoute
+  ApiPublicMercadopagoWebhookRoute: typeof ApiPublicMercadopagoWebhookRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -428,6 +478,27 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ContaPedidosRouteImport
       parentRoute: typeof ContaRoute
     }
+    '/checkout/success': {
+      id: '/checkout/success'
+      path: '/success'
+      fullPath: '/checkout/success'
+      preLoaderRoute: typeof CheckoutSuccessRouteImport
+      parentRoute: typeof CheckoutRoute
+    }
+    '/checkout/pending': {
+      id: '/checkout/pending'
+      path: '/pending'
+      fullPath: '/checkout/pending'
+      preLoaderRoute: typeof CheckoutPendingRouteImport
+      parentRoute: typeof CheckoutRoute
+    }
+    '/checkout/failure': {
+      id: '/checkout/failure'
+      path: '/failure'
+      fullPath: '/checkout/failure'
+      preLoaderRoute: typeof CheckoutFailureRouteImport
+      parentRoute: typeof CheckoutRoute
+    }
     '/admin/pedidos': {
       id: '/admin/pedidos'
       path: '/admin/pedidos'
@@ -491,8 +562,31 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminProdutosIdRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/mercadopago/webhook': {
+      id: '/api/public/mercadopago/webhook'
+      path: '/api/public/mercadopago/webhook'
+      fullPath: '/api/public/mercadopago/webhook'
+      preLoaderRoute: typeof ApiPublicMercadopagoWebhookRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
+
+interface CheckoutRouteChildren {
+  CheckoutFailureRoute: typeof CheckoutFailureRoute
+  CheckoutPendingRoute: typeof CheckoutPendingRoute
+  CheckoutSuccessRoute: typeof CheckoutSuccessRoute
+}
+
+const CheckoutRouteChildren: CheckoutRouteChildren = {
+  CheckoutFailureRoute: CheckoutFailureRoute,
+  CheckoutPendingRoute: CheckoutPendingRoute,
+  CheckoutSuccessRoute: CheckoutSuccessRoute,
+}
+
+const CheckoutRouteWithChildren = CheckoutRoute._addFileChildren(
+  CheckoutRouteChildren,
+)
 
 interface ContaRouteChildren {
   ContaPedidosRoute: typeof ContaPedidosRoute
@@ -509,7 +603,7 @@ const rootRouteChildren: RootRouteChildren = {
   CadastroRoute: CadastroRoute,
   CarrinhoRoute: CarrinhoRoute,
   CatalogoRoute: CatalogoRoute,
-  CheckoutRoute: CheckoutRoute,
+  CheckoutRoute: CheckoutRouteWithChildren,
   ContaRoute: ContaRouteWithChildren,
   EsqueciSenhaRoute: EsqueciSenhaRoute,
   LoginRoute: LoginRoute,
@@ -527,6 +621,7 @@ const rootRouteChildren: RootRouteChildren = {
   AdminProdutosIdRoute: AdminProdutosIdRoute,
   PedidoIdConfirmacaoRoute: PedidoIdConfirmacaoRoute,
   AdminProdutosIndexRoute: AdminProdutosIndexRoute,
+  ApiPublicMercadopagoWebhookRoute: ApiPublicMercadopagoWebhookRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

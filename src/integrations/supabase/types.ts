@@ -499,18 +499,26 @@ export type Database = {
           address_snapshot: Json | null
           admin_notes: string | null
           cancelled_reason: string | null
+          checkout_url: string | null
           coupon_code: string | null
           created_at: string | null
           discount: number
           estimated_delivery: string | null
+          external_reference: string | null
           id: string
           invoice_number: string | null
           invoice_url: string | null
+          mp_merchant_order_id: string | null
+          mp_payment_id: string | null
+          mp_preference_id: string | null
           notes: string | null
           order_number: number
+          paid_at: string | null
+          payment_error: string | null
           payment_id: string | null
           payment_link: string | null
           payment_method: string | null
+          payment_provider: string
           payment_status: string | null
           shipping_carrier: string | null
           shipping_cost: number
@@ -527,18 +535,26 @@ export type Database = {
           address_snapshot?: Json | null
           admin_notes?: string | null
           cancelled_reason?: string | null
+          checkout_url?: string | null
           coupon_code?: string | null
           created_at?: string | null
           discount?: number
           estimated_delivery?: string | null
+          external_reference?: string | null
           id?: string
           invoice_number?: string | null
           invoice_url?: string | null
+          mp_merchant_order_id?: string | null
+          mp_payment_id?: string | null
+          mp_preference_id?: string | null
           notes?: string | null
           order_number?: never
+          paid_at?: string | null
+          payment_error?: string | null
           payment_id?: string | null
           payment_link?: string | null
           payment_method?: string | null
+          payment_provider?: string
           payment_status?: string | null
           shipping_carrier?: string | null
           shipping_cost?: number
@@ -555,18 +571,26 @@ export type Database = {
           address_snapshot?: Json | null
           admin_notes?: string | null
           cancelled_reason?: string | null
+          checkout_url?: string | null
           coupon_code?: string | null
           created_at?: string | null
           discount?: number
           estimated_delivery?: string | null
+          external_reference?: string | null
           id?: string
           invoice_number?: string | null
           invoice_url?: string | null
+          mp_merchant_order_id?: string | null
+          mp_payment_id?: string | null
+          mp_preference_id?: string | null
           notes?: string | null
           order_number?: never
+          paid_at?: string | null
+          payment_error?: string | null
           payment_id?: string | null
           payment_link?: string | null
           payment_method?: string | null
+          payment_provider?: string
           payment_status?: string | null
           shipping_carrier?: string | null
           shipping_cost?: number
@@ -594,6 +618,51 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      payment_webhook_events: {
+        Row: {
+          action: string | null
+          created_at: string
+          data_id: string | null
+          event_id: string | null
+          headers: Json | null
+          id: string
+          live_mode: boolean | null
+          payload: Json
+          processed: boolean
+          processing_error: string | null
+          provider: string
+          type: string | null
+        }
+        Insert: {
+          action?: string | null
+          created_at?: string
+          data_id?: string | null
+          event_id?: string | null
+          headers?: Json | null
+          id?: string
+          live_mode?: boolean | null
+          payload: Json
+          processed?: boolean
+          processing_error?: string | null
+          provider?: string
+          type?: string | null
+        }
+        Update: {
+          action?: string | null
+          created_at?: string
+          data_id?: string | null
+          event_id?: string | null
+          headers?: Json | null
+          id?: string
+          live_mode?: boolean | null
+          payload?: Json
+          processed?: boolean
+          processing_error?: string | null
+          provider?: string
+          type?: string | null
+        }
+        Relationships: []
       }
       product_images: {
         Row: {

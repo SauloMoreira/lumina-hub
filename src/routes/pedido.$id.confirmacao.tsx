@@ -1,11 +1,13 @@
 import { createFileRoute, Link, useNavigate } from '@tanstack/react-router';
 import { useEffect, useState } from 'react';
-import { CheckCircle2, Package, Truck, Clock, ShoppingBag, ArrowRight, Loader2 } from 'lucide-react';
+import { CheckCircle2, Package, Truck, Clock, ShoppingBag, ArrowRight, Loader2, CreditCard } from 'lucide-react';
+import { toast } from 'sonner';
 import { StoreLayout } from '@/components/layout/StoreLayout';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/hooks/useAuth';
 import { formatBRL } from '@/lib/domain';
 import { getOrderById } from '@/server/checkout.functions';
+import { createMercadoPagoPreference } from '@/server/payment.functions';
 import { orderStatusLabel } from '@/lib/orderStatus';
 
 export const Route = createFileRoute('/pedido/$id/confirmacao')({ component: OrderConfirmation });
@@ -39,6 +41,24 @@ function OrderConfirmation() {
   const navigate = useNavigate();
   const [order, setOrder] = useState<OrderRow | null>(null);
   const [fetching, setFetching] = useState(true);
+  const [payRedirecting, setPayRedirecting] = useState(false);
+
+  async function startPayment() {
+    if (!order) return;
+    setPayRedirecting(true);
+    try {
+      const r = await createMercadoPagoPreference({ data: { orderId: order.id } });
+      if (r.ok && r.checkoutUrl) {
+        window.location.href = r.checkoutUrl;
+      } else {
+        toast.error(r.ok ? 'Não foi possível abrir o pagamento' : r.error);
+        setPayRedirecting(false);
+      }
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : 'Erro ao iniciar pagamento');
+      setPayRedirecting(false);
+    }
+  }
 
   useEffect(() => {
     if (!loading && !user) navigate({ to: '/login' });
@@ -110,10 +130,23 @@ function OrderConfirmation() {
             ))}
           </div>
 
-          {order.payment_status !== 'paid' && (
+          {order.payment_status === 'approved' || order.payment_status === 'paid' ? (
+            <div className="mt-5 p-4 bg-success/10 border border-success/30 rounded-lg text-sm">
+              <p className="font-medium mb-1 text-success">Pagamento aprovado</p>
+              <p className="text-muted-foreground text-xs">Recebemos a confirmação. Vamos preparar seu pedido.</p>
+            </div>
+          ) : order.payment_status === 'pending' || order.payment_status === 'in_process' ? (
             <div className="mt-5 p-4 bg-warning/10 border border-warning/30 rounded-lg text-sm">
-              <p className="font-medium mb-1">Aguardando pagamento</p>
-              <p className="text-muted-foreground text-xs">Assim que a integração com Mercado Pago for ativada, o link de pagamento aparecerá aqui automaticamente.</p>
+              <p className="font-medium mb-1">Pagamento em análise</p>
+              <p className="text-muted-foreground text-xs">Estamos confirmando seu pagamento com o Mercado Pago.</p>
+            </div>
+          ) : (
+            <div className="mt-5 p-4 bg-primary-tint border border-primary/30 rounded-lg">
+              <p className="font-medium mb-1 text-sm">Pagamento pendente</p>
+              <p className="text-muted-foreground text-xs mb-3">Finalize o pagamento de forma segura via Mercado Pago.</p>
+              <Button onClick={startPayment} disabled={payRedirecting} className="w-full sm:w-auto h-10">
+                {payRedirecting ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Abrindo...</> : <><CreditCard className="w-4 h-4 mr-2" />Pagar com Mercado Pago</>}
+              </Button>
             </div>
           )}
         </div>

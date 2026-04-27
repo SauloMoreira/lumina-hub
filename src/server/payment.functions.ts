@@ -1,0 +1,199 @@
+import { createServerFn } from '@tanstack/react-start';
+import { getRequestHost, getRequestHeader } from '@tanstack/react-start/server';
+import { z } from 'zod';
+import { requireSupabaseAuth } from '@/integrations/supabase/auth-middleware';
+import { supabaseAdmin } from '@/integrations/supabase/client.server';
+
+// ============================================================
+// Helpers
+// ============================================================
+function getSiteUrl(): string {
+  const fromEnv = process.env.SITE_URL?.replace(/\/$/, '');
+  if (fromEnv) return fromEnv;
+  // Fallback: derive from request
+  const host = getRequestHost();
+  const proto = getRequestHeader('x-forwarded-proto') ?? 'https';
+  return `${proto}://${host}`;
+}
+
+function isSandboxToken(token: string): boolean {
+  return token.startsWith('TEST-');
+}
+
+// ============================================================
+// Criar preference do Mercado Pago para um pedido existente
+// ============================================================
+export const createMercadoPagoPreference = createServerFn({ method: 'POST' })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) =>
+    z.object({ orderId: z.string().uuid() }).parse(input)
+  )
+  .handler(async ({ data, context }) => {
+    const { supabase, userId } = context;
+
+    const accessToken = process.env.MERCADOPAGO_ACCESS_TOKEN;
+    if (!accessToken) {
+      console.error('[MP] MERCADOPAGO_ACCESS_TOKEN não configurado');
+      return { ok: false as const, error: 'Pagamento indisponível no momento. Token não configurado.' };
+    }
+
+    // 1) Carregar pedido + itens (RLS garante posse)
+    const { data: order, error: orderErr } = await supabase
+      .from('orders')
+      .select('id, user_id, order_number, status, payment_status, subtotal, discount, shipping_cost, total, address_snapshot, mp_preference_id, checkout_url, order_items(id, product_id, product_name, qty, unit_price, total_price)')
+      .eq('id', data.orderId)
+      .single();
+
+    if (orderErr || !order) {
+      console.error('[MP] pedido não encontrado', orderErr);
+      return { ok: false as const, error: 'Pedido não encontrado' };
+    }
+    if (order.user_id !== userId) {
+      return { ok: false as const, error: 'Sem permissão' };
+    }
+    if (order.payment_status === 'approved' || order.payment_status === 'paid') {
+      return { ok: false as const, error: 'Pedido já está pago' };
+    }
+    const items = order.order_items ?? [];
+    if (!items.length) {
+      return { ok: false as const, error: 'Pedido sem itens' };
+    }
+
+    // 2) Validar valores
+    const itemsSubtotal = items.reduce((s, i) => s + Number(i.unit_price) * Number(i.qty), 0);
+    if (Math.abs(itemsSubtotal - Number(order.subtotal)) > 0.05) {
+      console.error('[MP] subtotal divergente', { itemsSubtotal, orderSubtotal: order.subtotal });
+      return { ok: false as const, error: 'Inconsistência no valor do pedido' };
+    }
+    const expectedTotal = Math.max(
+      0,
+      Number(order.subtotal) - Number(order.discount ?? 0) + Number(order.shipping_cost ?? 0)
+    );
+    if (Math.abs(expectedTotal - Number(order.total)) > 0.05) {
+      console.error('[MP] total divergente', { expectedTotal, total: order.total });
+      return { ok: false as const, error: 'Inconsistência no total do pedido' };
+    }
+
+    // 3) Dados do pagador
+    const addr = (order.address_snapshot ?? {}) as { recipient?: string };
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('email, name')
+      .eq('id', userId)
+      .single();
+
+    const externalReference = order.id;
+    const siteUrl = getSiteUrl();
+
+    // Build items para MP. Adiciona um item virtual de frete/desconto se necessário.
+    const mpItems: Array<Record<string, unknown>> = items.map((i) => ({
+      id: i.product_id ?? i.id,
+      title: i.product_name.slice(0, 250),
+      quantity: Number(i.qty),
+      currency_id: 'BRL',
+      unit_price: Number(Number(i.unit_price).toFixed(2)),
+    }));
+
+    if (Number(order.shipping_cost ?? 0) > 0) {
+      mpItems.push({
+        id: 'shipping',
+        title: 'Frete',
+        quantity: 1,
+        currency_id: 'BRL',
+        unit_price: Number(Number(order.shipping_cost).toFixed(2)),
+      });
+    }
+    if (Number(order.discount ?? 0) > 0) {
+      mpItems.push({
+        id: 'discount',
+        title: 'Desconto (cupom)',
+        quantity: 1,
+        currency_id: 'BRL',
+        unit_price: -Number(Number(order.discount).toFixed(2)),
+      });
+    }
+
+    const orderIdParam = encodeURIComponent(order.id);
+    const preferencePayload = {
+      items: mpItems,
+      payer: {
+        email: profile?.email ?? undefined,
+        name: profile?.name ?? addr.recipient ?? undefined,
+      },
+      external_reference: externalReference,
+      back_urls: {
+        success: `${siteUrl}/checkout/success?order_id=${orderIdParam}`,
+        failure: `${siteUrl}/checkout/failure?order_id=${orderIdParam}`,
+        pending: `${siteUrl}/checkout/pending?order_id=${orderIdParam}`,
+      },
+      auto_return: 'approved',
+      notification_url: `${siteUrl}/api/public/mercadopago/webhook`,
+      statement_descriptor: 'LED MARICA',
+      metadata: { order_id: order.id, order_number: order.order_number },
+    };
+
+    // 4) Criar preference
+    let mpJson: { id?: string; init_point?: string; sandbox_init_point?: string; message?: string } = {};
+    try {
+      const resp = await fetch('https://api.mercadopago.com/checkout/preferences', {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(preferencePayload),
+      });
+      mpJson = (await resp.json()) as typeof mpJson;
+      if (!resp.ok || !mpJson.id) {
+        console.error('[MP] erro ao criar preference', resp.status, mpJson);
+        await supabaseAdmin
+          .from('orders')
+          .update({ payment_error: mpJson.message ?? `MP HTTP ${resp.status}` })
+          .eq('id', order.id);
+        return { ok: false as const, error: mpJson.message ?? 'Falha ao criar preferência de pagamento' };
+      }
+    } catch (e) {
+      console.error('[MP] exception createPreference', e);
+      return { ok: false as const, error: 'Erro de comunicação com Mercado Pago' };
+    }
+
+    const sandbox = isSandboxToken(accessToken);
+    const checkoutUrl = (sandbox ? mpJson.sandbox_init_point : mpJson.init_point) ?? mpJson.init_point ?? mpJson.sandbox_init_point;
+
+    // 5) Persistir no pedido (via admin para garantir gravação independente da RLS de update)
+    const { error: updErr } = await supabaseAdmin
+      .from('orders')
+      .update({
+        mp_preference_id: mpJson.id,
+        checkout_url: checkoutUrl ?? null,
+        external_reference: externalReference,
+        payment_provider: 'mercadopago',
+        payment_status: 'preference_created',
+        payment_error: null,
+      })
+      .eq('id', order.id);
+    if (updErr) console.error('[MP] erro ao salvar preference no pedido', updErr);
+
+    return {
+      ok: true as const,
+      checkoutUrl: checkoutUrl ?? '',
+      preferenceId: mpJson.id,
+    };
+  });
+
+// ============================================================
+// Consultar status do pedido (usado nas páginas de retorno)
+// ============================================================
+export const getOrderPaymentStatus = createServerFn({ method: 'POST' })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) => z.object({ orderId: z.string().uuid() }).parse(input))
+  .handler(async ({ data, context }) => {
+    const { supabase } = context;
+    const { data: order, error } = await supabase
+      .from('orders')
+      .select('id, order_number, status, payment_status, total, paid_at, checkout_url, payment_error')
+      .eq('id', data.orderId)
+      .single();
+    if (error || !order) return { ok: false as const, error: 'Pedido não encontrado' };
+    return { ok: true as const, order };
+  });
