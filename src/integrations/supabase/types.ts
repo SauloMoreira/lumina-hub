@@ -538,6 +538,39 @@ export type Database = {
           },
         ]
       }
+      order_status_events: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          description: string | null
+          id: string
+          metadata: Json | null
+          order_id: string
+          status: string | null
+          type: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          metadata?: Json | null
+          order_id: string
+          status?: string | null
+          type: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          metadata?: Json | null
+          order_id?: string
+          status?: string | null
+          type?: string
+        }
+        Relationships: []
+      }
       orders: {
         Row: {
           address_id: string | null
