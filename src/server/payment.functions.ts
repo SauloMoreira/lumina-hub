@@ -16,6 +16,25 @@ function getSiteUrl(): string {
   return `${proto}://${host}`;
 }
 
+// Para back_urls do Mercado Pago: o domínio id-preview--*.lovable.app
+// bloqueia requests externos com referer (retorna "Forbidden" no redirect
+// vindo do MP). Convertemos para a URL estável project--{id}-dev.lovable.app
+// que aceita esses redirects.
+function getPublicReturnUrl(siteUrl: string): string {
+  try {
+    const u = new URL(siteUrl);
+    const host = u.hostname;
+    // id-preview--<projectId>.lovable.app  -> project--<projectId>-dev.lovable.app
+    const m = host.match(/^id-preview--([0-9a-f-]+)\.lovable\.app$/i);
+    if (m) {
+      return `https://project--${m[1]}-dev.lovable.app`;
+    }
+    return siteUrl;
+  } catch {
+    return siteUrl;
+  }
+}
+
 function isSandboxToken(token: string): boolean {
   // No Brasil, credenciais de TESTE também usam o prefixo APP_USR-.
   // Por isso não dá para distinguir produção/teste apenas pelo prefixo.
