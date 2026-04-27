@@ -175,7 +175,7 @@ export const createMercadoPagoPreference = createServerFn({ method: 'POST' })
           .from('orders')
           .update({ payment_error: errMsg })
           .eq('id', order.id);
-        return { ok: false as const, error: errMsg, mpStatus, mpBody: mpJson };
+        return { ok: false as const, error: errMsg };
       }
       console.log('[MP] preference criada com sucesso', { id: mpJson.id });
     } catch (e) {
