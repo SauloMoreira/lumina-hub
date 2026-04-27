@@ -24,7 +24,14 @@ function isSandboxToken(token: string): boolean {
 
 function shouldUseSandboxCheckout(siteUrl: string, accessToken: string): boolean {
   const host = new URL(siteUrl).hostname;
-  return isSandboxToken(accessToken) || host === 'localhost' || host.startsWith('id-preview--') || host.endsWith('-dev.lovable.app');
+  return (
+    isSandboxToken(accessToken) ||
+    host === 'localhost' ||
+    host === '127.0.0.1' ||
+    host.endsWith('.lovableproject.com') ||
+    host.startsWith('id-preview--') ||
+    host.endsWith('-dev.lovable.app')
+  );
 }
 
 // ============================================================
