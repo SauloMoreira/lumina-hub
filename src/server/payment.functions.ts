@@ -138,7 +138,19 @@ export const createMercadoPagoPreference = createServerFn({ method: 'POST' })
     };
 
     // 4) Criar preference
-    let mpJson: { id?: string; init_point?: string; sandbox_init_point?: string; message?: string } = {};
+    console.log('[MP] criando preference', {
+      orderId: order.id,
+      sandbox,
+      tokenPrefix: accessToken.slice(0, 8),
+      siteUrl,
+      itemsCount: mpItems.length,
+      total: order.total,
+      hasPayer: !!payer,
+    });
+
+    let mpJson: { id?: string; init_point?: string; sandbox_init_point?: string; message?: string; error?: string; cause?: unknown } = {};
+    let mpRawText = '';
+    let mpStatus = 0;
     try {
       const resp = await fetch('https://api.mercadopago.com/checkout/preferences', {
         method: 'POST',
@@ -148,15 +160,24 @@ export const createMercadoPagoPreference = createServerFn({ method: 'POST' })
         },
         body: JSON.stringify(preferencePayload),
       });
-      mpJson = (await resp.json()) as typeof mpJson;
+      mpStatus = resp.status;
+      mpRawText = await resp.text();
+      try { mpJson = JSON.parse(mpRawText); } catch { mpJson = { message: mpRawText }; }
+
       if (!resp.ok || !mpJson.id) {
-        console.error('[MP] erro ao criar preference', resp.status, mpJson);
+        console.error('[MP] erro ao criar preference', {
+          status: resp.status,
+          body: mpRawText,
+          payloadSent: preferencePayload,
+        });
+        const errMsg = mpJson.message ?? mpJson.error ?? `MP HTTP ${resp.status}: ${mpRawText.slice(0, 200)}`;
         await supabaseAdmin
           .from('orders')
-          .update({ payment_error: mpJson.message ?? `MP HTTP ${resp.status}` })
+          .update({ payment_error: errMsg })
           .eq('id', order.id);
-        return { ok: false as const, error: mpJson.message ?? 'Falha ao criar preferência de pagamento' };
+        return { ok: false as const, error: errMsg, mpStatus, mpBody: mpJson };
       }
+      console.log('[MP] preference criada com sucesso', { id: mpJson.id });
     } catch (e) {
       console.error('[MP] exception createPreference', e);
       return { ok: false as const, error: 'Erro de comunicação com Mercado Pago' };
