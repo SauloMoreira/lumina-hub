@@ -188,8 +188,13 @@ function HomePage() {
               <Button asChild size="lg" className="h-11 px-6 font-semibold">
                 <Link to="/catalogo">Ver catálogo <ArrowRight className="w-4 h-4 ml-1.5" /></Link>
               </Button>
-              <Button asChild size="lg" variant="outline" className="h-11 px-6 border-primary/30 text-primary hover:bg-primary-tint hover:text-primary font-semibold">
-                <Link to="/catalogo"><MessageSquareText className="w-4 h-4 mr-1.5" /> Falar com IA</Link>
+              <Button
+                size="lg"
+                variant="outline"
+                className="h-11 px-6 border-primary/30 text-primary hover:bg-primary-tint hover:text-primary font-semibold"
+                onClick={() => { if (typeof window !== 'undefined') window.dispatchEvent(new Event('open-chat')); }}
+              >
+                <MessageSquareText className="w-4 h-4 mr-1.5" /> Falar com IA
               </Button>
             </div>
           </div>

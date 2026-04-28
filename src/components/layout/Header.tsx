@@ -48,7 +48,12 @@ export function Header() {
 
         {/* Ações */}
         <div className="flex items-center gap-2 ml-auto">
-          <Button variant="outline" size="sm" className="hidden md:inline-flex h-9 gap-1.5 border-primary/30 text-primary hover:bg-primary-tint hover:text-primary">
+          <Button
+            variant="outline"
+            size="sm"
+            className="hidden md:inline-flex h-9 gap-1.5 border-primary/30 text-primary hover:bg-primary-tint hover:text-primary"
+            onClick={() => { if (typeof window !== 'undefined') window.dispatchEvent(new Event('open-chat')); }}
+          >
             <Sparkles className="w-3.5 h-3.5" /> Falar com IA
           </Button>
           {isAdmin && (
