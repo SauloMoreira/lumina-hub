@@ -31,6 +31,7 @@ const items: { to: string; label: string; icon: typeof LayoutDashboard; exact?: 
   { to: '/admin/institutional-pages', label: 'Páginas', icon: FileText },
   { to: '/admin/contact-messages', label: 'Mensagens', icon: Mail },
   { to: '/admin/settings/company', label: 'Empresa', icon: Building2 },
+  { to: '/admin/seguranca', label: 'Segurança', icon: Shield },
 ];
 
 export function AdminSidebar() {
