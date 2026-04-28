@@ -1,11 +1,10 @@
 import { createFileRoute, Link, useNavigate } from '@tanstack/react-router';
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import { LogOut, User as UserIcon, Package, MapPin, Shield } from 'lucide-react';
 import { StoreLayout } from '@/components/layout/StoreLayout';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { useAuth } from '@/hooks/useAuth';
-import { supabase } from '@/integrations/supabase/client';
 import { PageSkeleton } from '@/components/layout/PageSkeleton';
 import { MfaSetup } from '@/components/auth/MfaSetup';
 
