@@ -199,6 +199,7 @@ function ProductPage() {
     cart.addItem({
       productId: product.id, name: product.name, slug: product.slug,
       price: finalPrice, image: cartImage, stock: product.stock_qty,
+      freeShippingEligible: !!(product as any).free_shipping_eligible,
     }, qty);
     trackAddToCart(product, qty);
     if (then === 'checkout') {
@@ -317,10 +318,17 @@ function ProductPage() {
             </div>
 
             <div className="bg-card border border-border rounded-lg p-3 space-y-2">
-              <div className="flex items-start gap-2.5 text-xs">
-                <Truck className="w-4 h-4 text-primary mt-0.5 flex-shrink-0" />
-                <span className="text-muted-foreground"><strong className="text-foreground">Frete grátis</strong> em pedidos acima de R$ 199,00</span>
-              </div>
+              {(product as any).free_shipping_eligible ? (
+                <div className="flex items-start gap-2.5 text-xs">
+                  <Truck className="w-4 h-4 text-success mt-0.5 flex-shrink-0" />
+                  <span className="text-muted-foreground"><strong className="text-foreground">Frete grátis</strong> em pedidos acima de R$ 199,00 (produto participante)</span>
+                </div>
+              ) : (
+                <div className="flex items-start gap-2.5 text-xs">
+                  <Truck className="w-4 h-4 text-muted-foreground mt-0.5 flex-shrink-0" />
+                  <span className="text-muted-foreground">Este produto não participa da campanha de frete grátis.</span>
+                </div>
+              )}
               <div className="flex items-start gap-2.5 text-xs">
                 <Shield className="w-4 h-4 text-primary mt-0.5 flex-shrink-0" />
                 <span className="text-muted-foreground"><strong className="text-foreground">NF garantida</strong> em todos os pedidos</span>
