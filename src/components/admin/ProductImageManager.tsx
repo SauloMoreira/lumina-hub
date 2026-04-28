@@ -306,19 +306,12 @@ export const ProductImageManager = forwardRef<ProductImageManagerHandle, Props>(
   async function optimizeOne(img: ProductImageRow) {
     setOptimizingId(img.id);
     try {
-      const { data: sessionData } = await supabase.auth.getSession();
-      const token = sessionData.session?.access_token;
-      if (!token) {
-        toast.error('Sessão expirada. Faça login novamente.');
-        return;
-      }
       const seo = await generateImageSeo({
         data: {
           productName,
           brand: brand ?? null,
           category: category ?? null,
           index: img.sort_order,
-          accessToken: token,
         },
       });
       if (!seo.ok) {
