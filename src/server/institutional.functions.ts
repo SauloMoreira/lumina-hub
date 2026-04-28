@@ -138,10 +138,11 @@ export const adminGetCompanySettings = createServerFn({ method: 'POST' })
 export const adminUpdateCompanySettings = createServerFn({ method: 'POST' })
   .middleware([requireAdmin])
   .inputValidator(companyUpdateSchema)
-  .handler(async ({ data }) => {
+  .handler(async ({ data, context }) => {
+    const adminId = (context as { adminUserId: string }).adminUserId;
     const { data: existing } = await supabaseAdmin
       .from('company_settings')
-      .select('id')
+      .select('*')
       .order('created_at', { ascending: true })
       .limit(1)
       .maybeSingle();
@@ -153,10 +154,19 @@ export const adminUpdateCompanySettings = createServerFn({ method: 'POST' })
     if (existing?.id) {
       const { error } = await supabaseAdmin.from('company_settings').update(payload).eq('id', existing.id);
       if (error) throw new Error(error.message);
+      await logAdminAction({
+        adminId, action: 'update', resourceType: 'company_settings',
+        resourceId: existing.id, description: 'Atualizou dados da empresa',
+        before: existing, after: payload,
+      });
       return { ok: true };
     }
     const { error } = await supabaseAdmin.from('company_settings').insert(payload);
     if (error) throw new Error(error.message);
+    await logAdminAction({
+      adminId, action: 'create', resourceType: 'company_settings',
+      description: 'Criou registro de dados da empresa', after: payload,
+    });
     return { ok: true };
   });
 
