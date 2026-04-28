@@ -67,8 +67,6 @@ export const Route = createRootRouteWithContext<MyRouterContext>()({
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
       { name: "theme-color", content: "#3F5AE0" },
-      { httpEquiv: "Content-Security-Policy-Report-Only", content: CSP_REPORT_ONLY },
-      { httpEquiv: "X-Content-Type-Options", content: "nosniff" },
       { name: "referrer", content: "strict-origin-when-cross-origin" },
     ],
     links: [
@@ -90,7 +88,11 @@ export const Route = createRootRouteWithContext<MyRouterContext>()({
 function RootShell({ children }: { children: React.ReactNode }) {
   return (
     <html lang="pt-BR">
-      <head><HeadContent /></head>
+      <head>
+        <meta httpEquiv="Content-Security-Policy-Report-Only" content={CSP_REPORT_ONLY} />
+        <meta httpEquiv="X-Content-Type-Options" content="nosniff" />
+        <HeadContent />
+      </head>
       <body>{children}<Scripts /></body>
     </html>
   );
