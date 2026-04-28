@@ -57,7 +57,7 @@ function CatalogPage() {
   });
 
   const { data, isLoading } = useQuery({
-    queryKey: ['products', 'catalog', search.cat, search.sort, page],
+    queryKey: ['products', 'catalog', search.cat, search.sort, page, search.oferta, search.shipping],
     staleTime: 1000 * 60 * 10, // 10min
     enabled: !search.cat || !!categories,
     queryFn: async () => {
@@ -71,14 +71,24 @@ function CatalogPage() {
         const cat = categories?.find((c) => c.slug === search.cat);
         if (cat) query = query.eq('category_id', cat.id);
       }
+      if (search.oferta) {
+        query = query.not('sale_price', 'is', null);
+      }
+      if (search.shipping === 'free') {
+        query = query.gte('price', FREE_SHIPPING_THRESHOLD);
+      }
       if (search.sort === 'price_asc') query = query.order('price', { ascending: true });
       else if (search.sort === 'price_desc') query = query.order('price', { ascending: false });
       else if (search.sort === 'newest') query = query.order('created_at', { ascending: false });
+      else if (search.sort === 'best_sellers') query = query.order('featured', { ascending: false }).order('updated_at', { ascending: false });
       else query = query.order('featured', { ascending: false }).order('created_at', { ascending: false });
       const { data, error, count } = await query.range(from, to);
       if (error) throw error;
-      const products = (data ?? []).map((p: any) => ({ ...p, images: imageUrlsFromProductImages(p.product_images, p.images) })) as Product[];
-      return { products, total: count ?? 0 };
+      let products = (data ?? []).map((p: any) => ({ ...p, images: imageUrlsFromProductImages(p.product_images, p.images) })) as Product[];
+      if (search.oferta) {
+        products = products.filter((p) => p.sale_price != null && Number(p.sale_price) < Number(p.price));
+      }
+      return { products, total: search.oferta ? products.length : (count ?? 0) };
     },
   });
 
