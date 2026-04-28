@@ -1,15 +1,12 @@
 import { createServerFn } from '@tanstack/react-start';
-import { createClient } from '@supabase/supabase-js';
 import { z } from 'zod';
 import { requireAdmin } from '@/integrations/supabase/admin-middleware';
-import type { Database } from '@/integrations/supabase/types';
 
 const InputSchema = z.object({
   productName: z.string().min(1).max(200),
   category: z.string().max(120).optional().nullable(),
   brand: z.string().max(120).optional().nullable(),
   index: z.number().int().min(0).max(20).optional(),
-  accessToken: z.string().min(20).max(8192),
 });
 
 const ResultSchema = z.object({
@@ -36,38 +33,6 @@ export const generateImageSeo = createServerFn({ method: 'POST' })
   .inputValidator((raw: unknown) => InputSchema.parse(raw))
   .handler(async ({ data }) => {
     try {
-      const supabaseUrl = process.env.SUPABASE_URL;
-      const supabaseKey = process.env.SUPABASE_PUBLISHABLE_KEY;
-
-      if (!supabaseUrl || !supabaseKey) {
-        return { ok: false as const, error: 'Configuração de autenticação indisponível' };
-      }
-
-      const authedSupabase = createClient<Database>(supabaseUrl, supabaseKey, {
-        global: { headers: { Authorization: `Bearer ${data.accessToken}` } },
-        auth: {
-          storage: undefined,
-          persistSession: false,
-          autoRefreshToken: false,
-        },
-      });
-
-      const { data: claimsData, error: claimsError } = await authedSupabase.auth.getClaims(data.accessToken);
-      const userId = claimsData?.claims?.sub;
-
-      if (claimsError || !userId) {
-        return { ok: false as const, error: 'Sessão inválida. Faça login novamente.' };
-      }
-
-      const { data: profile, error: profileError } = await authedSupabase
-        .from('profiles')
-        .select('role')
-        .eq('id', userId)
-        .maybeSingle();
-
-      if (profileError) return { ok: false as const, error: profileError.message };
-      if (profile?.role !== 'admin') return { ok: false as const, error: 'Acesso negado' };
-
       const apiKey = process.env.LOVABLE_API_KEY;
       if (!apiKey) return { ok: false as const, error: 'LOVABLE_API_KEY não configurada' };
 
