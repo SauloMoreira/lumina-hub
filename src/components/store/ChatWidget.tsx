@@ -196,7 +196,7 @@ export function ChatWidget() {
       const fallbackText = encodeURIComponent(
         `Olá! Vim pelo site e gostaria de atendimento humano.\n\nMeu nome: ${trimmedName}\nMeu telefone: 55${digits}`
       );
-      setWhatsappUrl(`https://wa.me/5521982126467?text=${fallbackText}`);
+      setWhatsappUrl(`https://web.whatsapp.com/send?phone=5521982126467&text=${fallbackText}`);
       setHandoffStep("ready");
       setMessages((p) => [
         ...p,
