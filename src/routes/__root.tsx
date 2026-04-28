@@ -43,10 +43,10 @@ function NotFoundComponent() {
   );
 }
 
-// Content Security Policy — modo Report-Only.
+// Content Security Policy — modo ENFORCE.
 // Permite o que o app realmente usa (Supabase, Mercado Pago, Google Fonts, Lovable AI, imagens via storage).
-// Ajustar quando ativar no modo enforce.
-const CSP_REPORT_ONLY = [
+// Violações continuam sendo reportadas para /api/public/csp-report.
+const CSP_POLICY = [
   "default-src 'self'",
   "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://sdk.mercadopago.com https://www.googletagmanager.com https://www.google-analytics.com",
   "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
@@ -89,7 +89,7 @@ function RootShell({ children }: { children: React.ReactNode }) {
   return (
     <html lang="pt-BR">
       <head>
-        <meta httpEquiv="Content-Security-Policy-Report-Only" content={CSP_REPORT_ONLY} />
+        <meta httpEquiv="Content-Security-Policy" content={CSP_POLICY} />
         <meta httpEquiv="X-Content-Type-Options" content="nosniff" />
         <HeadContent />
       </head>
