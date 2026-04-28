@@ -381,5 +381,12 @@ export const resendOrderEmail = createServerFn({ method: 'POST' })
       createdBy: adminUserId,
     });
 
+    await logAdminAction({
+      adminId: adminUserId, action: 'resend_email', resourceType: 'order',
+      resourceId: data.orderId,
+      description: `Reenviou e-mail "${data.type}" (${result.ok ? 'sucesso' : 'falha'})`,
+      after: { email_type: data.type, ok: result.ok, error: result.error ?? null },
+    });
+
     return { ok: result.ok, error: result.error, skipped: result.skipped };
   });
