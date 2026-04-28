@@ -3,7 +3,7 @@ import { Trash2, Plus, Minus, ShoppingBag, ArrowRight } from 'lucide-react';
 import { StoreLayout } from '@/components/layout/StoreLayout';
 import { Button } from '@/components/ui/button';
 import { useCart } from '@/stores/cartStore';
-import { formatBRL, FREE_SHIPPING_THRESHOLD } from '@/lib/domain';
+import { formatBRL, FREE_SHIPPING_THRESHOLD, calcFreeShippingProgress } from '@/lib/domain';
 
 import { buildSeo } from '@/lib/seo';
 
@@ -15,7 +15,10 @@ export const Route = createFileRoute('/carrinho')({
 function CartPage() {
   const cart = useCart();
   const subtotal = cart.subtotal();
-  const shipping = subtotal >= FREE_SHIPPING_THRESHOLD ? 0 : 25;
+  const freeShip = calcFreeShippingProgress(
+    cart.items.map((i) => ({ price: i.price, qty: i.qty, freeShippingEligible: i.freeShippingEligible }))
+  );
+  const shipping = freeShip.qualifies ? 0 : 25;
   const total = subtotal + shipping;
 
   if (cart.items.length === 0) {
@@ -77,6 +80,13 @@ function CartPage() {
                 <span className="text-muted-foreground">Frete (estimado)</span>
                 <span className="font-medium">{shipping === 0 ? <span className="text-success">Grátis</span> : formatBRL(shipping)}</span>
               </div>
+              {!freeShip.qualifies && (
+                <p className="text-xs text-muted-foreground">
+                  {freeShip.hasEligibleItems
+                    ? <>Faltam <strong>{formatBRL(freeShip.remaining)}</strong> em produtos participantes para frete grátis.</>
+                    : <>Adicione produtos participantes para aproveitar frete grátis acima de {formatBRL(FREE_SHIPPING_THRESHOLD)}.</>}
+                </p>
+              )}
               <div className="border-t border-border pt-3 flex justify-between items-end">
                 <span className="font-medium">Total</span>
                 <span className="font-display font-extrabold text-2xl text-primary">{formatBRL(total)}</span>
