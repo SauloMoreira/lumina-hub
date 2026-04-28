@@ -169,18 +169,13 @@ function ProductForm() {
       const newId = isNew ? (res.data as { id?: string } | null)?.id : id;
       const seoEmpty = !payload.seo_title && !payload.seo_description && !payload.seo_keywords;
       if (isNew && newId && seoEmpty) {
-        const { data: sessionData } = await supabase.auth.getSession();
-        const accessToken = sessionData.session?.access_token;
-
-        if (accessToken) {
-          toast.info('🚀 Otimizando SEO com IA em segundo plano…');
-          boostProductSeoAuto({ data: { productId: newId, accessToken } })
-            .then((r) => {
-              if (r.ok) toast.success(`SEO turbinado: título, descrição e ${r.faqCount} FAQs gerados`);
-              else toast.error(`SEO booster: ${r.error}`);
-            })
-            .catch((e: unknown) => toast.error(`SEO booster falhou: ${e instanceof Error ? e.message : 'erro'}`));
-        }
+        toast.info('🚀 Otimizando SEO com IA em segundo plano…');
+        boostProductSeoAuto({ data: { productId: newId } })
+          .then((r) => {
+            if (r.ok) toast.success(`SEO turbinado: título, descrição e ${r.faqCount} FAQs gerados`);
+            else toast.error(`SEO booster: ${r.error}`);
+          })
+          .catch((e: unknown) => toast.error(`SEO booster falhou: ${e instanceof Error ? e.message : 'erro'}`));
       }
 
       if (isNew && newId) {
