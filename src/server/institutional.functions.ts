@@ -7,9 +7,13 @@ import { requireAdmin } from '@/integrations/supabase/admin-middleware';
 // PUBLIC: Company settings (single record) - read only
 // ============================================================
 export const getPublicCompanySettings = createServerFn({ method: 'GET' }).handler(async () => {
+  // Filtra explicitamente campos não-sensíveis. CNPJ, inscrições estadual/municipal,
+  // razão social e endereço completo NÃO são expostos publicamente — apenas no admin.
   const { data, error } = await supabaseAdmin
     .from('company_settings')
-    .select('*')
+    .select(
+      'id, trade_name, logo_url, support_email, support_phone, support_whatsapp, business_hours, instagram_url, facebook_url, tiktok_url, linkedin_url, website_url, address_street, address_number, address_complement, address_neighborhood, address_city, address_state, address_zipcode'
+    )
     .order('created_at', { ascending: true })
     .limit(1)
     .maybeSingle();
