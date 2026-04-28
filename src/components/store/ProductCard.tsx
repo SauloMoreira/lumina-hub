@@ -23,7 +23,8 @@ export function ProductCard({ product, index = 0 }: { product: Product; index?: 
     });
   };
 
-  const isAboveFold = index < 4;
+  // Apenas a 1ª imagem ganha prioridade alta para não competir com o LCP do banner
+  const isAboveFold = index === 0;
   return (
     <div>
       <Link

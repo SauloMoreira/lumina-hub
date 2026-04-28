@@ -71,6 +71,18 @@ export function pickUrl(img: Partial<ProductImageRow> | null | undefined, varian
 
 export type ProductImagePreviewRow = Pick<ProductImageRow, 'original_url' | 'url_card' | 'url_thumb' | 'is_primary' | 'sort_order'>;
 
+/**
+ * Garante que uma URL do Supabase Storage seja entregue via /render/image
+ * (WebP + resize + cache CDN). Se já estiver no render endpoint ou não for
+ * Supabase Storage, devolve como está.
+ */
+function ensureOptimized(url: string | null | undefined, variant: ImageVariant = 'card'): string | null {
+  if (!url) return null;
+  if (url.includes('/storage/v1/render/image/')) return url;
+  if (!url.includes('/storage/v1/object/public/')) return url;
+  return variantUrl(url, variant);
+}
+
 export function imageUrlsFromProductImages(
   images: ProductImagePreviewRow[] | null | undefined,
   fallback: string[] | null | undefined = [],
@@ -79,6 +91,11 @@ export function imageUrlsFromProductImages(
     if (a.is_primary !== b.is_primary) return a.is_primary ? -1 : 1;
     return (a.sort_order ?? 0) - (b.sort_order ?? 0);
   });
-  const urls = sorted.map((img) => img.url_thumb ?? img.url_card ?? img.original_url).filter((url): url is string => !!url);
-  return urls.length ? urls : (fallback ?? []);
+  const urls = sorted
+    .map((img) => ensureOptimized(img.url_card ?? img.url_thumb ?? img.original_url, 'card'))
+    .filter((url): url is string => !!url);
+  if (urls.length) return urls;
+  return (fallback ?? [])
+    .map((u) => ensureOptimized(u, 'card'))
+    .filter((url): url is string => !!url);
 }
