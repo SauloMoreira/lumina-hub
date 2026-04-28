@@ -146,9 +146,9 @@ export async function logSecurityEvent(input: SecurityEventInput): Promise<void>
     await supabaseAdmin.rpc('log_security_event', {
       _type: input.type,
       _severity: input.severity ?? 'info',
-      _identifier: input.identifier ?? null,
-      _message: input.message ?? null,
-      _metadata: (input.metadata ?? null) as never,
+      _identifier: input.identifier ?? '',
+      _message: input.message ?? '',
+      _metadata: (input.metadata ?? {}) as never,
     });
   } catch (e) {
     console.error('[security] log error', e);
