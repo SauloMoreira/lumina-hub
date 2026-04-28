@@ -305,7 +305,7 @@ export const createOrder = createServerFn({ method: 'POST' })
 
     // Criar itens
     const { error: itemsErr } = await supabase.from('order_items').insert(
-      data.items.map((i) => ({
+      validatedItems.map((i) => ({
         order_id: order.id,
         product_id: i.productId,
         product_name: i.name,
