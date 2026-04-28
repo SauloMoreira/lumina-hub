@@ -2,14 +2,14 @@ import { createFileRoute } from '@tanstack/react-router';
 import { useQuery } from '@tanstack/react-query';
 import {
   Shield, ShieldAlert, ShieldCheck, AlertTriangle, Activity,
-  Webhook, KeyRound, Users, RefreshCw,
+  Webhook, KeyRound, Users, RefreshCw, ScrollText,
 } from 'lucide-react';
 
 import { AdminLayout } from '@/components/admin/AdminLayout';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { getSecurityOverview } from '@/server/security.functions';
+import { getSecurityOverview, listAdminAuditLog } from '@/server/security.functions';
 
 export const Route = createFileRoute('/admin/seguranca')({
   component: AdminSecurityPage,
@@ -19,6 +19,12 @@ function AdminSecurityPage() {
   const { data, isLoading, refetch, isFetching } = useQuery({
     queryKey: ['security-overview'],
     queryFn: () => getSecurityOverview({ data: undefined as never }),
+    refetchInterval: 60_000,
+  });
+
+  const { data: audit } = useQuery({
+    queryKey: ['admin-audit-log'],
+    queryFn: () => listAdminAuditLog({ data: { limit: 50 } }),
     refetchInterval: 60_000,
   });
 
