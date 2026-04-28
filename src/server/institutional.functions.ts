@@ -2,6 +2,7 @@ import { createServerFn } from '@tanstack/react-start';
 import { z } from 'zod';
 import { supabaseAdmin } from '@/integrations/supabase/client.server';
 import { requireAdmin } from '@/integrations/supabase/admin-middleware';
+import { enforceRateLimit, getClientIdentifier } from '@/server/security/rateLimit';
 
 // ============================================================
 // PUBLIC: Company settings (single record) - read only
