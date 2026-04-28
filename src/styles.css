@@ -141,6 +141,8 @@
   html {
     font-family: var(--font-sans);
     -webkit-font-smoothing: antialiased;
+    /* Evita scroll horizontal acidental em mobile */
+    overflow-x: hidden;
   }
 
   body {
@@ -149,6 +151,15 @@
     font-family: var(--font-sans);
     font-size: 14px;
     line-height: 1.7;
+    /* Reforço anti scroll-x global */
+    overflow-x: hidden;
+    /* Espaço seguro para barra inferior do iOS quando há elementos fixos */
+    min-height: 100vh;
+  }
+
+  /* Garante que mídias nunca explodam o container */
+  img, video, canvas, svg, picture {
+    max-width: 100%;
   }
 
   h1, h2, h3, h4, h5, h6 {
