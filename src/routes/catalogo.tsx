@@ -1,7 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { useQuery } from '@tanstack/react-query';
 import { useState, useMemo } from 'react';
-import { Search, SlidersHorizontal, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Search, SlidersHorizontal, ChevronLeft, ChevronRight, X } from 'lucide-react';
 import { z } from 'zod';
 import { StoreLayout } from '@/components/layout/StoreLayout';
 import { ProductCard } from '@/components/store/ProductCard';
@@ -10,6 +10,7 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
 import type { Product, Category } from '@/lib/domain';
+import { FREE_SHIPPING_THRESHOLD, formatBRL } from '@/lib/domain';
 import { trackSearch } from '@/lib/tracking';
 import { imageUrlsFromProductImages } from '@/lib/productImages';
 
@@ -18,8 +19,10 @@ const PAGE_SIZE = 24;
 const searchSchema = z.object({
   cat: z.string().optional(),
   q: z.string().optional(),
-  sort: z.enum(['featured', 'price_asc', 'price_desc', 'newest']).optional(),
+  sort: z.enum(['featured', 'price_asc', 'price_desc', 'newest', 'best_sellers']).optional(),
   page: z.coerce.number().int().min(1).optional(),
+  oferta: z.coerce.boolean().optional(),
+  shipping: z.enum(['free']).optional(),
 });
 
 import { buildSeo } from '@/lib/seo';
