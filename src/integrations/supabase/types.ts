@@ -617,51 +617,75 @@ export type Database = {
       leads: {
         Row: {
           company: string | null
+          conversation_summary: string | null
           converted_order: string | null
           created_at: string | null
           email: string | null
           estimated_value: number | null
           id: string
           interest: string | null
+          last_user_message: string | null
           lost_reason: string | null
+          metadata: Json | null
           name: string
           notes: string | null
           origin: string | null
+          page_url: string | null
           phone: string | null
+          product_id: string | null
+          product_name: string | null
+          product_url: string | null
           status: string | null
           updated_at: string | null
+          whatsapp_message: string | null
         }
         Insert: {
           company?: string | null
+          conversation_summary?: string | null
           converted_order?: string | null
           created_at?: string | null
           email?: string | null
           estimated_value?: number | null
           id?: string
           interest?: string | null
+          last_user_message?: string | null
           lost_reason?: string | null
+          metadata?: Json | null
           name: string
           notes?: string | null
           origin?: string | null
+          page_url?: string | null
           phone?: string | null
+          product_id?: string | null
+          product_name?: string | null
+          product_url?: string | null
           status?: string | null
           updated_at?: string | null
+          whatsapp_message?: string | null
         }
         Update: {
           company?: string | null
+          conversation_summary?: string | null
           converted_order?: string | null
           created_at?: string | null
           email?: string | null
           estimated_value?: number | null
           id?: string
           interest?: string | null
+          last_user_message?: string | null
           lost_reason?: string | null
+          metadata?: Json | null
           name?: string
           notes?: string | null
           origin?: string | null
+          page_url?: string | null
           phone?: string | null
+          product_id?: string | null
+          product_name?: string | null
+          product_url?: string | null
           status?: string | null
           updated_at?: string | null
+          whatsapp_message?: string | null
         }
         Relationships: [
           {

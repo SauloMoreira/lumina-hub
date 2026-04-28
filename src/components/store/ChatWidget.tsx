@@ -1,8 +1,9 @@
 import { useEffect, useRef, useState } from "react";
-import { MessageCircle, X, Send, Loader2 } from "lucide-react";
+import { MessageCircle, X, Send, Loader2, ExternalLink } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import { useServerFn } from "@tanstack/react-start";
 import { chatWithAI, loadChatHistory } from "@/server/chat.functions";
+import { requestHumanHandoff } from "@/server/leadHandoff.functions";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -13,8 +14,38 @@ interface Msg {
   content: string;
 }
 
+type HandoffStep = "idle" | "offer" | "form" | "ready";
+
 const SESSION_KEY = "ledm_chat_session";
 const STORAGE_KEY = "ledm_chat_open";
+
+const HUMAN_TRIGGERS = [
+  "humano",
+  "atendente",
+  "vendedor",
+  "vendedora",
+  "pessoa",
+  "whatsapp",
+  "whats",
+  "zap",
+  "falar com alguém",
+  "falar com alguem",
+  "atendimento humano",
+  "quero falar",
+];
+
+function detectHumanRequest(text: string): boolean {
+  const t = text.toLowerCase();
+  return HUMAN_TRIGGERS.some((k) => t.includes(k));
+}
+
+function formatPhoneBR(value: string): string {
+  const d = value.replace(/\D/g, "").slice(0, 11);
+  if (d.length <= 2) return d;
+  if (d.length <= 6) return `(${d.slice(0, 2)}) ${d.slice(2)}`;
+  if (d.length <= 10) return `(${d.slice(0, 2)}) ${d.slice(2, 6)}-${d.slice(6)}`;
+  return `(${d.slice(0, 2)}) ${d.slice(2, 7)}-${d.slice(7)}`;
+}
 
 function getOrCreateSession(): string {
   if (typeof window === "undefined") return "";
@@ -39,10 +70,20 @@ export function ChatWidget() {
   const [loading, setLoading] = useState(false);
   const [sessionId, setSessionId] = useState("");
   const [userId, setUserId] = useState<string | null>(null);
+
+  // Handoff state
+  const [handoffStep, setHandoffStep] = useState<HandoffStep>("idle");
+  const [handoffName, setHandoffName] = useState("");
+  const [handoffPhone, setHandoffPhone] = useState("");
+  const [handoffError, setHandoffError] = useState<string | null>(null);
+  const [handoffLoading, setHandoffLoading] = useState(false);
+  const [whatsappUrl, setWhatsappUrl] = useState<string | null>(null);
+
   const scrollRef = useRef<HTMLDivElement>(null);
 
   const chat = useServerFn(chatWithAI);
   const loadHistory = useServerFn(loadChatHistory);
+  const handoff = useServerFn(requestHumanHandoff);
 
   useEffect(() => {
     const sid = getOrCreateSession();
@@ -70,7 +111,7 @@ export function ChatWidget() {
 
   useEffect(() => {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
-  }, [messages, loading]);
+  }, [messages, loading, handoffStep]);
 
   const toggle = () => {
     const next = !open;
@@ -78,9 +119,109 @@ export function ChatWidget() {
     localStorage.setItem(STORAGE_KEY, next ? "1" : "0");
   };
 
+  const startHandoffOffer = () => {
+    setHandoffStep("offer");
+    setMessages((p) => [
+      ...p,
+      {
+        role: "assistant",
+        content:
+          "Claro, posso te encaminhar para um atendente pelo WhatsApp.\n\nAntes disso, se quiser, eu também consigo te ajudar por aqui com dúvidas sobre produtos, preços, comparações, frete, formas de pagamento, troca, devolução e acompanhamento de pedido.\n\n**Como prefere seguir?**",
+      },
+    ]);
+  };
+
+  const handleContinueHere = () => {
+    setHandoffStep("idle");
+    setMessages((p) => [
+      ...p,
+      { role: "user", content: "Pode tentar me ajudar por aqui." },
+      {
+        role: "assistant",
+        content: "Combinado! Me conta sua dúvida que eu te ajudo. 👇",
+      },
+    ]);
+  };
+
+  const handleWantWhatsapp = () => {
+    setHandoffStep("form");
+    setHandoffError(null);
+    setMessages((p) => [
+      ...p,
+      { role: "user", content: "Quero ir para o WhatsApp." },
+      {
+        role: "assistant",
+        content:
+          "Perfeito. Para encaminhar seu atendimento, me informe seu **nome** e **telefone com WhatsApp**.\n\n_Usaremos esses dados apenas para registrar seu atendimento e facilitar o retorno da nossa equipe._",
+      },
+    ]);
+  };
+
+  const submitHandoff = async () => {
+    setHandoffError(null);
+    const trimmedName = handoffName.trim();
+    const digits = handoffPhone.replace(/\D/g, "");
+    if (trimmedName.length < 2 || /^\d+$/.test(trimmedName)) {
+      setHandoffError("Informe um nome válido.");
+      return;
+    }
+    if (digits.length < 10 || digits.length > 11) {
+      setHandoffError("Telefone inválido. Use DDD + número (10 ou 11 dígitos).");
+      return;
+    }
+    setHandoffLoading(true);
+    try {
+      const res = await handoff({
+        data: {
+          name: trimmedName,
+          phone: digits,
+          sessionId,
+          pageUrl: typeof window !== "undefined" ? window.location.href : null,
+        },
+      });
+      setWhatsappUrl(res.whatsappUrl);
+      setHandoffStep("ready");
+      trackLeadCaptured("chat_handoff");
+      setMessages((p) => [
+        ...p,
+        {
+          role: "assistant",
+          content: res.leadSaved
+            ? `Pronto, **${trimmedName}**! Registrei seu atendimento e vou te encaminhar para o WhatsApp com um resumo da nossa conversa.`
+            : `Pronto, **${trimmedName}**! Não consegui registrar agora, mas você pode seguir para o WhatsApp normalmente.`,
+        },
+      ]);
+    } catch (e: any) {
+      // Mesmo com erro, tenta gerar link com os dados informados
+      const fallbackText = encodeURIComponent(
+        `Olá! Vim pelo site e gostaria de atendimento humano.\n\nMeu nome: ${trimmedName}\nMeu telefone: 55${digits}`
+      );
+      setWhatsappUrl(`https://wa.me/5521982126467?text=${fallbackText}`);
+      setHandoffStep("ready");
+      setMessages((p) => [
+        ...p,
+        {
+          role: "assistant",
+          content: `Não consegui registrar seu atendimento agora, **${trimmedName}**, mas você pode seguir para o WhatsApp normalmente.`,
+        },
+      ]);
+    } finally {
+      setHandoffLoading(false);
+    }
+  };
+
   const send = async () => {
     const text = input.trim();
     if (!text || loading) return;
+
+    // Intercepta pedido humano antes de mandar para a IA
+    if (handoffStep === "idle" && detectHumanRequest(text)) {
+      setMessages((p) => [...p, { role: "user", content: text }]);
+      setInput("");
+      startHandoffOffer();
+      return;
+    }
+
     const userMsg: Msg = { role: "user", content: text };
     const next = [...messages, userMsg];
     setMessages(next);
@@ -109,6 +250,8 @@ export function ChatWidget() {
     }
   };
 
+  const inputDisabled = loading || handoffStep === "form" || handoffStep === "ready";
+
   return (
     <>
       {/* Floating button */}
@@ -125,7 +268,7 @@ export function ChatWidget() {
 
       {/* Panel */}
       {open && (
-        <div className="fixed bottom-24 right-6 z-50 flex h-[32rem] w-[calc(100vw-3rem)] max-w-sm flex-col overflow-hidden rounded-2xl border border-border bg-card shadow-2xl animate-in fade-in slide-in-from-bottom-4">
+        <div className="fixed bottom-24 right-6 z-50 flex h-[34rem] w-[calc(100vw-3rem)] max-w-sm flex-col overflow-hidden rounded-2xl border border-border bg-card shadow-2xl animate-in fade-in slide-in-from-bottom-4">
           <div className="flex items-center gap-3 border-b border-border bg-primary px-4 py-3 text-primary-foreground">
             <div className="flex h-9 w-9 items-center justify-center rounded-full bg-primary-foreground/20">
               <MessageCircle className="h-5 w-5" />
@@ -160,6 +303,78 @@ export function ChatWidget() {
                 </div>
               </div>
             )}
+
+            {/* Handoff: oferta inicial */}
+            {handoffStep === "offer" && !loading && (
+              <div className="flex flex-col gap-2">
+                <Button size="sm" variant="outline" onClick={handleContinueHere}>
+                  Pode tentar me ajudar
+                </Button>
+                <Button size="sm" onClick={handleWantWhatsapp}>
+                  Quero ir para o WhatsApp
+                </Button>
+              </div>
+            )}
+
+            {/* Handoff: formulário nome+telefone */}
+            {handoffStep === "form" && (
+              <div className="rounded-2xl border border-border bg-card p-3 space-y-2">
+                <input
+                  value={handoffName}
+                  onChange={(e) => setHandoffName(e.target.value)}
+                  placeholder="Seu nome"
+                  maxLength={120}
+                  autoComplete="name"
+                  className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:border-primary"
+                />
+                <input
+                  value={handoffPhone}
+                  onChange={(e) => setHandoffPhone(formatPhoneBR(e.target.value))}
+                  placeholder="(21) 99999-9999"
+                  inputMode="tel"
+                  autoComplete="tel"
+                  className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:border-primary"
+                />
+                {handoffError && (
+                  <p className="text-xs text-destructive">{handoffError}</p>
+                )}
+                <Button
+                  size="sm"
+                  className="w-full"
+                  onClick={submitHandoff}
+                  disabled={handoffLoading}
+                >
+                  {handoffLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : "Continuar para o WhatsApp"}
+                </Button>
+                <p className="text-[10px] text-muted-foreground">
+                  Usamos seus dados apenas para registrar este atendimento.
+                </p>
+              </div>
+            )}
+
+            {/* Handoff: pronto */}
+            {handoffStep === "ready" && whatsappUrl && (
+              <div className="flex flex-col gap-2">
+                <a href={whatsappUrl} target="_blank" rel="noopener noreferrer">
+                  <Button size="sm" className="w-full bg-green-600 hover:bg-green-700 text-white">
+                    <ExternalLink className="h-4 w-4 mr-2" />
+                    Falar no WhatsApp
+                  </Button>
+                </a>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  onClick={() => {
+                    setHandoffStep("idle");
+                    setHandoffName("");
+                    setHandoffPhone("");
+                    setWhatsappUrl(null);
+                  }}
+                >
+                  Continuar conversando aqui
+                </Button>
+              </div>
+            )}
           </div>
 
           <div className="flex items-center gap-2 border-t border-border bg-card p-3">
@@ -172,11 +387,17 @@ export function ChatWidget() {
                   send();
                 }
               }}
-              placeholder="Digite sua mensagem..."
-              disabled={loading}
-              className="flex-1 rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:border-primary"
+              placeholder={
+                handoffStep === "form"
+                  ? "Preencha o formulário acima…"
+                  : handoffStep === "ready"
+                  ? "Clique em Falar no WhatsApp"
+                  : "Digite sua mensagem..."
+              }
+              disabled={inputDisabled}
+              className="flex-1 rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:border-primary disabled:opacity-60"
             />
-            <Button size="icon" onClick={send} disabled={loading || !input.trim()}>
+            <Button size="icon" onClick={send} disabled={inputDisabled || !input.trim()}>
               <Send className="h-4 w-4" />
             </Button>
           </div>
