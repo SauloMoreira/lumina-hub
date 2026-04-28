@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
-import { ChevronLeft, ChevronRight, ImageOff } from 'lucide-react';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { pickUrl, type ProductImageRow } from '@/lib/productImages';
+import { ProductImagePlaceholder } from '@/components/store/ProductImagePlaceholder';
 
 interface Props {
   images: ProductImageRow[];
@@ -43,8 +44,8 @@ export function ProductGallery({ images, productName }: Props) {
   if (!sorted.length) {
     return (
       <div className="flex gap-3">
-        <div className="bg-surface border border-border rounded-lg flex-1 aspect-square flex items-center justify-center text-muted-foreground">
-          <ImageOff className="w-16 h-16" strokeWidth={1.2} />
+        <div className="border border-border rounded-lg flex-1 aspect-square overflow-hidden">
+          <ProductImagePlaceholder iconSize={88} />
         </div>
       </div>
     );

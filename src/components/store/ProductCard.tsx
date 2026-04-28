@@ -1,8 +1,9 @@
 import { Link } from '@tanstack/react-router';
-import { ShoppingCart, Zap } from 'lucide-react';
+import { ShoppingCart } from 'lucide-react';
 import type { Product } from '@/lib/domain';
 import { formatBRL } from '@/lib/domain';
 import { useCart } from '@/stores/cartStore';
+import { ProductImagePlaceholder } from '@/components/store/ProductImagePlaceholder';
 
 export function ProductCard({ product, index = 0 }: { product: Product; index?: number }) {
   const cart = useCart();
@@ -44,7 +45,7 @@ export function ProductCard({ product, index = 0 }: { product: Product; index?: 
               className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
             />
           ) : (
-            <Zap className="w-16 h-16 text-primary/20" strokeWidth={1.5} />
+            <ProductImagePlaceholder iconSize={56} />
           )}
           {product.featured && (
             <span className="absolute top-2 left-2 text-[10px] font-bold uppercase tracking-wider bg-accent text-accent-foreground px-2 py-1 rounded">

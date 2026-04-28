@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
-import { ChevronLeft, ChevronRight, ImageOff } from 'lucide-react';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { pickUrl, type ProductImageRow } from '@/lib/productImages';
+import { ProductImagePlaceholder } from '@/components/store/ProductImagePlaceholder';
 
 interface Props {
   images: ProductImageRow[];
@@ -25,8 +26,8 @@ export function ProductImageCarousel({ images, productName }: Props) {
 
   if (!sorted.length) {
     return (
-      <div className="bg-card border border-border rounded-xl aspect-square flex items-center justify-center text-muted-foreground">
-        <ImageOff className="w-16 h-16" strokeWidth={1.2} />
+      <div className="border border-border rounded-xl aspect-square overflow-hidden">
+        <ProductImagePlaceholder iconSize={88} />
       </div>
     );
   }
