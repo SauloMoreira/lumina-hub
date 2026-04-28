@@ -70,6 +70,51 @@ export type Database = {
           },
         ]
       }
+      admin_audit_log: {
+        Row: {
+          action: string
+          admin_email: string | null
+          admin_id: string
+          after: Json | null
+          before: Json | null
+          created_at: string
+          description: string | null
+          id: string
+          ip: string | null
+          resource_id: string | null
+          resource_type: string
+          user_agent: string | null
+        }
+        Insert: {
+          action: string
+          admin_email?: string | null
+          admin_id: string
+          after?: Json | null
+          before?: Json | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          ip?: string | null
+          resource_id?: string | null
+          resource_type: string
+          user_agent?: string | null
+        }
+        Update: {
+          action?: string
+          admin_email?: string | null
+          admin_id?: string
+          after?: Json | null
+          before?: Json | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          ip?: string | null
+          resource_id?: string | null
+          resource_type?: string
+          user_agent?: string | null
+        }
+        Relationships: []
+      }
       cart_items: {
         Row: {
           created_at: string | null
@@ -1247,6 +1292,21 @@ export type Database = {
       }
       increment_coupon_usage: { Args: { _code: string }; Returns: undefined }
       is_admin: { Args: { _user_id: string }; Returns: boolean }
+      log_admin_action: {
+        Args: {
+          _action: string
+          _admin_email: string
+          _admin_id: string
+          _after: Json
+          _before: Json
+          _description: string
+          _ip: string
+          _resource_id: string
+          _resource_type: string
+          _user_agent: string
+        }
+        Returns: string
+      }
       log_security_event: {
         Args: {
           _identifier: string
