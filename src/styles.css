@@ -4,7 +4,7 @@
 
 @custom-variant dark (&:is(.dark *));
 
-/* Fontes carregadas via <link> no <head> do __root para não bloquear o CSS parsing */
+/* Fontes carregadas via <link> no <head> do __root para não bloquear o CSS parsing. */
 
 /*
  * LED MARICÁ — Design System
