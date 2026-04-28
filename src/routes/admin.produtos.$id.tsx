@@ -44,7 +44,7 @@ function ProductForm() {
     price: '', sale_price: '', cost_price: '',
     stock_qty: '0', stock_min_alert: '10',
     weight_kg: '0.3', length_cm: '10', width_cm: '10', height_cm: '10',
-    category_id: '', active: true, featured: false,
+    category_id: '', active: true, featured: false, free_shipping_eligible: false,
     images: [] as string[],
     tags: '',
     seo_title: '', seo_description: '', seo_keywords: '',
@@ -61,7 +61,7 @@ function ProductForm() {
           price: String(data.price), sale_price: data.sale_price ? String(data.sale_price) : '', cost_price: data.cost_price ? String(data.cost_price) : '',
           stock_qty: String(data.stock_qty), stock_min_alert: String(data.stock_min_alert ?? 10),
           weight_kg: String(data.weight_kg ?? 0.3), length_cm: String(data.length_cm ?? 10), width_cm: String(data.width_cm ?? 10), height_cm: String(data.height_cm ?? 10),
-          category_id: data.category_id ?? '', active: !!data.active, featured: !!data.featured,
+          category_id: data.category_id ?? '', active: !!data.active, featured: !!data.featured, free_shipping_eligible: !!(data as any).free_shipping_eligible,
           images: data.images ?? [],
           tags: (data.tags ?? []).join(', '),
           seo_title: (data as any).seo_title ?? '',
@@ -151,6 +151,7 @@ function ProductForm() {
         category_id: form.category_id || null,
         active: form.active,
         featured: form.featured,
+        free_shipping_eligible: form.free_shipping_eligible,
         images: imagesArray,
         tags: form.tags.split(',').map((t) => t.trim()).filter(Boolean),
         seo_title: form.seo_title.trim() || null,
@@ -282,6 +283,15 @@ function ProductForm() {
           <Section title="Visibilidade">
             <div className="flex items-center justify-between"><Label>Ativo</Label><Switch checked={form.active} onCheckedChange={(v) => setForm({ ...form, active: v })} /></div>
             <div className="flex items-center justify-between"><Label>Destaque na home</Label><Switch checked={form.featured} onCheckedChange={(v) => setForm({ ...form, featured: v })} /></div>
+            <div className="flex items-start justify-between gap-4">
+              <div className="flex-1">
+                <Label>Elegível a frete grátis</Label>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Quando ativo, este produto participa da campanha de frete grátis para compras acima de R$ 199,00.
+                </p>
+              </div>
+              <Switch checked={form.free_shipping_eligible} onCheckedChange={(v) => setForm({ ...form, free_shipping_eligible: v })} />
+            </div>
           </Section>
 
           <Button type="submit" disabled={saving} className="w-full">
