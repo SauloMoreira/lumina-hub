@@ -1,6 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { createHmac, timingSafeEqual } from 'crypto';
 import { supabaseAdmin } from '@/integrations/supabase/client.server';
+import { logSecurityEvent } from '@/server/security/rateLimit';
 
 // =============================================================================
 // Webhook Mercado Pago
