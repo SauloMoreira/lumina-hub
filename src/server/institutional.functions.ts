@@ -1,7 +1,7 @@
 import { createServerFn } from '@tanstack/react-start';
 import { z } from 'zod';
 import { supabaseAdmin } from '@/integrations/supabase/client.server';
-import { requireAdmin } from '@/integrations/supabase/admin-middleware';
+import { requireAdmin, requireAdminMfaSoft } from '@/integrations/supabase/admin-middleware';
 import { enforceRateLimit, getClientIdentifier } from '@/server/security/rateLimit';
 import { logAdminAction } from '@/server/security/auditLog';
 
@@ -136,7 +136,7 @@ export const adminGetCompanySettings = createServerFn({ method: 'POST' })
   });
 
 export const adminUpdateCompanySettings = createServerFn({ method: 'POST' })
-  .middleware([requireAdmin])
+  .middleware([requireAdminMfaSoft])
   .inputValidator(companyUpdateSchema)
   .handler(async ({ data, context }) => {
     const adminId = (context as { adminUserId: string }).adminUserId;
@@ -216,7 +216,7 @@ const pageUpsertSchema = z.object({
 });
 
 export const adminSaveInstitutionalPage = createServerFn({ method: 'POST' })
-  .middleware([requireAdmin])
+  .middleware([requireAdminMfaSoft])
   .inputValidator(pageUpsertSchema)
   .handler(async ({ data, context }) => {
     const userId = (context as { adminUserId: string }).adminUserId;
@@ -261,7 +261,7 @@ export const adminSaveInstitutionalPage = createServerFn({ method: 'POST' })
   });
 
 export const adminDeleteInstitutionalPage = createServerFn({ method: 'POST' })
-  .middleware([requireAdmin])
+  .middleware([requireAdminMfaSoft])
   .inputValidator(z.object({ id: z.string().uuid() }))
   .handler(async ({ data, context }) => {
     const adminId = (context as { adminUserId: string }).adminUserId;
@@ -297,7 +297,7 @@ export const adminListContactMessages = createServerFn({ method: 'POST' })
   });
 
 export const adminUpdateContactMessageStatus = createServerFn({ method: 'POST' })
-  .middleware([requireAdmin])
+  .middleware([requireAdminMfaSoft])
   .inputValidator(z.object({
     id: z.string().uuid(),
     status: z.enum(['new', 'read', 'answered', 'archived']),
