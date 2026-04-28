@@ -1053,6 +1053,7 @@ export type Database = {
           created_at: string | null
           description: string | null
           featured: boolean | null
+          free_shipping_eligible: boolean
           height_cm: number | null
           id: string
           images: string[] | null
@@ -1082,6 +1083,7 @@ export type Database = {
           created_at?: string | null
           description?: string | null
           featured?: boolean | null
+          free_shipping_eligible?: boolean
           height_cm?: number | null
           id?: string
           images?: string[] | null
@@ -1111,6 +1113,7 @@ export type Database = {
           created_at?: string | null
           description?: string | null
           featured?: boolean | null
+          free_shipping_eligible?: boolean
           height_cm?: number | null
           id?: string
           images?: string[] | null
