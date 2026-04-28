@@ -1,10 +1,15 @@
 import { Link } from '@tanstack/react-router';
 import { MessageCircle, Instagram, Facebook } from 'lucide-react';
 import { STORE_NAME, STORE_WHATSAPP } from '@/lib/domain';
-import { useCookieStore } from '@/stores/cookieStore';
 import logoFooter from '@/assets/logo-footer.jpg';
 
 export function Footer() {
+  const openCookiePreferences = () => {
+    void import('@/stores/cookieStore').then(({ useCookieStore }) => {
+      useCookieStore.getState().openPreferences();
+    });
+  };
+
   return (
     <footer
       className="mt-24 text-slate-100 relative"
@@ -73,7 +78,7 @@ export function Footer() {
               <li><Link to="/devolucao" className="hover:text-[#60A5FA] transition-colors">Devolução</Link></li>
               <li><Link to="/privacidade" className="hover:text-[#60A5FA] transition-colors">Política de Privacidade</Link></li>
               <li>
-                <button type="button" onClick={() => useCookieStore.getState().openPreferences()}
+                <button type="button" onClick={openCookiePreferences}
                   className="hover:text-[#60A5FA] transition-colors text-left">
                   Gerenciar cookies
                 </button>
