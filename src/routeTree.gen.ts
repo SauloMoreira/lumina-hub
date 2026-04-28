@@ -33,6 +33,7 @@ import { Route as ContaPedidosRouteImport } from './routes/conta.pedidos'
 import { Route as CheckoutSuccessRouteImport } from './routes/checkout.success'
 import { Route as CheckoutPendingRouteImport } from './routes/checkout.pending'
 import { Route as CheckoutFailureRouteImport } from './routes/checkout.failure'
+import { Route as AdminSegurancaRouteImport } from './routes/admin.seguranca'
 import { Route as AdminPedidosRouteImport } from './routes/admin.pedidos'
 import { Route as AdminLeadsRouteImport } from './routes/admin.leads'
 import { Route as AdminCuponsRouteImport } from './routes/admin.cupons'
@@ -170,6 +171,11 @@ const CheckoutFailureRoute = CheckoutFailureRouteImport.update({
   path: '/failure',
   getParentRoute: () => CheckoutRoute,
 } as any)
+const AdminSegurancaRoute = AdminSegurancaRouteImport.update({
+  id: '/admin/seguranca',
+  path: '/admin/seguranca',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AdminPedidosRoute = AdminPedidosRouteImport.update({
   id: '/admin/pedidos',
   path: '/admin/pedidos',
@@ -279,6 +285,7 @@ export interface FileRoutesByFullPath {
   '/admin/cupons': typeof AdminCuponsRoute
   '/admin/leads': typeof AdminLeadsRoute
   '/admin/pedidos': typeof AdminPedidosRouteWithChildren
+  '/admin/seguranca': typeof AdminSegurancaRoute
   '/checkout/failure': typeof CheckoutFailureRoute
   '/checkout/pending': typeof CheckoutPendingRoute
   '/checkout/success': typeof CheckoutSuccessRoute
@@ -321,6 +328,7 @@ export interface FileRoutesByTo {
   '/admin/cupons': typeof AdminCuponsRoute
   '/admin/leads': typeof AdminLeadsRoute
   '/admin/pedidos': typeof AdminPedidosRouteWithChildren
+  '/admin/seguranca': typeof AdminSegurancaRoute
   '/checkout/failure': typeof CheckoutFailureRoute
   '/checkout/pending': typeof CheckoutPendingRoute
   '/checkout/success': typeof CheckoutSuccessRoute
@@ -364,6 +372,7 @@ export interface FileRoutesById {
   '/admin/cupons': typeof AdminCuponsRoute
   '/admin/leads': typeof AdminLeadsRoute
   '/admin/pedidos': typeof AdminPedidosRouteWithChildren
+  '/admin/seguranca': typeof AdminSegurancaRoute
   '/checkout/failure': typeof CheckoutFailureRoute
   '/checkout/pending': typeof CheckoutPendingRoute
   '/checkout/success': typeof CheckoutSuccessRoute
@@ -408,6 +417,7 @@ export interface FileRouteTypes {
     | '/admin/cupons'
     | '/admin/leads'
     | '/admin/pedidos'
+    | '/admin/seguranca'
     | '/checkout/failure'
     | '/checkout/pending'
     | '/checkout/success'
@@ -450,6 +460,7 @@ export interface FileRouteTypes {
     | '/admin/cupons'
     | '/admin/leads'
     | '/admin/pedidos'
+    | '/admin/seguranca'
     | '/checkout/failure'
     | '/checkout/pending'
     | '/checkout/success'
@@ -492,6 +503,7 @@ export interface FileRouteTypes {
     | '/admin/cupons'
     | '/admin/leads'
     | '/admin/pedidos'
+    | '/admin/seguranca'
     | '/checkout/failure'
     | '/checkout/pending'
     | '/checkout/success'
@@ -535,6 +547,7 @@ export interface RootRouteChildren {
   AdminCuponsRoute: typeof AdminCuponsRoute
   AdminLeadsRoute: typeof AdminLeadsRoute
   AdminPedidosRoute: typeof AdminPedidosRouteWithChildren
+  AdminSegurancaRoute: typeof AdminSegurancaRoute
   InstitucionalSlugRoute: typeof InstitucionalSlugRoute
   ProdutoSlugRoute: typeof ProdutoSlugRoute
   AdminIndexRoute: typeof AdminIndexRoute
@@ -718,6 +731,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof CheckoutFailureRouteImport
       parentRoute: typeof CheckoutRoute
     }
+    '/admin/seguranca': {
+      id: '/admin/seguranca'
+      path: '/admin/seguranca'
+      fullPath: '/admin/seguranca'
+      preLoaderRoute: typeof AdminSegurancaRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/admin/pedidos': {
       id: '/admin/pedidos'
       path: '/admin/pedidos'
@@ -896,6 +916,7 @@ const rootRouteChildren: RootRouteChildren = {
   AdminCuponsRoute: AdminCuponsRoute,
   AdminLeadsRoute: AdminLeadsRoute,
   AdminPedidosRoute: AdminPedidosRouteWithChildren,
+  AdminSegurancaRoute: AdminSegurancaRoute,
   InstitucionalSlugRoute: InstitucionalSlugRoute,
   ProdutoSlugRoute: ProdutoSlugRoute,
   AdminIndexRoute: AdminIndexRoute,
