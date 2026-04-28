@@ -115,48 +115,14 @@ export const improveProductSeo = createServerFn({ method: 'POST' })
 
 const BoostInputSchema = z.object({
   productId: z.string().uuid(),
-  accessToken: z.string().min(20).max(8192),
 });
 
 /** SEO Booster automático: gera title/description/keywords + FAQ e grava direto no produto. */
 export const boostProductSeoAuto = createServerFn({ method: 'POST' })
+  .middleware([requireAdmin])
   .inputValidator((raw: unknown) => BoostInputSchema.parse(raw))
   .handler(async ({ data }) => {
     try {
-      const supabaseUrl = process.env.SUPABASE_URL;
-      const supabaseKey = process.env.SUPABASE_PUBLISHABLE_KEY;
-
-      if (!supabaseUrl || !supabaseKey) {
-        return { ok: false as const, error: 'Configuração de autenticação indisponível' };
-      }
-
-      const authedSupabase = createClient<Database>(supabaseUrl, supabaseKey, {
-        global: { headers: { Authorization: `Bearer ${data.accessToken}` } },
-        auth: {
-          storage: undefined,
-          persistSession: false,
-          autoRefreshToken: false,
-        },
-      });
-
-      const { data: claimsData, error: claimsError } = await authedSupabase.auth.getClaims(data.accessToken);
-      const userId = claimsData?.claims?.sub;
-
-      if (claimsError || !userId) {
-        return { ok: false as const, error: 'Sessão inválida. Faça login novamente.' };
-      }
-
-      const { data: profile, error: profileError } = await authedSupabase
-        .from('profiles')
-        .select('role')
-        .eq('id', userId)
-        .maybeSingle();
-
-      if (profileError) return { ok: false as const, error: profileError.message };
-      if (profile?.role !== 'admin') {
-        return { ok: false as const, error: 'Acesso negado' };
-      }
-
       const { data: product, error: pErr } = await supabaseAdmin
         .from('products')
         .select('id, name, description, brand, price, category_id, specs, categories:category_id(name)')
