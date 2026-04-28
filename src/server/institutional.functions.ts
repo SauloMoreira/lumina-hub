@@ -12,7 +12,7 @@ export const getPublicCompanySettings = createServerFn({ method: 'GET' }).handle
   const { data, error } = await supabaseAdmin
     .from('company_settings')
     .select(
-      'id, trade_name, logo_url, support_email, support_phone, support_whatsapp, business_hours, instagram_url, facebook_url, tiktok_url, linkedin_url, website_url, address_city, address_state, address_neighborhood'
+      'id, trade_name, logo_url, support_email, support_phone, support_whatsapp, business_hours, instagram_url, facebook_url, tiktok_url, linkedin_url, website_url, address_street, address_number, address_complement, address_neighborhood, address_city, address_state, address_zipcode'
     )
     .order('created_at', { ascending: true })
     .limit(1)
