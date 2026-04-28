@@ -390,12 +390,26 @@ export function ChatWidget() {
             {/* Handoff: pronto */}
             {handoffStep === "ready" && whatsappUrl && (
               <div className="flex flex-col gap-2 rounded-xl border border-border bg-background p-3">
-                <a href={whatsappUrl} target="_blank" rel="noopener noreferrer">
-                  <Button size="sm" className="w-full bg-green-600 hover:bg-green-700 text-white">
-                    <ExternalLink className="h-4 w-4 mr-2" />
-                    Falar no WhatsApp
-                  </Button>
-                </a>
+                <Button
+                  size="sm"
+                  className="w-full bg-green-600 hover:bg-green-700 text-white"
+                  onClick={() => {
+                    const isMobile = /Android|iPhone|iPad|iPod|Mobile/i.test(
+                      navigator.userAgent,
+                    );
+                    const encoded = encodeURIComponent(whatsappText);
+                    // Mobile: wa.me abre o app nativo direto.
+                    // Desktop: web.whatsapp.com/send evita o redirect via api.whatsapp.com
+                    // (que costuma ser bloqueado por extensões/firewalls corporativos).
+                    const url = isMobile
+                      ? `https://wa.me/${whatsappPhone}?text=${encoded}`
+                      : `https://web.whatsapp.com/send?phone=${whatsappPhone}&text=${encoded}`;
+                    window.open(url, "_blank", "noopener,noreferrer");
+                  }}
+                >
+                  <ExternalLink className="h-4 w-4 mr-2" />
+                  Falar no WhatsApp
+                </Button>
                 <p className="text-[11px] text-muted-foreground text-center">
                   Se o WhatsApp aparecer bloqueado no seu navegador, use uma das opções abaixo:
                 </p>
