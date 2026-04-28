@@ -43,16 +43,19 @@ Se não souber algo técnico, seja honesto e sugira contato pelo WhatsApp.`;
 async function loadCatalogContext(): Promise<string> {
   const { data: products } = await supabaseAdmin
     .from("products")
-    .select("name, slug, price, sale_price, brand, tags, stock_qty")
+    .select("name, slug, price, sale_price, brand, tags, stock_qty, categories(name)")
     .eq("active", true)
     .gt("stock_qty", 0)
-    .limit(40);
+    .order("featured", { ascending: false })
+    .limit(80);
   if (!products || products.length === 0) return "";
-  const lines = products.map((p) => {
+  const lines = products.map((p: any) => {
     const price = p.sale_price ?? p.price;
-    return `- ${p.name}${p.brand ? ` (${p.brand})` : ""} — R$ ${Number(price).toFixed(2)} — /produto/${p.slug}`;
+    const cat = p.categories?.name ? ` [${p.categories.name}]` : "";
+    const promo = p.sale_price && p.sale_price < p.price ? ` (promo, de R$ ${Number(p.price).toFixed(2)})` : "";
+    return `- ${p.name}${p.brand ? ` (${p.brand})` : ""}${cat} — R$ ${Number(price).toFixed(2)}${promo} — /produto/${p.slug}`;
   });
-  return `\n\nCatálogo atual (amostra):\n${lines.join("\n")}`;
+  return `\n\nCATÁLOGO DA LOJA (única fonte permitida para comparação de preços):\n${lines.join("\n")}`;
 }
 
 function detectLeadIntent(text: string): boolean {
