@@ -214,6 +214,47 @@ function AdminSecurityPage() {
               )}
             </CardContent>
           </Card>
+
+          {/* Auditoria de ações admin */}
+          <Card>
+            <CardContent className="p-6">
+              <SectionTitle icon={<ScrollText className="w-4 h-4" />} title="Auditoria de ações admin" />
+              {!audit || audit.events.length === 0 ? (
+                <div className="text-sm text-muted-foreground py-6 text-center">
+                  Nenhuma ação registrada ainda.
+                </div>
+              ) : (
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="text-left text-xs text-muted-foreground border-b">
+                        <th className="py-2 pr-3">Quando</th>
+                        <th className="py-2 pr-3">Admin</th>
+                        <th className="py-2 pr-3">Ação</th>
+                        <th className="py-2 pr-3">Recurso</th>
+                        <th className="py-2 pr-3">Descrição</th>
+                        <th className="py-2">IP</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {audit.events.map((e) => (
+                        <tr key={e.id} className="border-b last:border-0">
+                          <td className="py-2 pr-3 whitespace-nowrap text-xs text-muted-foreground">{fmt(e.created_at)}</td>
+                          <td className="py-2 pr-3 text-xs">{e.admin_email ?? e.admin_id.slice(0, 8)}</td>
+                          <td className="py-2 pr-3"><Badge variant="outline" className="text-[10px] uppercase">{e.action}</Badge></td>
+                          <td className="py-2 pr-3 font-mono text-xs">
+                            {e.resource_type}{e.resource_id ? `:${e.resource_id.slice(0, 8)}` : ''}
+                          </td>
+                          <td className="py-2 pr-3 text-xs max-w-[300px] truncate">{e.description ?? '—'}</td>
+                          <td className="py-2 text-xs text-muted-foreground">{e.ip ?? '—'}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </CardContent>
+          </Card>
         </div>
       )}
     </AdminLayout>
