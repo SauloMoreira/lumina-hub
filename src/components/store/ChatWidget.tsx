@@ -266,6 +266,11 @@ export function ChatWidget() {
         if ((res as { leadCaptured?: boolean }).leadCaptured) {
           trackLeadCaptured("chat");
         }
+        // Se a IA acabou pedindo nome/telefone/email em texto, abre o formulário inline
+        if (handoffStep === "idle" && aiAskedForContact(res.reply || "")) {
+          setHandoffStep("form");
+          setHandoffError(null);
+        }
       }
     } catch (e) {
       setMessages((p) => [...p, { role: "assistant", content: "⚠️ Erro de conexão. Tente novamente." }]);
