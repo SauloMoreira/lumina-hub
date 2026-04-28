@@ -120,11 +120,14 @@ function HomePage() {
     return () => clearTimeout(t);
   }, [queryClient]);
 
-  const PROMO_CARDS = [
-    { icon: Flame, title: 'Ofertas da semana', desc: 'Descontos imperdíveis', to: '/catalogo', tone: 'from-orange-500 to-red-500' },
-    { icon: Star, title: 'Mais vendidos', desc: 'O que está bombando', to: '/catalogo', tone: 'from-amber-400 to-yellow-500' },
-    { icon: Truck, title: 'Frete grátis', desc: `Acima de ${formatBRL(FREE_SHIPPING_THRESHOLD)}`, to: '/catalogo', tone: 'from-emerald-500 to-teal-500' },
-    { icon: Sparkles, title: 'Atendimento IA 24h', desc: 'Tire dúvidas técnicas', to: '/catalogo', tone: 'from-violet-500 to-indigo-500' },
+  const PROMO_CARDS: Array<{
+    icon: any; title: string; desc: string; tone: string;
+    to?: string; searchParams?: Record<string, any>; onClick?: () => void;
+  }> = [
+    { icon: Flame, title: 'Ofertas da semana', desc: 'Descontos imperdíveis', to: '/catalogo', searchParams: { oferta: true }, tone: 'from-orange-500 to-red-500' },
+    { icon: Star, title: 'Destaques da loja', desc: 'O que está bombando', to: '/catalogo', searchParams: { sort: 'best_sellers' }, tone: 'from-amber-400 to-yellow-500' },
+    { icon: Truck, title: 'Frete grátis', desc: `Acima de ${formatBRL(FREE_SHIPPING_THRESHOLD)}`, to: '/catalogo', searchParams: { shipping: 'free' }, tone: 'from-emerald-500 to-teal-500' },
+    { icon: Sparkles, title: 'Atendimento IA 24h', desc: 'Tire dúvidas técnicas', tone: 'from-violet-500 to-indigo-500', onClick: () => { if (typeof window !== 'undefined') window.dispatchEvent(new Event('open-chat')); } },
   ];
 
   return (
