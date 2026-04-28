@@ -119,7 +119,15 @@ export const requestHumanHandoff = createServerFn({ method: "POST" })
       `\n\nResumo da minha dúvida:\n${summary}` +
       lastLine;
 
-    const whatsappUrl = `https://wa.me/${storeWhats}?text=${encodeURIComponent(whatsappText)}`;
+    // Usamos web.whatsapp.com/send em vez de wa.me porque o wa.me redireciona
+    // para api.whatsapp.com no desktop, que pode ser bloqueado por filtros/proxies.
+    // O web.whatsapp.com abre direto no WhatsApp Web (desktop) ou no app (mobile).
+    const whatsappUrl = `https://api.whatsapp.com/send?phone=${storeWhats}&text=${encodeURIComponent(whatsappText)}`.replace(
+      "https://api.whatsapp.com/send",
+      "https://wa.me/" + storeWhats
+    );
+    // Link alternativo (web) caso o cliente esteja num ambiente que bloqueia o redirect do wa.me
+    const whatsappWebUrl = `https://web.whatsapp.com/send?phone=${storeWhats}&text=${encodeURIComponent(whatsappText)}`;
 
     // Deduplicação: lead com mesmo telefone nas últimas 24h
     let leadId: string | null = null;
