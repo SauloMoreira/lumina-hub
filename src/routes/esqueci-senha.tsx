@@ -7,6 +7,7 @@ import { supabase } from '@/integrations/supabase/client';
 import {
   AuthCard, FieldLabel, FieldError, inputClass, inputStyle, inputFocusHandlers, PrimaryButton,
 } from '@/components/auth/AuthCard';
+import { checkPasswordResetAttempt } from '@/server/auth.functions';
 
 import { buildSeo } from '@/lib/seo';
 
@@ -29,6 +30,13 @@ function ForgotPage() {
     if (!r.success) { setError(r.error.issues[0].message); return; }
     setError(undefined); setLoading(true);
     try {
+      try {
+        await checkPasswordResetAttempt({ data: { email } });
+      } catch (rl: any) {
+        toast.error(rl?.message ?? 'Muitas tentativas. Tente novamente mais tarde.');
+        setLoading(false);
+        return;
+      }
       const { error } = await supabase.auth.resetPasswordForEmail(email, {
         redirectTo: `${window.location.origin}/reset-password`,
       });
