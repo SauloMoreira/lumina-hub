@@ -18,6 +18,7 @@ export const Route = createFileRoute('/admin/seguranca')({
 });
 
 function AdminSecurityPage() {
+  const [exporting, setExporting] = useState(false);
   const { data, isLoading, refetch, isFetching } = useQuery({
     queryKey: ['security-overview'],
     queryFn: () => getSecurityOverview({ data: undefined as never }),
@@ -29,6 +30,25 @@ function AdminSecurityPage() {
     queryFn: () => listAdminAuditLog({ data: { limit: 50 } }),
     refetchInterval: 60_000,
   });
+
+  const handleExport = async () => {
+    setExporting(true);
+    try {
+      const res = await exportAdminAuditCsv({ data: { days: 90 } });
+      const blob = new Blob([res.csv], { type: 'text/csv;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `auditoria-admin-${new Date().toISOString().slice(0, 10)}.csv`;
+      a.click();
+      URL.revokeObjectURL(url);
+      toast.success(`${res.count} registros exportados`);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Falha ao exportar');
+    } finally {
+      setExporting(false);
+    }
+  };
 
   return (
     <AdminLayout
