@@ -207,6 +207,8 @@ export function ChatWidget() {
         },
       });
       setWhatsappUrl(res.whatsappUrl);
+      setWhatsappPhone(res.whatsappPhone || "5521982126467");
+      setWhatsappText(res.whatsappText || "");
       setHandoffStep("ready");
       trackLeadCaptured("chat_handoff");
       setMessages((p) => [
