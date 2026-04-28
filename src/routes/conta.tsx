@@ -79,6 +79,16 @@ function AccountPage() {
           ))}
         </div>
 
+        <Card className="mt-6">
+          <CardContent className="p-6">
+            <div className="flex items-center gap-2 mb-4">
+              <Shield className="w-5 h-5 text-primary" />
+              <h2 className="font-display font-semibold">Segurança</h2>
+            </div>
+            <MfaSetup />
+          </CardContent>
+        </Card>
+
         <div className="mt-6 flex justify-end">
           <Button variant="ghost" onClick={() => { signOut(); navigate({ to: '/' }); }} className="text-muted-foreground">
             <LogOut className="w-4 h-4 mr-2" /> Sair
