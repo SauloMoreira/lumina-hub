@@ -19,34 +19,13 @@ export const Route = createFileRoute('/conta')({
 function AccountPage() {
   const { user, loading, signOut } = useAuth();
   const navigate = useNavigate();
-  const [checkingRole, setCheckingRole] = useState(true);
 
   useEffect(() => {
     if (loading) return;
-    if (!user) {
-      navigate({ to: '/login' });
-      return;
-    }
-
-    let mounted = true;
-    const checkRole = async () => {
-      const { data } = await supabase
-        .from('profiles')
-        .select('role')
-        .eq('id', user.id)
-        .maybeSingle();
-
-      if (!mounted) return;
-      if (data?.role === 'admin') navigate({ to: '/admin' as any });
-      else setCheckingRole(false);
-    };
-
-    checkRole().catch(() => { if (mounted) setCheckingRole(false); });
-
-    return () => { mounted = false; };
+    if (!user) navigate({ to: '/login' });
   }, [user, loading, navigate]);
 
-  if (loading || checkingRole || !user) {
+  if (loading || !user) {
     return <PageSkeleton />;
   }
 
