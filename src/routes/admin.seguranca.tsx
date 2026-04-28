@@ -1,21 +1,24 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { useQuery } from '@tanstack/react-query';
+import { useState } from 'react';
+import { toast } from 'sonner';
 import {
   Shield, ShieldAlert, ShieldCheck, AlertTriangle, Activity,
-  Webhook, KeyRound, Users, RefreshCw, ScrollText,
+  Webhook, KeyRound, Users, RefreshCw, ScrollText, Download, Ban,
 } from 'lucide-react';
 
 import { AdminLayout } from '@/components/admin/AdminLayout';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { getSecurityOverview, listAdminAuditLog } from '@/server/security.functions';
+import { getSecurityOverview, listAdminAuditLog, exportAdminAuditCsv } from '@/server/security.functions';
 
 export const Route = createFileRoute('/admin/seguranca')({
   component: AdminSecurityPage,
 });
 
 function AdminSecurityPage() {
+  const [exporting, setExporting] = useState(false);
   const { data, isLoading, refetch, isFetching } = useQuery({
     queryKey: ['security-overview'],
     queryFn: () => getSecurityOverview({ data: undefined as never }),
@@ -27,6 +30,25 @@ function AdminSecurityPage() {
     queryFn: () => listAdminAuditLog({ data: { limit: 50 } }),
     refetchInterval: 60_000,
   });
+
+  const handleExport = async () => {
+    setExporting(true);
+    try {
+      const res = await exportAdminAuditCsv({ data: { days: 90 } });
+      const blob = new Blob([res.csv], { type: 'text/csv;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `auditoria-admin-${new Date().toISOString().slice(0, 10)}.csv`;
+      a.click();
+      URL.revokeObjectURL(url);
+      toast.success(`${res.count} registros exportados`);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Falha ao exportar');
+    } finally {
+      setExporting(false);
+    }
+  };
 
   return (
     <AdminLayout
@@ -215,10 +237,40 @@ function AdminSecurityPage() {
             </CardContent>
           </Card>
 
+          {/* Top identificadores bloqueados */}
+          <Card>
+            <CardContent className="p-6">
+              <SectionTitle icon={<Ban className="w-4 h-4" />} title="Top identificadores bloqueados (24h)" />
+              {data.rlStats.topIdentifiers.length === 0 ? (
+                <div className="text-sm text-muted-foreground py-6 text-center">
+                  Nenhum bloqueio registrado.
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  {data.rlStats.topIdentifiers.map((t) => (
+                    <div key={t.identifier} className="flex items-center justify-between p-3 border rounded-lg">
+                      <span className="font-mono text-xs truncate max-w-[70%]">{t.identifier}</span>
+                      <Badge variant={t.count > 10 ? 'destructive' : 'secondary'}>{t.count} hits</Badge>
+                    </div>
+                  ))}
+                  <p className="text-xs text-muted-foreground pt-2">
+                    Identificadores com muitos hits podem indicar tentativas de força bruta ou abuso.
+                  </p>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
           {/* Auditoria de ações admin */}
           <Card>
             <CardContent className="p-6">
-              <SectionTitle icon={<ScrollText className="w-4 h-4" />} title="Auditoria de ações admin" />
+              <div className="flex items-center justify-between mb-3">
+                <SectionTitle icon={<ScrollText className="w-4 h-4" />} title="Auditoria de ações admin" />
+                <Button variant="outline" size="sm" onClick={handleExport} disabled={exporting}>
+                  <Download className="w-4 h-4" />
+                  {exporting ? 'Exportando...' : 'Exportar CSV (90d)'}
+                </Button>
+              </div>
               {!audit || audit.events.length === 0 ? (
                 <div className="text-sm text-muted-foreground py-6 text-center">
                   Nenhuma ação registrada ainda.
