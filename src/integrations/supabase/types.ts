@@ -1282,6 +1282,7 @@ export type Database = {
           retry_after_seconds: number
         }[]
       }
+      cleanup_old_events: { Args: { _days?: number }; Returns: Json }
       cleanup_rate_limit_events: { Args: never; Returns: number }
       decrement_stock_for_order: {
         Args: { _order_id: string }

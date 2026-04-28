@@ -195,6 +195,9 @@ export const createMercadoPagoPreference = createServerFn({ method: 'POST' })
         headers: {
           Authorization: `Bearer ${accessToken}`,
           'Content-Type': 'application/json',
+          // Idempotency-Key garante que cliques duplicados não criem 2 preferências.
+          // Usamos o id do pedido — único e estável.
+          'X-Idempotency-Key': `order-${order.id}`,
         },
         body: JSON.stringify(preferencePayload),
       });
