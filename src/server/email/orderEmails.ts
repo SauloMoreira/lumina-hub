@@ -113,7 +113,8 @@ export async function sendOrderEmail(opts: SendOrderEmailOptions): Promise<{
       messageType: opts.type,
     });
 
-    // 5) Registrar pending
+    // 5) Registrar pending (provider real é resolvido no transport)
+    const initialProvider = (process.env.EMAIL_PROVIDER ?? 'resend').toLowerCase();
     const { data: eventRow } = await supabaseAdmin
       .from('email_events')
       .insert({
@@ -121,7 +122,7 @@ export async function sendOrderEmail(opts: SendOrderEmailOptions): Promise<{
         customer_email: customerEmail,
         type: opts.type,
         subject,
-        provider: 'resend',
+        provider: initialProvider,
         status: 'pending',
       })
       .select('id')
@@ -136,13 +137,14 @@ export async function sendOrderEmail(opts: SendOrderEmailOptions): Promise<{
       metadata: { orderId: order.id, type: opts.type },
     });
 
-    // 7) Atualizar evento
+    // 7) Atualizar evento (registra provider efetivamente usado)
     if (eventRow?.id) {
       if (result.ok) {
         await supabaseAdmin
           .from('email_events')
           .update({
             status: result.skipped ? 'skipped' : 'sent',
+            provider: result.provider,
             provider_message_id: result.messageId ?? null,
             sent_at: new Date().toISOString(),
           })
@@ -152,6 +154,7 @@ export async function sendOrderEmail(opts: SendOrderEmailOptions): Promise<{
           .from('email_events')
           .update({
             status: 'failed',
+            provider: result.provider,
             error_message: result.error ?? 'unknown',
           })
           .eq('id', eventRow.id);
