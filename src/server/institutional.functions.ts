@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { supabaseAdmin } from '@/integrations/supabase/client.server';
 import { requireAdmin } from '@/integrations/supabase/admin-middleware';
 import { enforceRateLimit, getClientIdentifier } from '@/server/security/rateLimit';
+import { logAdminAction } from '@/server/security/auditLog';
 
 // ============================================================
 // PUBLIC: Company settings (single record) - read only
