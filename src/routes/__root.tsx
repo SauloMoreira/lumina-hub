@@ -93,12 +93,16 @@ export const Route = createRootRouteWithContext<MyRouterContext>()({
       { name: "viewport", content: "width=device-width, initial-scale=1" },
       { name: "theme-color", content: "#3F5AE0" },
       { name: "referrer", content: "strict-origin-when-cross-origin" },
-      { title: "Lovable App" },
-      { property: "og:title", content: "Lovable App" },
-      { name: "twitter:title", content: "Lovable App" },
-      { name: "description", content: "Lumina Hub is a smart e-commerce platform for electrical and lighting materials." },
-      { property: "og:description", content: "Lumina Hub is a smart e-commerce platform for electrical and lighting materials." },
-      { name: "twitter:description", content: "Lumina Hub is a smart e-commerce platform for electrical and lighting materials." },
+      { httpEquiv: "Content-Language", content: "pt-BR" } as unknown as { name: string; content: string },
+      { name: "google", content: "notranslate" },
+      { name: "language", content: "Portuguese" },
+      { title: "Led Maricá — Material Elétrico & Iluminação LED em Maricá/RJ" },
+      { property: "og:title", content: "Led Maricá — Material Elétrico & Iluminação LED em Maricá/RJ" },
+      { name: "twitter:title", content: "Led Maricá — Material Elétrico & Iluminação LED em Maricá/RJ" },
+      { property: "og:locale", content: "pt_BR" },
+      { name: "description", content: SITE_DESCRIPTION },
+      { property: "og:description", content: SITE_DESCRIPTION },
+      { name: "twitter:description", content: SITE_DESCRIPTION },
       { property: "og:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/67194be9-0eba-4ee8-a498-3845ba247db4/id-preview-ecc3ae96--3f0ae235-0d23-458c-97a5-352d790386aa.lovable.app-1777381033099.png" },
       { name: "twitter:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/67194be9-0eba-4ee8-a498-3845ba247db4/id-preview-ecc3ae96--3f0ae235-0d23-458c-97a5-352d790386aa.lovable.app-1777381033099.png" },
       { name: "twitter:card", content: "summary_large_image" },
@@ -122,10 +126,12 @@ export const Route = createRootRouteWithContext<MyRouterContext>()({
 
 function RootShell({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="pt-BR">
+    <html lang="pt-BR" translate="no">
       <head>
         <meta httpEquiv="Content-Security-Policy" content={CSP_POLICY} />
         <meta httpEquiv="X-Content-Type-Options" content="nosniff" />
+        <meta httpEquiv="Content-Language" content="pt-BR" />
+        <meta name="google" content="notranslate" />
         <HeadContent />
       </head>
       <body>{children}<Scripts /></body>
