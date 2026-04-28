@@ -19,7 +19,10 @@ export const getPublicCompanySettings = createServerFn({ method: 'GET' }).handle
     .order('created_at', { ascending: true })
     .limit(1)
     .maybeSingle();
-  if (error) throw new Error(error.message);
+  if (error) {
+    console.error('[getPublicCompanySettings] db error:', error);
+    throw new Error('Serviço temporariamente indisponível');
+  }
   return { company: data };
 });
 
@@ -33,7 +36,10 @@ export const getFooterPages = createServerFn({ method: 'GET' }).handler(async ()
     .eq('status', 'published')
     .eq('show_in_footer', true)
     .order('sort_order', { ascending: true });
-  if (error) throw new Error(error.message);
+  if (error) {
+    console.error('[getFooterPages] db error:', error);
+    throw new Error('Serviço temporariamente indisponível');
+  }
   return { pages: data ?? [] };
 });
 
@@ -49,7 +55,10 @@ export const getPublicInstitutionalPage = createServerFn({ method: 'POST' })
       .eq('slug', data.slug)
       .eq('status', 'published')
       .maybeSingle();
-    if (error) throw new Error(error.message);
+    if (error) {
+      console.error('[getPublicInstitutionalPage] db error:', error);
+      throw new Error('Serviço temporariamente indisponível');
+    }
     return { page };
   });
 
