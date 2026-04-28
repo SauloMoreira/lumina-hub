@@ -43,6 +43,7 @@ import { Route as AdminBannersRouteImport } from './routes/admin.banners'
 import { Route as AdminProdutosIndexRouteImport } from './routes/admin.produtos.index'
 import { Route as AdminInstitutionalPagesIndexRouteImport } from './routes/admin.institutional-pages.index'
 import { Route as PedidoIdConfirmacaoRouteImport } from './routes/pedido.$id.confirmacao'
+import { Route as ApiPublicCspReportRouteImport } from './routes/api/public/csp-report'
 import { Route as AdminSettingsCompanyRouteImport } from './routes/admin.settings.company'
 import { Route as AdminProdutosIdRouteImport } from './routes/admin.produtos.$id'
 import { Route as AdminPedidosOrderIdRouteImport } from './routes/admin.pedidos.$orderId'
@@ -220,6 +221,11 @@ const PedidoIdConfirmacaoRoute = PedidoIdConfirmacaoRouteImport.update({
   path: '/pedido/$id/confirmacao',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicCspReportRoute = ApiPublicCspReportRouteImport.update({
+  id: '/api/public/csp-report',
+  path: '/api/public/csp-report',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AdminSettingsCompanyRoute = AdminSettingsCompanyRouteImport.update({
   id: '/admin/settings/company',
   path: '/admin/settings/company',
@@ -284,6 +290,7 @@ export interface FileRoutesByFullPath {
   '/admin/pedidos/$orderId': typeof AdminPedidosOrderIdRoute
   '/admin/produtos/$id': typeof AdminProdutosIdRoute
   '/admin/settings/company': typeof AdminSettingsCompanyRoute
+  '/api/public/csp-report': typeof ApiPublicCspReportRoute
   '/pedido/$id/confirmacao': typeof PedidoIdConfirmacaoRoute
   '/admin/institutional-pages/': typeof AdminInstitutionalPagesIndexRoute
   '/admin/produtos/': typeof AdminProdutosIndexRoute
@@ -325,6 +332,7 @@ export interface FileRoutesByTo {
   '/admin/pedidos/$orderId': typeof AdminPedidosOrderIdRoute
   '/admin/produtos/$id': typeof AdminProdutosIdRoute
   '/admin/settings/company': typeof AdminSettingsCompanyRoute
+  '/api/public/csp-report': typeof ApiPublicCspReportRoute
   '/pedido/$id/confirmacao': typeof PedidoIdConfirmacaoRoute
   '/admin/institutional-pages': typeof AdminInstitutionalPagesIndexRoute
   '/admin/produtos': typeof AdminProdutosIndexRoute
@@ -367,6 +375,7 @@ export interface FileRoutesById {
   '/admin/pedidos/$orderId': typeof AdminPedidosOrderIdRoute
   '/admin/produtos/$id': typeof AdminProdutosIdRoute
   '/admin/settings/company': typeof AdminSettingsCompanyRoute
+  '/api/public/csp-report': typeof ApiPublicCspReportRoute
   '/pedido/$id/confirmacao': typeof PedidoIdConfirmacaoRoute
   '/admin/institutional-pages/': typeof AdminInstitutionalPagesIndexRoute
   '/admin/produtos/': typeof AdminProdutosIndexRoute
@@ -410,6 +419,7 @@ export interface FileRouteTypes {
     | '/admin/pedidos/$orderId'
     | '/admin/produtos/$id'
     | '/admin/settings/company'
+    | '/api/public/csp-report'
     | '/pedido/$id/confirmacao'
     | '/admin/institutional-pages/'
     | '/admin/produtos/'
@@ -451,6 +461,7 @@ export interface FileRouteTypes {
     | '/admin/pedidos/$orderId'
     | '/admin/produtos/$id'
     | '/admin/settings/company'
+    | '/api/public/csp-report'
     | '/pedido/$id/confirmacao'
     | '/admin/institutional-pages'
     | '/admin/produtos'
@@ -492,6 +503,7 @@ export interface FileRouteTypes {
     | '/admin/pedidos/$orderId'
     | '/admin/produtos/$id'
     | '/admin/settings/company'
+    | '/api/public/csp-report'
     | '/pedido/$id/confirmacao'
     | '/admin/institutional-pages/'
     | '/admin/produtos/'
@@ -529,6 +541,7 @@ export interface RootRouteChildren {
   AdminInstitutionalPagesIdRoute: typeof AdminInstitutionalPagesIdRoute
   AdminProdutosIdRoute: typeof AdminProdutosIdRoute
   AdminSettingsCompanyRoute: typeof AdminSettingsCompanyRoute
+  ApiPublicCspReportRoute: typeof ApiPublicCspReportRoute
   PedidoIdConfirmacaoRoute: typeof PedidoIdConfirmacaoRoute
   AdminInstitutionalPagesIndexRoute: typeof AdminInstitutionalPagesIndexRoute
   AdminProdutosIndexRoute: typeof AdminProdutosIndexRoute
@@ -775,6 +788,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PedidoIdConfirmacaoRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/csp-report': {
+      id: '/api/public/csp-report'
+      path: '/api/public/csp-report'
+      fullPath: '/api/public/csp-report'
+      preLoaderRoute: typeof ApiPublicCspReportRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/admin/settings/company': {
       id: '/admin/settings/company'
       path: '/admin/settings/company'
@@ -882,6 +902,7 @@ const rootRouteChildren: RootRouteChildren = {
   AdminInstitutionalPagesIdRoute: AdminInstitutionalPagesIdRoute,
   AdminProdutosIdRoute: AdminProdutosIdRoute,
   AdminSettingsCompanyRoute: AdminSettingsCompanyRoute,
+  ApiPublicCspReportRoute: ApiPublicCspReportRoute,
   PedidoIdConfirmacaoRoute: PedidoIdConfirmacaoRoute,
   AdminInstitutionalPagesIndexRoute: AdminInstitutionalPagesIndexRoute,
   AdminProdutosIndexRoute: AdminProdutosIndexRoute,
