@@ -237,10 +237,40 @@ function AdminSecurityPage() {
             </CardContent>
           </Card>
 
+          {/* Top identificadores bloqueados */}
+          <Card>
+            <CardContent className="p-6">
+              <SectionTitle icon={<Ban className="w-4 h-4" />} title="Top identificadores bloqueados (24h)" />
+              {data.rlStats.topIdentifiers.length === 0 ? (
+                <div className="text-sm text-muted-foreground py-6 text-center">
+                  Nenhum bloqueio registrado.
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  {data.rlStats.topIdentifiers.map((t) => (
+                    <div key={t.identifier} className="flex items-center justify-between p-3 border rounded-lg">
+                      <span className="font-mono text-xs truncate max-w-[70%]">{t.identifier}</span>
+                      <Badge variant={t.count > 10 ? 'destructive' : 'secondary'}>{t.count} hits</Badge>
+                    </div>
+                  ))}
+                  <p className="text-xs text-muted-foreground pt-2">
+                    Identificadores com muitos hits podem indicar tentativas de força bruta ou abuso.
+                  </p>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
           {/* Auditoria de ações admin */}
           <Card>
             <CardContent className="p-6">
-              <SectionTitle icon={<ScrollText className="w-4 h-4" />} title="Auditoria de ações admin" />
+              <div className="flex items-center justify-between mb-3">
+                <SectionTitle icon={<ScrollText className="w-4 h-4" />} title="Auditoria de ações admin" />
+                <Button variant="outline" size="sm" onClick={handleExport} disabled={exporting}>
+                  <Download className="w-4 h-4" />
+                  {exporting ? 'Exportando...' : 'Exportar CSV (90d)'}
+                </Button>
+              </div>
               {!audit || audit.events.length === 0 ? (
                 <div className="text-sm text-muted-foreground py-6 text-center">
                   Nenhuma ação registrada ainda.
