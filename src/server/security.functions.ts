@@ -132,3 +132,24 @@ export const listSecurityEvents = createServerFn({ method: 'POST' })
     if (error) throw new Error(error.message);
     return { events: rows ?? [] };
   });
+
+/** Lista o histórico de auditoria de ações administrativas. */
+export const listAdminAuditLog = createServerFn({ method: 'POST' })
+  .middleware([requireAdmin])
+  .inputValidator(z.object({
+    resourceType: z.string().max(50).optional(),
+    adminId: z.string().uuid().optional(),
+    limit: z.number().int().min(1).max(500).default(100),
+  }))
+  .handler(async ({ data }) => {
+    let q = supabaseAdmin
+      .from('admin_audit_log')
+      .select('id, admin_id, admin_email, action, resource_type, resource_id, description, ip, user_agent, created_at')
+      .order('created_at', { ascending: false })
+      .limit(data.limit);
+    if (data.resourceType) q = q.eq('resource_type', data.resourceType);
+    if (data.adminId) q = q.eq('admin_id', data.adminId);
+    const { data: rows, error } = await q;
+    if (error) throw new Error(error.message);
+    return { events: rows ?? [] };
+  });

@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { requireAdmin } from '@/integrations/supabase/admin-middleware';
 import { supabaseAdmin } from '@/integrations/supabase/client.server';
 import { sendOrderEmail } from './email/orderEmails';
+import { logAdminAction } from './security/auditLog';
 
 // ============================================================
 // Helpers
@@ -211,7 +212,8 @@ export const updateOrderStatus = createServerFn({ method: 'POST' })
       .parse(input),
   )
   .handler(async ({ data, context }) => {
-    const adminUserId = (context as { adminUserId: string }).adminUserId;
+    const adminUserId = (context as { adminUserId: string; adminEmail: string | null }).adminUserId;
+    const adminEmail = (context as { adminEmail: string | null }).adminEmail;
 
     const { data: current, error: curErr } = await supabaseAdmin
       .from('orders')
@@ -300,6 +302,17 @@ export const updateOrderStatus = createServerFn({ method: 'POST' })
       );
     }
     await Promise.all(tasks);
+
+    await logAdminAction({
+      adminId: adminUserId,
+      adminEmail,
+      action: 'update',
+      resourceType: 'order',
+      resourceId: data.orderId,
+      description: `Pedido atualizado${data.status ? ` → status ${data.status}` : ''}${data.paymentStatus ? ` / pagamento ${data.paymentStatus}` : ''}${data.trackingCode ? ` / rastreio ${data.trackingCode}` : ''}`,
+      before: current,
+      after: { ...current, ...patch },
+    });
 
     return { ok: true as const };
   });

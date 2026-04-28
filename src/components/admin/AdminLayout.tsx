@@ -5,6 +5,7 @@ import { useIsAdmin } from '@/hooks/useIsAdmin';
 import { AdminSidebar } from './AdminSidebar';
 import { Toaster } from '@/components/ui/sonner';
 import { PageSkeleton } from '@/components/layout/PageSkeleton';
+import { RequireAdminMfa } from '@/components/auth/RequireAdminMfa';
 
 export function AdminLayout({ children, title, action }: { children: ReactNode; title: string; action?: ReactNode }) {
   const { user, loading } = useAuth();
@@ -29,7 +30,9 @@ export function AdminLayout({ children, title, action }: { children: ReactNode; 
           <h1 className="font-display text-xl font-semibold tracking-tight">{title}</h1>
           {action}
         </header>
-        <main className="p-6">{children}</main>
+        <main className="p-6">
+          <RequireAdminMfa>{children}</RequireAdminMfa>
+        </main>
       </div>
       <Toaster position="top-right" richColors />
     </div>
