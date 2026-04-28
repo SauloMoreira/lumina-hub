@@ -67,7 +67,7 @@ export async function logAdminAction(params: {
       _after: (params.after ?? null) as never,
       _ip: ip,
       _user_agent: userAgent,
-    });
+    } as never);
   } catch (err) {
     // Auditoria nunca deve quebrar a operação principal.
     console.error('[auditLog] failed to log admin action:', err);
