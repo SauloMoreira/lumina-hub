@@ -11,7 +11,8 @@ export type RateLimitAction =
   | 'chat'
   | 'coupon'
   | 'webhook_invalid'
-  | 'admin_action';
+  | 'admin_action'
+  | 'lead_handoff';
 
 export interface RateLimitConfig {
   maxAttempts: number;
@@ -27,6 +28,7 @@ export const DEFAULT_LIMITS: Record<RateLimitAction, RateLimitConfig> = {
   coupon: { maxAttempts: 20, windowSeconds: 10 * 60 },
   webhook_invalid: { maxAttempts: 50, windowSeconds: 60 * 60 },
   admin_action: { maxAttempts: 200, windowSeconds: 60 * 60 },
+  lead_handoff: { maxAttempts: 5, windowSeconds: 10 * 60 },
 };
 
 export interface RateLimitResult {
