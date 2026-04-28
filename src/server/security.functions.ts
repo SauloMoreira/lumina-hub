@@ -153,3 +153,32 @@ export const listAdminAuditLog = createServerFn({ method: 'POST' })
     if (error) throw new Error(error.message);
     return { events: rows ?? [] };
   });
+
+/** Exporta auditoria como CSV (string). Limita a 5000 linhas. */
+export const exportAdminAuditCsv = createServerFn({ method: 'POST' })
+  .middleware([requireAdmin])
+  .inputValidator(z.object({
+    days: z.number().int().min(1).max(365).default(90),
+  }))
+  .handler(async ({ data }) => {
+    const since = new Date(Date.now() - data.days * 24 * 60 * 60 * 1000).toISOString();
+    const { data: rows, error } = await supabaseAdmin
+      .from('admin_audit_log')
+      .select('created_at, admin_email, admin_id, action, resource_type, resource_id, description, ip, user_agent')
+      .gte('created_at', since)
+      .order('created_at', { ascending: false })
+      .limit(5000);
+    if (error) throw new Error(error.message);
+
+    const escape = (v: unknown) => {
+      if (v === null || v === undefined) return '';
+      const s = String(v).replace(/"/g, '""');
+      return /[",\n;]/.test(s) ? `"${s}"` : s;
+    };
+    const header = ['created_at','admin_email','admin_id','action','resource_type','resource_id','description','ip','user_agent'];
+    const lines = [header.join(',')];
+    for (const r of rows ?? []) {
+      lines.push(header.map((h) => escape((r as Record<string, unknown>)[h])).join(','));
+    }
+    return { csv: lines.join('\n'), count: rows?.length ?? 0 };
+  });
