@@ -1,5 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
+import { enforceRateLimit, getClientIdentifier } from "@/server/security/rateLimit";
 
 interface ChatMessage {
   role: "user" | "assistant";
