@@ -151,22 +151,22 @@ function CatalogPage() {
             <div
               role="note"
               aria-label="Regra da promoção de frete grátis"
-              className="mb-4 flex items-start gap-3 rounded-xl border border-primary/20 bg-primary/5 p-4 sm:p-5 shadow-sm"
+              className="mb-4 flex items-start gap-3 rounded-xl border border-amber-300 bg-amber-50 p-4 sm:p-5 shadow-sm dark:border-amber-500/40 dark:bg-amber-500/10"
             >
-              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-amber-100 text-amber-700 dark:bg-amber-500/20 dark:text-amber-300">
                 <Truck className="h-5 w-5" aria-hidden="true" />
               </div>
               <div className="min-w-0 flex-1">
-                <p className="text-sm sm:text-base text-foreground leading-snug">
+                <p className="text-sm sm:text-base text-amber-900 leading-snug dark:text-amber-100">
                   Frete grátis para compras acima de{' '}
-                  <strong className="font-semibold text-primary">{formatBRL(FREE_SHIPPING_THRESHOLD)}</strong>{' '}
+                  <strong className="font-semibold text-amber-900 dark:text-amber-50">{formatBRL(FREE_SHIPPING_THRESHOLD)}</strong>{' '}
                   em{' '}
-                  <span className="inline-flex items-center rounded-md bg-primary/10 px-1.5 py-0.5 text-xs font-medium text-primary align-baseline">
+                  <span className="inline-flex items-center rounded-md bg-amber-200/70 px-1.5 py-0.5 text-xs font-medium text-amber-900 align-baseline dark:bg-amber-500/25 dark:text-amber-100">
                     produtos participantes
                   </span>
                   .
                 </p>
-                <p className="mt-1 text-xs text-muted-foreground">
+                <p className="mt-1 text-xs text-amber-800/80 dark:text-amber-200/80">
                   A promoção é aplicada automaticamente no carrinho quando a regra for atendida.
                 </p>
               </div>
