@@ -119,11 +119,11 @@ export const requestHumanHandoff = createServerFn({ method: "POST" })
       `\n\nResumo da minha dúvida:\n${summary}` +
       lastLine;
 
-    // Usamos web.whatsapp.com/send em vez de wa.me porque o wa.me redireciona
-    // para api.whatsapp.com no desktop, que pode ser bloqueado por filtros/proxies
-    // (ex.: ambientes corporativos). O web.whatsapp.com abre direto no WhatsApp Web
-    // (desktop) ou no app via deep link (mobile).
-    const whatsappUrl = `https://web.whatsapp.com/send?phone=${storeWhats}&text=${encodeURIComponent(whatsappText)}`;
+    // wa.me é o link oficial e mais universal: redireciona para o app no mobile
+    // e para web.whatsapp.com no desktop. Se o navegador do cliente bloquear o
+    // domínio (extensão/proxy/firewall), o ChatWidget oferece alternativas:
+    // copiar número, copiar mensagem e ligar.
+    const whatsappUrl = `https://wa.me/${storeWhats}?text=${encodeURIComponent(whatsappText)}`;
 
     // Deduplicação: lead com mesmo telefone nas últimas 24h
     let leadId: string | null = null;
@@ -181,6 +181,8 @@ export const requestHumanHandoff = createServerFn({ method: "POST" })
     return {
       ok: true,
       whatsappUrl,
+      whatsappPhone: storeWhats,
+      whatsappText,
       leadId,
       leadSaved: leadId !== null,
       leadError,
