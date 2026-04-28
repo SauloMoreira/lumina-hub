@@ -19,6 +19,7 @@ export type Product = {
   tags: string[];
   active: boolean;
   featured: boolean;
+  free_shipping_eligible: boolean;
   specs: Record<string, unknown>;
 };
 
@@ -40,6 +41,7 @@ export type CartLine = {
   image: string | null;
   qty: number;
   stock: number;
+  freeShippingEligible?: boolean;
 };
 
 export const formatBRL = (value: number) =>
@@ -48,3 +50,19 @@ export const formatBRL = (value: number) =>
 export const FREE_SHIPPING_THRESHOLD = 199;
 export const STORE_WHATSAPP = '5521982126467';
 export const STORE_NAME = 'Led Maricá';
+
+/**
+ * Calcula se o carrinho atingiu a regra de frete grátis.
+ * Regra: somente produtos elegíveis contam para o subtotal mínimo.
+ */
+export function calcFreeShippingProgress(
+  items: Array<{ price: number; qty: number; freeShippingEligible?: boolean }>
+) {
+  const eligibleSubtotal = items
+    .filter((i) => i.freeShippingEligible)
+    .reduce((acc, i) => acc + i.price * i.qty, 0);
+  const hasEligibleItems = items.some((i) => i.freeShippingEligible);
+  const qualifies = hasEligibleItems && eligibleSubtotal >= FREE_SHIPPING_THRESHOLD;
+  const remaining = Math.max(0, FREE_SHIPPING_THRESHOLD - eligibleSubtotal);
+  return { eligibleSubtotal, hasEligibleItems, qualifies, remaining };
+}

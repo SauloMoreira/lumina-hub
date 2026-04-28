@@ -3,13 +3,15 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { X, Trash2, Plus, Minus, ShoppingBag } from 'lucide-react';
 import { useCart } from '@/stores/cartStore';
 import { Button } from '@/components/ui/button';
-import { formatBRL, FREE_SHIPPING_THRESHOLD } from '@/lib/domain';
+import { formatBRL, FREE_SHIPPING_THRESHOLD, calcFreeShippingProgress } from '@/lib/domain';
 
 export function CartDrawer() {
   const cart = useCart();
   const subtotal = cart.subtotal();
-  const remainingForFree = Math.max(0, FREE_SHIPPING_THRESHOLD - subtotal);
-  const progress = Math.min(100, (subtotal / FREE_SHIPPING_THRESHOLD) * 100);
+  const freeShip = calcFreeShippingProgress(
+    cart.items.map((i) => ({ price: i.price, qty: i.qty, freeShippingEligible: i.freeShippingEligible }))
+  );
+  const progress = Math.min(100, (freeShip.eligibleSubtotal / FREE_SHIPPING_THRESHOLD) * 100);
 
   return (
     <AnimatePresence>
@@ -48,12 +50,16 @@ export function CartDrawer() {
               <>
                 {/* Progress frete grátis */}
                 <div className="px-5 py-3 bg-primary-tint border-b border-primary-border">
-                  {remainingForFree > 0 ? (
+                  {!freeShip.hasEligibleItems ? (
                     <p className="text-xs text-primary font-medium mb-1.5">
-                      Faltam <strong>{formatBRL(remainingForFree)}</strong> para frete grátis
+                      Adicione produtos participantes para aproveitar frete grátis acima de {formatBRL(FREE_SHIPPING_THRESHOLD)}.
                     </p>
-                  ) : (
+                  ) : freeShip.qualifies ? (
                     <p className="text-xs text-success font-medium mb-1.5">🎉 Você ganhou frete grátis!</p>
+                  ) : (
+                    <p className="text-xs text-primary font-medium mb-1.5">
+                      Faltam <strong>{formatBRL(freeShip.remaining)}</strong> em produtos participantes para frete grátis
+                    </p>
                   )}
                   <div className="h-1.5 bg-primary-foreground/40 rounded-full overflow-hidden">
                     <div className="h-full bg-primary transition-all" style={{ width: `${progress}%` }} />

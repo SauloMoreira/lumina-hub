@@ -51,6 +51,9 @@ export const calculateShipping = createServerFn({ method: 'POST' })
         zipCode: z.string().transform((v) => v.replace(/\D/g, '')),
         subtotal: z.number().min(0),
         weightKg: z.number().min(0).default(1),
+        // Subtotal somado APENAS dos itens marcados como elegíveis a frete grátis.
+        // Se omitido (compatibilidade), assume 0 — não libera frete grátis.
+        eligibleSubtotal: z.number().min(0).optional(),
       })
       .parse(input)
   )
@@ -110,8 +113,9 @@ export const calculateShipping = createServerFn({ method: 'POST' })
       },
     ];
 
-    // Frete grátis local (RJ Maricá) acima de R$ 199
-    if (prefix >= 24 && prefix <= 25 && data.subtotal >= 199) {
+    // Frete grátis local (RJ Maricá): subtotal de produtos ELEGÍVEIS >= R$ 199.
+    const eligibleSubtotal = data.eligibleSubtotal ?? 0;
+    if (prefix >= 24 && prefix <= 25 && eligibleSubtotal >= 199) {
       services.unshift({
         id: 'local',
         name: 'Entrega local Maricá',

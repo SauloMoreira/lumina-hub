@@ -67,7 +67,7 @@ function CatalogPage() {
       const to = from + PAGE_SIZE - 1;
       let query = supabase
         .from('products')
-        .select('id, name, slug, price, sale_price, images, brand, tags, stock_qty, featured, category_id, product_images(url_thumb, url_card, original_url, is_primary, sort_order)', { count: 'exact' })
+        .select('id, name, slug, price, sale_price, images, brand, tags, stock_qty, featured, free_shipping_eligible, category_id, product_images(url_thumb, url_card, original_url, is_primary, sort_order)', { count: 'exact' })
         .eq('active', true);
       if (search.cat) {
         const cat = categories?.find((c) => c.slug === search.cat);
@@ -77,7 +77,7 @@ function CatalogPage() {
         query = query.not('sale_price', 'is', null);
       }
       if (search.shipping === 'free') {
-        query = query.gte('price', FREE_SHIPPING_THRESHOLD);
+        query = query.eq('free_shipping_eligible', true);
       }
       if (search.sort === 'best_sellers') {
         // Sem histórico de vendas: tratamos "destaques" como produtos marcados featured.
@@ -122,7 +122,7 @@ function CatalogPage() {
   const pageTitle = search.oferta
     ? 'Ofertas da semana'
     : search.shipping === 'free'
-    ? `Frete grátis acima de ${formatBRL(FREE_SHIPPING_THRESHOLD)}`
+    ? 'Produtos elegíveis a frete grátis'
     : search.sort === 'best_sellers'
     ? 'Destaques da loja'
     : search.cat
@@ -132,7 +132,7 @@ function CatalogPage() {
   const pageSubtitle = search.oferta
     ? 'Produtos com desconto ativo'
     : search.shipping === 'free'
-    ? `Produtos elegíveis a frete grátis (pedidos a partir de ${formatBRL(FREE_SHIPPING_THRESHOLD)}).`
+    ? `Frete grátis para compras acima de ${formatBRL(FREE_SHIPPING_THRESHOLD)} em produtos participantes.`
     : search.sort === 'best_sellers'
     ? 'Os produtos mais procurados pelos nossos clientes.'
     : null;
@@ -252,7 +252,7 @@ function CatalogPage() {
                   {search.oferta
                     ? 'Nenhuma oferta disponível no momento. Volte em breve!'
                     : search.shipping === 'free'
-                    ? `Nenhum produto elegível a frete grátis no momento (a partir de ${formatBRL(FREE_SHIPPING_THRESHOLD)}).`
+                    ? 'Nenhum produto elegível a frete grátis no momento.'
                     : search.sort === 'best_sellers'
                     ? 'Nenhum produto em destaque no momento.'
                     : 'Nenhum produto encontrado.'}
