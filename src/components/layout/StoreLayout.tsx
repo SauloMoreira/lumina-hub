@@ -2,9 +2,7 @@ import { Header } from './Header';
 import { Footer } from './Footer';
 import { CartDrawer } from '@/components/store/CartDrawer';
 import { ChatWidgetLazy } from '@/components/store/ChatWidgetLazy';
-import { CookieBanner } from '@/components/lgpd/CookieBanner';
-import { CookiePreferencesModal } from '@/components/lgpd/CookiePreferencesModal';
-import { ConditionalScripts } from '@/components/lgpd/ConditionalScripts';
+import { LgpdLayer } from '@/components/lgpd/LgpdLayer';
 import { Toaster } from '@/components/ui/sonner';
 import type { ReactNode } from 'react';
 
@@ -16,9 +14,7 @@ export function StoreLayout({ children }: { children: ReactNode }) {
       <Footer />
       <CartDrawer />
       <ChatWidgetLazy />
-      <CookieBanner />
-      <CookiePreferencesModal />
-      <ConditionalScripts />
+      <LgpdLayer />
       <Toaster position="top-right" richColors />
     </div>
   );
