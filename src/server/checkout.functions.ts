@@ -193,8 +193,56 @@ export const createOrder = createServerFn({ method: 'POST' })
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
 
+    // ========================================================
+    // VALIDAÇÃO SERVER-SIDE: preço e estoque
+    // Nunca confiar no unitPrice/qty enviados pelo cliente.
+    // Carrega os produtos do banco e usa SEMPRE o preço atual
+    // (sale_price ?? price) e checa o estoque disponível.
+    // ========================================================
+    const productIds = Array.from(new Set(data.items.map((i) => i.productId)));
+    const { data: products, error: prodErr } = await supabase
+      .from('products')
+      .select('id, name, price, sale_price, stock_qty, active')
+      .in('id', productIds);
+    if (prodErr) {
+      return { ok: false as const, error: 'Não foi possível validar os produtos. Tente novamente.' };
+    }
+    const productMap = new Map((products ?? []).map((p) => [p.id, p]));
+
+    // Itens normalizados com preço autoritativo do servidor
+    const validatedItems: Array<{
+      productId: string;
+      name: string;
+      sku: string | null;
+      image: string | null;
+      unitPrice: number;
+      qty: number;
+    }> = [];
+
+    for (const i of data.items) {
+      const p = productMap.get(i.productId);
+      if (!p || p.active === false) {
+        return { ok: false as const, error: `Produto indisponível foi removido do catálogo. Atualize o carrinho.` };
+      }
+      if (p.stock_qty < i.qty) {
+        return {
+          ok: false as const,
+          error: `Estoque insuficiente para "${p.name}" (disponível: ${p.stock_qty}). Ajuste a quantidade.`,
+        };
+      }
+      const serverPrice = Number(p.sale_price ?? p.price);
+      validatedItems.push({
+        productId: p.id,
+        name: p.name, // usa o nome atual do banco
+        sku: i.sku ?? null,
+        image: i.image ?? null,
+        unitPrice: serverPrice,
+        qty: i.qty,
+      });
+    }
+
     // Recalcula subtotal/desconto/total no servidor (nunca confiar no cliente)
-    const subtotal = data.items.reduce((s, i) => s + i.unitPrice * i.qty, 0);
+    const subtotal = validatedItems.reduce((s, i) => s + i.unitPrice * i.qty, 0);
 
     let discount = 0;
     if (data.couponCode) {
