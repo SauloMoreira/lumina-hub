@@ -58,7 +58,9 @@ function CatalogPage() {
 
   const { data, isLoading } = useQuery({
     queryKey: ['products', 'catalog', search.cat, search.sort, page, search.oferta, search.shipping],
-    staleTime: 1000 * 60 * 10, // 10min
+    staleTime: 0,
+    refetchOnMount: 'always',
+    refetchOnWindowFocus: true,
     enabled: !search.cat || !!categories,
     queryFn: async () => {
       const from = (page - 1) * PAGE_SIZE;
@@ -86,13 +88,20 @@ function CatalogPage() {
       else if (search.sort === 'newest') query = query.order('created_at', { ascending: false });
       else if (search.sort === 'best_sellers') query = query.order('updated_at', { ascending: false });
       else query = query.order('featured', { ascending: false }).order('created_at', { ascending: false });
+
+      if (search.oferta) {
+        const { data, error } = await query;
+        if (error) throw error;
+        const offerProducts = (data ?? [])
+          .map((p: any) => ({ ...p, images: imageUrlsFromProductImages(p.product_images, p.images) }))
+          .filter((p: Product) => p.sale_price != null && Number(p.sale_price) < Number(p.price)) as Product[];
+        return { products: offerProducts.slice(from, to + 1), total: offerProducts.length };
+      }
+
       const { data, error, count } = await query.range(from, to);
       if (error) throw error;
-      let products = (data ?? []).map((p: any) => ({ ...p, images: imageUrlsFromProductImages(p.product_images, p.images) })) as Product[];
-      if (search.oferta) {
-        products = products.filter((p) => p.sale_price != null && Number(p.sale_price) < Number(p.price));
-      }
-      return { products, total: search.oferta ? products.length : (count ?? 0) };
+      const products = (data ?? []).map((p: any) => ({ ...p, images: imageUrlsFromProductImages(p.product_images, p.images) })) as Product[];
+      return { products, total: count ?? 0 };
     },
   });
 
