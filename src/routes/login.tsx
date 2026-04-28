@@ -8,6 +8,7 @@ import {
   AuthCard, FieldLabel, FieldError, inputClass, inputStyle, inputFocusHandlers,
   PrimaryButton, GoogleButton, Divider,
 } from '@/components/auth/AuthCard';
+import { checkLoginAttempt, recordAuthFailure } from '@/server/auth.functions';
 
 import { buildSeo } from '@/lib/seo';
 
