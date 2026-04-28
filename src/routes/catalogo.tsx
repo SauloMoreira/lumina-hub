@@ -106,14 +106,69 @@ function CatalogPage() {
 
   const goPage = (p: number) => navigate({ search: (s: any) => ({ ...s, page: p }) as any });
 
+  const pageTitle = search.oferta
+    ? 'Ofertas da semana'
+    : search.shipping === 'free'
+    ? `Frete grátis acima de ${formatBRL(FREE_SHIPPING_THRESHOLD)}`
+    : search.sort === 'best_sellers'
+    ? 'Destaques da loja'
+    : search.cat
+    ? categories?.find((c) => c.slug === search.cat)?.name ?? 'Produtos'
+    : 'Todos os produtos';
+
+  const pageSubtitle = search.oferta
+    ? 'Produtos com desconto ativo'
+    : search.shipping === 'free'
+    ? `Produtos elegíveis a frete grátis (pedidos a partir de ${formatBRL(FREE_SHIPPING_THRESHOLD)}).`
+    : search.sort === 'best_sellers'
+    ? 'Os produtos mais procurados pelos nossos clientes.'
+    : null;
+
+  const hasActiveFilters = !!(search.cat || search.oferta || search.shipping || search.sort || search.q);
+
+  const clearFilters = () => navigate({ search: {} as any });
+
   return (
     <StoreLayout>
       <div className="bg-card border-b border-border">
         <div className="container mx-auto px-4 py-8">
-          <div className="label-meta mb-2">Catálogo completo</div>
-          <h1 className="font-display font-bold text-3xl tracking-tight mb-4">
-            {search.cat ? categories?.find((c) => c.slug === search.cat)?.name ?? 'Produtos' : 'Todos os produtos'}
-          </h1>
+          <div className="label-meta mb-2">Catálogo</div>
+          <h1 className="font-display font-bold text-3xl tracking-tight mb-2">{pageTitle}</h1>
+          {pageSubtitle && <p className="text-sm text-muted-foreground mb-4">{pageSubtitle}</p>}
+
+          {hasActiveFilters && (
+            <div className="flex flex-wrap items-center gap-2 mb-4">
+              {search.oferta && (
+                <button onClick={() => navigate({ search: (s: any) => ({ ...s, oferta: undefined, page: 1 }) as any })} className="inline-flex items-center gap-1.5 text-xs bg-accent/10 text-accent-foreground px-2.5 py-1 rounded-full hover:bg-accent/20">
+                  Oferta <X className="w-3 h-3" />
+                </button>
+              )}
+              {search.shipping === 'free' && (
+                <button onClick={() => navigate({ search: (s: any) => ({ ...s, shipping: undefined, page: 1 }) as any })} className="inline-flex items-center gap-1.5 text-xs bg-accent/10 text-accent-foreground px-2.5 py-1 rounded-full hover:bg-accent/20">
+                  Frete grátis <X className="w-3 h-3" />
+                </button>
+              )}
+              {search.sort === 'best_sellers' && (
+                <button onClick={() => navigate({ search: (s: any) => ({ ...s, sort: undefined, page: 1 }) as any })} className="inline-flex items-center gap-1.5 text-xs bg-accent/10 text-accent-foreground px-2.5 py-1 rounded-full hover:bg-accent/20">
+                  Destaques <X className="w-3 h-3" />
+                </button>
+              )}
+              {search.cat && (
+                <button onClick={() => navigate({ search: (s: any) => ({ ...s, cat: undefined, page: 1 }) as any })} className="inline-flex items-center gap-1.5 text-xs bg-primary-tint text-primary px-2.5 py-1 rounded-full hover:bg-primary/10">
+                  {categories?.find((c) => c.slug === search.cat)?.name ?? search.cat} <X className="w-3 h-3" />
+                </button>
+              )}
+              {search.q && (
+                <button onClick={() => { setQ(''); navigate({ search: (s: any) => ({ ...s, q: undefined, page: 1 }) as any }); }} className="inline-flex items-center gap-1.5 text-xs bg-surface px-2.5 py-1 rounded-full hover:bg-muted">
+                  "{search.q}" <X className="w-3 h-3" />
+                </button>
+              )}
+              <button onClick={clearFilters} className="text-xs text-muted-foreground underline hover:text-foreground ml-1">
+                Limpar filtros
+              </button>
+            </div>
+          )}
+
           <form
             onSubmit={(e) => { e.preventDefault(); if (q) trackSearch(q); navigate({ search: (s: any) => ({ ...s, q: q || undefined, page: 1 }) as any }); }}
             className="max-w-md"
