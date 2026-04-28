@@ -20,6 +20,7 @@ export function ProductCard({ product, index = 0 }: { product: Product; index?: 
       price: finalPrice,
       image: product.images[0] ?? null,
       stock: product.stock_qty,
+      freeShippingEligible: !!product.free_shipping_eligible,
     });
   };
 
@@ -87,6 +88,9 @@ export function ProductCard({ product, index = 0 }: { product: Product; index?: 
           )}
           {product.stock_qty === 0 && (
             <div className="text-[10px] text-destructive font-medium mt-2">Esgotado</div>
+          )}
+          {product.free_shipping_eligible && product.stock_qty > 0 && (
+            <div className="text-[10px] text-success font-medium mt-2">🚚 Frete grátis acima de R$ 199,00</div>
           )}
         </div>
       </Link>
