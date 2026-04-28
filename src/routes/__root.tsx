@@ -43,12 +43,33 @@ function NotFoundComponent() {
   );
 }
 
+// Content Security Policy — modo Report-Only.
+// Permite o que o app realmente usa (Supabase, Mercado Pago, Google Fonts, Lovable AI, imagens via storage).
+// Ajustar quando ativar no modo enforce.
+const CSP_REPORT_ONLY = [
+  "default-src 'self'",
+  "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://sdk.mercadopago.com https://www.googletagmanager.com https://www.google-analytics.com",
+  "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
+  "font-src 'self' data: https://fonts.gstatic.com",
+  "img-src 'self' data: blob: https:",
+  "connect-src 'self' https://*.supabase.co https://*.supabase.in https://api.mercadopago.com https://ai.gateway.lovable.dev https://www.google-analytics.com https://*.google-analytics.com",
+  "frame-src 'self' https://www.mercadopago.com https://www.mercadopago.com.br",
+  "object-src 'none'",
+  "base-uri 'self'",
+  "form-action 'self' https://www.mercadopago.com https://www.mercadopago.com.br",
+  "frame-ancestors 'none'",
+  "report-uri /api/public/csp-report",
+].join('; ');
+
 export const Route = createRootRouteWithContext<MyRouterContext>()({
   head: () => ({
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
       { name: "theme-color", content: "#3F5AE0" },
+      { httpEquiv: "Content-Security-Policy-Report-Only", content: CSP_REPORT_ONLY },
+      { httpEquiv: "X-Content-Type-Options", content: "nosniff" },
+      { name: "referrer", content: "strict-origin-when-cross-origin" },
     ],
     links: [
       { rel: "stylesheet", href: appCss },

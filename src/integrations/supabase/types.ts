@@ -1130,6 +1130,60 @@ export type Database = {
         }
         Relationships: []
       }
+      rate_limit_events: {
+        Row: {
+          action: string
+          created_at: string
+          id: string
+          identifier: string
+          metadata: Json | null
+        }
+        Insert: {
+          action: string
+          created_at?: string
+          id?: string
+          identifier: string
+          metadata?: Json | null
+        }
+        Update: {
+          action?: string
+          created_at?: string
+          id?: string
+          identifier?: string
+          metadata?: Json | null
+        }
+        Relationships: []
+      }
+      security_events: {
+        Row: {
+          created_at: string
+          id: string
+          identifier: string | null
+          message: string | null
+          metadata: Json | null
+          severity: string
+          type: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          identifier?: string | null
+          message?: string | null
+          metadata?: Json | null
+          severity?: string
+          type: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          identifier?: string | null
+          message?: string | null
+          metadata?: Json | null
+          severity?: string
+          type?: string
+        }
+        Relationships: []
+      }
       stock_decrement_audit: {
         Row: {
           created_at: string
@@ -1170,6 +1224,20 @@ export type Database = {
           valid: boolean
         }[]
       }
+      check_rate_limit: {
+        Args: {
+          _action: string
+          _identifier: string
+          _max_attempts: number
+          _window_seconds: number
+        }
+        Returns: {
+          allowed: boolean
+          current_count: number
+          retry_after_seconds: number
+        }[]
+      }
+      cleanup_rate_limit_events: { Args: never; Returns: number }
       decrement_stock_for_order: {
         Args: { _order_id: string }
         Returns: {
@@ -1179,6 +1247,16 @@ export type Database = {
       }
       increment_coupon_usage: { Args: { _code: string }; Returns: undefined }
       is_admin: { Args: { _user_id: string }; Returns: boolean }
+      log_security_event: {
+        Args: {
+          _identifier: string
+          _message: string
+          _metadata: Json
+          _severity: string
+          _type: string
+        }
+        Returns: string
+      }
       sync_product_images_array: {
         Args: { _product_id: string }
         Returns: undefined

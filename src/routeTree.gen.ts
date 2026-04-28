@@ -33,6 +33,7 @@ import { Route as ContaPedidosRouteImport } from './routes/conta.pedidos'
 import { Route as CheckoutSuccessRouteImport } from './routes/checkout.success'
 import { Route as CheckoutPendingRouteImport } from './routes/checkout.pending'
 import { Route as CheckoutFailureRouteImport } from './routes/checkout.failure'
+import { Route as AdminSegurancaRouteImport } from './routes/admin.seguranca'
 import { Route as AdminPedidosRouteImport } from './routes/admin.pedidos'
 import { Route as AdminLeadsRouteImport } from './routes/admin.leads'
 import { Route as AdminCuponsRouteImport } from './routes/admin.cupons'
@@ -43,6 +44,7 @@ import { Route as AdminBannersRouteImport } from './routes/admin.banners'
 import { Route as AdminProdutosIndexRouteImport } from './routes/admin.produtos.index'
 import { Route as AdminInstitutionalPagesIndexRouteImport } from './routes/admin.institutional-pages.index'
 import { Route as PedidoIdConfirmacaoRouteImport } from './routes/pedido.$id.confirmacao'
+import { Route as ApiPublicCspReportRouteImport } from './routes/api/public/csp-report'
 import { Route as AdminSettingsCompanyRouteImport } from './routes/admin.settings.company'
 import { Route as AdminProdutosIdRouteImport } from './routes/admin.produtos.$id'
 import { Route as AdminPedidosOrderIdRouteImport } from './routes/admin.pedidos.$orderId'
@@ -169,6 +171,11 @@ const CheckoutFailureRoute = CheckoutFailureRouteImport.update({
   path: '/failure',
   getParentRoute: () => CheckoutRoute,
 } as any)
+const AdminSegurancaRoute = AdminSegurancaRouteImport.update({
+  id: '/admin/seguranca',
+  path: '/admin/seguranca',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AdminPedidosRoute = AdminPedidosRouteImport.update({
   id: '/admin/pedidos',
   path: '/admin/pedidos',
@@ -218,6 +225,11 @@ const AdminInstitutionalPagesIndexRoute =
 const PedidoIdConfirmacaoRoute = PedidoIdConfirmacaoRouteImport.update({
   id: '/pedido/$id/confirmacao',
   path: '/pedido/$id/confirmacao',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiPublicCspReportRoute = ApiPublicCspReportRouteImport.update({
+  id: '/api/public/csp-report',
+  path: '/api/public/csp-report',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AdminSettingsCompanyRoute = AdminSettingsCompanyRouteImport.update({
@@ -273,6 +285,7 @@ export interface FileRoutesByFullPath {
   '/admin/cupons': typeof AdminCuponsRoute
   '/admin/leads': typeof AdminLeadsRoute
   '/admin/pedidos': typeof AdminPedidosRouteWithChildren
+  '/admin/seguranca': typeof AdminSegurancaRoute
   '/checkout/failure': typeof CheckoutFailureRoute
   '/checkout/pending': typeof CheckoutPendingRoute
   '/checkout/success': typeof CheckoutSuccessRoute
@@ -284,6 +297,7 @@ export interface FileRoutesByFullPath {
   '/admin/pedidos/$orderId': typeof AdminPedidosOrderIdRoute
   '/admin/produtos/$id': typeof AdminProdutosIdRoute
   '/admin/settings/company': typeof AdminSettingsCompanyRoute
+  '/api/public/csp-report': typeof ApiPublicCspReportRoute
   '/pedido/$id/confirmacao': typeof PedidoIdConfirmacaoRoute
   '/admin/institutional-pages/': typeof AdminInstitutionalPagesIndexRoute
   '/admin/produtos/': typeof AdminProdutosIndexRoute
@@ -314,6 +328,7 @@ export interface FileRoutesByTo {
   '/admin/cupons': typeof AdminCuponsRoute
   '/admin/leads': typeof AdminLeadsRoute
   '/admin/pedidos': typeof AdminPedidosRouteWithChildren
+  '/admin/seguranca': typeof AdminSegurancaRoute
   '/checkout/failure': typeof CheckoutFailureRoute
   '/checkout/pending': typeof CheckoutPendingRoute
   '/checkout/success': typeof CheckoutSuccessRoute
@@ -325,6 +340,7 @@ export interface FileRoutesByTo {
   '/admin/pedidos/$orderId': typeof AdminPedidosOrderIdRoute
   '/admin/produtos/$id': typeof AdminProdutosIdRoute
   '/admin/settings/company': typeof AdminSettingsCompanyRoute
+  '/api/public/csp-report': typeof ApiPublicCspReportRoute
   '/pedido/$id/confirmacao': typeof PedidoIdConfirmacaoRoute
   '/admin/institutional-pages': typeof AdminInstitutionalPagesIndexRoute
   '/admin/produtos': typeof AdminProdutosIndexRoute
@@ -356,6 +372,7 @@ export interface FileRoutesById {
   '/admin/cupons': typeof AdminCuponsRoute
   '/admin/leads': typeof AdminLeadsRoute
   '/admin/pedidos': typeof AdminPedidosRouteWithChildren
+  '/admin/seguranca': typeof AdminSegurancaRoute
   '/checkout/failure': typeof CheckoutFailureRoute
   '/checkout/pending': typeof CheckoutPendingRoute
   '/checkout/success': typeof CheckoutSuccessRoute
@@ -367,6 +384,7 @@ export interface FileRoutesById {
   '/admin/pedidos/$orderId': typeof AdminPedidosOrderIdRoute
   '/admin/produtos/$id': typeof AdminProdutosIdRoute
   '/admin/settings/company': typeof AdminSettingsCompanyRoute
+  '/api/public/csp-report': typeof ApiPublicCspReportRoute
   '/pedido/$id/confirmacao': typeof PedidoIdConfirmacaoRoute
   '/admin/institutional-pages/': typeof AdminInstitutionalPagesIndexRoute
   '/admin/produtos/': typeof AdminProdutosIndexRoute
@@ -399,6 +417,7 @@ export interface FileRouteTypes {
     | '/admin/cupons'
     | '/admin/leads'
     | '/admin/pedidos'
+    | '/admin/seguranca'
     | '/checkout/failure'
     | '/checkout/pending'
     | '/checkout/success'
@@ -410,6 +429,7 @@ export interface FileRouteTypes {
     | '/admin/pedidos/$orderId'
     | '/admin/produtos/$id'
     | '/admin/settings/company'
+    | '/api/public/csp-report'
     | '/pedido/$id/confirmacao'
     | '/admin/institutional-pages/'
     | '/admin/produtos/'
@@ -440,6 +460,7 @@ export interface FileRouteTypes {
     | '/admin/cupons'
     | '/admin/leads'
     | '/admin/pedidos'
+    | '/admin/seguranca'
     | '/checkout/failure'
     | '/checkout/pending'
     | '/checkout/success'
@@ -451,6 +472,7 @@ export interface FileRouteTypes {
     | '/admin/pedidos/$orderId'
     | '/admin/produtos/$id'
     | '/admin/settings/company'
+    | '/api/public/csp-report'
     | '/pedido/$id/confirmacao'
     | '/admin/institutional-pages'
     | '/admin/produtos'
@@ -481,6 +503,7 @@ export interface FileRouteTypes {
     | '/admin/cupons'
     | '/admin/leads'
     | '/admin/pedidos'
+    | '/admin/seguranca'
     | '/checkout/failure'
     | '/checkout/pending'
     | '/checkout/success'
@@ -492,6 +515,7 @@ export interface FileRouteTypes {
     | '/admin/pedidos/$orderId'
     | '/admin/produtos/$id'
     | '/admin/settings/company'
+    | '/api/public/csp-report'
     | '/pedido/$id/confirmacao'
     | '/admin/institutional-pages/'
     | '/admin/produtos/'
@@ -523,12 +547,14 @@ export interface RootRouteChildren {
   AdminCuponsRoute: typeof AdminCuponsRoute
   AdminLeadsRoute: typeof AdminLeadsRoute
   AdminPedidosRoute: typeof AdminPedidosRouteWithChildren
+  AdminSegurancaRoute: typeof AdminSegurancaRoute
   InstitucionalSlugRoute: typeof InstitucionalSlugRoute
   ProdutoSlugRoute: typeof ProdutoSlugRoute
   AdminIndexRoute: typeof AdminIndexRoute
   AdminInstitutionalPagesIdRoute: typeof AdminInstitutionalPagesIdRoute
   AdminProdutosIdRoute: typeof AdminProdutosIdRoute
   AdminSettingsCompanyRoute: typeof AdminSettingsCompanyRoute
+  ApiPublicCspReportRoute: typeof ApiPublicCspReportRoute
   PedidoIdConfirmacaoRoute: typeof PedidoIdConfirmacaoRoute
   AdminInstitutionalPagesIndexRoute: typeof AdminInstitutionalPagesIndexRoute
   AdminProdutosIndexRoute: typeof AdminProdutosIndexRoute
@@ -705,6 +731,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof CheckoutFailureRouteImport
       parentRoute: typeof CheckoutRoute
     }
+    '/admin/seguranca': {
+      id: '/admin/seguranca'
+      path: '/admin/seguranca'
+      fullPath: '/admin/seguranca'
+      preLoaderRoute: typeof AdminSegurancaRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/admin/pedidos': {
       id: '/admin/pedidos'
       path: '/admin/pedidos'
@@ -773,6 +806,13 @@ declare module '@tanstack/react-router' {
       path: '/pedido/$id/confirmacao'
       fullPath: '/pedido/$id/confirmacao'
       preLoaderRoute: typeof PedidoIdConfirmacaoRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/csp-report': {
+      id: '/api/public/csp-report'
+      path: '/api/public/csp-report'
+      fullPath: '/api/public/csp-report'
+      preLoaderRoute: typeof ApiPublicCspReportRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/admin/settings/company': {
@@ -876,12 +916,14 @@ const rootRouteChildren: RootRouteChildren = {
   AdminCuponsRoute: AdminCuponsRoute,
   AdminLeadsRoute: AdminLeadsRoute,
   AdminPedidosRoute: AdminPedidosRouteWithChildren,
+  AdminSegurancaRoute: AdminSegurancaRoute,
   InstitucionalSlugRoute: InstitucionalSlugRoute,
   ProdutoSlugRoute: ProdutoSlugRoute,
   AdminIndexRoute: AdminIndexRoute,
   AdminInstitutionalPagesIdRoute: AdminInstitutionalPagesIdRoute,
   AdminProdutosIdRoute: AdminProdutosIdRoute,
   AdminSettingsCompanyRoute: AdminSettingsCompanyRoute,
+  ApiPublicCspReportRoute: ApiPublicCspReportRoute,
   PedidoIdConfirmacaoRoute: PedidoIdConfirmacaoRoute,
   AdminInstitutionalPagesIndexRoute: AdminInstitutionalPagesIndexRoute,
   AdminProdutosIndexRoute: AdminProdutosIndexRoute,

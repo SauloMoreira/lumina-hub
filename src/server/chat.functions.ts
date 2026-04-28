@@ -1,5 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
+import { enforceRateLimit, getClientIdentifier } from "@/server/security/rateLimit";
 
 interface ChatMessage {
   role: "user" | "assistant";
@@ -70,6 +71,11 @@ export const chatWithAI = createServerFn({ method: "POST" })
     return input;
   })
   .handler(async ({ data }) => {
+    const ip = getClientIdentifier();
+    // Rate limit: por sessão E por IP
+    await enforceRateLimit(`session:${data.sessionId}`, 'chat');
+    await enforceRateLimit(`ip:${ip}`, 'chat', { maxAttempts: 60, windowSeconds: 5 * 60 });
+
     const apiKey = process.env.LOVABLE_API_KEY;
     if (!apiKey) {
       return { reply: "Chat indisponível no momento.", error: "missing_key" };

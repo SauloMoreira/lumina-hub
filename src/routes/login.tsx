@@ -8,6 +8,7 @@ import {
   AuthCard, FieldLabel, FieldError, inputClass, inputStyle, inputFocusHandlers,
   PrimaryButton, GoogleButton, Divider,
 } from '@/components/auth/AuthCard';
+import { checkLoginAttempt, recordAuthFailure } from '@/server/auth.functions';
 
 import { buildSeo } from '@/lib/seo';
 
@@ -51,8 +52,24 @@ function LoginPage() {
     if (!validate()) return;
     setLoading(true);
     try {
+      // Pré-checagem de rate limit (server-side)
+      try {
+        await checkLoginAttempt({ data: { email } });
+      } catch (rlErr: unknown) {
+        if (rlErr instanceof Response && rlErr.status === 429) {
+          toast.error('Muitas tentativas. Aguarde alguns minutos.');
+          setLoading(false);
+          return;
+        }
+        throw rlErr;
+      }
+
       const { data, error } = await supabase.auth.signInWithPassword({ email, password });
-      if (error) throw error;
+      if (error) {
+        // Auditoria de falha
+        void recordAuthFailure({ data: { email, reason: error.message } });
+        throw error;
+      }
       const userId = data.user?.id;
       if (!userId) throw new Error('Sessão inválida');
       const { data: profile } = await supabase
