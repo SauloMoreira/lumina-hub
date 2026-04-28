@@ -120,11 +120,14 @@ function HomePage() {
     return () => clearTimeout(t);
   }, [queryClient]);
 
-  const PROMO_CARDS = [
-    { icon: Flame, title: 'Ofertas da semana', desc: 'Descontos imperdíveis', to: '/catalogo', tone: 'from-orange-500 to-red-500' },
-    { icon: Star, title: 'Mais vendidos', desc: 'O que está bombando', to: '/catalogo', tone: 'from-amber-400 to-yellow-500' },
-    { icon: Truck, title: 'Frete grátis', desc: `Acima de ${formatBRL(FREE_SHIPPING_THRESHOLD)}`, to: '/catalogo', tone: 'from-emerald-500 to-teal-500' },
-    { icon: Sparkles, title: 'Atendimento IA 24h', desc: 'Tire dúvidas técnicas', to: '/catalogo', tone: 'from-violet-500 to-indigo-500' },
+  const PROMO_CARDS: Array<{
+    icon: any; title: string; desc: string; tone: string;
+    to?: string; searchParams?: Record<string, any>; onClick?: () => void;
+  }> = [
+    { icon: Flame, title: 'Ofertas da semana', desc: 'Descontos imperdíveis', to: '/catalogo', searchParams: { oferta: true }, tone: 'from-orange-500 to-red-500' },
+    { icon: Star, title: 'Destaques da loja', desc: 'O que está bombando', to: '/catalogo', searchParams: { sort: 'best_sellers' }, tone: 'from-amber-400 to-yellow-500' },
+    { icon: Truck, title: 'Frete grátis', desc: `Acima de ${formatBRL(FREE_SHIPPING_THRESHOLD)}`, to: '/catalogo', searchParams: { shipping: 'free' }, tone: 'from-emerald-500 to-teal-500' },
+    { icon: Sparkles, title: 'Atendimento IA 24h', desc: 'Tire dúvidas técnicas', tone: 'from-violet-500 to-indigo-500', onClick: () => { if (typeof window !== 'undefined') window.dispatchEvent(new Event('open-chat')); } },
   ];
 
   return (
@@ -135,22 +138,33 @@ function HomePage() {
       {/* CARDS PROMOCIONAIS DE APOIO */}
       <section className="container mx-auto px-4 py-6">
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-          {PROMO_CARDS.map((c) => (
-            <Link
-              key={c.title}
-              to={c.to as any}
-              className="group relative overflow-hidden rounded-xl bg-card border border-border p-4 hover:shadow-elevated transition-all hover:-translate-y-0.5"
-            >
-              <div className={`absolute inset-0 opacity-10 group-hover:opacity-20 bg-gradient-to-br ${c.tone} transition-opacity`} />
-              <div className="relative">
-                <div className={`w-9 h-9 rounded-lg bg-gradient-to-br ${c.tone} flex items-center justify-center mb-3 shadow-md`}>
-                  <c.icon className="w-4 h-4 text-white" />
+          {PROMO_CARDS.map((c) => {
+            const inner = (
+              <>
+                <div className={`absolute inset-0 opacity-10 group-hover:opacity-20 bg-gradient-to-br ${c.tone} transition-opacity`} />
+                <div className="relative">
+                  <div className={`w-9 h-9 rounded-lg bg-gradient-to-br ${c.tone} flex items-center justify-center mb-3 shadow-md`}>
+                    <c.icon className="w-4 h-4 text-white" />
+                  </div>
+                  <div className="font-display font-semibold text-sm leading-tight">{c.title}</div>
+                  <div className="text-xs text-muted-foreground mt-0.5">{c.desc}</div>
                 </div>
-                <div className="font-display font-semibold text-sm leading-tight">{c.title}</div>
-                <div className="text-xs text-muted-foreground mt-0.5">{c.desc}</div>
-              </div>
-            </Link>
-          ))}
+              </>
+            );
+            const cls = "group relative overflow-hidden rounded-xl bg-card border border-border p-4 hover:shadow-elevated transition-all hover:-translate-y-0.5 text-left";
+            if (c.onClick) {
+              return (
+                <button key={c.title} type="button" onClick={c.onClick} className={cls}>
+                  {inner}
+                </button>
+              );
+            }
+            return (
+              <Link key={c.title} to={c.to as any} search={(c.searchParams ?? {}) as any} className={cls}>
+                {inner}
+              </Link>
+            );
+          })}
         </div>
       </section>
 

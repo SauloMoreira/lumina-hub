@@ -1,7 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { useQuery } from '@tanstack/react-query';
 import { useState, useMemo } from 'react';
-import { Search, SlidersHorizontal, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Search, SlidersHorizontal, ChevronLeft, ChevronRight, X } from 'lucide-react';
 import { z } from 'zod';
 import { StoreLayout } from '@/components/layout/StoreLayout';
 import { ProductCard } from '@/components/store/ProductCard';
@@ -10,6 +10,7 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
 import type { Product, Category } from '@/lib/domain';
+import { FREE_SHIPPING_THRESHOLD, formatBRL } from '@/lib/domain';
 import { trackSearch } from '@/lib/tracking';
 import { imageUrlsFromProductImages } from '@/lib/productImages';
 
@@ -18,8 +19,10 @@ const PAGE_SIZE = 24;
 const searchSchema = z.object({
   cat: z.string().optional(),
   q: z.string().optional(),
-  sort: z.enum(['featured', 'price_asc', 'price_desc', 'newest']).optional(),
+  sort: z.enum(['featured', 'price_asc', 'price_desc', 'newest', 'best_sellers']).optional(),
   page: z.coerce.number().int().min(1).optional(),
+  oferta: z.coerce.boolean().optional(),
+  shipping: z.enum(['free']).optional(),
 });
 
 import { buildSeo } from '@/lib/seo';
@@ -54,7 +57,7 @@ function CatalogPage() {
   });
 
   const { data, isLoading } = useQuery({
-    queryKey: ['products', 'catalog', search.cat, search.sort, page],
+    queryKey: ['products', 'catalog', search.cat, search.sort, page, search.oferta, search.shipping],
     staleTime: 1000 * 60 * 10, // 10min
     enabled: !search.cat || !!categories,
     queryFn: async () => {
@@ -68,14 +71,24 @@ function CatalogPage() {
         const cat = categories?.find((c) => c.slug === search.cat);
         if (cat) query = query.eq('category_id', cat.id);
       }
+      if (search.oferta) {
+        query = query.not('sale_price', 'is', null);
+      }
+      if (search.shipping === 'free') {
+        query = query.gte('price', FREE_SHIPPING_THRESHOLD);
+      }
       if (search.sort === 'price_asc') query = query.order('price', { ascending: true });
       else if (search.sort === 'price_desc') query = query.order('price', { ascending: false });
       else if (search.sort === 'newest') query = query.order('created_at', { ascending: false });
+      else if (search.sort === 'best_sellers') query = query.order('featured', { ascending: false }).order('updated_at', { ascending: false });
       else query = query.order('featured', { ascending: false }).order('created_at', { ascending: false });
       const { data, error, count } = await query.range(from, to);
       if (error) throw error;
-      const products = (data ?? []).map((p: any) => ({ ...p, images: imageUrlsFromProductImages(p.product_images, p.images) })) as Product[];
-      return { products, total: count ?? 0 };
+      let products = (data ?? []).map((p: any) => ({ ...p, images: imageUrlsFromProductImages(p.product_images, p.images) })) as Product[];
+      if (search.oferta) {
+        products = products.filter((p) => p.sale_price != null && Number(p.sale_price) < Number(p.price));
+      }
+      return { products, total: search.oferta ? products.length : (count ?? 0) };
     },
   });
 
@@ -93,14 +106,69 @@ function CatalogPage() {
 
   const goPage = (p: number) => navigate({ search: (s: any) => ({ ...s, page: p }) as any });
 
+  const pageTitle = search.oferta
+    ? 'Ofertas da semana'
+    : search.shipping === 'free'
+    ? `Frete grátis acima de ${formatBRL(FREE_SHIPPING_THRESHOLD)}`
+    : search.sort === 'best_sellers'
+    ? 'Destaques da loja'
+    : search.cat
+    ? categories?.find((c) => c.slug === search.cat)?.name ?? 'Produtos'
+    : 'Todos os produtos';
+
+  const pageSubtitle = search.oferta
+    ? 'Produtos com desconto ativo'
+    : search.shipping === 'free'
+    ? `Produtos elegíveis a frete grátis (pedidos a partir de ${formatBRL(FREE_SHIPPING_THRESHOLD)}).`
+    : search.sort === 'best_sellers'
+    ? 'Os produtos mais procurados pelos nossos clientes.'
+    : null;
+
+  const hasActiveFilters = !!(search.cat || search.oferta || search.shipping || search.sort || search.q);
+
+  const clearFilters = () => navigate({ search: {} as any });
+
   return (
     <StoreLayout>
       <div className="bg-card border-b border-border">
         <div className="container mx-auto px-4 py-8">
-          <div className="label-meta mb-2">Catálogo completo</div>
-          <h1 className="font-display font-bold text-3xl tracking-tight mb-4">
-            {search.cat ? categories?.find((c) => c.slug === search.cat)?.name ?? 'Produtos' : 'Todos os produtos'}
-          </h1>
+          <div className="label-meta mb-2">Catálogo</div>
+          <h1 className="font-display font-bold text-3xl tracking-tight mb-2">{pageTitle}</h1>
+          {pageSubtitle && <p className="text-sm text-muted-foreground mb-4">{pageSubtitle}</p>}
+
+          {hasActiveFilters && (
+            <div className="flex flex-wrap items-center gap-2 mb-4">
+              {search.oferta && (
+                <button onClick={() => navigate({ search: (s: any) => ({ ...s, oferta: undefined, page: 1 }) as any })} className="inline-flex items-center gap-1.5 text-xs bg-accent/10 text-accent-foreground px-2.5 py-1 rounded-full hover:bg-accent/20">
+                  Oferta <X className="w-3 h-3" />
+                </button>
+              )}
+              {search.shipping === 'free' && (
+                <button onClick={() => navigate({ search: (s: any) => ({ ...s, shipping: undefined, page: 1 }) as any })} className="inline-flex items-center gap-1.5 text-xs bg-accent/10 text-accent-foreground px-2.5 py-1 rounded-full hover:bg-accent/20">
+                  Frete grátis <X className="w-3 h-3" />
+                </button>
+              )}
+              {search.sort === 'best_sellers' && (
+                <button onClick={() => navigate({ search: (s: any) => ({ ...s, sort: undefined, page: 1 }) as any })} className="inline-flex items-center gap-1.5 text-xs bg-accent/10 text-accent-foreground px-2.5 py-1 rounded-full hover:bg-accent/20">
+                  Destaques <X className="w-3 h-3" />
+                </button>
+              )}
+              {search.cat && (
+                <button onClick={() => navigate({ search: (s: any) => ({ ...s, cat: undefined, page: 1 }) as any })} className="inline-flex items-center gap-1.5 text-xs bg-primary-tint text-primary px-2.5 py-1 rounded-full hover:bg-primary/10">
+                  {categories?.find((c) => c.slug === search.cat)?.name ?? search.cat} <X className="w-3 h-3" />
+                </button>
+              )}
+              {search.q && (
+                <button onClick={() => { setQ(''); navigate({ search: (s: any) => ({ ...s, q: undefined, page: 1 }) as any }); }} className="inline-flex items-center gap-1.5 text-xs bg-surface px-2.5 py-1 rounded-full hover:bg-muted">
+                  "{search.q}" <X className="w-3 h-3" />
+                </button>
+              )}
+              <button onClick={clearFilters} className="text-xs text-muted-foreground underline hover:text-foreground ml-1">
+                Limpar filtros
+              </button>
+            </div>
+          )}
+
           <form
             onSubmit={(e) => { e.preventDefault(); if (q) trackSearch(q); navigate({ search: (s: any) => ({ ...s, q: q || undefined, page: 1 }) as any }); }}
             className="max-w-md"
@@ -166,7 +234,7 @@ function CatalogPage() {
                 {Array.from({ length: 8 }).map((_, i) => <ProductCardSkeleton key={i} />)}
               </div>
             ) : filtered.length === 0 ? (
-              <div className="text-center py-16 text-muted-foreground"><p>Nenhum produto encontrado.</p></div>
+              <div className="text-center py-16 text-muted-foreground"><p>{search.oferta ? 'Nenhuma oferta disponível no momento.' : 'Nenhum produto encontrado.'}</p></div>
             ) : (
               <>
                 <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
