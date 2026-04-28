@@ -26,14 +26,7 @@ export function ProductSEOSection({ productId, productCtx, seoTitle, seoDescript
     if (!productId) return;
     setBoosting(true);
     try {
-      const { data: sessionData } = await supabase.auth.getSession();
-      const accessToken = sessionData.session?.access_token;
-      if (!accessToken) {
-        toast.error('Sessão expirada. Faça login novamente.');
-        return;
-      }
-
-      const r = await boostProductSeoAuto({ data: { productId, accessToken } });
+      const r = await boostProductSeoAuto({ data: { productId } });
       if (!r.ok) {
         toast.error(r.error);
       } else {
