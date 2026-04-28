@@ -56,7 +56,7 @@ export function HeroCarousel({ banners }: { banners: HeroBanner[] }) {
       aria-roledescription="carousel"
       aria-label="Promoções e destaques"
     >
-      <div className="relative h-[320px] sm:h-[380px] md:h-[440px] lg:h-[480px]">
+      <div className="relative h-[260px] xs:h-[300px] sm:h-[380px] md:h-[440px] lg:h-[480px]">
         {banners.map((b, i) => {
           const active = i === idx;
           const isInternal = b.cta_link?.startsWith('/');
@@ -108,22 +108,22 @@ export function HeroCarousel({ banners }: { banners: HeroBanner[] }) {
               />
 
               <div className="relative h-full container mx-auto px-4 md:px-8 flex items-center">
-                <div className="max-w-xl" style={{ color: b.text_color ?? '#FFFFFF' }}>
+                <div className="max-w-full sm:max-w-xl" style={{ color: b.text_color ?? '#FFFFFF' }}>
                   {b.badge && (
-                    <span className="inline-flex items-center px-3 py-1 rounded-full bg-accent text-accent-foreground text-xs font-bold uppercase tracking-wider mb-4 shadow-md">
+                    <span className="inline-flex items-center px-2.5 py-0.5 sm:px-3 sm:py-1 rounded-full bg-accent text-accent-foreground text-[10px] sm:text-xs font-bold uppercase tracking-wider mb-2 sm:mb-4 shadow-md">
                       {b.badge}
                     </span>
                   )}
-                  <h2 className="font-display font-extrabold text-3xl md:text-5xl leading-tight tracking-tight mb-3 drop-shadow-lg">
+                  <h2 className="font-display font-extrabold text-xl sm:text-3xl md:text-5xl leading-tight tracking-tight mb-2 sm:mb-3 drop-shadow-lg break-words">
                     {b.title}
                   </h2>
                   {b.subtitle && (
-                    <p className="text-lg md:text-2xl font-medium mb-3 opacity-95 drop-shadow">
+                    <p className="text-sm sm:text-lg md:text-2xl font-medium mb-2 sm:mb-3 opacity-95 drop-shadow break-words">
                       {b.subtitle}
                     </p>
                   )}
                   {b.description && (
-                    <p className="text-sm md:text-base mb-6 opacity-85 max-w-md leading-relaxed">
+                    <p className="hidden sm:block text-sm md:text-base mb-6 opacity-85 max-w-md leading-relaxed">
                       {b.description}
                     </p>
                   )}
@@ -131,7 +131,7 @@ export function HeroCarousel({ banners }: { banners: HeroBanner[] }) {
                     isInternal ? (
                       <Link
                         to={b.cta_link as any}
-                        className="inline-flex items-center gap-2 h-12 px-6 rounded-pill bg-accent text-accent-foreground font-semibold text-sm shadow-elevated hover:brightness-110 transition"
+                        className="inline-flex items-center gap-2 h-10 sm:h-12 px-4 sm:px-6 rounded-pill bg-accent text-accent-foreground font-semibold text-xs sm:text-sm shadow-elevated hover:brightness-110 transition"
                       >
                         {b.cta_label}
                         <ArrowRight className="w-4 h-4" />
@@ -139,7 +139,7 @@ export function HeroCarousel({ banners }: { banners: HeroBanner[] }) {
                     ) : (
                       <a
                         href={b.cta_link}
-                        className="inline-flex items-center gap-2 h-12 px-6 rounded-pill bg-accent text-accent-foreground font-semibold text-sm shadow-elevated hover:brightness-110 transition"
+                        className="inline-flex items-center gap-2 h-10 sm:h-12 px-4 sm:px-6 rounded-pill bg-accent text-accent-foreground font-semibold text-xs sm:text-sm shadow-elevated hover:brightness-110 transition"
                       >
                         {b.cta_label}
                         <ArrowRight className="w-4 h-4" />

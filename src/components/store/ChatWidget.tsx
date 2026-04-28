@@ -293,8 +293,9 @@ export function ChatWidget() {
       <button
         onClick={toggle}
         aria-label={open ? "Fechar chat" : "Abrir chat"}
+        style={{ bottom: 'calc(env(safe-area-inset-bottom, 0px) + 1.5rem)' }}
         className={cn(
-          "fixed bottom-6 right-6 z-50 flex h-14 w-14 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-lg transition-all hover:scale-105 hover:brightness-110",
+          "fixed right-4 sm:right-6 z-50 flex h-14 w-14 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-lg transition-all hover:scale-105 hover:brightness-110",
           open && "rotate-90"
         )}
       >
@@ -303,7 +304,10 @@ export function ChatWidget() {
 
       {/* Panel */}
       {open && (
-        <div className="fixed bottom-24 right-6 z-50 flex h-[34rem] w-[calc(100vw-3rem)] max-w-sm flex-col overflow-hidden rounded-2xl border border-border bg-card shadow-2xl animate-in fade-in slide-in-from-bottom-4">
+        <div
+          className="fixed inset-x-2 bottom-2 top-2 z-50 flex flex-col overflow-hidden rounded-2xl border border-border bg-card shadow-2xl animate-in fade-in slide-in-from-bottom-4 sm:inset-auto sm:bottom-24 sm:right-6 sm:top-auto sm:h-[34rem] sm:w-[calc(100vw-3rem)] sm:max-w-sm"
+          style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
+        >
           <div className="flex items-center gap-3 border-b border-border bg-primary px-4 py-3 text-primary-foreground">
             <div className="flex h-9 w-9 items-center justify-center rounded-full bg-primary-foreground/20">
               <MessageCircle className="h-5 w-5" />
