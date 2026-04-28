@@ -102,6 +102,9 @@ export function ChatWidget() {
   const [handoffError, setHandoffError] = useState<string | null>(null);
   const [handoffLoading, setHandoffLoading] = useState(false);
   const [whatsappUrl, setWhatsappUrl] = useState<string | null>(null);
+  const [whatsappPhone, setWhatsappPhone] = useState<string>("5521982126467");
+  const [whatsappText, setWhatsappText] = useState<string>("");
+  const [copyFeedback, setCopyFeedback] = useState<string | null>(null);
 
   const scrollRef = useRef<HTMLDivElement>(null);
 
