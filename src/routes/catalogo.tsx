@@ -77,10 +77,14 @@ function CatalogPage() {
       if (search.shipping === 'free') {
         query = query.gte('price', FREE_SHIPPING_THRESHOLD);
       }
+      if (search.sort === 'best_sellers') {
+        // Sem histórico de vendas: tratamos "destaques" como produtos marcados featured.
+        query = query.eq('featured', true);
+      }
       if (search.sort === 'price_asc') query = query.order('price', { ascending: true });
       else if (search.sort === 'price_desc') query = query.order('price', { ascending: false });
       else if (search.sort === 'newest') query = query.order('created_at', { ascending: false });
-      else if (search.sort === 'best_sellers') query = query.order('featured', { ascending: false }).order('updated_at', { ascending: false });
+      else if (search.sort === 'best_sellers') query = query.order('updated_at', { ascending: false });
       else query = query.order('featured', { ascending: false }).order('created_at', { ascending: false });
       const { data, error, count } = await query.range(from, to);
       if (error) throw error;
@@ -234,7 +238,20 @@ function CatalogPage() {
                 {Array.from({ length: 8 }).map((_, i) => <ProductCardSkeleton key={i} />)}
               </div>
             ) : filtered.length === 0 ? (
-              <div className="text-center py-16 text-muted-foreground"><p>{search.oferta ? 'Nenhuma oferta disponível no momento.' : 'Nenhum produto encontrado.'}</p></div>
+              <div className="text-center py-16 text-muted-foreground space-y-3">
+                <p>
+                  {search.oferta
+                    ? 'Nenhuma oferta disponível no momento. Volte em breve!'
+                    : search.shipping === 'free'
+                    ? `Nenhum produto elegível a frete grátis no momento (a partir de ${formatBRL(FREE_SHIPPING_THRESHOLD)}).`
+                    : search.sort === 'best_sellers'
+                    ? 'Nenhum produto em destaque no momento.'
+                    : 'Nenhum produto encontrado.'}
+                </p>
+                {(search.oferta || search.shipping === 'free' || search.sort === 'best_sellers') && (
+                  <Button variant="outline" size="sm" onClick={clearFilters}>Ver todo o catálogo</Button>
+                )}
+              </div>
             ) : (
               <>
                 <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
