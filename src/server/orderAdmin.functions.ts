@@ -338,6 +338,11 @@ export const addOrderNote = createServerFn({ method: 'POST' })
       description: data.note,
       createdBy: adminUserId,
     });
+    await logAdminAction({
+      adminId: adminUserId, action: 'note', resourceType: 'order',
+      resourceId: data.orderId, description: 'Adicionou nota ao pedido',
+      after: { note: data.note },
+    });
     return { ok: true as const };
   });
 
@@ -374,6 +379,13 @@ export const resendOrderEmail = createServerFn({ method: 'POST' })
         : `Falha ao reenviar e-mail "${data.type}": ${result.error ?? result.skipped ?? 'erro'}`,
       metadata: { email_type: data.type, skipped: result.skipped ?? null },
       createdBy: adminUserId,
+    });
+
+    await logAdminAction({
+      adminId: adminUserId, action: 'resend_email', resourceType: 'order',
+      resourceId: data.orderId,
+      description: `Reenviou e-mail "${data.type}" (${result.ok ? 'sucesso' : 'falha'})`,
+      after: { email_type: data.type, ok: result.ok, error: result.error ?? null },
     });
 
     return { ok: result.ok, error: result.error, skipped: result.skipped };

@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { supabaseAdmin } from '@/integrations/supabase/client.server';
 import { requireAdmin } from '@/integrations/supabase/admin-middleware';
 import { enforceRateLimit, getClientIdentifier } from '@/server/security/rateLimit';
+import { logAdminAction } from '@/server/security/auditLog';
 
 // ============================================================
 // PUBLIC: Company settings (single record) - read only
@@ -137,10 +138,11 @@ export const adminGetCompanySettings = createServerFn({ method: 'POST' })
 export const adminUpdateCompanySettings = createServerFn({ method: 'POST' })
   .middleware([requireAdmin])
   .inputValidator(companyUpdateSchema)
-  .handler(async ({ data }) => {
+  .handler(async ({ data, context }) => {
+    const adminId = (context as { adminUserId: string }).adminUserId;
     const { data: existing } = await supabaseAdmin
       .from('company_settings')
-      .select('id')
+      .select('*')
       .order('created_at', { ascending: true })
       .limit(1)
       .maybeSingle();
@@ -152,10 +154,19 @@ export const adminUpdateCompanySettings = createServerFn({ method: 'POST' })
     if (existing?.id) {
       const { error } = await supabaseAdmin.from('company_settings').update(payload).eq('id', existing.id);
       if (error) throw new Error(error.message);
+      await logAdminAction({
+        adminId, action: 'update', resourceType: 'company_settings',
+        resourceId: existing.id, description: 'Atualizou dados da empresa',
+        before: existing, after: payload,
+      });
       return { ok: true };
     }
     const { error } = await supabaseAdmin.from('company_settings').insert(payload);
     if (error) throw new Error(error.message);
+    await logAdminAction({
+      adminId, action: 'create', resourceType: 'company_settings',
+      description: 'Criou registro de dados da empresa', after: payload,
+    });
     return { ok: true };
   });
 
@@ -224,8 +235,15 @@ export const adminSaveInstitutionalPage = createServerFn({ method: 'POST' })
       published_at: data.status === 'published' ? new Date().toISOString() : null,
     };
     if (data.id) {
+      const { data: before } = await supabaseAdmin
+        .from('institutional_pages').select('*').eq('id', data.id).maybeSingle();
       const { error } = await supabaseAdmin.from('institutional_pages').update(payload).eq('id', data.id);
       if (error) throw new Error(error.message);
+      await logAdminAction({
+        adminId: userId, action: 'update', resourceType: 'institutional_page',
+        resourceId: data.id, description: `Atualizou página "${data.title}"`,
+        before, after: payload,
+      });
       return { ok: true, id: data.id };
     }
     const { data: inserted, error } = await supabaseAdmin
@@ -234,21 +252,32 @@ export const adminSaveInstitutionalPage = createServerFn({ method: 'POST' })
       .select('id')
       .single();
     if (error) throw new Error(error.message);
+    await logAdminAction({
+      adminId: userId, action: 'create', resourceType: 'institutional_page',
+      resourceId: inserted.id, description: `Criou página "${data.title}"`,
+      after: payload,
+    });
     return { ok: true, id: inserted.id };
   });
 
 export const adminDeleteInstitutionalPage = createServerFn({ method: 'POST' })
   .middleware([requireAdmin])
   .inputValidator(z.object({ id: z.string().uuid() }))
-  .handler(async ({ data }) => {
+  .handler(async ({ data, context }) => {
+    const adminId = (context as { adminUserId: string }).adminUserId;
     const { data: page } = await supabaseAdmin
       .from('institutional_pages')
-      .select('is_required')
+      .select('*')
       .eq('id', data.id)
       .maybeSingle();
     if (page?.is_required) throw new Error('Esta página é obrigatória e não pode ser excluída. Arquive-a.');
     const { error } = await supabaseAdmin.from('institutional_pages').delete().eq('id', data.id);
     if (error) throw new Error(error.message);
+    await logAdminAction({
+      adminId, action: 'delete', resourceType: 'institutional_page',
+      resourceId: data.id, description: `Excluiu página "${page?.title ?? data.id}"`,
+      before: page,
+    });
     return { ok: true };
   });
 
@@ -273,11 +302,17 @@ export const adminUpdateContactMessageStatus = createServerFn({ method: 'POST' }
     id: z.string().uuid(),
     status: z.enum(['new', 'read', 'answered', 'archived']),
   }))
-  .handler(async ({ data }) => {
+  .handler(async ({ data, context }) => {
+    const adminId = (context as { adminUserId: string }).adminUserId;
     const { error } = await supabaseAdmin
       .from('contact_messages')
       .update({ status: data.status })
       .eq('id', data.id);
     if (error) throw new Error(error.message);
+    await logAdminAction({
+      adminId, action: 'update', resourceType: 'contact_message',
+      resourceId: data.id, description: `Marcou mensagem como "${data.status}"`,
+      after: { status: data.status },
+    });
     return { ok: true };
   });
