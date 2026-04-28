@@ -235,8 +235,15 @@ export const adminSaveInstitutionalPage = createServerFn({ method: 'POST' })
       published_at: data.status === 'published' ? new Date().toISOString() : null,
     };
     if (data.id) {
+      const { data: before } = await supabaseAdmin
+        .from('institutional_pages').select('*').eq('id', data.id).maybeSingle();
       const { error } = await supabaseAdmin.from('institutional_pages').update(payload).eq('id', data.id);
       if (error) throw new Error(error.message);
+      await logAdminAction({
+        adminId: userId, action: 'update', resourceType: 'institutional_page',
+        resourceId: data.id, description: `Atualizou página "${data.title}"`,
+        before, after: payload,
+      });
       return { ok: true, id: data.id };
     }
     const { data: inserted, error } = await supabaseAdmin
@@ -245,21 +252,32 @@ export const adminSaveInstitutionalPage = createServerFn({ method: 'POST' })
       .select('id')
       .single();
     if (error) throw new Error(error.message);
+    await logAdminAction({
+      adminId: userId, action: 'create', resourceType: 'institutional_page',
+      resourceId: inserted.id, description: `Criou página "${data.title}"`,
+      after: payload,
+    });
     return { ok: true, id: inserted.id };
   });
 
 export const adminDeleteInstitutionalPage = createServerFn({ method: 'POST' })
   .middleware([requireAdmin])
   .inputValidator(z.object({ id: z.string().uuid() }))
-  .handler(async ({ data }) => {
+  .handler(async ({ data, context }) => {
+    const adminId = (context as { adminUserId: string }).adminUserId;
     const { data: page } = await supabaseAdmin
       .from('institutional_pages')
-      .select('is_required')
+      .select('*')
       .eq('id', data.id)
       .maybeSingle();
     if (page?.is_required) throw new Error('Esta página é obrigatória e não pode ser excluída. Arquive-a.');
     const { error } = await supabaseAdmin.from('institutional_pages').delete().eq('id', data.id);
     if (error) throw new Error(error.message);
+    await logAdminAction({
+      adminId, action: 'delete', resourceType: 'institutional_page',
+      resourceId: data.id, description: `Excluiu página "${page?.title ?? data.id}"`,
+      before: page,
+    });
     return { ok: true };
   });
 
