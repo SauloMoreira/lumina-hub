@@ -66,6 +66,11 @@ const contactSchema = z.object({
 export const submitContactMessage = createServerFn({ method: 'POST' })
   .inputValidator(contactSchema)
   .handler(async ({ data }) => {
+    const ip = getClientIdentifier();
+    // Rate limit por IP e por e-mail (qualquer um que estoure bloqueia)
+    await enforceRateLimit(`ip:${ip}`, 'contact');
+    await enforceRateLimit(`email:${data.email.toLowerCase()}`, 'contact');
+
     const { error } = await supabaseAdmin.from('contact_messages').insert({
       name: data.name,
       email: data.email,
