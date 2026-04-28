@@ -1,4 +1,46 @@
 import { createServerFn } from '@tanstack/react-start';
+import { requireAdmin } from '@/integrations/supabase/admin-middleware';
+
+/**
+ * Allowlist de hosts confiáveis para fetchExternalImage.
+ * Mantém-se restrito a CDNs conhecidas usadas no fluxo de cadastro de produtos
+ * (Cosmos/Bluesoft + grandes provedores de imagem). Bloqueia SSRF para
+ * 127.x, 10.x, 192.168.x, 169.254.x, ::1 etc.
+ */
+const ALLOWED_IMAGE_HOSTS: readonly RegExp[] = [
+  /(^|\.)cosmos\.bluesoft\.com\.br$/i,
+  /(^|\.)bluesoft\.com\.br$/i,
+  /(^|\.)akamaihd\.net$/i,
+  /(^|\.)cloudfront\.net$/i,
+  /(^|\.)googleusercontent\.com$/i,
+  /(^|\.)gstatic\.com$/i,
+  /(^|\.)mlstatic\.com$/i,
+  /(^|\.)amazonaws\.com$/i,
+  /(^|\.)imgur\.com$/i,
+];
+
+function isPrivateHostname(host: string): boolean {
+  const h = host.toLowerCase();
+  if (h === 'localhost' || h.endsWith('.localhost') || h.endsWith('.local')) return true;
+  // IPv4 literais privados / loopback / link-local / metadata
+  if (/^127\./.test(h)) return true;
+  if (/^10\./.test(h)) return true;
+  if (/^192\.168\./.test(h)) return true;
+  if (/^169\.254\./.test(h)) return true; // inclui 169.254.169.254 (cloud metadata)
+  if (/^172\.(1[6-9]|2\d|3[01])\./.test(h)) return true;
+  if (/^0\./.test(h)) return true;
+  // IPv6 loopback / link-local / unique local
+  if (h === '::1' || h === '[::1]') return true;
+  if (h.startsWith('fe80:') || h.startsWith('[fe80:')) return true;
+  if (h.startsWith('fc') || h.startsWith('fd')) return true;
+  return false;
+}
+
+function isAllowedImageHost(host: string): boolean {
+  if (isPrivateHostname(host)) return false;
+  return ALLOWED_IMAGE_HOSTS.some((re) => re.test(host));
+}
+
 
 export type BarcodeLookupResult = {
   ok: boolean;
@@ -148,6 +190,7 @@ async function callAI(prompt: string, system: string) {
 }
 
 export const lookupBarcode = createServerFn({ method: 'POST' })
+  .middleware([requireAdmin])
   .inputValidator((input: { barcode: string; categoriesAvailable?: string[] }) => input)
   .handler(async ({ data }): Promise<BarcodeLookupResult> => {
     const code = sanitizeBarcode(data.barcode);
@@ -318,29 +361,53 @@ function emptySuggestion(): BarcodeLookupResult['suggested'] {
  * Usado pelo ProductImageManager.addExternalImages.
  */
 export const fetchExternalImage = createServerFn({ method: 'POST' })
+  .middleware([requireAdmin])
   .inputValidator((input: { url: string }) => input)
   .handler(async ({ data }) => {
-    const url = (data.url ?? '').trim();
-    if (!/^https?:\/\//i.test(url)) {
+    const raw = (data.url ?? '').trim();
+    let parsed: URL;
+    try {
+      parsed = new URL(raw);
+    } catch {
       throw new Error('URL inválida');
     }
-    const res = await fetch(url, {
-      headers: { 'User-Agent': 'Mozilla/5.0 (compatible; LedMarica-Importer/1.0)' },
-    });
-    if (!res.ok) throw new Error(`Falha ao baixar imagem (${res.status})`);
-    const contentType = res.headers.get('content-type') || 'image/jpeg';
-    if (!contentType.startsWith('image/')) throw new Error('URL não é uma imagem');
-    const buf = await res.arrayBuffer();
-    if (buf.byteLength > 10 * 1024 * 1024) throw new Error('Imagem maior que 10MB');
-    // base64 para devolver pelo JSON do server fn
-    const base64 = btoa(String.fromCharCode(...new Uint8Array(buf)));
-    return { base64, contentType, size: buf.byteLength };
+    if (parsed.protocol !== 'https:' && parsed.protocol !== 'http:') {
+      throw new Error('Protocolo não permitido');
+    }
+    // Bloqueia SSRF: hosts privados, loopback, metadata e tudo fora da allowlist
+    if (!isAllowedImageHost(parsed.hostname)) {
+      throw new Error(`Host de imagem não permitido: ${parsed.hostname}`);
+    }
+    // Em produção, exigir HTTPS
+    if (process.env.NODE_ENV === 'production' && parsed.protocol !== 'https:') {
+      throw new Error('Em produção apenas HTTPS é permitido');
+    }
+
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 15_000);
+    try {
+      const res = await fetch(parsed.toString(), {
+        headers: { 'User-Agent': 'Mozilla/5.0 (compatible; LedMarica-Importer/1.0)' },
+        redirect: 'follow',
+        signal: controller.signal,
+      });
+      if (!res.ok) throw new Error(`Falha ao baixar imagem (${res.status})`);
+      const contentType = res.headers.get('content-type') || 'image/jpeg';
+      if (!contentType.startsWith('image/')) throw new Error('URL não é uma imagem');
+      const buf = await res.arrayBuffer();
+      if (buf.byteLength > 10 * 1024 * 1024) throw new Error('Imagem maior que 10MB');
+      const base64 = btoa(String.fromCharCode(...new Uint8Array(buf)));
+      return { base64, contentType, size: buf.byteLength };
+    } finally {
+      clearTimeout(timeout);
+    }
   });
 
 /**
  * Gera uma imagem do produto usando Lovable AI (Gemini image preview).
  */
 export const generateProductImage = createServerFn({ method: 'POST' })
+  .middleware([requireAdmin])
   .inputValidator((input: { name: string; brand?: string | null; category?: string | null; extraHint?: string | null }) => input)
   .handler(async ({ data }) => {
     const apiKey = process.env.LOVABLE_API_KEY;
