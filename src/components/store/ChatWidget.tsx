@@ -24,7 +24,11 @@ const HUMAN_TRIGGERS = [
   "atendente",
   "vendedor",
   "vendedora",
-  "pessoa",
+  "consultor",
+  "consultora",
+  "pessoa de verdade",
+  "alguém da equipe",
+  "alguem da equipe",
   "whatsapp",
   "whats",
   "zap",
@@ -32,11 +36,31 @@ const HUMAN_TRIGGERS = [
   "falar com alguem",
   "atendimento humano",
   "quero falar",
+  "conectar com atendente",
+  "conectar com um atendente",
+  "conectar com humano",
+  "transferir",
+  "encaminhar para atendimento",
+];
+
+// Frases que a IA pode soltar pedindo dados de contato em texto livre.
+// Quando detectadas, abrimos o formulário inline automaticamente.
+const AI_ASKS_CONTACT_PATTERNS: RegExp[] = [
+  /informe seu\s+(nome|telefone|whatsapp|e-?mail)/i,
+  /me passa(r)?\s+seu\s+(nome|telefone|whatsapp|e-?mail)/i,
+  /me informe\s+seu\s+(nome|telefone|whatsapp|e-?mail)/i,
+  /seu\s+nome.*(telefone|whatsapp|e-?mail)/i,
+  /(nome|telefone|whatsapp).*para que.*(equipe|atendente|contato)/i,
+  /conectar (com|com um|você com).*(atendente|humano)/i,
 ];
 
 function detectHumanRequest(text: string): boolean {
   const t = text.toLowerCase();
   return HUMAN_TRIGGERS.some((k) => t.includes(k));
+}
+
+function aiAskedForContact(text: string): boolean {
+  return AI_ASKS_CONTACT_PATTERNS.some((re) => re.test(text));
 }
 
 function formatPhoneBR(value: string): string {
@@ -241,6 +265,11 @@ export function ChatWidget() {
         setMessages((p) => [...p, { role: "assistant", content: res.reply }]);
         if ((res as { leadCaptured?: boolean }).leadCaptured) {
           trackLeadCaptured("chat");
+        }
+        // Se a IA acabou pedindo nome/telefone/email em texto, abre o formulário inline
+        if (handoffStep === "idle" && aiAskedForContact(res.reply || "")) {
+          setHandoffStep("form");
+          setHandoffError(null);
         }
       }
     } catch (e) {
