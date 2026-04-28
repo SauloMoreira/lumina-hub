@@ -119,8 +119,11 @@ function CheckoutPage() {
     setShippingLoading(true);
     try {
       const weight = cart.items.reduce((s, i) => s + i.qty * 0.5, 0);
+      const eligibleSubtotal = cart.items
+        .filter((i) => i.freeShippingEligible)
+        .reduce((s, i) => s + i.price * i.qty, 0);
       const r = await calculateShipping({
-        data: { zipCode: cleanZip, subtotal, weightKg: Math.max(0.5, weight) },
+        data: { zipCode: cleanZip, subtotal, weightKg: Math.max(0.5, weight), eligibleSubtotal },
       });
       if ('error' in r && r.error) {
         toast.error(r.error);
