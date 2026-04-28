@@ -27,8 +27,8 @@ export function Footer() {
         }}
       />
 
-      <div className="container mx-auto px-4 py-16">
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-10">
+      <div className="container mx-auto px-4 py-12 md:py-16">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-6 md:gap-10">
           {/* Marca */}
           <div className="col-span-2 md:col-span-1">
             <div className="bg-white/95 rounded-xl p-3 inline-block mb-5 shadow-lg shadow-black/20 ring-1 ring-white/10">

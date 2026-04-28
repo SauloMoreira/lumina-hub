@@ -226,7 +226,7 @@ function ProductPage() {
           <span className="text-foreground line-clamp-1">{product.name}</span>
         </nav>
 
-        <div className="grid lg:grid-cols-[minmax(0,1fr)_360px] xl:grid-cols-[minmax(0,1fr)_400px] gap-8">
+        <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_360px] xl:grid-cols-[minmax(0,1fr)_400px] gap-6 lg:gap-8">
           {/* COLUNA ESQUERDA: GALERIA */}
           <div>
             <ProductGallery images={productImages} productName={product.name} />
@@ -256,9 +256,9 @@ function ProductPage() {
                   <span className="ml-2 text-destructive font-semibold">-{discountPct}%</span>
                 </div>
               )}
-              <div className="flex items-baseline gap-2">
+              <div className="flex items-baseline gap-2 flex-wrap">
                 <span className="text-[15px] text-destructive font-medium">R$</span>
-                <span className="font-display font-extrabold text-foreground text-4xl leading-none">
+                <span className="font-display font-extrabold text-foreground text-3xl sm:text-4xl leading-none break-all">
                   {finalPrice.toFixed(2).replace('.', ',')}
                 </span>
               </div>

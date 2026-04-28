@@ -142,9 +142,9 @@ function CatalogPage() {
   return (
     <StoreLayout>
       <div className="bg-card border-b border-border">
-        <div className="container mx-auto px-4 py-8">
+        <div className="container mx-auto px-4 py-6 sm:py-8">
           <div className="label-meta mb-2">Catálogo</div>
-          <h1 className="font-display font-bold text-3xl tracking-tight mb-2">{pageTitle}</h1>
+          <h1 className="font-display font-bold text-2xl sm:text-3xl tracking-tight mb-2 break-words">{pageTitle}</h1>
           {pageSubtitle && <p className="text-sm text-muted-foreground mb-4">{pageSubtitle}</p>}
 
           {search.shipping === 'free' && (
@@ -267,7 +267,7 @@ function CatalogPage() {
             </div>
 
             {isLoading ? (
-              <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-2.5 sm:gap-4">
                 {Array.from({ length: 8 }).map((_, i) => <ProductCardSkeleton key={i} />)}
               </div>
             ) : filtered.length === 0 ? (
@@ -287,7 +287,7 @@ function CatalogPage() {
               </div>
             ) : (
               <>
-                <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-2.5 sm:gap-4">
                   {filtered.map((p, i) => <ProductCard key={p.id} product={p} index={i} />)}
                 </div>
 
