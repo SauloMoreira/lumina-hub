@@ -77,10 +77,14 @@ function CatalogPage() {
       if (search.shipping === 'free') {
         query = query.gte('price', FREE_SHIPPING_THRESHOLD);
       }
+      if (search.sort === 'best_sellers') {
+        // Sem histórico de vendas: tratamos "destaques" como produtos marcados featured.
+        query = query.eq('featured', true);
+      }
       if (search.sort === 'price_asc') query = query.order('price', { ascending: true });
       else if (search.sort === 'price_desc') query = query.order('price', { ascending: false });
       else if (search.sort === 'newest') query = query.order('created_at', { ascending: false });
-      else if (search.sort === 'best_sellers') query = query.order('featured', { ascending: false }).order('updated_at', { ascending: false });
+      else if (search.sort === 'best_sellers') query = query.order('updated_at', { ascending: false });
       else query = query.order('featured', { ascending: false }).order('created_at', { ascending: false });
       const { data, error, count } = await query.range(from, to);
       if (error) throw error;
