@@ -235,30 +235,30 @@ function CheckoutPage() {
         </Link>
 
         {/* Stepper */}
-        <div className="flex items-center justify-center mb-8 gap-2 sm:gap-6">
+        <div className="flex items-center justify-center mb-8 gap-1.5 sm:gap-6 flex-wrap">
           {[
             { n: 1, label: 'Endereço', icon: MapPin },
             { n: 2, label: 'Frete', icon: Truck },
             { n: 3, label: 'Pagamento', icon: CreditCard },
           ].map((s, idx) => (
-            <div key={s.n} className="flex items-center gap-2">
+            <div key={s.n} className="flex items-center gap-1.5 sm:gap-2">
               <div
-                className={`w-9 h-9 rounded-full flex items-center justify-center text-sm font-semibold transition-colors ${
+                className={`w-8 h-8 sm:w-9 sm:h-9 rounded-full flex items-center justify-center text-sm font-semibold transition-colors shrink-0 ${
                   step >= s.n ? 'bg-primary text-primary-foreground' : 'bg-surface text-text-faint'
                 }`}
               >
                 {step > s.n ? <Check className="w-4 h-4" /> : <s.icon className="w-4 h-4" />}
               </div>
-              <span className={`text-sm font-medium hidden sm:inline ${step >= s.n ? 'text-foreground' : 'text-muted-foreground'}`}>
+              <span className={`text-xs sm:text-sm font-medium hidden sm:inline ${step >= s.n ? 'text-foreground' : 'text-muted-foreground'}`}>
                 {s.label}
               </span>
-              {idx < 2 && <div className="w-6 sm:w-12 h-px bg-border mx-1" />}
+              {idx < 2 && <div className="w-4 sm:w-12 h-px bg-border mx-0.5 sm:mx-1" />}
             </div>
           ))}
         </div>
 
         <div className="grid lg:grid-cols-3 gap-6">
-          <div className="lg:col-span-2 bg-card border border-border rounded-xl p-6">
+          <div className="lg:col-span-2 bg-card border border-border rounded-xl p-4 sm:p-6">
             {step === 1 && (
               <>
                 <h2 className="font-display font-bold text-xl mb-5">Endereço de entrega</h2>

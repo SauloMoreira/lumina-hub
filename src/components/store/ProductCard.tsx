@@ -60,24 +60,24 @@ export function ProductCard({ product, index = 0 }: { product: Product; index?: 
             </span>
           )}
         </div>
-        <div className="p-4">
+        <div className="p-2.5 sm:p-4">
           {product.brand && (
-            <div className="text-[10px] uppercase tracking-widest text-muted-foreground font-medium mb-1">{product.brand}</div>
+            <div className="text-[10px] uppercase tracking-widest text-muted-foreground font-medium mb-1 truncate">{product.brand}</div>
           )}
-          <h3 className="text-sm font-medium text-foreground line-clamp-2 leading-snug mb-3 min-h-[2.5rem]">
+          <h3 className="text-xs sm:text-sm font-medium text-foreground line-clamp-2 leading-snug mb-2 sm:mb-3 min-h-[2.25rem] sm:min-h-[2.5rem] break-words">
             {product.name}
           </h3>
-          <div className="flex items-end justify-between gap-2">
-            <div>
+          <div className="flex items-end justify-between gap-1.5 sm:gap-2">
+            <div className="min-w-0">
               {hasDiscount && (
-                <div className="text-xs text-muted-foreground line-through leading-none mb-0.5">{formatBRL(product.price)}</div>
+                <div className="text-[10px] sm:text-xs text-muted-foreground line-through leading-none mb-0.5 truncate">{formatBRL(product.price)}</div>
               )}
-              <div className="font-display font-extrabold text-primary text-lg leading-none">{formatBRL(finalPrice)}</div>
+              <div className="font-display font-extrabold text-primary text-base sm:text-lg leading-none truncate">{formatBRL(finalPrice)}</div>
             </div>
             <button
               onClick={handleAdd}
               disabled={product.stock_qty === 0}
-              className="w-9 h-9 rounded-md bg-primary text-primary-foreground hover:brightness-110 transition-all flex items-center justify-center disabled:opacity-40 disabled:cursor-not-allowed shadow-primary"
+              className="w-9 h-9 rounded-md bg-primary text-primary-foreground hover:brightness-110 transition-all flex items-center justify-center disabled:opacity-40 disabled:cursor-not-allowed shadow-primary shrink-0"
               aria-label="Adicionar ao carrinho"
             >
               <ShoppingCart className="w-4 h-4" />
@@ -90,7 +90,7 @@ export function ProductCard({ product, index = 0 }: { product: Product; index?: 
             <div className="text-[10px] text-destructive font-medium mt-2">Esgotado</div>
           )}
           {product.free_shipping_eligible && product.stock_qty > 0 && (
-            <div className="text-[10px] text-success font-medium mt-2">🚚 Frete grátis acima de R$ 199,00</div>
+            <div className="text-[10px] text-success font-medium mt-2 leading-tight">🚚 Frete grátis acima de R$ 199,00</div>
           )}
         </div>
       </Link>
