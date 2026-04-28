@@ -131,8 +131,6 @@ function CatalogPage() {
 
   const pageSubtitle = search.oferta
     ? 'Produtos com desconto ativo'
-    : search.shipping === 'free'
-    ? `Frete grátis para compras acima de ${formatBRL(FREE_SHIPPING_THRESHOLD)} em produtos participantes.`
     : search.sort === 'best_sellers'
     ? 'Os produtos mais procurados pelos nossos clientes.'
     : null;
@@ -148,6 +146,32 @@ function CatalogPage() {
           <div className="label-meta mb-2">Catálogo</div>
           <h1 className="font-display font-bold text-3xl tracking-tight mb-2">{pageTitle}</h1>
           {pageSubtitle && <p className="text-sm text-muted-foreground mb-4">{pageSubtitle}</p>}
+
+          {search.shipping === 'free' && (
+            <div
+              role="note"
+              aria-label="Regra da promoção de frete grátis"
+              className="mb-4 flex items-start gap-3 rounded-xl border border-primary/20 bg-primary/5 p-4 sm:p-5 shadow-sm"
+            >
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary">
+                <Truck className="h-5 w-5" aria-hidden="true" />
+              </div>
+              <div className="min-w-0 flex-1">
+                <p className="text-sm sm:text-base text-foreground leading-snug">
+                  Frete grátis para compras acima de{' '}
+                  <strong className="font-semibold text-primary">{formatBRL(FREE_SHIPPING_THRESHOLD)}</strong>{' '}
+                  em{' '}
+                  <span className="inline-flex items-center rounded-md bg-primary/10 px-1.5 py-0.5 text-xs font-medium text-primary align-baseline">
+                    produtos participantes
+                  </span>
+                  .
+                </p>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  A promoção é aplicada automaticamente no carrinho quando a regra for atendida.
+                </p>
+              </div>
+            </div>
+          )}
 
           {hasActiveFilters && (
             <div className="flex flex-wrap items-center gap-2 mb-4">
