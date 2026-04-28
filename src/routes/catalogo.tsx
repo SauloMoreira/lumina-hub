@@ -238,7 +238,20 @@ function CatalogPage() {
                 {Array.from({ length: 8 }).map((_, i) => <ProductCardSkeleton key={i} />)}
               </div>
             ) : filtered.length === 0 ? (
-              <div className="text-center py-16 text-muted-foreground"><p>{search.oferta ? 'Nenhuma oferta disponível no momento.' : 'Nenhum produto encontrado.'}</p></div>
+              <div className="text-center py-16 text-muted-foreground space-y-3">
+                <p>
+                  {search.oferta
+                    ? 'Nenhuma oferta disponível no momento. Volte em breve!'
+                    : search.shipping === 'free'
+                    ? `Nenhum produto elegível a frete grátis no momento (a partir de ${formatBRL(FREE_SHIPPING_THRESHOLD)}).`
+                    : search.sort === 'best_sellers'
+                    ? 'Nenhum produto em destaque no momento.'
+                    : 'Nenhum produto encontrado.'}
+                </p>
+                {(search.oferta || search.shipping === 'free' || search.sort === 'best_sellers') && (
+                  <Button variant="outline" size="sm" onClick={clearFilters}>Ver todo o catálogo</Button>
+                )}
+              </div>
             ) : (
               <>
                 <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
