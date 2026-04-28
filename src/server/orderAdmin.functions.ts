@@ -1,6 +1,6 @@
 import { createServerFn } from '@tanstack/react-start';
 import { z } from 'zod';
-import { requireAdmin } from '@/integrations/supabase/admin-middleware';
+import { requireAdmin, requireAdminMfaSoft } from '@/integrations/supabase/admin-middleware';
 import { supabaseAdmin } from '@/integrations/supabase/client.server';
 import { sendOrderEmail } from './email/orderEmails';
 import { logAdminAction } from './security/auditLog';
