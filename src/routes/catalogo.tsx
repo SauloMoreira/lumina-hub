@@ -234,7 +234,7 @@ function CatalogPage() {
                 {Array.from({ length: 8 }).map((_, i) => <ProductCardSkeleton key={i} />)}
               </div>
             ) : filtered.length === 0 ? (
-              <div className="text-center py-16 text-muted-foreground"><p>Nenhum produto encontrado.</p></div>
+              <div className="text-center py-16 text-muted-foreground"><p>{search.oferta ? 'Nenhuma oferta disponível no momento.' : 'Nenhum produto encontrado.'}</p></div>
             ) : (
               <>
                 <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
