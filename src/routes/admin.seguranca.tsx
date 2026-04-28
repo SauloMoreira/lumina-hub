@@ -1,15 +1,17 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { useQuery } from '@tanstack/react-query';
+import { useState } from 'react';
+import { toast } from 'sonner';
 import {
   Shield, ShieldAlert, ShieldCheck, AlertTriangle, Activity,
-  Webhook, KeyRound, Users, RefreshCw, ScrollText,
+  Webhook, KeyRound, Users, RefreshCw, ScrollText, Download, Ban,
 } from 'lucide-react';
 
 import { AdminLayout } from '@/components/admin/AdminLayout';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { getSecurityOverview, listAdminAuditLog } from '@/server/security.functions';
+import { getSecurityOverview, listAdminAuditLog, exportAdminAuditCsv } from '@/server/security.functions';
 
 export const Route = createFileRoute('/admin/seguranca')({
   component: AdminSecurityPage,
