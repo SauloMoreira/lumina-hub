@@ -222,10 +222,11 @@ export function ChatWidget() {
       ]);
     } catch (e: any) {
       // Mesmo com erro, tenta gerar link com os dados informados
-      const fallbackText = encodeURIComponent(
-        `Olá! Vim pelo site e gostaria de atendimento humano.\n\nMeu nome: ${trimmedName}\nMeu telefone: 55${digits}`
-      );
-      setWhatsappUrl(`https://web.whatsapp.com/send?phone=5521982126467&text=${fallbackText}`);
+      const fallbackPhone = "5521982126467";
+      const fallbackPlain = `Olá! Vim pelo site e gostaria de atendimento humano.\n\nMeu nome: ${trimmedName}\nMeu telefone: 55${digits}`;
+      setWhatsappPhone(fallbackPhone);
+      setWhatsappText(fallbackPlain);
+      setWhatsappUrl(`https://wa.me/${fallbackPhone}?text=${encodeURIComponent(fallbackPlain)}`);
       setHandoffStep("ready");
       setMessages((p) => [
         ...p,
