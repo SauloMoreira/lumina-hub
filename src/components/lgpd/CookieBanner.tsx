@@ -58,14 +58,14 @@ export function CookieBanner() {
       role="dialog"
       aria-label="Consentimento de cookies"
       aria-busy={disabled}
-      className="fixed bottom-0 left-0 right-0 z-[70] bg-card border-t border-border shadow-2xl transition-transform duration-200 ease-out"
+      className="fixed bottom-3 left-3 right-3 z-[70] mx-auto max-w-5xl rounded-lg bg-card border border-border shadow-2xl transition-transform duration-150 ease-out md:bottom-5 md:left-5 md:right-5"
       style={{
         animation: closing ? undefined : 'lm-slideUp .35s cubic-bezier(.16,1,.3,1)',
-        transform: closing ? 'translateY(100%)' : 'translateY(0)',
+        transform: closing ? 'translateY(calc(100% + 24px))' : 'translateY(0)',
         pointerEvents: closing ? 'none' : 'auto',
       }}
     >
-      <div className="container mx-auto px-4 py-5 grid lg:grid-cols-[1fr_auto] gap-5 items-center">
+      <div className="px-4 py-4 grid lg:grid-cols-[1fr_auto] gap-4 items-center">
         <div className="space-y-2">
           <div className="flex items-center gap-2">
             <Cookie className="w-5 h-5 text-primary" />
@@ -124,7 +124,7 @@ export function CookieBanner() {
       </div>
 
       <style>{`
-        @keyframes lm-slideUp { from { transform: translateY(100%) } to { transform: translateY(0) } }
+        @keyframes lm-slideUp { from { transform: translateY(calc(100% + 24px)) } to { transform: translateY(0) } }
       `}</style>
     </div>
   );
