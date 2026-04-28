@@ -1,11 +1,11 @@
 // Orquestrador idempotente de e-mails transacionais ligados a pedidos.
 // - Carrega pedido + itens + profile do cliente
 // - Verifica em email_events se já foi enviado (status='sent')
-// - Renderiza template, envia via Resend, registra em email_events
+// - Renderiza template, envia via transport (Resend hoje, Lovable Emails depois)
 // - NUNCA lança: falha de e-mail não pode quebrar fluxo de pedido/pagamento
 
 import { supabaseAdmin } from '@/integrations/supabase/client.server';
-import { sendTransactionalEmail } from './resend';
+import { sendTransactionalEmail } from './transport';
 import { buildOrderEmailTemplate, type EmailMessageType } from './templates';
 
 function getSiteUrl(): string {
