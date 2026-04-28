@@ -389,13 +389,56 @@ export function ChatWidget() {
 
             {/* Handoff: pronto */}
             {handoffStep === "ready" && whatsappUrl && (
-              <div className="flex flex-col gap-2">
+              <div className="flex flex-col gap-2 rounded-xl border border-border bg-background p-3">
                 <a href={whatsappUrl} target="_blank" rel="noopener noreferrer">
                   <Button size="sm" className="w-full bg-green-600 hover:bg-green-700 text-white">
                     <ExternalLink className="h-4 w-4 mr-2" />
                     Falar no WhatsApp
                   </Button>
                 </a>
+                <p className="text-[11px] text-muted-foreground text-center">
+                  Se o WhatsApp aparecer bloqueado no seu navegador, use uma das opções abaixo:
+                </p>
+                <div className="grid grid-cols-2 gap-2">
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={async () => {
+                      try {
+                        await navigator.clipboard.writeText(whatsappPhone);
+                        setCopyFeedback("Número copiado!");
+                        setTimeout(() => setCopyFeedback(null), 2000);
+                      } catch {
+                        setCopyFeedback("Não foi possível copiar.");
+                      }
+                    }}
+                  >
+                    Copiar número
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={async () => {
+                      try {
+                        await navigator.clipboard.writeText(whatsappText);
+                        setCopyFeedback("Mensagem copiada!");
+                        setTimeout(() => setCopyFeedback(null), 2000);
+                      } catch {
+                        setCopyFeedback("Não foi possível copiar.");
+                      }
+                    }}
+                  >
+                    Copiar mensagem
+                  </Button>
+                </div>
+                <a href={`tel:+${whatsappPhone}`} className="block">
+                  <Button size="sm" variant="outline" className="w-full">
+                    Ligar agora
+                  </Button>
+                </a>
+                {copyFeedback && (
+                  <p className="text-[11px] text-center text-primary">{copyFeedback}</p>
+                )}
                 <Button
                   size="sm"
                   variant="ghost"
@@ -404,6 +447,7 @@ export function ChatWidget() {
                     setHandoffName("");
                     setHandoffPhone("");
                     setWhatsappUrl(null);
+                    setCopyFeedback(null);
                   }}
                 >
                   Continuar conversando aqui
