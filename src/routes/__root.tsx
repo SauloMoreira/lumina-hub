@@ -126,10 +126,12 @@ export const Route = createRootRouteWithContext<MyRouterContext>()({
 
 function RootShell({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="pt-BR">
+    <html lang="pt-BR" translate="no">
       <head>
         <meta httpEquiv="Content-Security-Policy" content={CSP_POLICY} />
         <meta httpEquiv="X-Content-Type-Options" content="nosniff" />
+        <meta httpEquiv="Content-Language" content="pt-BR" />
+        <meta name="google" content="notranslate" />
         <HeadContent />
       </head>
       <body>{children}<Scripts /></body>
