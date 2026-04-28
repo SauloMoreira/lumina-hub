@@ -1,4 +1,5 @@
 import { createServerFn } from '@tanstack/react-start';
+import { requireAdmin } from '@/integrations/supabase/admin-middleware';
 
 const AI_IMAGE_URL = 'https://ai.gateway.lovable.dev/v1/chat/completions';
 
@@ -8,6 +9,7 @@ const AI_IMAGE_URL = 'https://ai.gateway.lovable.dev/v1/chat/completions';
  * em File no cliente e enviado pro bucket product-images/banners/.
  */
 export const generateBannerImage = createServerFn({ method: 'POST' })
+  .middleware([requireAdmin])
   .inputValidator((input: { title: string; subtitle?: string | null; campaignType?: string | null; extraHint?: string | null }) => input)
   .handler(async ({ data }) => {
     const apiKey = process.env.LOVABLE_API_KEY;

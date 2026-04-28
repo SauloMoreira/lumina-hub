@@ -2,6 +2,7 @@ import { createServerFn } from '@tanstack/react-start';
 import { createClient } from '@supabase/supabase-js';
 import { z } from 'zod';
 import { supabaseAdmin } from '@/integrations/supabase/client.server';
+import { requireAdmin } from '@/integrations/supabase/admin-middleware';
 import type { Database } from '@/integrations/supabase/types';
 
 const InputSchema = z.object({
@@ -73,6 +74,7 @@ async function callAiGateway(body: Record<string, unknown>) {
 
 /** Geração rápida (botão manual no admin) — sem FAQ. */
 export const improveProductSeo = createServerFn({ method: 'POST' })
+  .middleware([requireAdmin])
   .inputValidator((raw: unknown) => InputSchema.parse(raw))
   .handler(async ({ data }) => {
     try {

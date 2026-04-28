@@ -1,6 +1,7 @@
 import { createServerFn } from '@tanstack/react-start';
 import { createClient } from '@supabase/supabase-js';
 import { z } from 'zod';
+import { requireAdmin } from '@/integrations/supabase/admin-middleware';
 import type { Database } from '@/integrations/supabase/types';
 
 const InputSchema = z.object({
@@ -31,6 +32,7 @@ Para cada imagem de produto, gere:
 Regras: português brasileiro, sem aspas, sem emojis, sem pontuação no filename além de hífens.`;
 
 export const generateImageSeo = createServerFn({ method: 'POST' })
+  .middleware([requireAdmin])
   .inputValidator((raw: unknown) => InputSchema.parse(raw))
   .handler(async ({ data }) => {
     try {
