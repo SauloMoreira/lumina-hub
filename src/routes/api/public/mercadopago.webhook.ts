@@ -153,8 +153,29 @@ export const Route = createFileRoute('/api/public/mercadopago/webhook')({
         if (auditErr) console.error('[MP webhook] erro audit insert', auditErr);
         const auditId = auditRow?.id ?? null;
 
-        // 2) Validar assinatura (se secret configurado)
-        if (webhookSecret) {
+        // 2) Validar assinatura
+        // Em produção, secret é OBRIGATÓRIO — ausente => 503.
+        const isProd = process.env.NODE_ENV === 'production';
+        if (!webhookSecret) {
+          if (isProd) {
+            console.error('[MP webhook] MERCADOPAGO_WEBHOOK_SECRET ausente em produção — recusando');
+            void logSecurityEvent({
+              type: 'webhook_invalid_signature',
+              severity: 'error',
+              identifier: 'mercadopago',
+              message: 'Webhook recebido sem secret configurado em produção',
+              metadata: { auditId, dataId, type },
+            });
+            if (auditId) {
+              await supabaseAdmin
+                .from('payment_webhook_events')
+                .update({ processing_error: 'webhook secret missing in production' })
+                .eq('id', auditId);
+            }
+            return new Response('Webhook secret not configured', { status: 503 });
+          }
+          console.warn('[MP webhook] MERCADOPAGO_WEBHOOK_SECRET não configurado (dev) — pulando validação');
+        } else {
           const sig = verifySignature({
             secret: webhookSecret,
             signatureHeader,
@@ -163,6 +184,13 @@ export const Route = createFileRoute('/api/public/mercadopago/webhook')({
           });
           if (!sig.ok) {
             console.warn('[MP webhook] assinatura inválida:', sig.reason);
+            void logSecurityEvent({
+              type: 'webhook_invalid_signature',
+              severity: 'warn',
+              identifier: 'mercadopago',
+              message: `Assinatura inválida: ${sig.reason}`,
+              metadata: { auditId, dataId, type, requestId },
+            });
             if (auditId) {
               await supabaseAdmin
                 .from('payment_webhook_events')
@@ -171,8 +199,6 @@ export const Route = createFileRoute('/api/public/mercadopago/webhook')({
             }
             return new Response('Unauthorized', { status: 401 });
           }
-        } else {
-          console.warn('[MP webhook] MERCADOPAGO_WEBHOOK_SECRET não configurado — pulando validação');
         }
 
         // 3) Só processa eventos do tipo payment
