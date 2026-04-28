@@ -66,3 +66,51 @@ export const requireAdminMfa = createMiddleware({ type: 'function' })
 
     return next({ context: ctx });
   });
+
+/**
+ * Versão SOFT do MFA: não bloqueia. Se o admin não tem MFA configurado
+ * ou a sessão ainda é aal1, registra um evento em security_events
+ * ('admin_action_without_mfa') e deixa a ação prosseguir.
+ *
+ * Use em ações sensíveis (mutações de pedidos, conteúdo institucional,
+ * configurações) durante a fase de homologação. Quando todos os admins
+ * tiverem MFA configurado, troque para `requireAdminMfa`.
+ */
+export const requireAdminMfaSoft = createMiddleware({ type: 'function' })
+  .middleware([requireAdmin])
+  .server(async ({ next, context }) => {
+    const ctx = context as {
+      adminUserId: string;
+      adminEmail: string | null;
+      claims?: { aal?: string } & Record<string, unknown>;
+    };
+    const aal = ctx.claims?.aal;
+
+    let hasVerifiedFactor = false;
+    try {
+      const { data } = await supabaseAdmin.auth.admin.getUserById(ctx.adminUserId);
+      type FactorLite = { status?: string };
+      const factors = (data?.user?.factors ?? []) as FactorLite[];
+      hasVerifiedFactor = factors.some((f) => f?.status === 'verified');
+    } catch {
+      hasVerifiedFactor = false;
+    }
+
+    if (!hasVerifiedFactor || (aal && aal !== 'aal2')) {
+      try {
+        await supabaseAdmin.rpc('log_security_event', {
+          _type: 'admin_action_without_mfa',
+          _severity: 'warn',
+          _identifier: ctx.adminEmail ?? ctx.adminUserId,
+          _message: hasVerifiedFactor
+            ? 'Admin executou ação sensível sem desafio MFA na sessão'
+            : 'Admin executou ação sensível sem MFA configurado',
+          _metadata: { adminUserId: ctx.adminUserId, aal: aal ?? null },
+        });
+      } catch {
+        // não bloqueia em caso de falha de auditoria
+      }
+    }
+
+    return next({ context: ctx });
+  });
