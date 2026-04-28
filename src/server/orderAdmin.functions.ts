@@ -338,6 +338,11 @@ export const addOrderNote = createServerFn({ method: 'POST' })
       description: data.note,
       createdBy: adminUserId,
     });
+    await logAdminAction({
+      adminId: adminUserId, action: 'note', resourceType: 'order',
+      resourceId: data.orderId, description: 'Adicionou nota ao pedido',
+      after: { note: data.note },
+    });
     return { ok: true as const };
   });
 
