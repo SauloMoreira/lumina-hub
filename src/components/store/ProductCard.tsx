@@ -22,12 +22,13 @@ export function ProductCard({ product, index = 0 }: { product: Product; index?: 
     });
   };
 
-  void index;
+  const isAboveFold = index < 4;
   return (
     <div>
       <Link
         to="/produto/$slug"
         params={{ slug: product.slug }}
+        preload="intent"
         className="group block bg-card rounded-lg border border-border shadow-soft hover:shadow-elevated hover:-translate-y-0.5 transition-all duration-200 overflow-hidden"
       >
         <div className="aspect-square bg-surface relative overflow-hidden flex items-center justify-center">
@@ -37,7 +38,8 @@ export function ProductCard({ product, index = 0 }: { product: Product; index?: 
               alt={product.name}
               width={400}
               height={400}
-              loading="lazy"
+              loading={isAboveFold ? 'eager' : 'lazy'}
+              fetchPriority={isAboveFold ? 'high' : 'auto'}
               decoding="async"
               className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
             />

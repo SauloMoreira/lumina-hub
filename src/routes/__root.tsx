@@ -8,24 +8,49 @@ import appCss from "../styles.css?url";
 
 interface MyRouterContext { queryClient: QueryClient }
 
-const LOCAL_BUSINESS_JSONLD = JSON.stringify({
+const ORG_JSONLD = JSON.stringify({
   "@context": "https://schema.org",
-  "@type": "Store",
-  name: SITE_NAME,
-  description: SITE_DESCRIPTION,
-  url: SITE_URL,
-  telephone: "+55-21-98212-6467",
-  address: {
-    "@type": "PostalAddress",
-    addressLocality: "Maricá",
-    addressRegion: "RJ",
-    addressCountry: "BR",
-  },
-  geo: { "@type": "GeoCoordinates", latitude: "-22.9189", longitude: "-42.8186" },
-  openingHours: "Mo-Sa 08:00-18:00",
-  priceRange: "$$",
-  currenciesAccepted: "BRL",
-  paymentAccepted: "Cash, Credit Card, PIX",
+  "@graph": [
+    {
+      "@type": "Organization",
+      "@id": `${SITE_URL}/#organization`,
+      name: SITE_NAME,
+      url: SITE_URL,
+      logo: `${SITE_URL}/og-default.png`,
+      sameAs: [],
+    },
+    {
+      "@type": "Store",
+      "@id": `${SITE_URL}/#store`,
+      name: SITE_NAME,
+      description: SITE_DESCRIPTION,
+      url: SITE_URL,
+      telephone: "+55-21-98212-6467",
+      address: {
+        "@type": "PostalAddress",
+        addressLocality: "Maricá",
+        addressRegion: "RJ",
+        addressCountry: "BR",
+      },
+      geo: { "@type": "GeoCoordinates", latitude: "-22.9189", longitude: "-42.8186" },
+      openingHours: "Mo-Sa 08:00-18:00",
+      priceRange: "$$",
+      currenciesAccepted: "BRL",
+      paymentAccepted: "Cash, Credit Card, PIX",
+    },
+    {
+      "@type": "WebSite",
+      "@id": `${SITE_URL}/#website`,
+      url: SITE_URL,
+      name: SITE_NAME,
+      publisher: { "@id": `${SITE_URL}/#organization` },
+      potentialAction: {
+        "@type": "SearchAction",
+        target: `${SITE_URL}/catalogo?q={search_term_string}`,
+        "query-input": "required name=search_term_string",
+      },
+    },
+  ],
 });
 
 function NotFoundComponent() {
@@ -78,7 +103,7 @@ export const Route = createRootRouteWithContext<MyRouterContext>()({
         href: "https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&family=Plus+Jakarta+Sans:wght@700;800&display=swap",
       },
     ],
-    scripts: [{ type: "application/ld+json", children: LOCAL_BUSINESS_JSONLD }],
+    scripts: [{ type: "application/ld+json", children: ORG_JSONLD }],
   }),
   shellComponent: RootShell,
   component: RootComponent,

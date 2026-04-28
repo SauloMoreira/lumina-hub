@@ -63,6 +63,18 @@ function buildFaqJsonLd(faq: FaqItem[]) {
   };
 }
 
+function buildBreadcrumbJsonLd(p: ProductWithSeo) {
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: [
+      { '@type': 'ListItem', position: 1, name: 'Início', item: SITE_URL },
+      { '@type': 'ListItem', position: 2, name: 'Catálogo', item: `${SITE_URL}/catalogo` },
+      { '@type': 'ListItem', position: 3, name: p.name, item: `${SITE_URL}/produto/${p.slug}` },
+    ],
+  };
+}
+
 const productQueryOptions = (slug: string) => ({
   queryKey: ['product', slug],
   queryFn: async () => {
@@ -119,6 +131,7 @@ export const Route = createFileRoute('/produto/$slug')({
     const faq = extractFaq(p.specs);
     const scripts: Array<{ type: string; children: string }> = [
       { type: 'application/ld+json', children: productJsonLd },
+      { type: 'application/ld+json', children: JSON.stringify(buildBreadcrumbJsonLd(p)) },
     ];
     if (faq.length > 0) {
       scripts.push({
