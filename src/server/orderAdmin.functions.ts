@@ -122,7 +122,7 @@ export const getOrderDetail = createServerFn({ method: 'POST' })
 // 2) reconsultar Mercado Pago
 // ============================================================
 export const reconsultMercadoPagoPayment = createServerFn({ method: 'POST' })
-  .middleware([requireAdmin])
+  .middleware([requireAdminMfaSoft])
   .inputValidator((input: unknown) =>
     z.object({ orderId: z.string().uuid() }).parse(input),
   )
@@ -197,7 +197,7 @@ export const reconsultMercadoPagoPayment = createServerFn({ method: 'POST' })
 const TERMINAL_STATUSES = new Set(['delivered', 'cancelled', 'refunded']);
 
 export const updateOrderStatus = createServerFn({ method: 'POST' })
-  .middleware([requireAdmin])
+  .middleware([requireAdminMfaSoft])
   .inputValidator((input: unknown) =>
     z
       .object({
@@ -321,7 +321,7 @@ export const updateOrderStatus = createServerFn({ method: 'POST' })
 // 4) Adicionar nota administrativa
 // ============================================================
 export const addOrderNote = createServerFn({ method: 'POST' })
-  .middleware([requireAdmin])
+  .middleware([requireAdminMfaSoft])
   .inputValidator((input: unknown) =>
     z
       .object({
@@ -350,7 +350,7 @@ export const addOrderNote = createServerFn({ method: 'POST' })
 // 5) Reenviar e-mail transacional (admin)
 // ============================================================
 export const resendOrderEmail = createServerFn({ method: 'POST' })
-  .middleware([requireAdmin])
+  .middleware([requireAdminMfaSoft])
   .inputValidator((input: unknown) =>
     z
       .object({
