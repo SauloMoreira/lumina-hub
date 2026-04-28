@@ -252,7 +252,7 @@ function CatalogPage() {
                   {search.oferta
                     ? 'Nenhuma oferta disponível no momento. Volte em breve!'
                     : search.shipping === 'free'
-                    ? `Nenhum produto elegível a frete grátis no momento (a partir de ${formatBRL(FREE_SHIPPING_THRESHOLD)}).`
+                    ? 'Nenhum produto elegível a frete grátis no momento.'
                     : search.sort === 'best_sellers'
                     ? 'Nenhum produto em destaque no momento.'
                     : 'Nenhum produto encontrado.'}
