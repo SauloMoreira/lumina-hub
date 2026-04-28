@@ -302,11 +302,17 @@ export const adminUpdateContactMessageStatus = createServerFn({ method: 'POST' }
     id: z.string().uuid(),
     status: z.enum(['new', 'read', 'answered', 'archived']),
   }))
-  .handler(async ({ data }) => {
+  .handler(async ({ data, context }) => {
+    const adminId = (context as { adminUserId: string }).adminUserId;
     const { error } = await supabaseAdmin
       .from('contact_messages')
       .update({ status: data.status })
       .eq('id', data.id);
     if (error) throw new Error(error.message);
+    await logAdminAction({
+      adminId, action: 'update', resourceType: 'contact_message',
+      resourceId: data.id, description: `Marcou mensagem como "${data.status}"`,
+      after: { status: data.status },
+    });
     return { ok: true };
   });
