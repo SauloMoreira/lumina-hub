@@ -8,6 +8,7 @@ import {
   AuthCard, FieldLabel, FieldError, inputClass, inputStyle, inputFocusHandlers,
   PrimaryButton, GoogleButton, Divider,
 } from '@/components/auth/AuthCard';
+import { checkSignupAttempt } from '@/server/auth.functions';
 
 import { buildSeo } from '@/lib/seo';
 import { trackEvent } from '@/lib/tracking';
@@ -54,6 +55,13 @@ function SignupPage() {
     if (!validate()) return;
     setLoading(true);
     try {
+      try {
+        await checkSignupAttempt({ data: { email: form.email } });
+      } catch (rl: any) {
+        toast.error(rl?.message ?? 'Muitas tentativas. Tente novamente mais tarde.');
+        setLoading(false);
+        return;
+      }
       const { error } = await supabase.auth.signUp({
         email: form.email, password: form.password,
         options: {

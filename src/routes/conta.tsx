@@ -1,11 +1,13 @@
 import { createFileRoute, Link, useNavigate } from '@tanstack/react-router';
 import { useEffect, useState } from 'react';
-import { LogOut, User as UserIcon, Package, MapPin } from 'lucide-react';
+import { LogOut, User as UserIcon, Package, MapPin, Shield } from 'lucide-react';
 import { StoreLayout } from '@/components/layout/StoreLayout';
 import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { PageSkeleton } from '@/components/layout/PageSkeleton';
+import { MfaSetup } from '@/components/auth/MfaSetup';
 
 import { buildSeo } from '@/lib/seo';
 
@@ -76,6 +78,16 @@ function AccountPage() {
             </Link>
           ))}
         </div>
+
+        <Card className="mt-6">
+          <CardContent className="p-6">
+            <div className="flex items-center gap-2 mb-4">
+              <Shield className="w-5 h-5 text-primary" />
+              <h2 className="font-display font-semibold">Segurança</h2>
+            </div>
+            <MfaSetup />
+          </CardContent>
+        </Card>
 
         <div className="mt-6 flex justify-end">
           <Button variant="ghost" onClick={() => { signOut(); navigate({ to: '/' }); }} className="text-muted-foreground">
