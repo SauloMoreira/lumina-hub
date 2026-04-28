@@ -62,8 +62,10 @@ export function HeroCarousel({ banners }: { banners: HeroBanner[] }) {
           const isInternal = b.cta_link?.startsWith('/');
           // Só montamos imagens dos demais slides após autoplay/interação
           const shouldRender = i === 0 || interacted || idx !== 0;
-          const desktopSrc = optimizeBannerUrl(b.image_desktop, { width: 1600, quality: 80 });
-          const mobileSrc = optimizeBannerUrl(b.image_mobile ?? b.image_desktop, { width: 768, quality: 78 });
+          const desktopSrc = optimizeBannerUrl(b.image_desktop, { width: 1280, quality: 75 });
+          const desktopSrc2x = optimizeBannerUrl(b.image_desktop, { width: 1920, quality: 72 });
+          const tabletSrc = optimizeBannerUrl(b.image_desktop, { width: 1024, quality: 75 });
+          const mobileSrc = optimizeBannerUrl(b.image_mobile ?? b.image_desktop, { width: 720, quality: 72 });
           return (
             <div
               key={b.id}
@@ -81,11 +83,14 @@ export function HeroCarousel({ banners }: { banners: HeroBanner[] }) {
               {shouldRender && (
                 <picture className="absolute inset-0">
                   <source media="(max-width: 640px)" srcSet={mobileSrc} />
+                  <source media="(max-width: 1024px)" srcSet={tabletSrc} />
                   <img
                     src={desktopSrc}
+                    srcSet={`${desktopSrc} 1280w, ${desktopSrc2x} 1920w`}
+                    sizes="100vw"
                     alt={b.title}
-                    width={1600}
-                    height={640}
+                    width={1280}
+                    height={512}
                     loading={i === 0 ? 'eager' : 'lazy'}
                     fetchPriority={i === 0 ? 'high' : 'auto'}
                     decoding="async"
