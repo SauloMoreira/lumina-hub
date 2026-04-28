@@ -181,6 +181,8 @@ export const requestHumanHandoff = createServerFn({ method: "POST" })
     return {
       ok: true,
       whatsappUrl,
+      whatsappPhone: storeWhats,
+      whatsappText,
       leadId,
       leadSaved: leadId !== null,
       leadError,
