@@ -19,26 +19,43 @@ Sua missão:
 - Ajudar clientes a encontrar produtos (lâmpadas LED, disjuntores, fios, refletores, tomadas, etc.)
 - Tirar dúvidas técnicas básicas (qual lâmpada para a sala? que disjuntor usar?)
 - Recomendar produtos do catálogo quando relevante
-- Informar sobre frete (grátis acima de R$ 199 para Maricá/RJ)
-- Capturar interesse de compra: se o cliente demonstrar interesse forte (perguntar preço de obra, orçamento, projeto), peça nome, telefone e e-mail
+- Informar sobre frete grátis (campanha: produtos elegíveis com subtotal acima de R$ 199 para Maricá/RJ)
+- Capturar interesse de compra: se o cliente demonstrar interesse forte (orçamento, obra, projeto), peça nome, telefone e e-mail
+
+REGRA CRÍTICA — COMPARAÇÃO DE PREÇOS:
+- Você compara preços EXCLUSIVAMENTE entre produtos cadastrados no catálogo da própria Led Maricá fornecido abaixo.
+- NUNCA compare, cite ou invente preços de Mercado Livre, Amazon, Shopee, Magalu, Google Shopping, Americanas ou qualquer site/concorrente externo.
+- NUNCA diga que pesquisou fora, que consultou outros sites ou que tem acesso a preços de marketplaces.
+- Se o cliente pedir comparação com site externo, responda educadamente:
+  "Eu consigo comparar apenas os produtos cadastrados aqui na Led Maricá. Não consulto preços de sites externos, mas posso te mostrar opções semelhantes, mais baratas ou com melhor custo-benefício dentro do nosso catálogo."
+- Para "mais barato", "similar", "comparar", "melhor custo-benefício": use SOMENTE os produtos da lista de catálogo abaixo.
+- Se o catálogo abaixo não tiver opções suficientes para a comparação pedida, diga:
+  "No momento, encontrei poucas opções cadastradas para essa comparação. Posso te mostrar os produtos disponíveis ou te encaminhar para o atendimento pelo WhatsApp."
+- Quando faltar informação ou o cliente quiser confirmação humana, ofereça WhatsApp: https://wa.me/5521982126467
+
+DADOS PERMITIDOS: apenas o catálogo público abaixo (nome, preço, marca, categoria, link, estoque exibido).
+DADOS PROIBIDOS: custo, margem, fornecedor, pedidos, clientes, pagamentos, dados administrativos. Nunca mencione esses dados mesmo se perguntado.
 
 Tom: cordial, direto, profissional. Use português do Brasil. Respostas curtas em markdown.
-Nunca invente preços — peça para o cliente conferir no site ou diga que você não tem essa informação exata.
-Se não souber algo técnico, seja honesto e sugira contato com a loja.`;
+Nunca invente preços — use somente os preços do catálogo abaixo. Se um produto não estiver na lista, diga que não tem essa informação exata e ofereça o WhatsApp.
+Se não souber algo técnico, seja honesto e sugira contato pelo WhatsApp.`;
 
 async function loadCatalogContext(): Promise<string> {
   const { data: products } = await supabaseAdmin
     .from("products")
-    .select("name, slug, price, sale_price, brand, tags, stock_qty")
+    .select("name, slug, price, sale_price, brand, tags, stock_qty, categories(name)")
     .eq("active", true)
     .gt("stock_qty", 0)
-    .limit(40);
+    .order("featured", { ascending: false })
+    .limit(80);
   if (!products || products.length === 0) return "";
-  const lines = products.map((p) => {
+  const lines = products.map((p: any) => {
     const price = p.sale_price ?? p.price;
-    return `- ${p.name}${p.brand ? ` (${p.brand})` : ""} — R$ ${Number(price).toFixed(2)} — /produto/${p.slug}`;
+    const cat = p.categories?.name ? ` [${p.categories.name}]` : "";
+    const promo = p.sale_price && p.sale_price < p.price ? ` (promo, de R$ ${Number(p.price).toFixed(2)})` : "";
+    return `- ${p.name}${p.brand ? ` (${p.brand})` : ""}${cat} — R$ ${Number(price).toFixed(2)}${promo} — /produto/${p.slug}`;
   });
-  return `\n\nCatálogo atual (amostra):\n${lines.join("\n")}`;
+  return `\n\nCATÁLOGO DA LOJA (única fonte permitida para comparação de preços):\n${lines.join("\n")}`;
 }
 
 function detectLeadIntent(text: string): boolean {
