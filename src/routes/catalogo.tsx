@@ -1,7 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { useQuery } from '@tanstack/react-query';
 import { useState, useMemo } from 'react';
-import { Search, SlidersHorizontal, ChevronLeft, ChevronRight, X } from 'lucide-react';
+import { Search, SlidersHorizontal, ChevronLeft, ChevronRight, X, Truck } from 'lucide-react';
 import { z } from 'zod';
 import { StoreLayout } from '@/components/layout/StoreLayout';
 import { ProductCard } from '@/components/store/ProductCard';
