@@ -68,12 +68,22 @@ export const getSecurityOverview = createServerFn({ method: 'POST' })
 
     // Stats de rate limit
     const rlList = rlEvents.data ?? [];
+    const rlByIdent = rlList.reduce<Record<string, number>>((acc, e) => {
+      const k = e.identifier ?? 'unknown';
+      acc[k] = (acc[k] ?? 0) + 1;
+      return acc;
+    }, {});
+    const rlTopIdentifiers = Object.entries(rlByIdent)
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 10)
+      .map(([identifier, count]) => ({ identifier, count }));
     const rlStats = {
       total: rlList.length,
       byAction: rlList.reduce<Record<string, number>>((acc, e) => {
         acc[e.action] = (acc[e.action] ?? 0) + 1;
         return acc;
       }, {}),
+      topIdentifiers: rlTopIdentifiers,
     };
 
     // MFA status — Supabase não expõe MFA factors via service_role na tabela profiles,
