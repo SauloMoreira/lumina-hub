@@ -49,6 +49,12 @@ export function ChatWidget() {
     setSessionId(sid);
     setOpen(localStorage.getItem(STORAGE_KEY) === "1");
     supabase.auth.getUser().then(({ data }) => setUserId(data.user?.id ?? null));
+    const openHandler = () => {
+      setOpen(true);
+      localStorage.setItem(STORAGE_KEY, "1");
+    };
+    window.addEventListener("open-chat", openHandler);
+    return () => window.removeEventListener("open-chat", openHandler);
   }, []);
 
   useEffect(() => {
