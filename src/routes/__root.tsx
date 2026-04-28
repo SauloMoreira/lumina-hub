@@ -88,7 +88,11 @@ export const Route = createRootRouteWithContext<MyRouterContext>()({
 function RootShell({ children }: { children: React.ReactNode }) {
   return (
     <html lang="pt-BR">
-      <head><HeadContent /></head>
+      <head>
+        <meta httpEquiv="Content-Security-Policy-Report-Only" content={CSP_REPORT_ONLY} />
+        <meta httpEquiv="X-Content-Type-Options" content="nosniff" />
+        <HeadContent />
+      </head>
       <body>{children}<Scripts /></body>
     </html>
   );
