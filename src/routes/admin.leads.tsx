@@ -487,7 +487,7 @@ function LeadsPage() {
               {selected.interest && <div><Label className="text-xs">Interesse</Label><p className="text-muted-foreground">{selected.interest}</p></div>}
               <div className="grid grid-cols-2 gap-3 pt-2 border-t border-border">
                 <div><Label>Status</Label>
-                  <select value={edit.status} onChange={(e) => setEdit({ ...edit, status: e.target.value })} className="mt-1 h-9 w-full rounded-md border border-input bg-background px-2 text-sm">
+                  <select value={edit.status} onChange={(e) => setEdit({ ...edit, status: e.target.value as LeadStatus })} className="mt-1 h-9 w-full rounded-md border border-input bg-background px-2 text-sm">
                     {STATUSES.map((s) => <option key={s} value={s}>{LEAD_STATUS_LABELS[s]}</option>)}
                   </select>
                 </div>
