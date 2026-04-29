@@ -566,6 +566,7 @@ export const getAdminOperations = createServerFn({ method: 'GET' })
         ctaHref: '/admin/carrinhos-abandonados',
       });
     }
+    if (productsNoImage > 0) {
       alerts.push({
         id: 'alert-no-image',
         title: 'Produtos ativos sem imagem',
