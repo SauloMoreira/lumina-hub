@@ -162,11 +162,15 @@ export const adminUpdateCompanySettings = createServerFn({ method: 'POST' })
       .order('created_at', { ascending: true })
       .limit(1)
       .maybeSingle();
-    const cleaned: Record<string, string | null> = {};
+    const cleaned: Record<string, string | boolean | null> = {};
     for (const [k, v] of Object.entries(data)) {
-      cleaned[k] = v === '' || v === undefined ? null : (v as string | null);
+      if (k === 'pickup_enabled') {
+        cleaned[k] = v === true || v === 'true' || v === '1' || v === 'on';
+      } else {
+        cleaned[k] = v === '' || v === undefined ? null : (v as string | null);
+      }
     }
-    const payload = cleaned as typeof data;
+    const payload = cleaned as never;
     if (existing?.id) {
       const { error } = await supabaseAdmin.from('company_settings').update(payload).eq('id', existing.id);
       if (error) throw new Error(error.message);
