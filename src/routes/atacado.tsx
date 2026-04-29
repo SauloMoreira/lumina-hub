@@ -15,6 +15,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { buildSeo } from '@/lib/seo';
 import { formatCNPJ } from '@/lib/cnpj';
 import { ProductCard } from '@/components/store/ProductCard';
+import { StoreLayout } from '@/components/layout/StoreLayout';
 import { ProductImagePlaceholder } from '@/components/store/ProductImagePlaceholder';
 import { formatBRL, STORE_WHATSAPP } from '@/lib/domain';
 import { useCart } from '@/stores/cartStore';
@@ -178,18 +179,21 @@ function AtacadoPage() {
 
   if (settings && !settings.vitrine_is_active) {
     return (
-      <div className="max-w-3xl mx-auto px-4 py-20 text-center">
-        <h1 className="text-2xl font-bold text-foreground">Vitrine de atacado indisponível</h1>
-        <p className="text-muted-foreground mt-2">
-          A área de atacado está temporariamente desativada.
-        </p>
-      </div>
+      <StoreLayout>
+        <div className="max-w-3xl mx-auto px-4 py-20 text-center">
+          <h1 className="text-2xl font-bold text-foreground">Vitrine de atacado indisponível</h1>
+          <p className="text-muted-foreground mt-2">
+            A área de atacado está temporariamente desativada.
+          </p>
+        </div>
+      </StoreLayout>
     );
   }
 
   return (
-    <div className="bg-background">
-      {/* HERO — compacto quando empresa aprovada */}
+    <StoreLayout>
+      <div className="bg-background">
+        {/* HERO — compacto quando empresa aprovada */}
       {isApproved ? (
         <CompactHero companyName={companyName} whatsappLink={whatsappLink} />
       ) : (
@@ -320,7 +324,8 @@ function AtacadoPage() {
           </a>
         </div>
       </section>
-    </div>
+      </div>
+    </StoreLayout>
   );
 }
 
