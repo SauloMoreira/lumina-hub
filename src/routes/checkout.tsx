@@ -293,60 +293,135 @@ function CheckoutPage() {
           <div className="lg:col-span-2 bg-card border border-border rounded-xl p-4 sm:p-6">
             {step === 1 && (
               <>
-                <h2 className="font-display font-bold text-xl mb-5">Endereço de entrega</h2>
-                <div className="grid sm:grid-cols-2 gap-4">
-                  <div className="sm:col-span-2">
-                    <Label htmlFor="recipient">Destinatário</Label>
-                    <Input id="recipient" value={recipient} onChange={(e) => setRecipient(e.target.value)} className="mt-1.5" />
-                  </div>
-                  <div>
-                    <Label htmlFor="zip">CEP</Label>
-                    <div className="relative mt-1.5">
-                      <Input
-                        id="zip"
-                        value={zip}
-                        onChange={(e) => setZip(formatCep(e.target.value))}
-                        onBlur={handleZipBlur}
-                        placeholder="00000-000"
-                        maxLength={9}
-                        inputMode="numeric"
-                        autoComplete="postal-code"
-                      />
-                      {zipLoading && <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 animate-spin text-muted-foreground" />}
+                <h2 className="font-display font-bold text-xl mb-4">Como você quer receber?</h2>
+
+                {/* Toggle entrega vs retirada */}
+                <div className={`grid gap-2.5 mb-5 ${pickupEnabled ? 'sm:grid-cols-2' : ''}`}>
+                  <button
+                    type="button"
+                    onClick={() => setDeliveryMethod('delivery')}
+                    className={`flex items-start gap-3 p-3.5 border rounded-lg text-left transition-colors ${
+                      !isPickup ? 'border-primary bg-primary-tint' : 'border-border hover:border-primary/40'
+                    }`}
+                  >
+                    <Truck className="w-5 h-5 text-primary shrink-0 mt-0.5" />
+                    <div className="min-w-0">
+                      <div className="font-medium text-sm">Receber em casa</div>
+                      <div className="text-xs text-muted-foreground">Frete calculado pelo CEP</div>
                     </div>
-                  </div>
-                  <div className="sm:col-span-2">
-                    <Label htmlFor="street">Rua</Label>
-                    <Input id="street" value={street} onChange={(e) => setStreet(e.target.value)} className="mt-1.5" />
-                  </div>
-                  <div>
-                    <Label htmlFor="number">Número</Label>
-                    <Input id="number" value={number} onChange={(e) => setNumber(e.target.value)} className="mt-1.5" />
-                  </div>
-                  <div>
-                    <Label htmlFor="complement">Complemento</Label>
-                    <Input id="complement" value={complement} onChange={(e) => setComplement(e.target.value)} className="mt-1.5" />
-                  </div>
-                  <div>
-                    <Label htmlFor="neighborhood">Bairro</Label>
-                    <Input id="neighborhood" value={neighborhood} onChange={(e) => setNeighborhood(e.target.value)} className="mt-1.5" />
-                  </div>
-                  <div>
-                    <Label htmlFor="city">Cidade</Label>
-                    <Input id="city" value={city} onChange={(e) => setCity(e.target.value)} className="mt-1.5" />
-                  </div>
-                  <div>
-                    <Label htmlFor="state">UF</Label>
-                    <Input id="state" value={state} onChange={(e) => setState(e.target.value.toUpperCase().slice(0, 2))} maxLength={2} className="mt-1.5" />
-                  </div>
+                  </button>
+                  {pickupEnabled && (
+                    <button
+                      type="button"
+                      onClick={() => setDeliveryMethod('pickup')}
+                      className={`flex items-start gap-3 p-3.5 border rounded-lg text-left transition-colors ${
+                        isPickup ? 'border-primary bg-primary-tint' : 'border-border hover:border-primary/40'
+                      }`}
+                    >
+                      <Store className="w-5 h-5 text-primary shrink-0 mt-0.5" />
+                      <div className="min-w-0">
+                        <div className="font-medium text-sm">Retirar na loja <span className="text-success">· Grátis</span></div>
+                        <div className="text-xs text-muted-foreground line-clamp-2">
+                          {(company?.pickup_store_name as string) || 'Retirada presencial'}
+                          {company?.pickup_ready_eta ? ` · ${company.pickup_ready_eta}` : ''}
+                        </div>
+                      </div>
+                    </button>
+                  )}
                 </div>
-                <label className="inline-flex items-center gap-2 mt-5 text-sm">
-                  <input type="checkbox" checked={saveAddress} onChange={(e) => setSaveAddress(e.target.checked)} className="rounded border-border" />
-                  Salvar este endereço na minha conta
-                </label>
-                <Button onClick={goToShipping} size="lg" className="w-full mt-6 h-12">
-                  Continuar para o frete <ArrowRight className="w-4 h-4 ml-1.5" />
-                </Button>
+
+                {isPickup ? (
+                  <>
+                    <h3 className="font-semibold text-sm mb-3 mt-2">Quem irá retirar?</h3>
+                    <div className="grid sm:grid-cols-2 gap-4">
+                      <div className="sm:col-span-2">
+                        <Label htmlFor="recipient">Nome completo</Label>
+                        <Input id="recipient" value={recipient} onChange={(e) => setRecipient(e.target.value)} className="mt-1.5" />
+                      </div>
+                    </div>
+                    <div className="mt-5 p-4 rounded-lg bg-surface border border-border text-sm space-y-1.5">
+                      <div className="flex items-center gap-2 font-medium">
+                        <Store className="w-4 h-4 text-primary" />
+                        {(company?.pickup_store_name as string) || 'Local de retirada'}
+                      </div>
+                      {company?.pickup_address && (
+                        <p className="text-muted-foreground whitespace-pre-line">{company.pickup_address as string}</p>
+                      )}
+                      {company?.pickup_phone && (
+                        <p className="text-muted-foreground">📞 {company.pickup_phone as string}</p>
+                      )}
+                      {company?.pickup_business_hours && (
+                        <p className="text-muted-foreground">🕒 {company.pickup_business_hours as string}</p>
+                      )}
+                      {company?.pickup_instructions && (
+                        <p className="text-muted-foreground whitespace-pre-line mt-2">{company.pickup_instructions as string}</p>
+                      )}
+                      <p className="text-xs text-warning mt-2">
+                        ⚠️ Aguarde a confirmação de disponibilidade antes de comparecer à loja.
+                      </p>
+                    </div>
+                    <Button onClick={goToShipping} size="lg" className="w-full mt-6 h-12">
+                      Revisar pedido <ArrowRight className="w-4 h-4 ml-1.5" />
+                    </Button>
+                  </>
+                ) : (
+                  <>
+                    <h3 className="font-semibold text-sm mb-3 mt-2">Endereço de entrega</h3>
+                    <div className="grid sm:grid-cols-2 gap-4">
+                      <div className="sm:col-span-2">
+                        <Label htmlFor="recipient">Destinatário</Label>
+                        <Input id="recipient" value={recipient} onChange={(e) => setRecipient(e.target.value)} className="mt-1.5" />
+                      </div>
+                      <div>
+                        <Label htmlFor="zip">CEP</Label>
+                        <div className="relative mt-1.5">
+                          <Input
+                            id="zip"
+                            value={zip}
+                            onChange={(e) => setZip(formatCep(e.target.value))}
+                            onBlur={handleZipBlur}
+                            placeholder="00000-000"
+                            maxLength={9}
+                            inputMode="numeric"
+                            autoComplete="postal-code"
+                          />
+                          {zipLoading && <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 animate-spin text-muted-foreground" />}
+                        </div>
+                      </div>
+                      <div className="sm:col-span-2">
+                        <Label htmlFor="street">Rua</Label>
+                        <Input id="street" value={street} onChange={(e) => setStreet(e.target.value)} className="mt-1.5" />
+                      </div>
+                      <div>
+                        <Label htmlFor="number">Número</Label>
+                        <Input id="number" value={number} onChange={(e) => setNumber(e.target.value)} className="mt-1.5" />
+                      </div>
+                      <div>
+                        <Label htmlFor="complement">Complemento</Label>
+                        <Input id="complement" value={complement} onChange={(e) => setComplement(e.target.value)} className="mt-1.5" />
+                      </div>
+                      <div>
+                        <Label htmlFor="neighborhood">Bairro</Label>
+                        <Input id="neighborhood" value={neighborhood} onChange={(e) => setNeighborhood(e.target.value)} className="mt-1.5" />
+                      </div>
+                      <div>
+                        <Label htmlFor="city">Cidade</Label>
+                        <Input id="city" value={city} onChange={(e) => setCity(e.target.value)} className="mt-1.5" />
+                      </div>
+                      <div>
+                        <Label htmlFor="state">UF</Label>
+                        <Input id="state" value={state} onChange={(e) => setState(e.target.value.toUpperCase().slice(0, 2))} maxLength={2} className="mt-1.5" />
+                      </div>
+                    </div>
+                    <label className="inline-flex items-center gap-2 mt-5 text-sm">
+                      <input type="checkbox" checked={saveAddress} onChange={(e) => setSaveAddress(e.target.checked)} className="rounded border-border" />
+                      Salvar este endereço na minha conta
+                    </label>
+                    <Button onClick={goToShipping} size="lg" className="w-full mt-6 h-12">
+                      Continuar para o frete <ArrowRight className="w-4 h-4 ml-1.5" />
+                    </Button>
+                  </>
+                )}
               </>
             )}
 
