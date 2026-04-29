@@ -536,7 +536,7 @@ function CheckoutPage() {
                           type="radio"
                           name="shipping"
                           checked={selectedShipping?.id === s.id}
-                          onChange={() => setSelectedShipping(s)}
+                          onChange={() => handleSelectShipping(s)}
                           className="text-primary"
                         />
                         <div className="flex-1">
