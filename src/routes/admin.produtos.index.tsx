@@ -121,6 +121,18 @@ function ProdutosList() {
                     )}
                   </td>
                   <td className="px-4 py-3">
+                    {p.b2b_enabled && p.b2b_price ? (
+                      <div>
+                        <span className="font-semibold text-foreground">R$ {Number(p.b2b_price).toFixed(2)}</span>
+                        {p.b2b_min_qty ? (
+                          <span className="text-xs text-muted-foreground block">a partir de {p.b2b_min_qty} un</span>
+                        ) : null}
+                      </div>
+                    ) : (
+                      <span className="text-xs text-muted-foreground">—</span>
+                    )}
+                  </td>
+                  <td className="px-4 py-3">
                     <span className={p.stock_qty < 10 ? 'text-destructive font-medium' : ''}>{p.stock_qty}</span>
                   </td>
                   <td className="px-4 py-3">
