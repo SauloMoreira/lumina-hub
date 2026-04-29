@@ -14,6 +14,7 @@ import {
   Building2,
   Mail,
   Shield,
+  Truck,
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import logo from '@/assets/logo-navbar.png';
@@ -31,6 +32,7 @@ const items: { to: string; label: string; icon: typeof LayoutDashboard; exact?: 
   { to: '/admin/institutional-pages', label: 'Páginas', icon: FileText },
   { to: '/admin/contact-messages', label: 'Mensagens', icon: Mail },
   { to: '/admin/settings/company', label: 'Empresa', icon: Building2 },
+  { to: '/admin/settings/frete-local', label: 'Frete Local', icon: Truck },
   { to: '/admin/seguranca', label: 'Segurança', icon: Shield },
 ];
 

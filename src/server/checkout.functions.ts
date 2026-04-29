@@ -41,6 +41,67 @@ export const lookupCep = createServerFn({ method: 'POST' })
   });
 
 // ============================================================
+// Lookup zona de frete local Maricá/RJ (com normalização + alias)
+// Retornado para o front mostrar/ocultar opção e exibir mensagens.
+// O valor final é SEMPRE recalculado no servidor em createOrder.
+// ============================================================
+export const lookupLocalDeliveryZone = createServerFn({ method: 'POST' })
+  .inputValidator((input: unknown) =>
+    z
+      .object({
+        city: z.string().max(120).optional().default(''),
+        state: z.string().max(2).optional().default(''),
+        neighborhood: z.string().max(120).optional().default(''),
+      })
+      .parse(input)
+  )
+  .handler(async ({ data }) => {
+    const { supabaseAdmin } = await import('@/integrations/supabase/client.server');
+    const state = (data.state || '').toUpperCase();
+    if (state !== 'RJ' || !data.city || !data.neighborhood) {
+      return { ok: false as const, reason: 'out_of_area' as const };
+    }
+    const { data: rows, error } = await supabaseAdmin.rpc('lookup_local_delivery_zone' as never, {
+      _city: data.city,
+      _state: state,
+      _neighborhood: data.neighborhood,
+    } as never);
+    if (error) {
+      console.error('[lookupLocalDeliveryZone] rpc err', error);
+      return { ok: false as const, reason: 'error' as const };
+    }
+    const row = (Array.isArray(rows) ? rows[0] : rows) as
+      | {
+          zone_id: string;
+          matched_via: string;
+          display_name: string;
+          district: string;
+          shipping_price: number | null;
+          estimated_delivery_time: string | null;
+          is_active: boolean;
+          has_price: boolean;
+        }
+      | null
+      | undefined;
+    if (!row) return { ok: false as const, reason: 'not_configured' as const };
+    if (!row.is_active) {
+      return { ok: false as const, reason: 'inactive' as const, displayName: row.display_name, district: row.district };
+    }
+    if (!row.has_price || row.shipping_price === null) {
+      return { ok: false as const, reason: 'no_price' as const, displayName: row.display_name, district: row.district };
+    }
+    return {
+      ok: true as const,
+      zoneId: row.zone_id,
+      displayName: row.display_name,
+      district: row.district,
+      price: Number(row.shipping_price),
+      eta: row.estimated_delivery_time,
+      matchedVia: row.matched_via,
+    };
+  });
+
+// ============================================================
 // Cálculo de frete — STUB local
 // TODO: substituir pela chamada real ao Melhor Envio quando token disponível
 // ============================================================
@@ -168,12 +229,14 @@ const CreateOrderInput = z.object({
       })
     )
     .min(1),
-  deliveryMethod: z.enum(['delivery', 'pickup']).default('delivery'),
+  deliveryMethod: z.enum(['delivery', 'pickup', 'local_delivery']).default('delivery'),
   shipping: z
     .object({
       carrier: z.string(),
       service: z.string(),
       cost: z.number().min(0),
+      // Para frete local: id da zona escolhida (servidor revalida o preço)
+      localZoneId: z.string().uuid().optional().nullable(),
     })
     .optional()
     .nullable(),
@@ -266,6 +329,7 @@ export const createOrder = createServerFn({ method: 'POST' })
     }
 
     const isPickup = data.deliveryMethod === 'pickup';
+    const isLocal = data.deliveryMethod === 'local_delivery';
 
     // Validações específicas por método
     if (isPickup) {
@@ -273,17 +337,65 @@ export const createOrder = createServerFn({ method: 'POST' })
         return { ok: false as const, error: 'Informe o nome para retirada.' };
       }
     } else {
-      if (!data.shipping) {
-        return { ok: false as const, error: 'Selecione uma opção de frete.' };
-      }
       if (!data.address?.street || !data.address?.number || !data.address?.city || !data.address?.state || !data.address?.zipCode) {
         return { ok: false as const, error: 'Endereço de entrega incompleto.' };
       }
+      if (!isLocal && !data.shipping) {
+        return { ok: false as const, error: 'Selecione uma opção de frete.' };
+      }
     }
 
-    const shippingCost = isPickup ? 0 : Number(data.shipping?.cost ?? 0);
-    const shippingCarrier = isPickup ? 'Retirada na loja' : data.shipping?.carrier ?? null;
-    const shippingService = isPickup ? 'Retirada na loja' : data.shipping?.service ?? null;
+    // Validar e RECALCULAR frete local no servidor (nunca confiar no cliente)
+    let localZoneInfo: {
+      zoneId: string;
+      displayName: string;
+      district: string;
+      price: number;
+      eta: string | null;
+    } | null = null;
+    if (isLocal) {
+      const { supabaseAdmin } = await import('@/integrations/supabase/client.server');
+      const { data: rows, error: rpcErr } = await supabaseAdmin.rpc('lookup_local_delivery_zone' as never, {
+        _city: data.address?.city ?? '',
+        _state: (data.address?.state ?? '').toUpperCase(),
+        _neighborhood: data.address?.neighborhood ?? '',
+      } as never);
+      if (rpcErr) {
+        console.error('[createOrder] lookup zone err', rpcErr);
+        return { ok: false as const, error: 'Não foi possível validar a zona de frete local.' };
+      }
+      const z = (Array.isArray(rows) ? rows[0] : rows) as
+        | { zone_id: string; display_name: string; district: string; shipping_price: number | null; estimated_delivery_time: string | null; is_active: boolean; has_price: boolean }
+        | null;
+      if (!z) return { ok: false as const, error: 'Bairro/localidade não atendido pelo frete local de Maricá.' };
+      if (!z.is_active) return { ok: false as const, error: `Frete local indisponível para ${z.display_name} no momento.` };
+      if (!z.has_price || z.shipping_price === null) {
+        return { ok: false as const, error: `Ainda não há valor de frete local configurado para ${z.display_name}.` };
+      }
+      localZoneInfo = {
+        zoneId: z.zone_id,
+        displayName: z.display_name,
+        district: z.district,
+        price: Number(z.shipping_price),
+        eta: z.estimated_delivery_time,
+      };
+    }
+
+    const shippingCost = isPickup
+      ? 0
+      : isLocal
+      ? localZoneInfo!.price
+      : Number(data.shipping?.cost ?? 0);
+    const shippingCarrier = isPickup
+      ? 'Retirada na loja'
+      : isLocal
+      ? 'Frete Local Maricá/RJ'
+      : data.shipping?.carrier ?? null;
+    const shippingService = isPickup
+      ? 'Retirada na loja'
+      : isLocal
+      ? `Frete Local Maricá/RJ — ${localZoneInfo!.displayName}`
+      : data.shipping?.service ?? null;
     const total = Math.max(0, subtotal - discount + shippingCost);
 
     // Snapshot dos dados de retirada (loja) — em pickup
@@ -312,7 +424,7 @@ export const createOrder = createServerFn({ method: 'POST' })
       };
     }
 
-    // Salvar endereço (opcional) — apenas em entrega
+    // Salvar endereço (opcional) — em entrega/local_delivery
     let addressId: string | null = null;
     if (!isPickup && data.address?.saveAddress && data.address.street && data.address.number && data.address.city && data.address.state) {
       const { data: addr } = await supabase
@@ -334,6 +446,7 @@ export const createOrder = createServerFn({ method: 'POST' })
     }
 
     // Criar pedido
+    const deliveryMethodValue = isPickup ? 'pickup' : isLocal ? 'local_delivery' : 'delivery';
     const { data: order, error: orderErr } = await supabase
       .from('orders')
       .insert({
@@ -351,8 +464,15 @@ export const createOrder = createServerFn({ method: 'POST' })
         address_id: addressId,
         address_snapshot: (data.address ?? null) as never,
         notes: data.notes ?? null,
-        delivery_method: isPickup ? 'pickup' : 'delivery',
+        delivery_method: deliveryMethodValue,
         ...(pickupSnap ?? {}),
+        ...(localZoneInfo
+          ? {
+              local_delivery_zone_id: localZoneInfo.zoneId,
+              local_delivery_district: localZoneInfo.district,
+              local_delivery_eta: localZoneInfo.eta,
+            }
+          : {}),
       } as never)
       .select('id, order_number')
       .single();
