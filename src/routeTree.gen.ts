@@ -37,7 +37,9 @@ import { Route as CheckoutSuccessRouteImport } from './routes/checkout.success'
 import { Route as CheckoutPendingRouteImport } from './routes/checkout.pending'
 import { Route as CheckoutFailureRouteImport } from './routes/checkout.failure'
 import { Route as AdminSegurancaRouteImport } from './routes/admin.seguranca'
+import { Route as AdminPendenciasRouteImport } from './routes/admin.pendencias'
 import { Route as AdminPedidosRouteImport } from './routes/admin.pedidos'
+import { Route as AdminPainelDoDiaRouteImport } from './routes/admin.painel-do-dia'
 import { Route as AdminLeadsRouteImport } from './routes/admin.leads'
 import { Route as AdminEmpresasRouteImport } from './routes/admin.empresas'
 import { Route as AdminCuponsRouteImport } from './routes/admin.cupons'
@@ -198,9 +200,19 @@ const AdminSegurancaRoute = AdminSegurancaRouteImport.update({
   path: '/admin/seguranca',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AdminPendenciasRoute = AdminPendenciasRouteImport.update({
+  id: '/admin/pendencias',
+  path: '/admin/pendencias',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AdminPedidosRoute = AdminPedidosRouteImport.update({
   id: '/admin/pedidos',
   path: '/admin/pedidos',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminPainelDoDiaRoute = AdminPainelDoDiaRouteImport.update({
+  id: '/admin/painel-do-dia',
+  path: '/admin/painel-do-dia',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AdminLeadsRoute = AdminLeadsRouteImport.update({
@@ -329,7 +341,9 @@ export interface FileRoutesByFullPath {
   '/admin/cupons': typeof AdminCuponsRoute
   '/admin/empresas': typeof AdminEmpresasRoute
   '/admin/leads': typeof AdminLeadsRoute
+  '/admin/painel-do-dia': typeof AdminPainelDoDiaRoute
   '/admin/pedidos': typeof AdminPedidosRouteWithChildren
+  '/admin/pendencias': typeof AdminPendenciasRoute
   '/admin/seguranca': typeof AdminSegurancaRoute
   '/checkout/failure': typeof CheckoutFailureRoute
   '/checkout/pending': typeof CheckoutPendingRoute
@@ -379,7 +393,9 @@ export interface FileRoutesByTo {
   '/admin/cupons': typeof AdminCuponsRoute
   '/admin/empresas': typeof AdminEmpresasRoute
   '/admin/leads': typeof AdminLeadsRoute
+  '/admin/painel-do-dia': typeof AdminPainelDoDiaRoute
   '/admin/pedidos': typeof AdminPedidosRouteWithChildren
+  '/admin/pendencias': typeof AdminPendenciasRoute
   '/admin/seguranca': typeof AdminSegurancaRoute
   '/checkout/failure': typeof CheckoutFailureRoute
   '/checkout/pending': typeof CheckoutPendingRoute
@@ -430,7 +446,9 @@ export interface FileRoutesById {
   '/admin/cupons': typeof AdminCuponsRoute
   '/admin/empresas': typeof AdminEmpresasRoute
   '/admin/leads': typeof AdminLeadsRoute
+  '/admin/painel-do-dia': typeof AdminPainelDoDiaRoute
   '/admin/pedidos': typeof AdminPedidosRouteWithChildren
+  '/admin/pendencias': typeof AdminPendenciasRoute
   '/admin/seguranca': typeof AdminSegurancaRoute
   '/checkout/failure': typeof CheckoutFailureRoute
   '/checkout/pending': typeof CheckoutPendingRoute
@@ -482,7 +500,9 @@ export interface FileRouteTypes {
     | '/admin/cupons'
     | '/admin/empresas'
     | '/admin/leads'
+    | '/admin/painel-do-dia'
     | '/admin/pedidos'
+    | '/admin/pendencias'
     | '/admin/seguranca'
     | '/checkout/failure'
     | '/checkout/pending'
@@ -532,7 +552,9 @@ export interface FileRouteTypes {
     | '/admin/cupons'
     | '/admin/empresas'
     | '/admin/leads'
+    | '/admin/painel-do-dia'
     | '/admin/pedidos'
+    | '/admin/pendencias'
     | '/admin/seguranca'
     | '/checkout/failure'
     | '/checkout/pending'
@@ -582,7 +604,9 @@ export interface FileRouteTypes {
     | '/admin/cupons'
     | '/admin/empresas'
     | '/admin/leads'
+    | '/admin/painel-do-dia'
     | '/admin/pedidos'
+    | '/admin/pendencias'
     | '/admin/seguranca'
     | '/checkout/failure'
     | '/checkout/pending'
@@ -633,7 +657,9 @@ export interface RootRouteChildren {
   AdminCuponsRoute: typeof AdminCuponsRoute
   AdminEmpresasRoute: typeof AdminEmpresasRoute
   AdminLeadsRoute: typeof AdminLeadsRoute
+  AdminPainelDoDiaRoute: typeof AdminPainelDoDiaRoute
   AdminPedidosRoute: typeof AdminPedidosRouteWithChildren
+  AdminPendenciasRoute: typeof AdminPendenciasRoute
   AdminSegurancaRoute: typeof AdminSegurancaRoute
   InstitucionalSlugRoute: typeof InstitucionalSlugRoute
   ProdutoSlugRoute: typeof ProdutoSlugRoute
@@ -849,11 +875,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminSegurancaRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/admin/pendencias': {
+      id: '/admin/pendencias'
+      path: '/admin/pendencias'
+      fullPath: '/admin/pendencias'
+      preLoaderRoute: typeof AdminPendenciasRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/admin/pedidos': {
       id: '/admin/pedidos'
       path: '/admin/pedidos'
       fullPath: '/admin/pedidos'
       preLoaderRoute: typeof AdminPedidosRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin/painel-do-dia': {
+      id: '/admin/painel-do-dia'
+      path: '/admin/painel-do-dia'
+      fullPath: '/admin/painel-do-dia'
+      preLoaderRoute: typeof AdminPainelDoDiaRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/admin/leads': {
@@ -1059,7 +1099,9 @@ const rootRouteChildren: RootRouteChildren = {
   AdminCuponsRoute: AdminCuponsRoute,
   AdminEmpresasRoute: AdminEmpresasRoute,
   AdminLeadsRoute: AdminLeadsRoute,
+  AdminPainelDoDiaRoute: AdminPainelDoDiaRoute,
   AdminPedidosRoute: AdminPedidosRouteWithChildren,
+  AdminPendenciasRoute: AdminPendenciasRoute,
   AdminSegurancaRoute: AdminSegurancaRoute,
   InstitucionalSlugRoute: InstitucionalSlugRoute,
   ProdutoSlugRoute: ProdutoSlugRoute,
