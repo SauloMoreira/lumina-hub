@@ -14,9 +14,15 @@ import { buildSeo } from '@/lib/seo';
 
 export const Route = createFileRoute('/login')({
   head: () => buildSeo({ title: 'Entrar na sua conta', url: '/login', noindex: true }),
-  beforeLoad: async () => {
+  validateSearch: (search: Record<string, unknown>) => ({
+    redirect: typeof search.redirect === 'string' ? search.redirect : undefined,
+  }),
+  beforeLoad: async ({ search }) => {
     const { data } = await supabase.auth.getSession();
     if (data.session) {
+      if (search.redirect) {
+        throw redirect({ to: search.redirect as never });
+      }
       const { data: profile } = await supabase
         .from('profiles').select('role').eq('id', data.session.user.id).maybeSingle();
       throw redirect({ to: profile?.role === 'admin' ? '/admin' : '/conta' });
@@ -32,6 +38,7 @@ const schema = z.object({
 
 function LoginPage() {
   const navigate = useNavigate();
+  const { redirect: redirectTo } = Route.useSearch();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPwd, setShowPwd] = useState(false);
@@ -75,7 +82,11 @@ function LoginPage() {
       const { data: profile } = await supabase
         .from('profiles').select('role').eq('id', userId).maybeSingle();
       toast.success('Bem-vindo de volta!');
-      navigate({ to: profile?.role === 'admin' ? '/admin' : '/conta' });
+      if (redirectTo) {
+        navigate({ to: redirectTo as never });
+      } else {
+        navigate({ to: profile?.role === 'admin' ? '/admin' : '/conta' });
+      }
     } catch {
       toast.error('E-mail ou senha incorretos. Tente novamente.');
     } finally {
@@ -84,9 +95,12 @@ function LoginPage() {
   };
 
   const handleGoogle = async () => {
+    const loginUrl = redirectTo
+      ? `${window.location.origin}/login?redirect=${encodeURIComponent(redirectTo)}`
+      : `${window.location.origin}/login`;
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
-      options: { redirectTo: `${window.location.origin}/login` },
+      options: { redirectTo: loginUrl },
     });
     if (error) toast.error('Não foi possível conectar ao Google');
   };
