@@ -273,11 +273,12 @@ function AdminHomepageContentPage() {
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <Field label="Ícone / emoji">
-                    <Input
-                      value={form.promo_bar_icon ?? ''}
-                      onChange={(e) => set('promo_bar_icon', e.target.value)}
-                      placeholder="🚚"
+                  <Field label="Ícone / emoji" hint="Escolha um ícone ou cole um emoji no campo do popover">
+                    <IconPicker
+                      value={form.promo_bar_icon}
+                      onChange={(v) => set('promo_bar_icon', v)}
+                      allowEmoji
+                      placeholder="Escolher ícone ou emoji"
                     />
                   </Field>
                   <Field label="Link (opcional)">
