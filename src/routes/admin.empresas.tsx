@@ -182,6 +182,7 @@ function AdminEmpresasPage() {
         />
       )}
     </div>
+    </AdminLayout>
   );
 }
 
