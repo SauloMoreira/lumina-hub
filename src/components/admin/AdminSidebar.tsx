@@ -54,8 +54,8 @@ const groups: Group[] = [
     icon: LayoutDashboard,
     items: [
       { to: '/admin', label: 'Visão geral', icon: LayoutDashboard, exact: true },
-      { label: 'Painel do dia', soon: true },
-      { label: 'Pendências', soon: true },
+      { to: '/admin/painel-do-dia', label: 'Painel do dia', icon: Sparkles },
+      { to: '/admin/pendencias', label: 'Pendências', icon: AlertCircle },
       { label: 'Indicadores', soon: true },
     ],
   },
