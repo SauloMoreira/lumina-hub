@@ -560,7 +560,11 @@ function CheckoutPage() {
                         />
                         <div className="flex-1">
                           <div className="font-medium text-sm">{s.name} <span className="text-muted-foreground font-normal">· {s.carrier}</span></div>
-                          <div className="text-xs text-muted-foreground">Entrega em até {s.days} {s.days === 1 ? 'dia útil' : 'dias úteis'}</div>
+                          <div className="text-xs text-muted-foreground">
+                            {s.id === 'local-zone'
+                              ? (localZone?.eta || 'Entrega no mesmo dia / D+1')
+                              : `Entrega em até ${s.days} ${s.days === 1 ? 'dia útil' : 'dias úteis'}`}
+                          </div>
                         </div>
                         <div className="font-display font-bold">
                           {s.price === 0 ? <span className="text-success">Grátis</span> : formatBRL(s.price)}
