@@ -536,7 +536,36 @@ export const getAdminOperations = createServerFn({ method: 'GET' })
         ctaHref: '/admin/produtos',
       });
     }
-    if (productsNoImage > 0) {
+    if (abandonedHighValue > 0) {
+      alerts.push({
+        id: 'alert-abandoned-high-value',
+        title: 'Carrinho abandonado de alto valor',
+        description: `${abandonedHighValue} carrinho(s) acima de R$ 1.000 aguardando contato pelo WhatsApp.`,
+        severity: 'high',
+        ctaLabel: 'Ver carrinhos',
+        ctaHref: '/admin/carrinhos-abandonados',
+      });
+    }
+    if (abandonedStuck24h > 0) {
+      alerts.push({
+        id: 'alert-abandoned-stuck',
+        title: 'Carrinhos sem retorno há +24h',
+        description: `${abandonedStuck24h} carrinho(s) abandonado(s) sem retorno do cliente.`,
+        severity: 'medium',
+        ctaLabel: 'Ver carrinhos',
+        ctaHref: '/admin/carrinhos-abandonados',
+      });
+    }
+    if (abandonedB2bCount > 0) {
+      alerts.push({
+        id: 'alert-abandoned-b2b',
+        title: 'Carrinho B2B abandonado',
+        description: `${abandonedB2bCount} carrinho(s) B2B aguardando recuperação.`,
+        severity: 'medium',
+        ctaLabel: 'Ver carrinhos',
+        ctaHref: '/admin/carrinhos-abandonados',
+      });
+    }
       alerts.push({
         id: 'alert-no-image',
         title: 'Produtos ativos sem imagem',
