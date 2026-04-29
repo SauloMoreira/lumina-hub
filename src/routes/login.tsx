@@ -43,8 +43,6 @@ function LoginPage() {
   const { redirect: redirectTo } = Route.useSearch();
   const emailRef = useRef<HTMLInputElement>(null);
   const passwordRef = useRef<HTMLInputElement>(null);
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
   const [showPwd, setShowPwd] = useState(false);
   const [errors, setErrors] = useState<{ email?: string; password?: string }>({});
   const [authError, setAuthError] = useState<string | null>(null);
@@ -67,10 +65,8 @@ function LoginPage() {
   const handleSubmit = async () => {
     if (loading) return;
     setAuthError(null);
-    const nextEmail = emailRef.current?.value ?? email;
-    const nextPassword = passwordRef.current?.value ?? password;
-    setEmail(nextEmail);
-    setPassword(nextPassword);
+    const nextEmail = emailRef.current?.value.trim() ?? '';
+    const nextPassword = passwordRef.current?.value ?? '';
     if (!validate({ email: nextEmail, password: nextPassword })) {
       showAuthError('Confira os campos antes de continuar.');
       return;
@@ -182,7 +178,7 @@ function LoginPage() {
         <input
           ref={emailRef}
           id="email" name="email" type="email" autoComplete="email" placeholder="seu@email.com"
-          value={email} onChange={(e) => { setEmail(e.target.value); setAuthError(null); }}
+          onChange={() => setAuthError(null)}
           className={inputClass} style={inputStyle} {...inputFocusHandlers}
         />
         <FieldError message={errors.email} />
@@ -194,7 +190,7 @@ function LoginPage() {
               ref={passwordRef}
               id="password" name="password" type={showPwd ? 'text' : 'password'} autoComplete="current-password"
               placeholder="••••••••"
-              value={password} onChange={(e) => { setPassword(e.target.value); setAuthError(null); }}
+              onChange={() => setAuthError(null)}
               className={inputClass + ' pr-10'} style={inputStyle} {...inputFocusHandlers}
             />
             <button
