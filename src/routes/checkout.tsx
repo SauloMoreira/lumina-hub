@@ -616,7 +616,12 @@ function CheckoutPage() {
                       <p className="text-sm">{recipient}</p>
                       <p className="text-sm text-muted-foreground">{street}, {number}{complement ? `, ${complement}` : ''} — {neighborhood}</p>
                       <p className="text-sm text-muted-foreground">{city}/{state} · CEP {zip}</p>
-                      <p className="text-sm mt-2 font-medium">{selectedShipping?.name} · {selectedShipping?.carrier} ({selectedShipping?.days}d)</p>
+                      <p className="text-sm mt-2 font-medium">
+                        {selectedShipping?.name} · {selectedShipping?.carrier}
+                        {isLocal
+                          ? (localZone?.eta ? ` (${localZone.eta})` : '')
+                          : ` (${selectedShipping?.days}d)`}
+                      </p>
                     </>
                   )}
                 </section>
