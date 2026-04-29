@@ -29,7 +29,7 @@ const ICONS: Record<string, any> = { Lightbulb, Zap, Cable, Plug, Sun, LayoutGri
 
 function getLucideIcon(name?: string | null, fallback: any = Sparkles) {
   if (!name) return fallback;
-  const Comp = (LucideIcons as any)[name];
+  const Comp = (LucideIcons as any).icons?.[name] ?? (LucideIcons as any)[name];
   return Comp ?? fallback;
 }
 
