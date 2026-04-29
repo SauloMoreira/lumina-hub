@@ -40,7 +40,8 @@ type CustomerOrder = {
   estimatedDelivery: string | null;
   createdAt: string | null;
   paidAt: string | null;
-  deliveryMethod: 'delivery' | 'pickup' | string;
+  deliveryMethod: 'delivery' | 'pickup' | 'local_delivery' | string;
+  localDelivery?: { district: string | null; eta: string | null } | null;
   pickup: {
     status: string | null;
     storeName: string | null;
