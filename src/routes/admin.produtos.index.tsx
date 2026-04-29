@@ -20,6 +20,9 @@ interface Product {
   brand: string | null;
   sku: string | null;
   images: string[] | null;
+  b2b_enabled: boolean;
+  b2b_price: number | null;
+  b2b_min_qty: number | null;
 }
 
 function ProdutosList() {
