@@ -122,12 +122,18 @@ function CadastroEmpresaPage() {
             <CheckCircle2 className="w-9 h-9" />
           </div>
           <h1 className="text-2xl font-display font-bold text-foreground mb-2">
-            Cadastro enviado!
+            {success.approved ? 'Empresa aprovada!' : 'Cadastro enviado!'}
           </h1>
-          <p className="text-sm text-muted-foreground mb-6">
-            Recebemos os dados da sua empresa. Nosso time vai analisar e liberar
-            os preços B2B em breve. Você receberá um e-mail assim que for aprovado.
+          <p className="text-sm text-muted-foreground mb-2">
+            {success.approved
+              ? 'Validamos seu CNPJ na Receita e seu acesso B2B já está liberado. Os preços de atacado aparecerão automaticamente para você.'
+              : 'Recebemos os dados. Nosso time vai analisar e liberar os preços B2B em breve. Você receberá um e-mail assim que for aprovado.'}
           </p>
+          {success.reason && (
+            <p className="text-xs text-muted-foreground mb-6 italic">
+              {success.reason}
+            </p>
+          )}
           <div className="text-xs text-muted-foreground">
             Redirecionando para "Minha empresa"...
           </div>
