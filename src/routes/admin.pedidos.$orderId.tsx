@@ -227,17 +227,31 @@ function OrderDetailPage() {
               <Field label="Cliente desde" value={customer?.created_at ? fmtDate(customer.created_at) : '—'} />
             </div>
             <Separator className="my-3" />
-            <div className="text-sm">
-              <p className="font-semibold mb-1">Endereço de entrega</p>
-              {snap ? (
-                <p className="text-muted-foreground">
-                  {snap.recipient} — {snap.street}, {snap.number} {snap.complement && `(${snap.complement})`} —{' '}
-                  {snap.neighborhood}, {snap.city}/{snap.state} — CEP {snap.zip_code}
+            {((order as any).delivery_method === 'pickup') ? (
+              <div className="text-sm">
+                <p className="font-semibold mb-1 flex items-center gap-2">
+                  <span className="inline-block px-2 py-0.5 rounded bg-amber-100 text-amber-900 text-[10px] uppercase tracking-wide font-bold">Retirada na loja</span>
                 </p>
-              ) : (
-                <p className="text-muted-foreground">—</p>
-              )}
-            </div>
+                <div className="text-muted-foreground space-y-0.5">
+                  {(order as any).pickup_store_name && <p className="text-foreground font-medium">{(order as any).pickup_store_name}</p>}
+                  {(order as any).pickup_store_address && <p className="whitespace-pre-line">{(order as any).pickup_store_address}</p>}
+                  {(order as any).pickup_store_phone && <p>Telefone: {(order as any).pickup_store_phone}</p>}
+                  {snap?.recipient && <p className="mt-1">Retirada por: <span className="text-foreground">{snap.recipient}</span></p>}
+                </div>
+              </div>
+            ) : (
+              <div className="text-sm">
+                <p className="font-semibold mb-1">Endereço de entrega</p>
+                {snap ? (
+                  <p className="text-muted-foreground">
+                    {snap.recipient} — {snap.street}, {snap.number} {snap.complement && `(${snap.complement})`} —{' '}
+                    {snap.neighborhood}, {snap.city}/{snap.state} — CEP {snap.zip_code}
+                  </p>
+                ) : (
+                  <p className="text-muted-foreground">—</p>
+                )}
+              </div>
+            )}
           </Card>
 
           {/* Itens */}
