@@ -67,7 +67,12 @@ function PedidosAdmin() {
                 <tr key={o.id} className="border-t border-border hover:bg-muted/20">
                   <td className="px-4 py-3 font-mono text-xs">#{o.order_number}</td>
                   <td className="px-4 py-3 text-xs">{new Date(o.created_at).toLocaleDateString('pt-BR')}</td>
-                  <td className="px-4 py-3">{(o.address_snapshot as any)?.recipient ?? '—'}</td>
+                  <td className="px-4 py-3">
+                    {(o.address_snapshot as any)?.recipient ?? '—'}
+                    {o.delivery_method === 'pickup' && (
+                      <span className="ml-2 inline-block px-1.5 py-0.5 rounded bg-amber-100 text-amber-900 text-[10px] uppercase font-bold tracking-wide">Retirada</span>
+                    )}
+                  </td>
                   <td className="px-4 py-3 font-medium">{fmt(Number(o.total))}</td>
                   <td className="px-4 py-3"><Badge value={o.payment_status} kind="payment" /></td>
                   <td className="px-4 py-3"><Badge value={o.status} kind="order" /></td>
