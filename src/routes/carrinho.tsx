@@ -21,6 +21,10 @@ function CartPage() {
   const shipping = freeShip.qualifies ? 0 : 25;
   const total = subtotal + shipping;
 
+  const hasB2b = cart.hasB2bItems();
+  const continueLink = hasB2b ? '/atacado' : '/catalogo';
+  const continueLabel = hasB2b ? 'Continuar comprando no atacado' : 'Continuar comprando';
+
   if (cart.items.length === 0) {
     return (
       <StoreLayout>
@@ -53,14 +57,21 @@ function CartPage() {
                   <div className="font-display font-bold text-primary mt-1 mb-3">{formatBRL(item.price)}</div>
                   <div className="flex items-center justify-between">
                     <div className="inline-flex items-center border border-border rounded-md">
-                      <button onClick={() => cart.updateQty(item.productId, item.qty - 1)} className="w-8 h-8 hover:bg-surface flex items-center justify-center"><Minus className="w-3 h-3" /></button>
+                      <button onClick={() => cart.decrementQty(item.productId)} className="w-8 h-8 hover:bg-surface flex items-center justify-center"><Minus className="w-3 h-3" /></button>
                       <span className="w-10 text-center text-sm font-medium">{item.qty}</span>
-                      <button onClick={() => cart.updateQty(item.productId, item.qty + 1)} className="w-8 h-8 hover:bg-surface flex items-center justify-center"><Plus className="w-3 h-3" /></button>
+                      <button onClick={() => cart.incrementQty(item.productId)} className="w-8 h-8 hover:bg-surface flex items-center justify-center"><Plus className="w-3 h-3" /></button>
                     </div>
                     <button onClick={() => cart.removeItem(item.productId)} className="text-text-faint hover:text-destructive p-1.5">
                       <Trash2 className="w-4 h-4" />
                     </button>
                   </div>
+                  {(item.source === 'b2b' || (item.qtyMultiple ?? 1) > 1 || (item.minQty ?? 1) > 1) && (
+                    <p className="text-xs text-muted-foreground mt-1.5">
+                      {(item.minQty ?? 1) > 1 && <>Mín. {item.minQty} un</>}
+                      {(item.minQty ?? 1) > 1 && (item.qtyMultiple ?? 1) > 1 && ' · '}
+                      {(item.qtyMultiple ?? 1) > 1 && <>Múltiplo de {item.qtyMultiple}</>}
+                    </p>
+                  )}
                 </div>
                 <div className="text-right hidden md:block">
                   <div className="font-display font-bold">{formatBRL(item.price * item.qty)}</div>
@@ -97,7 +108,7 @@ function CartPage() {
               <Link to="/checkout">Finalizar pedido <ArrowRight className="w-4 h-4 ml-1.5" /></Link>
             </Button>
             <Button asChild variant="ghost" size="sm" className="w-full mt-2">
-              <Link to="/catalogo">Continuar comprando</Link>
+              <Link to={continueLink}>{continueLabel}</Link>
             </Button>
           </aside>
         </div>

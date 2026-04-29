@@ -47,7 +47,34 @@ export type CartLine = {
   qty: number;
   stock: number;
   freeShippingEligible?: boolean;
+  minQty?: number;
+  qtyMultiple?: number;
+  source?: 'b2c' | 'b2b';
 };
+
+/**
+ * Ajusta a quantidade respeitando mínimo, múltiplo e estoque.
+ * - Garante qty >= minQty (quando definido)
+ * - Arredonda para o múltiplo mais próximo (>= minQty)
+ * - Limita ao estoque disponível
+ */
+export function snapQty(
+  qty: number,
+  opts: { minQty?: number; qtyMultiple?: number; stock: number }
+): number {
+  const min = Math.max(1, opts.minQty ?? 1);
+  const mult = Math.max(1, opts.qtyMultiple ?? 1);
+  let q = Math.max(min, Math.floor(qty));
+  if (mult > 1) {
+    // arredonda para o múltiplo mais próximo, partindo de min
+    const offset = q - min;
+    const steps = Math.round(offset / mult);
+    q = min + steps * mult;
+    if (q < min) q = min;
+  }
+  if (opts.stock > 0) q = Math.min(q, opts.stock);
+  return q;
+}
 
 export const formatBRL = (value: number) =>
   value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
