@@ -48,6 +48,13 @@ function ProductForm() {
     images: [] as string[],
     tags: '',
     seo_title: '', seo_description: '', seo_keywords: '',
+    b2b_enabled: false,
+    b2b_price: '',
+    b2b_min_qty: '',
+    b2b_qty_multiple: '',
+    b2b_commercial_note: '',
+    b2b_valid_until: '',
+    b2b_show_in_vitrine: true,
   });
 
   useEffect(() => {
