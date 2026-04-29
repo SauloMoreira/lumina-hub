@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { requireSupabaseAuth } from '@/integrations/supabase/auth-middleware';
 import { supabaseAdmin } from '@/integrations/supabase/client.server';
 import { isValidCNPJ, onlyDigits } from '@/lib/cnpj';
+import { decideAutoApproval, lookupCnpj } from './cnpjLookup';
 
 const cnpjSchema = z
   .string()
@@ -46,9 +47,22 @@ export const createCompany = createServerFn({ method: 'POST' })
       );
     }
 
+    // Consulta a Receita (ReceitaWS) para decidir aprovação automática.
+    const cnpjInfo = await lookupCnpj(data.cnpj);
+    const decision = decideAutoApproval(cnpjInfo);
+
+    const autoApproved = decision.approve;
+    const adminNoteParts: string[] = [];
+    if (cnpjInfo.ok) {
+      adminNoteParts.push(
+        `ReceitaWS: ${cnpjInfo.situation || 'sem situação'}; abertura ${cnpjInfo.openedAt ?? 'n/d'}; razão "${cnpjInfo.legalName}"`,
+      );
+    } else {
+      adminNoteParts.push(`ReceitaWS indisponível: ${cnpjInfo.reason}`);
+    }
+    adminNoteParts.push(`Auto-aprovação: ${decision.reason}`);
+
     // Insere empresa via admin (auth já validada pelo middleware).
-    // Forçamos status=pending e campos de aprovação nulos para manter a
-    // mesma garantia da policy companies_self_insert.
     const { data: company, error } = await supabaseAdmin
       .from('companies')
       .insert({
@@ -67,11 +81,12 @@ export const createCompany = createServerFn({ method: 'POST' })
         address_neighborhood: data.address_neighborhood ?? null,
         address_city: data.address_city ?? null,
         address_state: data.address_state ?? null,
-        status: 'pending',
-        approved_at: null,
+        status: autoApproved ? 'approved' : 'pending',
+        approved_at: autoApproved ? new Date().toISOString() : null,
         approved_by: null,
         blocked_at: null,
         blocked_by: null,
+        admin_notes: adminNoteParts.join(' | '),
       })
       .select('id')
       .single();
@@ -80,7 +95,7 @@ export const createCompany = createServerFn({ method: 'POST' })
       throw new Error(error?.message ?? 'Não foi possível cadastrar a empresa.');
     }
 
-    // Vincula usuário como owner (admin: garante consistência mesmo se RLS bloquear)
+    // Vincula usuário como owner
     const { error: linkErr } = await supabaseAdmin.from('company_users').insert({
       company_id: company.id,
       user_id: userId,
@@ -91,7 +106,7 @@ export const createCompany = createServerFn({ method: 'POST' })
       throw new Error('Falha ao vincular usuário à empresa: ' + linkErr.message);
     }
 
-    return { id: company.id };
+    return { id: company.id, auto_approved: autoApproved, reason: decision.reason };
   });
 
 export const getMyCompany = createServerFn({ method: 'GET' })
