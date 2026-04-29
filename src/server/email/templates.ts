@@ -247,6 +247,7 @@ export function buildOrderEmailTemplate(p: OrderEmailParams): {
         ${secondaryBtn}
         ${itemsBlock}
         ${pickupBlock}
+        ${localBlock}
         ${supportLine}
       </td></tr>
       <tr><td style="padding:18px 28px;background:#fafafa;border-top:1px solid #eee;font-size:11px;color:#999;text-align:center;">
