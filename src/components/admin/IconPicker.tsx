@@ -5,7 +5,6 @@ import { Check, ChevronDown, Search, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { ScrollArea } from '@/components/ui/scroll-area';
 import { cn } from '@/lib/utils';
 
 /**
@@ -171,7 +170,7 @@ export function IconPicker({
             </div>
           )}
 
-          <ScrollArea className="h-[320px]">
+          <div className="h-[320px] overflow-y-auto">
             <div className="p-2 space-y-3">
               {filteredGroups.length === 0 && (
                 <p className="text-xs text-muted-foreground p-3 text-center">
@@ -215,7 +214,7 @@ export function IconPicker({
                 </div>
               ))}
             </div>
-          </ScrollArea>
+          </div>
 
           <div className="p-2 border-t text-[11px] text-muted-foreground">
             {ALL_ICONS.length} ícones curados · busca por nome (PascalCase)
