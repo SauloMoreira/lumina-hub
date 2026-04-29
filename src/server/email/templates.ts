@@ -242,8 +242,17 @@ export function buildOrderEmailTemplate(p: OrderEmailParams): {
       p.items.map((i) => `- ${i.name} x${i.qty} — ${BRL.format(i.totalPrice)}`).join('\n') +
       `\nSubtotal: ${BRL.format(p.subtotal)}` +
       (p.discountTotal > 0 ? `\nDesconto: -${BRL.format(p.discountTotal)}` : '') +
-      `\nFrete: ${p.shippingTotal > 0 ? BRL.format(p.shippingTotal) : 'Grátis'}` +
+      `\n${shippingLabel}: ${shippingValue}` +
       `\nTotal: ${BRL.format(p.total)}`
+    : '';
+
+  const pickupTxt = (isPickup && p.pickup)
+    ? `\n\nRetirada na loja:` +
+      (p.pickup.storeName ? `\n${p.pickup.storeName}` : '') +
+      (p.pickup.storeAddress ? `\n${p.pickup.storeAddress}` : '') +
+      (p.pickup.storePhone ? `\nTelefone: ${p.pickup.storePhone}` : '') +
+      (p.pickup.readyEta ? `\nTempo estimado: ${p.pickup.readyEta}` : '') +
+      (p.pickup.instructions ? `\n${p.pickup.instructions}` : '')
     : '';
 
   const text = `${greeting}
@@ -252,7 +261,7 @@ ${c.headline}
 
 ${c.intro.replace(/<[^>]+>/g, '')}
 
-${c.ctaLabel}: ${c.ctaUrl}${itemsTxt}
+${c.ctaLabel}: ${c.ctaUrl}${itemsTxt}${pickupTxt}
 
 — ${p.storeName}`;
 
