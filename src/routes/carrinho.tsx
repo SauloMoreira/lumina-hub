@@ -24,6 +24,8 @@ function CartPage() {
   const hasB2b = cart.hasB2bItems();
   const continueLink = hasB2b ? '/atacado' : '/catalogo';
   const continueLabel = hasB2b ? 'Continuar comprando no atacado' : 'Continuar comprando';
+  const lineValidations = cart.items.map((i) => ({ id: i.productId, validation: validateB2bLine(i) }));
+  const hasB2bIssue = lineValidations.some((r) => !r.validation.ok);
 
   if (cart.items.length === 0) {
     return (
