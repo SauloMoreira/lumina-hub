@@ -1,5 +1,6 @@
-import { createFileRoute, Link } from '@tanstack/react-router';
+import { createFileRoute, Link, useRouter } from '@tanstack/react-router';
 import { useEffect, useMemo, useState } from 'react';
+import { toast } from 'sonner';
 import {
   Building2,
   CheckCircle2,
@@ -211,16 +212,19 @@ function AtacadoPage() {
               Condições especiais para compras em quantidade.
             </p>
           </div>
-          {isApproved && (
-            <a
-              href={whatsappLink}
-              target="_blank"
-              rel="noreferrer"
-              className="hidden sm:inline-flex items-center gap-2 h-10 px-4 rounded-md border border-border bg-card text-sm font-semibold text-foreground hover:bg-muted transition"
-            >
-              <MessageSquareText className="w-4 h-4" /> Solicitar negociação
-            </a>
-          )}
+          <div className="flex items-center gap-2">
+            <CartButton />
+            {isApproved && (
+              <a
+                href={whatsappLink}
+                target="_blank"
+                rel="noreferrer"
+                className="hidden sm:inline-flex items-center gap-2 h-10 px-4 rounded-md border border-border bg-card text-sm font-semibold text-foreground hover:bg-muted transition"
+              >
+                <MessageSquareText className="w-4 h-4" /> Solicitar negociação
+              </a>
+            )}
+          </div>
         </div>
 
         {/* Filtros B2B */}
@@ -476,6 +480,7 @@ function B2bProductCard({ product, index }: { product: Product; index: number })
   const savePct = hasB2b && retail > 0 ? Math.round(((retail - (b2bPrice as number)) / retail) * 100) : 0;
   const finalPrice = hasB2b ? (b2bPrice as number) : retail;
 
+  const router = useRouter();
   const handleAdd = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
@@ -494,6 +499,16 @@ function B2bProductCard({ product, index }: { product: Product; index: number })
       },
       minQty
     );
+    toast.success('Adicionado ao carrinho', {
+      description: `${product.name} · ${minQty} un`,
+      action: {
+        label: 'Ir ao carrinho',
+        onClick: () => {
+          cart.close();
+          router.navigate({ to: '/carrinho' });
+        },
+      },
+    });
   };
 
   const isAboveFold = index < 3;
@@ -726,3 +741,26 @@ function Benefit({
 
 // Garante que formatCNPJ siga incluído (uso futuro nas próximas fases)
 void formatCNPJ;
+
+/* ----------------------------- CART BUTTON ----------------------------- */
+
+function CartButton() {
+  const cart = useCart();
+  const count = cart.count();
+  return (
+    <button
+      type="button"
+      onClick={() => cart.open()}
+      className="relative inline-flex items-center gap-2 h-10 px-4 rounded-md border border-border bg-card text-sm font-semibold text-foreground hover:bg-muted transition"
+      aria-label={`Abrir carrinho (${count} ${count === 1 ? 'item' : 'itens'})`}
+    >
+      <ShoppingCart className="w-4 h-4" />
+      <span className="hidden sm:inline">Carrinho</span>
+      {count > 0 && (
+        <span className="inline-flex items-center justify-center min-w-[20px] h-5 px-1.5 rounded-full bg-primary text-primary-foreground text-[10px] font-bold leading-none">
+          {count}
+        </span>
+      )}
+    </button>
+  );
+}
