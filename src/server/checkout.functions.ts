@@ -229,12 +229,14 @@ const CreateOrderInput = z.object({
       })
     )
     .min(1),
-  deliveryMethod: z.enum(['delivery', 'pickup']).default('delivery'),
+  deliveryMethod: z.enum(['delivery', 'pickup', 'local_delivery']).default('delivery'),
   shipping: z
     .object({
       carrier: z.string(),
       service: z.string(),
       cost: z.number().min(0),
+      // Para frete local: id da zona escolhida (servidor revalida o preço)
+      localZoneId: z.string().uuid().optional().nullable(),
     })
     .optional()
     .nullable(),
