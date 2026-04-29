@@ -32,6 +32,8 @@ import {
 import { supabase } from '@/integrations/supabase/client';
 import logo from '@/assets/logo-navbar.png';
 import { cn } from '@/lib/utils';
+import { useAdminCounters, type CounterSeverity } from '@/hooks/useAdminCounters';
+import { CounterBadge } from './CounterBadge';
 
 type Item = {
   to?: string;
