@@ -121,6 +121,34 @@ function CheckoutPage() {
     if (user?.user_metadata?.name) setRecipient(user.user_metadata.name as string);
   }, [user]);
 
+  async function checkLocalZone(opts: { city: string; state: string; neighborhood: string }) {
+    if (!opts.neighborhood || !opts.city || !opts.state) {
+      setLocalZone(null);
+      return;
+    }
+    setLocalZoneChecking(true);
+    try {
+      const r = await lookupLocalDeliveryZone({
+        data: { city: opts.city, state: opts.state, neighborhood: opts.neighborhood },
+      });
+      if (r.ok) {
+        setLocalZone({
+          zoneId: r.zoneId,
+          displayName: r.displayName,
+          district: r.district,
+          price: r.price,
+          eta: r.eta,
+        });
+      } else {
+        setLocalZone(null);
+      }
+    } catch {
+      setLocalZone(null);
+    } finally {
+      setLocalZoneChecking(false);
+    }
+  }
+
   async function handleZipBlur() {
     const clean = zip.replace(/\D/g, '');
     if (clean.length !== 8) return;
@@ -132,12 +160,21 @@ function CheckoutPage() {
         setNeighborhood(r.neighborhood);
         setCity(r.city);
         setState(r.state);
+        // Tenta detectar zona local automaticamente (Maricá/RJ etc.)
+        await checkLocalZone({ city: r.city, state: r.state, neighborhood: r.neighborhood });
       } else {
         toast.error(r.error);
+        setLocalZone(null);
       }
     } finally {
       setZipLoading(false);
     }
+  }
+
+  // Refazer lookup quando o cliente edita manualmente o bairro/cidade/UF
+  async function handleNeighborhoodBlur() {
+    if (!neighborhood || !city || !state) return;
+    await checkLocalZone({ city, state, neighborhood });
   }
 
   async function goToShipping() {
