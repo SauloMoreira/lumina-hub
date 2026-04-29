@@ -47,6 +47,12 @@ function normalizeProductImages<T extends { images?: string[] | null; product_im
 function HomePage() {
   const queryClient = useQueryClient();
 
+  const { data: homepage } = useQuery({
+    queryKey: ['homepage_settings'],
+    staleTime: 1000 * 60 * 5,
+    queryFn: fetchHomepageSettings,
+  });
+
   const { data: banners } = useQuery({
     queryKey: ['home-banners'],
     staleTime: 1000 * 60 * 5,
