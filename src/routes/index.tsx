@@ -299,11 +299,17 @@ function HomePage() {
                 const style: React.CSSProperties = {};
                 if (bg) style.background = bg;
                 if (fg) style.color = fg;
+                const promoIconValue = homepage?.promo_bar_icon;
+                const PromoIcon = getLucideIcon(promoIconValue, null);
                 const inner = (
-                  <>
-                    {homepage?.promo_bar_icon && <span className="mr-1">{homepage.promo_bar_icon}</span>}
+                  <span className="inline-flex items-center justify-center gap-1.5">
+                    {PromoIcon ? (
+                      <PromoIcon className="w-4 h-4 shrink-0" aria-hidden="true" />
+                    ) : promoIconValue ? (
+                      <span className="leading-none" aria-hidden="true">{promoIconValue}</span>
+                    ) : null}
                     <strong className="font-semibold">{homepage?.promo_bar_text}</strong>
-                  </>
+                  </span>
                 );
                 const baseCls = 'py-3 text-center text-sm font-medium';
                 const themeCls = bg || fg ? '' : 'bg-accent text-accent-foreground';
