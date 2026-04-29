@@ -5,10 +5,26 @@ import { formatBRL } from '@/lib/domain';
 import { useCart } from '@/stores/cartStore';
 import { ProductImagePlaceholder } from '@/components/store/ProductImagePlaceholder';
 
-export function ProductCard({ product, index = 0 }: { product: Product; index?: number }) {
+export function ProductCard({
+  product,
+  index = 0,
+  b2bApproved = false,
+}: {
+  product: Product;
+  index?: number;
+  b2bApproved?: boolean;
+}) {
   const cart = useCart();
-  const finalPrice = product.sale_price ?? product.price;
-  const hasDiscount = product.sale_price != null && product.sale_price < product.price;
+
+  const showB2bPrice =
+    b2bApproved && !!product.b2b_enabled && product.b2b_price != null && product.b2b_price > 0;
+
+  const retailFinal = product.sale_price ?? product.price;
+  const finalPrice = showB2bPrice ? (product.b2b_price as number) : retailFinal;
+  const hasDiscount =
+    !showB2bPrice && product.sale_price != null && product.sale_price < product.price;
+
+  const minQty = product.b2b_min_qty ?? 1;
 
   const handleAdd = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -69,10 +85,24 @@ export function ProductCard({ product, index = 0 }: { product: Product; index?: 
           </h3>
           <div className="flex items-end justify-between gap-1.5 sm:gap-2">
             <div className="min-w-0">
-              {hasDiscount && (
-                <div className="text-[10px] sm:text-xs text-muted-foreground line-through leading-none mb-0.5 truncate">{formatBRL(product.price)}</div>
+              {showB2bPrice ? (
+                <>
+                  <div className="text-[10px] sm:text-xs text-muted-foreground line-through leading-none mb-0.5 truncate">
+                    {formatBRL(retailFinal)}
+                  </div>
+                  <div className="font-display font-extrabold text-primary text-base sm:text-lg leading-none truncate">
+                    {formatBRL(finalPrice)}
+                  </div>
+                  <div className="text-[10px] text-success font-semibold mt-0.5">Preço empresa</div>
+                </>
+              ) : (
+                <>
+                  {hasDiscount && (
+                    <div className="text-[10px] sm:text-xs text-muted-foreground line-through leading-none mb-0.5 truncate">{formatBRL(product.price)}</div>
+                  )}
+                  <div className="font-display font-extrabold text-primary text-base sm:text-lg leading-none truncate">{formatBRL(finalPrice)}</div>
+                </>
               )}
-              <div className="font-display font-extrabold text-primary text-base sm:text-lg leading-none truncate">{formatBRL(finalPrice)}</div>
             </div>
             <button
               onClick={handleAdd}
@@ -83,6 +113,11 @@ export function ProductCard({ product, index = 0 }: { product: Product; index?: 
               <ShoppingCart className="w-4 h-4" />
             </button>
           </div>
+          {showB2bPrice && minQty > 1 && (
+            <div className="text-[10px] text-muted-foreground mt-1">
+              a partir de <span className="font-semibold text-foreground">{minQty} un</span>
+            </div>
+          )}
           {product.stock_qty <= 5 && product.stock_qty > 0 && (
             <div className="text-[10px] text-warning font-medium mt-2">⚠ Últimas {product.stock_qty} unidades</div>
           )}
