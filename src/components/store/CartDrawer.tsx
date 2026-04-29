@@ -124,9 +124,21 @@ export function CartDrawer() {
                     <span className="text-muted-foreground">Subtotal</span>
                     <span className="font-display font-bold text-lg text-foreground">{formatBRL(subtotal)}</span>
                   </div>
-                  <Button asChild className="w-full h-11" onClick={cart.close}>
-                    <Link to="/checkout">Finalizar pedido</Link>
-                  </Button>
+                  {hasB2bIssue && (
+                    <div className="flex items-start gap-2 rounded-md border border-destructive/40 bg-destructive/5 px-3 py-2 text-xs text-destructive">
+                      <AlertCircle className="w-3.5 h-3.5 mt-0.5 shrink-0" />
+                      <span>Ajuste a quantidade dos itens em atacado para respeitar mínimo e múltiplo antes de finalizar.</span>
+                    </div>
+                  )}
+                  {hasB2bIssue ? (
+                    <Button className="w-full h-11" disabled>
+                      Finalizar pedido
+                    </Button>
+                  ) : (
+                    <Button asChild className="w-full h-11" onClick={cart.close}>
+                      <Link to="/checkout">Finalizar pedido</Link>
+                    </Button>
+                  )}
                   <Button asChild variant="outline" size="sm" className="w-full" onClick={cart.close}>
                     <Link to="/carrinho">Ver carrinho completo</Link>
                   </Button>
