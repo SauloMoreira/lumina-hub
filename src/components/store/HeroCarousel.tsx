@@ -15,6 +15,7 @@ export type HeroBanner = {
   badge: string | null;
   bg_color: string | null;
   text_color: string | null;
+  title_color: string | null;
 };
 
 const AUTOPLAY_MS = 6000;
