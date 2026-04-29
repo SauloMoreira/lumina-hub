@@ -10,7 +10,7 @@ const AI_IMAGE_URL = 'https://ai.gateway.lovable.dev/v1/chat/completions';
  */
 export const generateBannerImage = createServerFn({ method: 'POST' })
   .middleware([requireAdmin])
-  .inputValidator((input: { title: string; subtitle?: string | null; campaignType?: string | null; extraHint?: string | null }) => input)
+  .inputValidator((input: { title: string; subtitle?: string | null; description?: string | null; campaignType?: string | null; extraHint?: string | null }) => input)
   .handler(async ({ data }) => {
     const apiKey = process.env.LOVABLE_API_KEY;
     if (!apiKey) throw new Error('LOVABLE_API_KEY não configurada');
@@ -18,6 +18,7 @@ export const generateBannerImage = createServerFn({ method: 'POST' })
     const title = (data.title ?? '').trim();
     if (!title) throw new Error('Título é obrigatório para gerar banner');
     const subtitle = (data.subtitle ?? '').trim();
+    const description = (data.description ?? '').trim();
     const type = (data.campaignType ?? 'promotion').trim();
     const hint = (data.extraHint ?? '').trim();
 
