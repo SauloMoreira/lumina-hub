@@ -71,7 +71,7 @@ function CadastroEmpresaPage() {
   const [form, setForm] = useState<FormState>(initial);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(false);
-  const [success, setSuccess] = useState(false);
+  const [success, setSuccess] = useState<{ approved: boolean; reason: string } | null>(null);
 
   const set =
     <K extends keyof FormState>(k: K) =>
@@ -96,11 +96,13 @@ function CadastroEmpresaPage() {
     setErrors({});
     setLoading(true);
     try {
-      await createCompany({
+      const res = await createCompany({
         data: { ...r.data, cnpj: onlyDigits(r.data.cnpj) },
       });
-      toast.success('Cadastro enviado para aprovação!');
-      setSuccess(true);
+      const approved = Boolean((res as { auto_approved?: boolean })?.auto_approved);
+      const reason = String((res as { reason?: string })?.reason ?? '');
+      toast.success(approved ? 'Empresa aprovada automaticamente!' : 'Cadastro enviado para aprovação!');
+      setSuccess({ approved, reason });
       setTimeout(() => {
         navigate({ to: '/conta/empresa' as never });
       }, 3500);
@@ -120,12 +122,18 @@ function CadastroEmpresaPage() {
             <CheckCircle2 className="w-9 h-9" />
           </div>
           <h1 className="text-2xl font-display font-bold text-foreground mb-2">
-            Cadastro enviado!
+            {success.approved ? 'Empresa aprovada!' : 'Cadastro enviado!'}
           </h1>
-          <p className="text-sm text-muted-foreground mb-6">
-            Recebemos os dados da sua empresa. Nosso time vai analisar e liberar
-            os preços B2B em breve. Você receberá um e-mail assim que for aprovado.
+          <p className="text-sm text-muted-foreground mb-2">
+            {success.approved
+              ? 'Validamos seu CNPJ na Receita e seu acesso B2B já está liberado. Os preços de atacado aparecerão automaticamente para você.'
+              : 'Recebemos os dados. Nosso time vai analisar e liberar os preços B2B em breve. Você receberá um e-mail assim que for aprovado.'}
           </p>
+          {success.reason && (
+            <p className="text-xs text-muted-foreground mb-6 italic">
+              {success.reason}
+            </p>
+          )}
           <div className="text-xs text-muted-foreground">
             Redirecionando para "Minha empresa"...
           </div>
