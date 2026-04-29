@@ -60,7 +60,25 @@ const groups: Group[] = [
     items: [
       { to: '/admin', label: 'Visão geral', icon: LayoutDashboard, exact: true },
       { to: '/admin/painel-do-dia', label: 'Painel do dia', icon: Sparkles },
-      { to: '/admin/pendencias', label: 'Pendências', icon: AlertCircle },
+      {
+        to: '/admin/pendencias',
+        label: 'Pendências',
+        icon: AlertCircle,
+        counterIds: [
+          'paid-awaiting-shipping',
+          'orders-awaiting-payment',
+          'new-leads',
+          'leads-no-response',
+          'pending-companies',
+          'b2b-open-negotiations',
+          'low-stock',
+          'out-of-stock',
+          'no-image',
+          'no-price',
+          'no-weight',
+          'local-zones-no-price',
+        ],
+      },
       { label: 'Indicadores', soon: true },
     ],
   },
@@ -69,7 +87,12 @@ const groups: Group[] = [
     label: 'Vendas',
     icon: ShoppingBag,
     items: [
-      { to: '/admin/pedidos', label: 'Pedidos', icon: ShoppingBag },
+      {
+        to: '/admin/pedidos',
+        label: 'Pedidos',
+        icon: ShoppingBag,
+        counterIds: ['paid-awaiting-shipping', 'orders-awaiting-payment'],
+      },
       { label: 'Carrinhos abandonados', soon: true },
       { label: 'Cupons utilizados', soon: true },
       { label: 'Pagamentos', soon: true },
@@ -81,7 +104,12 @@ const groups: Group[] = [
     label: 'Produtos',
     icon: Package,
     items: [
-      { to: '/admin/produtos', label: 'Produtos', icon: Package },
+      {
+        to: '/admin/produtos',
+        label: 'Produtos',
+        icon: Package,
+        counterIds: ['no-image', 'no-price', 'no-weight', 'low-stock', 'out-of-stock'],
+      },
       { to: '/admin/categorias', label: 'Categorias', icon: Tags },
       { label: 'Estoque', soon: true },
       { label: 'Preços e promoções', soon: true },
@@ -96,7 +124,12 @@ const groups: Group[] = [
     icon: Users,
     items: [
       { label: 'Clientes', soon: true },
-      { to: '/admin/leads', label: 'Leads', icon: Users },
+      {
+        to: '/admin/leads',
+        label: 'Leads',
+        icon: Users,
+        counterIds: ['new-leads', 'leads-no-response'],
+      },
       { label: 'Funil comercial', soon: true },
       { to: '/admin/contact-messages', label: 'Atendimentos', icon: Mail },
       { label: 'Modelos de WhatsApp', soon: true },
@@ -108,7 +141,12 @@ const groups: Group[] = [
     label: 'B2B / Atacado',
     icon: Briefcase,
     items: [
-      { to: '/admin/empresas', label: 'Empresas B2B', icon: Building2 },
+      {
+        to: '/admin/empresas',
+        label: 'Empresas B2B',
+        icon: Building2,
+        counterId: 'pending-companies',
+      },
       { label: 'Aprovações pendentes', soon: true },
       { label: 'Vitrine atacado', soon: true },
       { label: 'Negociações B2B', soon: true },
@@ -136,7 +174,12 @@ const groups: Group[] = [
     icon: Truck,
     items: [
       { label: 'Retirada na loja', soon: true },
-      { to: '/admin/settings/frete-local', label: 'Frete local Maricá/RJ', icon: Truck },
+      {
+        to: '/admin/settings/frete-local',
+        label: 'Frete local Maricá/RJ',
+        icon: Truck,
+        counterId: 'local-zones-no-price',
+      },
       { label: 'Frete convencional', soon: true },
       { label: 'Melhor Envio', soon: true },
       { label: 'Entregas', soon: true },
