@@ -24,18 +24,22 @@ import { Route as CondicoesDeUsoRouteImport } from './routes/condicoes-de-uso'
 import { Route as CheckoutRouteImport } from './routes/checkout'
 import { Route as CatalogoRouteImport } from './routes/catalogo'
 import { Route as CarrinhoRouteImport } from './routes/carrinho'
+import { Route as CadastroEmpresaRouteImport } from './routes/cadastro-empresa'
 import { Route as CadastroRouteImport } from './routes/cadastro'
+import { Route as AtacadoRouteImport } from './routes/atacado'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AdminIndexRouteImport } from './routes/admin.index'
 import { Route as ProdutoSlugRouteImport } from './routes/produto.$slug'
 import { Route as InstitucionalSlugRouteImport } from './routes/institucional.$slug'
 import { Route as ContaPedidosRouteImport } from './routes/conta.pedidos'
+import { Route as ContaEmpresaRouteImport } from './routes/conta.empresa'
 import { Route as CheckoutSuccessRouteImport } from './routes/checkout.success'
 import { Route as CheckoutPendingRouteImport } from './routes/checkout.pending'
 import { Route as CheckoutFailureRouteImport } from './routes/checkout.failure'
 import { Route as AdminSegurancaRouteImport } from './routes/admin.seguranca'
 import { Route as AdminPedidosRouteImport } from './routes/admin.pedidos'
 import { Route as AdminLeadsRouteImport } from './routes/admin.leads'
+import { Route as AdminEmpresasRouteImport } from './routes/admin.empresas'
 import { Route as AdminCuponsRouteImport } from './routes/admin.cupons'
 import { Route as AdminContactMessagesRouteImport } from './routes/admin.contact-messages'
 import { Route as AdminCategoriasRouteImport } from './routes/admin.categorias'
@@ -129,9 +133,19 @@ const CarrinhoRoute = CarrinhoRouteImport.update({
   path: '/carrinho',
   getParentRoute: () => rootRouteImport,
 } as any)
+const CadastroEmpresaRoute = CadastroEmpresaRouteImport.update({
+  id: '/cadastro-empresa',
+  path: '/cadastro-empresa',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const CadastroRoute = CadastroRouteImport.update({
   id: '/cadastro',
   path: '/cadastro',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AtacadoRoute = AtacadoRouteImport.update({
+  id: '/atacado',
+  path: '/atacado',
   getParentRoute: () => rootRouteImport,
 } as any)
 const IndexRoute = IndexRouteImport.update({
@@ -157,6 +171,11 @@ const InstitucionalSlugRoute = InstitucionalSlugRouteImport.update({
 const ContaPedidosRoute = ContaPedidosRouteImport.update({
   id: '/pedidos',
   path: '/pedidos',
+  getParentRoute: () => ContaRoute,
+} as any)
+const ContaEmpresaRoute = ContaEmpresaRouteImport.update({
+  id: '/empresa',
+  path: '/empresa',
   getParentRoute: () => ContaRoute,
 } as any)
 const CheckoutSuccessRoute = CheckoutSuccessRouteImport.update({
@@ -187,6 +206,11 @@ const AdminPedidosRoute = AdminPedidosRouteImport.update({
 const AdminLeadsRoute = AdminLeadsRouteImport.update({
   id: '/admin/leads',
   path: '/admin/leads',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminEmpresasRoute = AdminEmpresasRouteImport.update({
+  id: '/admin/empresas',
+  path: '/admin/empresas',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AdminCuponsRoute = AdminCuponsRouteImport.update({
@@ -280,7 +304,9 @@ const ApiPublicMercadopagoWebhookRoute =
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/atacado': typeof AtacadoRoute
   '/cadastro': typeof CadastroRoute
+  '/cadastro-empresa': typeof CadastroEmpresaRoute
   '/carrinho': typeof CarrinhoRoute
   '/catalogo': typeof CatalogoRoute
   '/checkout': typeof CheckoutRouteWithChildren
@@ -301,12 +327,14 @@ export interface FileRoutesByFullPath {
   '/admin/categorias': typeof AdminCategoriasRoute
   '/admin/contact-messages': typeof AdminContactMessagesRoute
   '/admin/cupons': typeof AdminCuponsRoute
+  '/admin/empresas': typeof AdminEmpresasRoute
   '/admin/leads': typeof AdminLeadsRoute
   '/admin/pedidos': typeof AdminPedidosRouteWithChildren
   '/admin/seguranca': typeof AdminSegurancaRoute
   '/checkout/failure': typeof CheckoutFailureRoute
   '/checkout/pending': typeof CheckoutPendingRoute
   '/checkout/success': typeof CheckoutSuccessRoute
+  '/conta/empresa': typeof ContaEmpresaRoute
   '/conta/pedidos': typeof ContaPedidosRoute
   '/institucional/$slug': typeof InstitucionalSlugRoute
   '/produto/$slug': typeof ProdutoSlugRoute
@@ -326,7 +354,9 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/atacado': typeof AtacadoRoute
   '/cadastro': typeof CadastroRoute
+  '/cadastro-empresa': typeof CadastroEmpresaRoute
   '/carrinho': typeof CarrinhoRoute
   '/catalogo': typeof CatalogoRoute
   '/checkout': typeof CheckoutRouteWithChildren
@@ -347,12 +377,14 @@ export interface FileRoutesByTo {
   '/admin/categorias': typeof AdminCategoriasRoute
   '/admin/contact-messages': typeof AdminContactMessagesRoute
   '/admin/cupons': typeof AdminCuponsRoute
+  '/admin/empresas': typeof AdminEmpresasRoute
   '/admin/leads': typeof AdminLeadsRoute
   '/admin/pedidos': typeof AdminPedidosRouteWithChildren
   '/admin/seguranca': typeof AdminSegurancaRoute
   '/checkout/failure': typeof CheckoutFailureRoute
   '/checkout/pending': typeof CheckoutPendingRoute
   '/checkout/success': typeof CheckoutSuccessRoute
+  '/conta/empresa': typeof ContaEmpresaRoute
   '/conta/pedidos': typeof ContaPedidosRoute
   '/institucional/$slug': typeof InstitucionalSlugRoute
   '/produto/$slug': typeof ProdutoSlugRoute
@@ -373,7 +405,9 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/atacado': typeof AtacadoRoute
   '/cadastro': typeof CadastroRoute
+  '/cadastro-empresa': typeof CadastroEmpresaRoute
   '/carrinho': typeof CarrinhoRoute
   '/catalogo': typeof CatalogoRoute
   '/checkout': typeof CheckoutRouteWithChildren
@@ -394,12 +428,14 @@ export interface FileRoutesById {
   '/admin/categorias': typeof AdminCategoriasRoute
   '/admin/contact-messages': typeof AdminContactMessagesRoute
   '/admin/cupons': typeof AdminCuponsRoute
+  '/admin/empresas': typeof AdminEmpresasRoute
   '/admin/leads': typeof AdminLeadsRoute
   '/admin/pedidos': typeof AdminPedidosRouteWithChildren
   '/admin/seguranca': typeof AdminSegurancaRoute
   '/checkout/failure': typeof CheckoutFailureRoute
   '/checkout/pending': typeof CheckoutPendingRoute
   '/checkout/success': typeof CheckoutSuccessRoute
+  '/conta/empresa': typeof ContaEmpresaRoute
   '/conta/pedidos': typeof ContaPedidosRoute
   '/institucional/$slug': typeof InstitucionalSlugRoute
   '/produto/$slug': typeof ProdutoSlugRoute
@@ -421,7 +457,9 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/atacado'
     | '/cadastro'
+    | '/cadastro-empresa'
     | '/carrinho'
     | '/catalogo'
     | '/checkout'
@@ -442,12 +480,14 @@ export interface FileRouteTypes {
     | '/admin/categorias'
     | '/admin/contact-messages'
     | '/admin/cupons'
+    | '/admin/empresas'
     | '/admin/leads'
     | '/admin/pedidos'
     | '/admin/seguranca'
     | '/checkout/failure'
     | '/checkout/pending'
     | '/checkout/success'
+    | '/conta/empresa'
     | '/conta/pedidos'
     | '/institucional/$slug'
     | '/produto/$slug'
@@ -467,7 +507,9 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/atacado'
     | '/cadastro'
+    | '/cadastro-empresa'
     | '/carrinho'
     | '/catalogo'
     | '/checkout'
@@ -488,12 +530,14 @@ export interface FileRouteTypes {
     | '/admin/categorias'
     | '/admin/contact-messages'
     | '/admin/cupons'
+    | '/admin/empresas'
     | '/admin/leads'
     | '/admin/pedidos'
     | '/admin/seguranca'
     | '/checkout/failure'
     | '/checkout/pending'
     | '/checkout/success'
+    | '/conta/empresa'
     | '/conta/pedidos'
     | '/institucional/$slug'
     | '/produto/$slug'
@@ -513,7 +557,9 @@ export interface FileRouteTypes {
   id:
     | '__root__'
     | '/'
+    | '/atacado'
     | '/cadastro'
+    | '/cadastro-empresa'
     | '/carrinho'
     | '/catalogo'
     | '/checkout'
@@ -534,12 +580,14 @@ export interface FileRouteTypes {
     | '/admin/categorias'
     | '/admin/contact-messages'
     | '/admin/cupons'
+    | '/admin/empresas'
     | '/admin/leads'
     | '/admin/pedidos'
     | '/admin/seguranca'
     | '/checkout/failure'
     | '/checkout/pending'
     | '/checkout/success'
+    | '/conta/empresa'
     | '/conta/pedidos'
     | '/institucional/$slug'
     | '/produto/$slug'
@@ -560,7 +608,9 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AtacadoRoute: typeof AtacadoRoute
   CadastroRoute: typeof CadastroRoute
+  CadastroEmpresaRoute: typeof CadastroEmpresaRoute
   CarrinhoRoute: typeof CarrinhoRoute
   CatalogoRoute: typeof CatalogoRoute
   CheckoutRoute: typeof CheckoutRouteWithChildren
@@ -581,6 +631,7 @@ export interface RootRouteChildren {
   AdminCategoriasRoute: typeof AdminCategoriasRoute
   AdminContactMessagesRoute: typeof AdminContactMessagesRoute
   AdminCuponsRoute: typeof AdminCuponsRoute
+  AdminEmpresasRoute: typeof AdminEmpresasRoute
   AdminLeadsRoute: typeof AdminLeadsRoute
   AdminPedidosRoute: typeof AdminPedidosRouteWithChildren
   AdminSegurancaRoute: typeof AdminSegurancaRoute
@@ -707,11 +758,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof CarrinhoRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/cadastro-empresa': {
+      id: '/cadastro-empresa'
+      path: '/cadastro-empresa'
+      fullPath: '/cadastro-empresa'
+      preLoaderRoute: typeof CadastroEmpresaRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/cadastro': {
       id: '/cadastro'
       path: '/cadastro'
       fullPath: '/cadastro'
       preLoaderRoute: typeof CadastroRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/atacado': {
+      id: '/atacado'
+      path: '/atacado'
+      fullPath: '/atacado'
+      preLoaderRoute: typeof AtacadoRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/': {
@@ -747,6 +812,13 @@ declare module '@tanstack/react-router' {
       path: '/pedidos'
       fullPath: '/conta/pedidos'
       preLoaderRoute: typeof ContaPedidosRouteImport
+      parentRoute: typeof ContaRoute
+    }
+    '/conta/empresa': {
+      id: '/conta/empresa'
+      path: '/empresa'
+      fullPath: '/conta/empresa'
+      preLoaderRoute: typeof ContaEmpresaRouteImport
       parentRoute: typeof ContaRoute
     }
     '/checkout/success': {
@@ -789,6 +861,13 @@ declare module '@tanstack/react-router' {
       path: '/admin/leads'
       fullPath: '/admin/leads'
       preLoaderRoute: typeof AdminLeadsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin/empresas': {
+      id: '/admin/empresas'
+      path: '/admin/empresas'
+      fullPath: '/admin/empresas'
+      preLoaderRoute: typeof AdminEmpresasRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/admin/cupons': {
@@ -930,10 +1009,12 @@ const CheckoutRouteWithChildren = CheckoutRoute._addFileChildren(
 )
 
 interface ContaRouteChildren {
+  ContaEmpresaRoute: typeof ContaEmpresaRoute
   ContaPedidosRoute: typeof ContaPedidosRoute
 }
 
 const ContaRouteChildren: ContaRouteChildren = {
+  ContaEmpresaRoute: ContaEmpresaRoute,
   ContaPedidosRoute: ContaPedidosRoute,
 }
 
@@ -953,7 +1034,9 @@ const AdminPedidosRouteWithChildren = AdminPedidosRoute._addFileChildren(
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AtacadoRoute: AtacadoRoute,
   CadastroRoute: CadastroRoute,
+  CadastroEmpresaRoute: CadastroEmpresaRoute,
   CarrinhoRoute: CarrinhoRoute,
   CatalogoRoute: CatalogoRoute,
   CheckoutRoute: CheckoutRouteWithChildren,
@@ -974,6 +1057,7 @@ const rootRouteChildren: RootRouteChildren = {
   AdminCategoriasRoute: AdminCategoriasRoute,
   AdminContactMessagesRoute: AdminContactMessagesRoute,
   AdminCuponsRoute: AdminCuponsRoute,
+  AdminEmpresasRoute: AdminEmpresasRoute,
   AdminLeadsRoute: AdminLeadsRoute,
   AdminPedidosRoute: AdminPedidosRouteWithChildren,
   AdminSegurancaRoute: AdminSegurancaRoute,

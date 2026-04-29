@@ -44,6 +44,7 @@ export function Header() {
         <nav className="hidden lg:flex items-center gap-5 text-sm font-medium text-muted-foreground">
           <Link to="/" className="hover:text-foreground transition-colors" activeProps={{ className: 'text-primary' }} activeOptions={{ exact: true }}>Início</Link>
           <Link to="/catalogo" className="hover:text-foreground transition-colors" activeProps={{ className: 'text-primary' }}>Catálogo</Link>
+          <Link to={'/atacado' as any} className="hover:text-foreground transition-colors" activeProps={{ className: 'text-primary' }}>Atacado</Link>
         </nav>
 
         {/* Ações */}
