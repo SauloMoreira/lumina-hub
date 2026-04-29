@@ -302,6 +302,7 @@ function CheckoutPage() {
                 carrier: selectedShipping!.carrier,
                 service: selectedShipping!.name,
                 cost: selectedShipping!.price,
+                localZoneId: isLocal ? (localZone?.zoneId ?? null) : null,
               },
           address: {
             recipient,
