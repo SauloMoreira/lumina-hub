@@ -171,6 +171,13 @@ function ProductForm() {
         seo_title: form.seo_title.trim() || null,
         seo_description: form.seo_description.trim() || null,
         seo_keywords: form.seo_keywords.trim() || null,
+        b2b_enabled: form.b2b_enabled,
+        b2b_price: form.b2b_enabled && form.b2b_price ? Number(form.b2b_price) : null,
+        b2b_min_qty: form.b2b_enabled && form.b2b_min_qty ? Number(form.b2b_min_qty) : null,
+        b2b_qty_multiple: form.b2b_enabled && form.b2b_qty_multiple ? Number(form.b2b_qty_multiple) : null,
+        b2b_commercial_note: form.b2b_enabled && form.b2b_commercial_note.trim() ? form.b2b_commercial_note.trim() : null,
+        b2b_valid_until: form.b2b_enabled && form.b2b_valid_until ? form.b2b_valid_until : null,
+        b2b_show_in_vitrine: form.b2b_show_in_vitrine,
       } as any;
 
       const res = isNew
