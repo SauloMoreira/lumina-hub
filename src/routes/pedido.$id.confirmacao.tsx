@@ -40,7 +40,8 @@ type CustomerOrder = {
   estimatedDelivery: string | null;
   createdAt: string | null;
   paidAt: string | null;
-  deliveryMethod: 'delivery' | 'pickup' | string;
+  deliveryMethod: 'delivery' | 'pickup' | 'local_delivery' | string;
+  localDelivery?: { district: string | null; eta: string | null } | null;
   pickup: {
     status: string | null;
     storeName: string | null;
@@ -95,6 +96,15 @@ function timelineSteps(status: string, paymentStatus: string | null, deliveryMet
       { icon: Package, label: 'Preparando', active: isPreparing },
       { icon: Store, label: 'Pronto p/ retirar', active: isShipped },
       { icon: CheckCircle2, label: 'Retirado', active: isDelivered },
+    ];
+  }
+  if (deliveryMethod === 'local_delivery') {
+    return [
+      { icon: CheckCircle2, label: 'Recebido', active: true },
+      { icon: CreditCard, label: 'Pagamento', active: isPaid },
+      { icon: Package, label: 'Preparando', active: isPreparing },
+      { icon: Truck, label: 'A caminho', active: isShipped },
+      { icon: CheckCircle2, label: 'Entregue', active: isDelivered },
     ];
   }
   return [
@@ -204,6 +214,7 @@ function OrderTrackingPage() {
 
   const msg = statusMessage(order.status, order.paymentStatus);
   const isPickup = order.deliveryMethod === 'pickup';
+  const isLocal = order.deliveryMethod === 'local_delivery';
   const steps = timelineSteps(order.status, order.paymentStatus, order.deliveryMethod);
   const trackUrl = trackingUrlFor(order.shippingCarrier, order.trackingCode);
   const isPaymentPending = order.paymentStatus === 'pending' || order.paymentStatus === 'in_process';
@@ -288,7 +299,7 @@ function OrderTrackingPage() {
           <div className="mt-4 pt-4 border-t border-border space-y-1.5 text-sm">
             <div className="flex justify-between"><span className="text-muted-foreground">Subtotal</span><span>{formatBRL(order.subtotal)}</span></div>
             {order.discount > 0 && <div className="flex justify-between text-success"><span>Desconto{order.couponCode ? ` (${order.couponCode})` : ''}</span><span>−{formatBRL(order.discount)}</span></div>}
-            <div className="flex justify-between"><span className="text-muted-foreground">{isPickup ? 'Retirada na loja' : `Frete${order.shippingService ? ` (${order.shippingService})` : ''}`}</span><span>{order.shippingCost === 0 ? 'Grátis' : formatBRL(order.shippingCost)}</span></div>
+            <div className="flex justify-between"><span className="text-muted-foreground">{isPickup ? 'Retirada na loja' : isLocal ? `Frete Local Maricá${order.localDelivery?.district ? ` (${order.localDelivery.district})` : ''}` : `Frete${order.shippingService ? ` (${order.shippingService})` : ''}`}</span><span>{order.shippingCost === 0 ? 'Grátis' : formatBRL(order.shippingCost)}</span></div>
             <div className="flex justify-between font-display font-bold text-lg pt-2 border-t border-border"><span>Total</span><span className="text-primary">{formatBRL(order.total)}</span></div>
           </div>
         </div>
@@ -296,8 +307,8 @@ function OrderTrackingPage() {
         {/* Entrega ou Retirada */}
         <div className="bg-card border border-border rounded-xl p-6 mb-6">
           <div className="flex items-center gap-2 mb-3">
-            {isPickup ? <Store className="w-4 h-4 text-primary" /> : <MapPin className="w-4 h-4 text-primary" />}
-            <h2 className="font-display font-semibold">{isPickup ? 'Retirada na loja' : 'Entrega'}</h2>
+            {isPickup ? <Store className="w-4 h-4 text-primary" /> : isLocal ? <Truck className="w-4 h-4 text-primary" /> : <MapPin className="w-4 h-4 text-primary" />}
+            <h2 className="font-display font-semibold">{isPickup ? 'Retirada na loja' : isLocal ? 'Frete Local Maricá/RJ' : 'Entrega'}</h2>
           </div>
 
           {isPickup ? (
@@ -340,9 +351,11 @@ function OrderTrackingPage() {
                 <p className="text-sm text-muted-foreground">Endereço não disponível.</p>
               )}
 
-              {(order.shippingCarrier || order.shippingService || order.estimatedDelivery) && (
+              {(order.shippingCarrier || order.shippingService || order.estimatedDelivery || (isLocal && order.localDelivery)) && (
                 <div className="mt-3 pt-3 border-t border-border text-xs text-muted-foreground space-y-0.5">
-                  {order.shippingCarrier && <p>Transportadora: <span className="text-foreground">{order.shippingCarrier}</span></p>}
+                  {isLocal && order.localDelivery?.district && <p>Localidade: <span className="text-foreground">{order.localDelivery.district}</span></p>}
+                  {isLocal && order.localDelivery?.eta && <p>Prazo estimado: <span className="text-foreground">{order.localDelivery.eta}</span></p>}
+                  {!isLocal && order.shippingCarrier && <p>Transportadora: <span className="text-foreground">{order.shippingCarrier}</span></p>}
                   {order.estimatedDelivery && <p>Previsão: <span className="text-foreground">{new Date(order.estimatedDelivery).toLocaleDateString('pt-BR')}</span></p>}
                   {order.trackingCode && <p>Código: <span className="text-foreground font-mono">{order.trackingCode}</span></p>}
                 </div>

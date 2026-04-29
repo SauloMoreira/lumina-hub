@@ -37,7 +37,7 @@ export async function sendOrderEmail(opts: SendOrderEmailOptions): Promise<{
     const { data: order, error: orderErr } = await supabaseAdmin
       .from('orders')
       .select(
-        'id, order_number, user_id, status, payment_status, subtotal, discount, shipping_cost, total, tracking_code, address_snapshot, public_access_token, delivery_method, pickup_store_name, pickup_store_address, pickup_store_phone, pickup_instructions, order_items(product_name, qty, unit_price, total_price)'
+        'id, order_number, user_id, status, payment_status, subtotal, discount, shipping_cost, total, tracking_code, address_snapshot, public_access_token, delivery_method, pickup_store_name, pickup_store_address, pickup_store_phone, pickup_instructions, local_delivery_district, local_delivery_eta, shipping_carrier, shipping_service, order_items(product_name, qty, unit_price, total_price)'
       )
       .eq('id', opts.orderId)
       .single();
@@ -98,7 +98,7 @@ export async function sendOrderEmail(opts: SendOrderEmailOptions): Promise<{
     }));
 
     const orderAny = order as any;
-    const deliveryMethod = (orderAny.delivery_method ?? 'delivery') as 'delivery' | 'pickup';
+    const deliveryMethod = (orderAny.delivery_method ?? 'delivery') as 'delivery' | 'pickup' | 'local_delivery';
 
     const { subject, html, text } = buildOrderEmailTemplate({
       storeName: getStoreName(),
@@ -122,6 +122,13 @@ export async function sendOrderEmail(opts: SendOrderEmailOptions): Promise<{
             storePhone: orderAny.pickup_store_phone ?? null,
             instructions: orderAny.pickup_instructions ?? null,
             readyEta: null,
+          }
+        : null,
+      localDelivery: deliveryMethod === 'local_delivery'
+        ? {
+            district: orderAny.local_delivery_district ?? null,
+            eta: orderAny.local_delivery_eta ?? null,
+            service: orderAny.shipping_service ?? null,
           }
         : null,
     });

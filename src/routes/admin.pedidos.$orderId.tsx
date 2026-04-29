@@ -239,6 +239,22 @@ function OrderDetailPage() {
                   {snap?.recipient && <p className="mt-1">Retirada por: <span className="text-foreground">{snap.recipient}</span></p>}
                 </div>
               </div>
+            ) : ((order as any).delivery_method === 'local_delivery') ? (
+              <div className="text-sm">
+                <p className="font-semibold mb-1 flex items-center gap-2">
+                  <span className="inline-block px-2 py-0.5 rounded bg-emerald-100 text-emerald-900 text-[10px] uppercase tracking-wide font-bold">Frete Local Maricá</span>
+                </p>
+                <div className="text-muted-foreground space-y-0.5">
+                  {(order as any).local_delivery_district && <p className="text-foreground font-medium">{(order as any).local_delivery_district}</p>}
+                  {(order as any).local_delivery_eta && <p>Prazo: {(order as any).local_delivery_eta}</p>}
+                  {snap && (
+                    <p className="mt-1">
+                      {snap.recipient} — {snap.street}, {snap.number} {snap.complement && `(${snap.complement})`} —{' '}
+                      {snap.neighborhood}, {snap.city}/{snap.state} — CEP {snap.zip_code}
+                    </p>
+                  )}
+                </div>
+              </div>
             ) : (
               <div className="text-sm">
                 <p className="font-semibold mb-1">Endereço de entrega</p>
@@ -276,7 +292,7 @@ function OrderDetailPage() {
             <Separator className="my-3" />
             <div className="space-y-1 text-sm">
               <Row label="Subtotal" value={fmt(order.subtotal)} />
-              <Row label={(order as any).delivery_method === 'pickup' ? 'Retirada na loja' : 'Frete'} value={Number(order.shipping_cost) === 0 ? 'Grátis' : fmt(order.shipping_cost)} />
+              <Row label={(order as any).delivery_method === 'pickup' ? 'Retirada na loja' : (order as any).delivery_method === 'local_delivery' ? 'Frete Local Maricá' : 'Frete'} value={Number(order.shipping_cost) === 0 ? 'Grátis' : fmt(order.shipping_cost)} />
               {Number(order.discount) > 0 && (
                 <Row label={`Desconto${order.coupon_code ? ` (${order.coupon_code})` : ''}`} value={`-${fmt(order.discount)}`} valueClass="text-emerald-600" />
               )}

@@ -39,7 +39,18 @@ function CheckoutPage() {
   const [submitting, setSubmitting] = useState(false);
 
   // Modalidade de entrega
-  const [deliveryMethod, setDeliveryMethod] = useState<'delivery' | 'pickup'>('delivery');
+  const [deliveryMethod, setDeliveryMethod] = useState<'delivery' | 'local_delivery' | 'pickup'>('delivery');
+
+  // Zona de frete local (Maricá/RJ) detectada após CEP
+  type LocalZone = {
+    zoneId: string;
+    displayName: string;
+    district: string;
+    price: number;
+    eta: string | null;
+  };
+  const [localZone, setLocalZone] = useState<LocalZone | null>(null);
+  const [localZoneChecking, setLocalZoneChecking] = useState(false);
 
   // Dados públicos da empresa (para info de retirada)
   const { data: companyData } = useQuery({
@@ -78,7 +89,12 @@ function CheckoutPage() {
   const [notes, setNotes] = useState('');
 
   const isPickup = deliveryMethod === 'pickup';
-  const shippingCost = isPickup ? 0 : (selectedShipping?.price ?? 0);
+  const isLocal = deliveryMethod === 'local_delivery';
+  const shippingCost = isPickup
+    ? 0
+    : isLocal
+    ? (localZone?.price ?? 0)
+    : (selectedShipping?.price ?? 0);
 
   const subtotal = cart.subtotal();
   const total = useMemo(
@@ -105,6 +121,34 @@ function CheckoutPage() {
     if (user?.user_metadata?.name) setRecipient(user.user_metadata.name as string);
   }, [user]);
 
+  async function checkLocalZone(opts: { city: string; state: string; neighborhood: string }) {
+    if (!opts.neighborhood || !opts.city || !opts.state) {
+      setLocalZone(null);
+      return;
+    }
+    setLocalZoneChecking(true);
+    try {
+      const r = await lookupLocalDeliveryZone({
+        data: { city: opts.city, state: opts.state, neighborhood: opts.neighborhood },
+      });
+      if (r.ok) {
+        setLocalZone({
+          zoneId: r.zoneId,
+          displayName: r.displayName,
+          district: r.district,
+          price: r.price,
+          eta: r.eta,
+        });
+      } else {
+        setLocalZone(null);
+      }
+    } catch {
+      setLocalZone(null);
+    } finally {
+      setLocalZoneChecking(false);
+    }
+  }
+
   async function handleZipBlur() {
     const clean = zip.replace(/\D/g, '');
     if (clean.length !== 8) return;
@@ -116,12 +160,21 @@ function CheckoutPage() {
         setNeighborhood(r.neighborhood);
         setCity(r.city);
         setState(r.state);
+        // Tenta detectar zona local automaticamente (Maricá/RJ etc.)
+        await checkLocalZone({ city: r.city, state: r.state, neighborhood: r.neighborhood });
       } else {
         toast.error(r.error);
+        setLocalZone(null);
       }
     } finally {
       setZipLoading(false);
     }
+  }
+
+  // Refazer lookup quando o cliente edita manualmente o bairro/cidade/UF
+  async function handleNeighborhoodBlur() {
+    if (!neighborhood || !city || !state) return;
+    await checkLocalZone({ city, state, neighborhood });
   }
 
   async function goToShipping() {
@@ -147,6 +200,24 @@ function CheckoutPage() {
     setStep(2);
     setShippingLoading(true);
     try {
+      // Garante lookup atualizado da zona local (caso bairro tenha sido editado)
+      let zone = localZone;
+      if (!zone && neighborhood && city && state) {
+        try {
+          const lz = await lookupLocalDeliveryZone({ data: { city, state, neighborhood } });
+          if (lz.ok) {
+            zone = {
+              zoneId: lz.zoneId,
+              displayName: lz.displayName,
+              district: lz.district,
+              price: lz.price,
+              eta: lz.eta,
+            };
+            setLocalZone(zone);
+          }
+        } catch { /* ignore */ }
+      }
+
       const weight = cart.items.reduce((s, i) => s + i.qty * 0.5, 0);
       const eligibleSubtotal = cart.items
         .filter((i) => i.freeShippingEligible)
@@ -161,13 +232,34 @@ function CheckoutPage() {
         setStep(1);
         return;
       }
-      setShippingOptions(r.services);
-      setSelectedShipping(r.services[0] ?? null);
+
+      // Adiciona opção de Frete Local se zona configurada e ativa
+      const services: ShippingService[] = [];
+      if (zone) {
+        services.push({
+          id: 'local-zone',
+          name: `Frete Local Maricá — ${zone.displayName}`,
+          carrier: 'Frete Local Maricá/RJ',
+          price: zone.price,
+          days: 1,
+        });
+      }
+      services.push(...r.services);
+
+      setShippingOptions(services);
+      // Pré-seleciona frete local se disponível, senão a primeira opção
+      setSelectedShipping(services[0] ?? null);
+      setDeliveryMethod(services[0]?.id === 'local-zone' ? 'local_delivery' : 'delivery');
     } catch {
       toast.error('Erro ao calcular frete');
     } finally {
       setShippingLoading(false);
     }
+  }
+
+  function handleSelectShipping(s: ShippingService) {
+    setSelectedShipping(s);
+    setDeliveryMethod(s.id === 'local-zone' ? 'local_delivery' : 'delivery');
   }
 
   async function handleApplyCoupon() {
@@ -210,6 +302,7 @@ function CheckoutPage() {
                 carrier: selectedShipping!.carrier,
                 service: selectedShipping!.name,
                 cost: selectedShipping!.price,
+                localZoneId: isLocal ? (localZone?.zoneId ?? null) : null,
               },
           address: {
             recipient,
@@ -402,7 +495,7 @@ function CheckoutPage() {
                       </div>
                       <div>
                         <Label htmlFor="neighborhood">Bairro</Label>
-                        <Input id="neighborhood" value={neighborhood} onChange={(e) => setNeighborhood(e.target.value)} className="mt-1.5" />
+                        <Input id="neighborhood" value={neighborhood} onChange={(e) => setNeighborhood(e.target.value)} onBlur={handleNeighborhoodBlur} className="mt-1.5" />
                       </div>
                       <div>
                         <Label htmlFor="city">Cidade</Label>
@@ -417,6 +510,25 @@ function CheckoutPage() {
                       <input type="checkbox" checked={saveAddress} onChange={(e) => setSaveAddress(e.target.checked)} className="rounded border-border" />
                       Salvar este endereço na minha conta
                     </label>
+                    {(localZoneChecking || localZone) && (
+                      <div className={`mt-4 p-3 rounded-lg border text-sm flex items-start gap-2 ${
+                        localZone ? 'bg-success/10 border-success/30' : 'bg-surface border-border'
+                      }`}>
+                        {localZoneChecking ? (
+                          <><Loader2 className="w-4 h-4 animate-spin shrink-0 mt-0.5" /> Verificando frete local…</>
+                        ) : (
+                          <>
+                            <Truck className="w-4 h-4 text-success shrink-0 mt-0.5" />
+                            <div className="min-w-0">
+                              <div className="font-medium">Frete Local disponível para {localZone!.displayName}</div>
+                              <div className="text-xs text-muted-foreground">
+                                {formatBRL(localZone!.price)}{localZone!.eta ? ` · ${localZone!.eta}` : ''} — você poderá escolher na próxima etapa.
+                              </div>
+                            </div>
+                          </>
+                        )}
+                      </div>
+                    )}
                     <Button onClick={goToShipping} size="lg" className="w-full mt-6 h-12">
                       Continuar para o frete <ArrowRight className="w-4 h-4 ml-1.5" />
                     </Button>
@@ -443,12 +555,16 @@ function CheckoutPage() {
                           type="radio"
                           name="shipping"
                           checked={selectedShipping?.id === s.id}
-                          onChange={() => setSelectedShipping(s)}
+                          onChange={() => handleSelectShipping(s)}
                           className="text-primary"
                         />
                         <div className="flex-1">
                           <div className="font-medium text-sm">{s.name} <span className="text-muted-foreground font-normal">· {s.carrier}</span></div>
-                          <div className="text-xs text-muted-foreground">Entrega em até {s.days} {s.days === 1 ? 'dia útil' : 'dias úteis'}</div>
+                          <div className="text-xs text-muted-foreground">
+                            {s.id === 'local-zone'
+                              ? (localZone?.eta || 'Entrega no mesmo dia / D+1')
+                              : `Entrega em até ${s.days} ${s.days === 1 ? 'dia útil' : 'dias úteis'}`}
+                          </div>
                         </div>
                         <div className="font-display font-bold">
                           {s.price === 0 ? <span className="text-success">Grátis</span> : formatBRL(s.price)}
@@ -500,7 +616,12 @@ function CheckoutPage() {
                       <p className="text-sm">{recipient}</p>
                       <p className="text-sm text-muted-foreground">{street}, {number}{complement ? `, ${complement}` : ''} — {neighborhood}</p>
                       <p className="text-sm text-muted-foreground">{city}/{state} · CEP {zip}</p>
-                      <p className="text-sm mt-2 font-medium">{selectedShipping?.name} · {selectedShipping?.carrier} ({selectedShipping?.days}d)</p>
+                      <p className="text-sm mt-2 font-medium">
+                        {selectedShipping?.name} · {selectedShipping?.carrier}
+                        {isLocal
+                          ? (localZone?.eta ? ` (${localZone.eta})` : '')
+                          : ` (${selectedShipping?.days}d)`}
+                      </p>
                     </>
                   )}
                 </section>
@@ -573,7 +694,7 @@ function CheckoutPage() {
                 <div className="flex justify-between text-success"><span>Desconto ({couponCode})</span><span>−{formatBRL(discount)}</span></div>
               )}
               <div className="flex justify-between">
-                <span className="text-muted-foreground">{isPickup ? 'Retirada na loja' : 'Frete'}</span>
+                <span className="text-muted-foreground">{isPickup ? 'Retirada na loja' : isLocal ? 'Frete Local Maricá' : 'Frete'}</span>
                 <span>
                   {isPickup
                     ? <span className="text-success">Grátis</span>
