@@ -1,6 +1,7 @@
 import { createFileRoute, Link } from '@tanstack/react-router';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useEffect } from 'react';
+import * as LucideIcons from 'lucide-react';
 import { Sparkles, Truck, Shield, MessageSquareText, ArrowRight, Lightbulb, Zap, Cable, Plug, Sun, LayoutGrid, Wrench, Package, Tag, Flame, Star } from 'lucide-react';
 import { StoreLayout } from '@/components/layout/StoreLayout';
 import { ProductCard } from '@/components/store/ProductCard';
@@ -10,6 +11,7 @@ import { supabase } from '@/integrations/supabase/client';
 import type { Product, Category } from '@/lib/domain';
 import { FREE_SHIPPING_THRESHOLD, formatBRL } from '@/lib/domain';
 import { imageUrlsFromProductImages } from '@/lib/productImages';
+import { fetchHomepageSettings, isPromoBarVisible } from '@/lib/homepageContent';
 import logoHero from '@/assets/logo-hero.webp';
 
 import { buildSeo } from '@/lib/seo';
@@ -24,6 +26,17 @@ export const Route = createFileRoute('/')({
 });
 
 const ICONS: Record<string, any> = { Lightbulb, Zap, Cable, Plug, Sun, LayoutGrid, Wrench, Package };
+
+function getLucideIcon(name?: string | null, fallback: any = Sparkles) {
+  if (!name) return fallback;
+  const Comp = (LucideIcons as any)[name];
+  return Comp ?? fallback;
+}
+
+function isExternalLink(url?: string | null) {
+  if (!url) return false;
+  return /^https?:\/\//i.test(url);
+}
 
 const PRODUCT_LIST_COLS = 'id, name, slug, price, sale_price, images, brand, tags, stock_qty, featured, category_id, product_images(url_thumb, url_card, original_url, is_primary, sort_order)';
 
