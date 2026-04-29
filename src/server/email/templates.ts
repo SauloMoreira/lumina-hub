@@ -161,12 +161,18 @@ export function buildOrderEmailTemplate(p: OrderEmailParams): {
         .join('')
     : '';
 
+  const isPickup = p.deliveryMethod === 'pickup';
+  const shippingLabel = isPickup ? 'Retirada na loja' : 'Frete';
+  const shippingValue = isPickup
+    ? 'Grátis'
+    : (p.shippingTotal > 0 ? BRL.format(p.shippingTotal) : 'Grátis');
+
   const totalsBlock = c.showItems
     ? `
     <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin-top:16px;font-size:14px;color:#444;">
       <tr><td>Subtotal</td><td style="text-align:right;">${BRL.format(p.subtotal)}</td></tr>
       ${p.discountTotal > 0 ? `<tr><td>Desconto</td><td style="text-align:right;color:#0a7a3e;">- ${BRL.format(p.discountTotal)}</td></tr>` : ''}
-      <tr><td>Frete</td><td style="text-align:right;">${p.shippingTotal > 0 ? BRL.format(p.shippingTotal) : 'Grátis'}</td></tr>
+      <tr><td>${shippingLabel}</td><td style="text-align:right;">${shippingValue}</td></tr>
       <tr><td style="padding-top:8px;font-weight:bold;color:#111;border-top:1px solid #eee;">Total</td>
           <td style="padding-top:8px;text-align:right;font-weight:bold;color:#111;border-top:1px solid #eee;">${BRL.format(p.total)}</td></tr>
     </table>`
@@ -179,6 +185,18 @@ export function buildOrderEmailTemplate(p: OrderEmailParams): {
       ${itemsRows}
     </table>
     ${totalsBlock}`
+    : '';
+
+  const pickupBlock = (isPickup && p.pickup)
+    ? `
+    <div style="margin-top:20px;padding:16px;background:#f8f9fb;border:1px solid #e5e7eb;border-radius:8px;">
+      <h3 style="margin:0 0 8px;font-size:14px;color:#111;">📍 Retirada na loja</h3>
+      ${p.pickup.storeName ? `<p style="margin:0 0 4px;font-size:14px;color:#111;font-weight:600;">${esc(p.pickup.storeName)}</p>` : ''}
+      ${p.pickup.storeAddress ? `<p style="margin:0 0 4px;font-size:13px;color:#444;white-space:pre-line;">${esc(p.pickup.storeAddress)}</p>` : ''}
+      ${p.pickup.storePhone ? `<p style="margin:0 0 4px;font-size:13px;color:#444;">Telefone: ${esc(p.pickup.storePhone)}</p>` : ''}
+      ${p.pickup.readyEta ? `<p style="margin:8px 0 0;font-size:13px;color:#444;"><strong>Tempo estimado de preparo:</strong> ${esc(p.pickup.readyEta)}</p>` : ''}
+      ${p.pickup.instructions ? `<p style="margin:8px 0 0;font-size:12px;color:#666;white-space:pre-line;">${esc(p.pickup.instructions)}</p>` : ''}
+    </div>`
     : '';
 
   const secondaryBtn = c.secondaryCta
