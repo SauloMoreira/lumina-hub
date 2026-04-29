@@ -1,6 +1,7 @@
 import { createFileRoute, Link } from '@tanstack/react-router';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useEffect } from 'react';
+import * as LucideIcons from 'lucide-react';
 import { Sparkles, Truck, Shield, MessageSquareText, ArrowRight, Lightbulb, Zap, Cable, Plug, Sun, LayoutGrid, Wrench, Package, Tag, Flame, Star } from 'lucide-react';
 import { StoreLayout } from '@/components/layout/StoreLayout';
 import { ProductCard } from '@/components/store/ProductCard';
@@ -10,6 +11,7 @@ import { supabase } from '@/integrations/supabase/client';
 import type { Product, Category } from '@/lib/domain';
 import { FREE_SHIPPING_THRESHOLD, formatBRL } from '@/lib/domain';
 import { imageUrlsFromProductImages } from '@/lib/productImages';
+import { fetchHomepageSettings, isPromoBarVisible } from '@/lib/homepageContent';
 import logoHero from '@/assets/logo-hero.webp';
 
 import { buildSeo } from '@/lib/seo';
@@ -25,6 +27,17 @@ export const Route = createFileRoute('/')({
 
 const ICONS: Record<string, any> = { Lightbulb, Zap, Cable, Plug, Sun, LayoutGrid, Wrench, Package };
 
+function getLucideIcon(name?: string | null, fallback: any = Sparkles) {
+  if (!name) return fallback;
+  const Comp = (LucideIcons as any)[name];
+  return Comp ?? fallback;
+}
+
+function isExternalLink(url?: string | null) {
+  if (!url) return false;
+  return /^https?:\/\//i.test(url);
+}
+
 const PRODUCT_LIST_COLS = 'id, name, slug, price, sale_price, images, brand, tags, stock_qty, featured, category_id, product_images(url_thumb, url_card, original_url, is_primary, sort_order)';
 
 function normalizeProductImages<T extends { images?: string[] | null; product_images?: any[] }>(product: T) {
@@ -33,6 +46,12 @@ function normalizeProductImages<T extends { images?: string[] | null; product_im
 
 function HomePage() {
   const queryClient = useQueryClient();
+
+  const { data: homepage } = useQuery({
+    queryKey: ['homepage_settings'],
+    staleTime: 1000 * 60 * 5,
+    queryFn: fetchHomepageSettings,
+  });
 
   const { data: banners } = useQuery({
     queryKey: ['home-banners'],
@@ -168,43 +187,141 @@ function HomePage() {
         </div>
       </section>
 
-      {/* HERO INSTITUCIONAL (abaixo do carrossel, conforme escolhido) */}
-      <section className="relative overflow-hidden bg-card border-y border-border">
-        <div className="container mx-auto px-4 py-6 md:py-8 relative">
-          <div className="max-w-3xl mx-auto text-center">
-            <img src={logoHero} alt="Led Maricá" loading="eager" fetchPriority="high" decoding="async" width={240} height={88} className="w-full max-w-[200px] md:max-w-[240px] h-auto mx-auto mb-3" />
-            <div className="inline-flex items-center gap-2 bg-primary-tint text-primary px-3 py-1 rounded-full text-xs font-medium mb-3">
-              <Sparkles className="w-3.5 h-3.5" /> Atendimento com IA 24h · Entrega rápida em Maricá e região
-            </div>
-            <h1 className="font-display font-extrabold text-xl md:text-3xl leading-tight mb-2 tracking-tight text-foreground">
-              Material elétrico e iluminação<br />
-              <span className="text-primary">com qualidade que ilumina.</span>
-            </h1>
-            <p className="text-sm md:text-base text-muted-foreground mb-4 max-w-xl mx-auto leading-relaxed">
-              Lâmpadas LED, disjuntores, fios, refletores e tudo que seu projeto precisa.
-              Nota fiscal garantida e suporte técnico de verdade.
-            </p>
-            <div className="flex flex-wrap gap-3 justify-center">
-              <Button asChild size="lg" className="h-11 px-6 font-semibold">
-                <Link to="/catalogo">Ver catálogo <ArrowRight className="w-4 h-4 ml-1.5" /></Link>
+      {/* HERO INSTITUCIONAL (administrável via /admin/conteudo/homepage) */}
+      {(homepage?.hero_is_active ?? true) && (() => {
+        const HeroBadgeIcon = getLucideIcon(homepage?.hero_badge_icon, Sparkles);
+        const PrimaryIcon = getLucideIcon(homepage?.hero_primary_button_icon, ArrowRight);
+        const SecondaryIcon = getLucideIcon(homepage?.hero_secondary_button_icon, MessageSquareText);
+        const heroTitle = homepage?.hero_title ?? 'Material elétrico e iluminação';
+        const heroHighlight = homepage?.hero_highlight_text ?? 'com qualidade que ilumina.';
+        const heroDesc = homepage?.hero_description ?? 'Lâmpadas LED, disjuntores, fios, refletores e tudo que seu projeto precisa.';
+        const heroSub = homepage?.hero_subdescription ?? 'Nota fiscal garantida e suporte técnico de verdade.';
+        const heroBadge = homepage?.hero_badge_text ?? 'Atendimento com IA 24h · Entrega rápida em Maricá e região';
+        const logoSrc = homepage?.hero_logo_url || logoHero;
+        const logoAlt = homepage?.hero_logo_alt || 'Led Maricá';
+        const primaryActive = homepage?.hero_primary_button_active ?? true;
+        const secondaryActive = homepage?.hero_secondary_button_active ?? true;
+        const primaryUrl = homepage?.hero_primary_button_url ?? '/catalogo';
+        const secondaryUrl = homepage?.hero_secondary_button_url ?? '#chat';
+        const primaryText = homepage?.hero_primary_button_text ?? 'Ver catálogo';
+        const secondaryText = homepage?.hero_secondary_button_text ?? 'Falar com IA';
+
+        const renderPrimary = () => {
+          if (!primaryActive) return null;
+          if (primaryUrl === '#chat') {
+            return (
+              <Button
+                size="lg"
+                className="h-11 px-6 font-semibold"
+                onClick={() => { if (typeof window !== 'undefined') window.dispatchEvent(new Event('open-chat')); }}
+              >
+                {primaryText} <PrimaryIcon className="w-4 h-4 ml-1.5" />
               </Button>
+            );
+          }
+          if (isExternalLink(primaryUrl)) {
+            return (
+              <Button asChild size="lg" className="h-11 px-6 font-semibold">
+                <a href={primaryUrl} target={homepage?.hero_primary_button_new_tab ? '_blank' : undefined} rel="noreferrer">
+                  {primaryText} <PrimaryIcon className="w-4 h-4 ml-1.5" />
+                </a>
+              </Button>
+            );
+          }
+          return (
+            <Button asChild size="lg" className="h-11 px-6 font-semibold">
+              <Link to={primaryUrl as any}>{primaryText} <PrimaryIcon className="w-4 h-4 ml-1.5" /></Link>
+            </Button>
+          );
+        };
+
+        const renderSecondary = () => {
+          if (!secondaryActive) return null;
+          const cls = 'h-11 px-6 border-primary/30 text-primary hover:bg-primary-tint hover:text-primary font-semibold';
+          if (secondaryUrl === '#chat') {
+            return (
               <Button
                 size="lg"
                 variant="outline"
-                className="h-11 px-6 border-primary/30 text-primary hover:bg-primary-tint hover:text-primary font-semibold"
+                className={cls}
                 onClick={() => { if (typeof window !== 'undefined') window.dispatchEvent(new Event('open-chat')); }}
               >
-                <MessageSquareText className="w-4 h-4 mr-1.5" /> Falar com IA
+                <SecondaryIcon className="w-4 h-4 mr-1.5" /> {secondaryText}
               </Button>
-            </div>
-          </div>
-        </div>
+            );
+          }
+          if (isExternalLink(secondaryUrl)) {
+            return (
+              <Button asChild size="lg" variant="outline" className={cls}>
+                <a href={secondaryUrl} target={homepage?.hero_secondary_button_new_tab ? '_blank' : undefined} rel="noreferrer">
+                  <SecondaryIcon className="w-4 h-4 mr-1.5" /> {secondaryText}
+                </a>
+              </Button>
+            );
+          }
+          return (
+            <Button asChild size="lg" variant="outline" className={cls}>
+              <Link to={secondaryUrl as any}><SecondaryIcon className="w-4 h-4 mr-1.5" /> {secondaryText}</Link>
+            </Button>
+          );
+        };
 
-        {/* Banner frete grátis */}
-        <div className="bg-accent text-accent-foreground py-3 text-center text-sm font-medium">
-          🚚 <strong>Frete grátis</strong> em pedidos acima de {formatBRL(FREE_SHIPPING_THRESHOLD)}
-        </div>
-      </section>
+        return (
+          <section className="relative overflow-hidden bg-card border-y border-border">
+            <div className="container mx-auto px-4 py-6 md:py-8 relative">
+              <div className="max-w-3xl mx-auto text-center">
+                <img src={logoSrc} alt={logoAlt} loading="eager" fetchPriority="high" decoding="async" width={240} height={88} className="w-full max-w-[200px] md:max-w-[240px] h-auto mx-auto mb-3" />
+                {heroBadge && (
+                  <div className="inline-flex items-center gap-2 bg-primary-tint text-primary px-3 py-1 rounded-full text-xs font-medium mb-3">
+                    <HeroBadgeIcon className="w-3.5 h-3.5" /> {heroBadge}
+                  </div>
+                )}
+                <h1 className="font-display font-extrabold text-xl md:text-3xl leading-tight mb-2 tracking-tight text-foreground">
+                  {heroTitle}{heroHighlight && <><br /><span className="text-primary">{heroHighlight}</span></>}
+                </h1>
+                {(heroDesc || heroSub) && (
+                  <p className="text-sm md:text-base text-muted-foreground mb-4 max-w-xl mx-auto leading-relaxed">
+                    {heroDesc}{heroSub ? ` ${heroSub}` : ''}
+                  </p>
+                )}
+                <div className="flex flex-wrap gap-3 justify-center">
+                  {renderPrimary()}
+                  {renderSecondary()}
+                </div>
+              </div>
+            </div>
+
+            {/* BARRA PROMOCIONAL (administrável) */}
+            {isPromoBarVisible(homepage) ? (
+              (() => {
+                const bg = homepage?.promo_bar_background_color;
+                const fg = homepage?.promo_bar_text_color;
+                const style: React.CSSProperties = {};
+                if (bg) style.background = bg;
+                if (fg) style.color = fg;
+                const inner = (
+                  <>
+                    {homepage?.promo_bar_icon && <span className="mr-1">{homepage.promo_bar_icon}</span>}
+                    <strong className="font-semibold">{homepage?.promo_bar_text}</strong>
+                  </>
+                );
+                const baseCls = 'py-3 text-center text-sm font-medium';
+                const themeCls = bg || fg ? '' : 'bg-accent text-accent-foreground';
+                if (homepage?.promo_bar_url) {
+                  const ext = isExternalLink(homepage.promo_bar_url);
+                  return ext ? (
+                    <a href={homepage.promo_bar_url} className={`${baseCls} ${themeCls} block hover:opacity-90`} style={style}>{inner}</a>
+                  ) : (
+                    <Link to={homepage.promo_bar_url as any} className={`${baseCls} ${themeCls} block hover:opacity-90`} style={style}>{inner}</Link>
+                  );
+                }
+                return <div className={`${baseCls} ${themeCls}`} style={style}>{inner}</div>;
+              })()
+            ) : null}
+          </section>
+        );
+      })()}
+
 
       {/* DIFERENCIAIS */}
       <section className="container mx-auto px-4 py-10">
@@ -293,19 +410,61 @@ function HomePage() {
         </div>
       </section>
 
-      {/* MARKETING / CONFIANÇA */}
-      <section className="container mx-auto px-4 pb-12">
-        <div className="rounded-2xl bg-gradient-to-br from-primary via-primary to-primary/80 text-primary-foreground p-8 md:p-12 text-center shadow-elevated">
-          <Sparkles className="w-8 h-8 mx-auto mb-3 opacity-90" />
-          <h3 className="font-display font-bold text-2xl md:text-3xl mb-3">A loja certa para o seu projeto</h3>
-          <p className="text-sm md:text-base opacity-90 max-w-xl mx-auto mb-6 leading-relaxed">
-            Nota fiscal garantida, suporte técnico de verdade, atendimento com IA 24h e entrega rápida em Maricá e região.
-          </p>
-          <Button asChild size="lg" variant="secondary" className="h-12 px-6 font-semibold">
-            <Link to="/catalogo">Ver catálogo completo <ArrowRight className="w-4 h-4 ml-1.5" /></Link>
-          </Button>
-        </div>
-      </section>
+      {/* MARKETING / CONFIANÇA (administrável) */}
+      {(homepage?.main_cta_is_active ?? true) && (() => {
+        const CtaIcon = getLucideIcon(homepage?.main_cta_icon, Sparkles);
+        const title = homepage?.main_cta_title ?? 'A loja certa para o seu projeto';
+        const desc = homepage?.main_cta_description ?? 'Nota fiscal garantida, suporte técnico de verdade, atendimento com IA 24h e entrega rápida em Maricá e região.';
+        const btnActive = homepage?.main_cta_button_active ?? true;
+        const btnText = homepage?.main_cta_button_text ?? 'Ver catálogo completo';
+        const btnUrl = homepage?.main_cta_button_url ?? '/catalogo';
+        const bg = homepage?.main_cta_background_color;
+        const fg = homepage?.main_cta_text_color;
+        const bgImage = homepage?.main_cta_image_url;
+        const containerStyle: React.CSSProperties = {};
+        if (bgImage) {
+          containerStyle.backgroundImage = `linear-gradient(135deg, rgba(0,0,0,0.55), rgba(0,0,0,0.35)), url(${bgImage})`;
+          containerStyle.backgroundSize = 'cover';
+          containerStyle.backgroundPosition = 'center';
+        } else if (bg) {
+          containerStyle.background = bg;
+        }
+        if (fg) containerStyle.color = fg;
+        const baseCls = bg || bgImage
+          ? 'rounded-2xl text-primary-foreground p-8 md:p-12 text-center shadow-elevated'
+          : 'rounded-2xl bg-gradient-to-br from-primary via-primary to-primary/80 text-primary-foreground p-8 md:p-12 text-center shadow-elevated';
+
+        const renderBtn = () => {
+          if (!btnActive) return null;
+          const btnStyle: React.CSSProperties = {};
+          if (homepage?.main_cta_button_color) btnStyle.background = homepage.main_cta_button_color;
+          if (isExternalLink(btnUrl)) {
+            return (
+              <Button asChild size="lg" variant="secondary" className="h-12 px-6 font-semibold" style={btnStyle}>
+                <a href={btnUrl} rel="noreferrer">{btnText} <ArrowRight className="w-4 h-4 ml-1.5" /></a>
+              </Button>
+            );
+          }
+          return (
+            <Button asChild size="lg" variant="secondary" className="h-12 px-6 font-semibold" style={btnStyle}>
+              <Link to={btnUrl as any}>{btnText} <ArrowRight className="w-4 h-4 ml-1.5" /></Link>
+            </Button>
+          );
+        };
+
+        return (
+          <section className="container mx-auto px-4 pb-12">
+            <div className={baseCls} style={containerStyle}>
+              <CtaIcon className="w-8 h-8 mx-auto mb-3 opacity-90" />
+              <h3 className="font-display font-bold text-2xl md:text-3xl mb-3">{title}</h3>
+              {desc && (
+                <p className="text-sm md:text-base opacity-90 max-w-xl mx-auto mb-6 leading-relaxed">{desc}</p>
+              )}
+              {renderBtn()}
+            </div>
+          </section>
+        );
+      })()}
     </StoreLayout>
   );
 }

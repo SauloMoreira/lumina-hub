@@ -51,6 +51,7 @@ import { Route as AdminSettingsCompanyRouteImport } from './routes/admin.setting
 import { Route as AdminProdutosIdRouteImport } from './routes/admin.produtos.$id'
 import { Route as AdminPedidosOrderIdRouteImport } from './routes/admin.pedidos.$orderId'
 import { Route as AdminInstitutionalPagesIdRouteImport } from './routes/admin.institutional-pages.$id'
+import { Route as AdminConteudoHomepageRouteImport } from './routes/admin.conteudo.homepage'
 import { Route as ApiPublicMercadopagoWebhookRouteImport } from './routes/api/public/mercadopago.webhook'
 
 const TrocaRoute = TrocaRouteImport.update({
@@ -265,6 +266,11 @@ const AdminInstitutionalPagesIdRoute =
     path: '/admin/institutional-pages/$id',
     getParentRoute: () => rootRouteImport,
   } as any)
+const AdminConteudoHomepageRoute = AdminConteudoHomepageRouteImport.update({
+  id: '/admin/conteudo/homepage',
+  path: '/admin/conteudo/homepage',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPublicMercadopagoWebhookRoute =
   ApiPublicMercadopagoWebhookRouteImport.update({
     id: '/api/public/mercadopago/webhook',
@@ -305,6 +311,7 @@ export interface FileRoutesByFullPath {
   '/institucional/$slug': typeof InstitucionalSlugRoute
   '/produto/$slug': typeof ProdutoSlugRoute
   '/admin/': typeof AdminIndexRoute
+  '/admin/conteudo/homepage': typeof AdminConteudoHomepageRoute
   '/admin/institutional-pages/$id': typeof AdminInstitutionalPagesIdRoute
   '/admin/pedidos/$orderId': typeof AdminPedidosOrderIdRoute
   '/admin/produtos/$id': typeof AdminProdutosIdRoute
@@ -350,6 +357,7 @@ export interface FileRoutesByTo {
   '/institucional/$slug': typeof InstitucionalSlugRoute
   '/produto/$slug': typeof ProdutoSlugRoute
   '/admin': typeof AdminIndexRoute
+  '/admin/conteudo/homepage': typeof AdminConteudoHomepageRoute
   '/admin/institutional-pages/$id': typeof AdminInstitutionalPagesIdRoute
   '/admin/pedidos/$orderId': typeof AdminPedidosOrderIdRoute
   '/admin/produtos/$id': typeof AdminProdutosIdRoute
@@ -396,6 +404,7 @@ export interface FileRoutesById {
   '/institucional/$slug': typeof InstitucionalSlugRoute
   '/produto/$slug': typeof ProdutoSlugRoute
   '/admin/': typeof AdminIndexRoute
+  '/admin/conteudo/homepage': typeof AdminConteudoHomepageRoute
   '/admin/institutional-pages/$id': typeof AdminInstitutionalPagesIdRoute
   '/admin/pedidos/$orderId': typeof AdminPedidosOrderIdRoute
   '/admin/produtos/$id': typeof AdminProdutosIdRoute
@@ -443,6 +452,7 @@ export interface FileRouteTypes {
     | '/institucional/$slug'
     | '/produto/$slug'
     | '/admin/'
+    | '/admin/conteudo/homepage'
     | '/admin/institutional-pages/$id'
     | '/admin/pedidos/$orderId'
     | '/admin/produtos/$id'
@@ -488,6 +498,7 @@ export interface FileRouteTypes {
     | '/institucional/$slug'
     | '/produto/$slug'
     | '/admin'
+    | '/admin/conteudo/homepage'
     | '/admin/institutional-pages/$id'
     | '/admin/pedidos/$orderId'
     | '/admin/produtos/$id'
@@ -533,6 +544,7 @@ export interface FileRouteTypes {
     | '/institucional/$slug'
     | '/produto/$slug'
     | '/admin/'
+    | '/admin/conteudo/homepage'
     | '/admin/institutional-pages/$id'
     | '/admin/pedidos/$orderId'
     | '/admin/produtos/$id'
@@ -575,6 +587,7 @@ export interface RootRouteChildren {
   InstitucionalSlugRoute: typeof InstitucionalSlugRoute
   ProdutoSlugRoute: typeof ProdutoSlugRoute
   AdminIndexRoute: typeof AdminIndexRoute
+  AdminConteudoHomepageRoute: typeof AdminConteudoHomepageRoute
   AdminInstitutionalPagesIdRoute: typeof AdminInstitutionalPagesIdRoute
   AdminProdutosIdRoute: typeof AdminProdutosIdRoute
   AdminSettingsCompanyRoute: typeof AdminSettingsCompanyRoute
@@ -883,6 +896,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminInstitutionalPagesIdRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/admin/conteudo/homepage': {
+      id: '/admin/conteudo/homepage'
+      path: '/admin/conteudo/homepage'
+      fullPath: '/admin/conteudo/homepage'
+      preLoaderRoute: typeof AdminConteudoHomepageRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/mercadopago/webhook': {
       id: '/api/public/mercadopago/webhook'
       path: '/api/public/mercadopago/webhook'
@@ -960,6 +980,7 @@ const rootRouteChildren: RootRouteChildren = {
   InstitucionalSlugRoute: InstitucionalSlugRoute,
   ProdutoSlugRoute: ProdutoSlugRoute,
   AdminIndexRoute: AdminIndexRoute,
+  AdminConteudoHomepageRoute: AdminConteudoHomepageRoute,
   AdminInstitutionalPagesIdRoute: AdminInstitutionalPagesIdRoute,
   AdminProdutosIdRoute: AdminProdutosIdRoute,
   AdminSettingsCompanyRoute: AdminSettingsCompanyRoute,
