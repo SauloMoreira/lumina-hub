@@ -14,6 +14,96 @@ export type Database = {
   }
   public: {
     Tables: {
+      abandoned_carts: {
+        Row: {
+          abandoned_at: string
+          cart_snapshot: Json
+          company_id: string | null
+          company_name: string | null
+          converted_order_id: string | null
+          created_at: string
+          customer_email: string | null
+          customer_name: string | null
+          customer_phone: string | null
+          id: string
+          last_activity_at: string | null
+          last_contacted_at: string | null
+          lead_id: string | null
+          notes: string | null
+          origin_page: string | null
+          origin_path: string | null
+          recovered_at: string | null
+          recovery_attempts: number
+          status: string
+          subtotal_amount: number
+          updated_at: string
+          user_id: string | null
+          utm_campaign: string | null
+          utm_content: string | null
+          utm_medium: string | null
+          utm_source: string | null
+          utm_term: string | null
+        }
+        Insert: {
+          abandoned_at?: string
+          cart_snapshot?: Json
+          company_id?: string | null
+          company_name?: string | null
+          converted_order_id?: string | null
+          created_at?: string
+          customer_email?: string | null
+          customer_name?: string | null
+          customer_phone?: string | null
+          id?: string
+          last_activity_at?: string | null
+          last_contacted_at?: string | null
+          lead_id?: string | null
+          notes?: string | null
+          origin_page?: string | null
+          origin_path?: string | null
+          recovered_at?: string | null
+          recovery_attempts?: number
+          status?: string
+          subtotal_amount?: number
+          updated_at?: string
+          user_id?: string | null
+          utm_campaign?: string | null
+          utm_content?: string | null
+          utm_medium?: string | null
+          utm_source?: string | null
+          utm_term?: string | null
+        }
+        Update: {
+          abandoned_at?: string
+          cart_snapshot?: Json
+          company_id?: string | null
+          company_name?: string | null
+          converted_order_id?: string | null
+          created_at?: string
+          customer_email?: string | null
+          customer_name?: string | null
+          customer_phone?: string | null
+          id?: string
+          last_activity_at?: string | null
+          last_contacted_at?: string | null
+          lead_id?: string | null
+          notes?: string | null
+          origin_page?: string | null
+          origin_path?: string | null
+          recovered_at?: string | null
+          recovery_attempts?: number
+          status?: string
+          subtotal_amount?: number
+          updated_at?: string
+          user_id?: string | null
+          utm_campaign?: string | null
+          utm_content?: string | null
+          utm_medium?: string | null
+          utm_source?: string | null
+          utm_term?: string | null
+        }
+        Relationships: []
+      }
       addresses: {
         Row: {
           city: string
@@ -112,6 +202,96 @@ export type Database = {
           resource_id?: string | null
           resource_type?: string
           user_agent?: string | null
+        }
+        Relationships: []
+      }
+      automation_rules: {
+        Row: {
+          active: boolean
+          channel: string
+          config: Json
+          created_at: string
+          description: string | null
+          id: string
+          max_sends_per_entity: number
+          name: string
+          respect_consent: boolean
+          template_id: string | null
+          trigger_type: string
+          updated_at: string
+          wait_minutes: number
+        }
+        Insert: {
+          active?: boolean
+          channel?: string
+          config?: Json
+          created_at?: string
+          description?: string | null
+          id?: string
+          max_sends_per_entity?: number
+          name: string
+          respect_consent?: boolean
+          template_id?: string | null
+          trigger_type: string
+          updated_at?: string
+          wait_minutes?: number
+        }
+        Update: {
+          active?: boolean
+          channel?: string
+          config?: Json
+          created_at?: string
+          description?: string | null
+          id?: string
+          max_sends_per_entity?: number
+          name?: string
+          respect_consent?: boolean
+          template_id?: string | null
+          trigger_type?: string
+          updated_at?: string
+          wait_minutes?: number
+        }
+        Relationships: []
+      }
+      automation_runs: {
+        Row: {
+          channel: string
+          created_at: string
+          entity_id: string | null
+          entity_type: string
+          error_message: string | null
+          generated_message: string | null
+          id: string
+          rule_id: string | null
+          status: string
+          trigger_kind: string
+          triggered_by: string | null
+        }
+        Insert: {
+          channel: string
+          created_at?: string
+          entity_id?: string | null
+          entity_type: string
+          error_message?: string | null
+          generated_message?: string | null
+          id?: string
+          rule_id?: string | null
+          status?: string
+          trigger_kind?: string
+          triggered_by?: string | null
+        }
+        Update: {
+          channel?: string
+          created_at?: string
+          entity_id?: string | null
+          entity_type?: string
+          error_message?: string | null
+          generated_message?: string | null
+          id?: string
+          rule_id?: string | null
+          status?: string
+          trigger_kind?: string
+          triggered_by?: string | null
         }
         Relationships: []
       }
@@ -1053,8 +1233,39 @@ export type Database = {
           },
         ]
       }
+      lead_status_history: {
+        Row: {
+          changed_by: string | null
+          created_at: string
+          from_status: string | null
+          id: string
+          lead_id: string
+          note: string | null
+          to_status: string
+        }
+        Insert: {
+          changed_by?: string | null
+          created_at?: string
+          from_status?: string | null
+          id?: string
+          lead_id: string
+          note?: string | null
+          to_status: string
+        }
+        Update: {
+          changed_by?: string | null
+          created_at?: string
+          from_status?: string | null
+          id?: string
+          lead_id?: string
+          note?: string | null
+          to_status?: string
+        }
+        Relationships: []
+      }
       leads: {
         Row: {
+          assigned_admin_id: string | null
           company: string | null
           conversation_summary: string | null
           converted_order: string | null
@@ -1063,22 +1274,43 @@ export type Database = {
           estimated_value: number | null
           id: string
           interest: string | null
+          last_interaction_at: string | null
           last_user_message: string | null
           lost_reason: string | null
           metadata: Json | null
           name: string
+          next_action: string | null
+          next_action_at: string | null
           notes: string | null
           origin: string | null
+          origin_category_id: string | null
+          origin_context: string | null
+          origin_page: string | null
+          origin_path: string | null
+          origin_product_id: string | null
+          origin_product_name: string | null
           page_url: string | null
           phone: string | null
+          priority: string
           product_id: string | null
           product_name: string | null
           product_url: string | null
+          referrer_url: string | null
+          score: number
+          score_reason: string | null
+          score_temperature: string
           status: string | null
+          tags: string[]
           updated_at: string | null
+          utm_campaign: string | null
+          utm_content: string | null
+          utm_medium: string | null
+          utm_source: string | null
+          utm_term: string | null
           whatsapp_message: string | null
         }
         Insert: {
+          assigned_admin_id?: string | null
           company?: string | null
           conversation_summary?: string | null
           converted_order?: string | null
@@ -1087,22 +1319,43 @@ export type Database = {
           estimated_value?: number | null
           id?: string
           interest?: string | null
+          last_interaction_at?: string | null
           last_user_message?: string | null
           lost_reason?: string | null
           metadata?: Json | null
           name: string
+          next_action?: string | null
+          next_action_at?: string | null
           notes?: string | null
           origin?: string | null
+          origin_category_id?: string | null
+          origin_context?: string | null
+          origin_page?: string | null
+          origin_path?: string | null
+          origin_product_id?: string | null
+          origin_product_name?: string | null
           page_url?: string | null
           phone?: string | null
+          priority?: string
           product_id?: string | null
           product_name?: string | null
           product_url?: string | null
+          referrer_url?: string | null
+          score?: number
+          score_reason?: string | null
+          score_temperature?: string
           status?: string | null
+          tags?: string[]
           updated_at?: string | null
+          utm_campaign?: string | null
+          utm_content?: string | null
+          utm_medium?: string | null
+          utm_source?: string | null
+          utm_term?: string | null
           whatsapp_message?: string | null
         }
         Update: {
+          assigned_admin_id?: string | null
           company?: string | null
           conversation_summary?: string | null
           converted_order?: string | null
@@ -1111,19 +1364,39 @@ export type Database = {
           estimated_value?: number | null
           id?: string
           interest?: string | null
+          last_interaction_at?: string | null
           last_user_message?: string | null
           lost_reason?: string | null
           metadata?: Json | null
           name?: string
+          next_action?: string | null
+          next_action_at?: string | null
           notes?: string | null
           origin?: string | null
+          origin_category_id?: string | null
+          origin_context?: string | null
+          origin_page?: string | null
+          origin_path?: string | null
+          origin_product_id?: string | null
+          origin_product_name?: string | null
           page_url?: string | null
           phone?: string | null
+          priority?: string
           product_id?: string | null
           product_name?: string | null
           product_url?: string | null
+          referrer_url?: string | null
+          score?: number
+          score_reason?: string | null
+          score_temperature?: string
           status?: string | null
+          tags?: string[]
           updated_at?: string | null
+          utm_campaign?: string | null
+          utm_content?: string | null
+          utm_medium?: string | null
+          utm_source?: string | null
+          utm_term?: string | null
           whatsapp_message?: string | null
         }
         Relationships: [
@@ -1880,6 +2153,42 @@ export type Database = {
         }
         Relationships: []
       }
+      whatsapp_templates: {
+        Row: {
+          active: boolean
+          body: string
+          category: string
+          created_at: string
+          id: string
+          name: string
+          sort_order: number
+          updated_at: string
+          variables: string[]
+        }
+        Insert: {
+          active?: boolean
+          body: string
+          category?: string
+          created_at?: string
+          id?: string
+          name: string
+          sort_order?: number
+          updated_at?: string
+          variables?: string[]
+        }
+        Update: {
+          active?: boolean
+          body?: string
+          category?: string
+          created_at?: string
+          id?: string
+          name?: string
+          sort_order?: number
+          updated_at?: string
+          variables?: string[]
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
@@ -1961,6 +2270,7 @@ export type Database = {
         }[]
       }
       normalize_zone_name: { Args: { _text: string }; Returns: string }
+      recalculate_lead_score: { Args: { _lead_id: string }; Returns: undefined }
       sync_product_images_array: {
         Args: { _product_id: string }
         Returns: undefined

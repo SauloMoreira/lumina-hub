@@ -39,25 +39,18 @@ export const Route = createFileRoute('/admin/leads')({
   component: LeadsPage,
 });
 
-const STATUSES = ['new', 'contacted', 'qualified', 'proposal', 'won', 'lost'] as const;
-type Status = (typeof STATUSES)[number];
+import { LEAD_STATUSES, LEAD_STATUS_STYLES, normalizeLeadStatus, type LeadStatus } from '@/lib/constants/leadStatus';
 
-const STATUS_STYLES: Record<Status, string> = {
-  new: 'bg-blue-500/15 text-blue-600 border-blue-500/30 dark:text-blue-400',
-  contacted: 'bg-amber-500/15 text-amber-600 border-amber-500/30 dark:text-amber-400',
-  qualified: 'bg-violet-500/15 text-violet-600 border-violet-500/30 dark:text-violet-400',
-  proposal: 'bg-cyan-500/15 text-cyan-600 border-cyan-500/30 dark:text-cyan-400',
-  won: 'bg-emerald-500/15 text-emerald-600 border-emerald-500/30 dark:text-emerald-400',
-  lost: 'bg-rose-500/15 text-rose-600 border-rose-500/30 dark:text-rose-400',
-};
+const STATUSES = LEAD_STATUSES;
+type Status = LeadStatus;
 
 const StatusBadge = ({ status }: { status?: string | null }) => {
-  const s = (status as Status) || 'new';
+  const s = normalizeLeadStatus(status);
   return (
     <span
       className={cn(
         'inline-flex items-center text-xs px-2 py-0.5 rounded-md border font-medium',
-        STATUS_STYLES[s] ?? 'bg-muted text-muted-foreground border-border'
+        LEAD_STATUS_STYLES[s] ?? 'bg-muted text-muted-foreground border-border'
       )}
     >
       {leadStatusLabel(s)}
@@ -113,7 +106,7 @@ function LeadsPage() {
   const KANBAN_PAGE = 20;
   const [open, setOpen] = useState(false);
   const [selected, setSelected] = useState<any>(null);
-  const [edit, setEdit] = useState({ status: 'new', notes: '', estimated_value: '' });
+  const [edit, setEdit] = useState<{ status: LeadStatus; notes: string; estimated_value: string }>({ status: 'novo', notes: '', estimated_value: '' });
 
   const load = async () => {
     setLoading(true);
@@ -136,9 +129,9 @@ function LeadsPage() {
   const norm = (s: string) =>
     s.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
 
-  const STATUS_ORDER: Record<string, number> = {
-    new: 0, contacted: 1, qualified: 2, proposal: 3, won: 4, lost: 5,
-  };
+  const STATUS_ORDER: Record<string, number> = Object.fromEntries(
+    LEAD_STATUSES.map((s, i) => [s, i]),
+  );
 
   const filteredLeads = leads
     .filter((l) => {
@@ -183,7 +176,7 @@ function LeadsPage() {
 
   const openDetail = (l: any) => {
     setSelected(l);
-    setEdit({ status: l.status ?? 'new', notes: l.notes ?? '', estimated_value: l.estimated_value ? String(l.estimated_value) : '' });
+    setEdit({ status: normalizeLeadStatus(l.status), notes: l.notes ?? '', estimated_value: l.estimated_value ? String(l.estimated_value) : '' });
     setOpen(true);
   };
 
@@ -228,7 +221,7 @@ function LeadsPage() {
     updateStatus(id, status);
   };
 
-  const leadsByStatus = (s: Status) => filteredLeads.filter((l) => (l.status ?? 'new') === s);
+  const leadsByStatus = (s: Status) => filteredLeads.filter((l) => normalizeLeadStatus(l.status) === s);
 
   return (
     <AdminLayout title="Leads">
