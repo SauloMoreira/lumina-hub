@@ -1,5 +1,5 @@
 import { createFileRoute, Link, useNavigate, redirect } from '@tanstack/react-router';
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { z } from 'zod';
 import { toast } from 'sonner';
 import { AlertCircle, Eye, EyeOff } from 'lucide-react';
@@ -41,6 +41,8 @@ const schema = z.object({
 function LoginPage() {
   const navigate = useNavigate();
   const { redirect: redirectTo } = Route.useSearch();
+  const emailRef = useRef<HTMLInputElement>(null);
+  const passwordRef = useRef<HTMLInputElement>(null);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPwd, setShowPwd] = useState(false);
@@ -48,8 +50,8 @@ function LoginPage() {
   const [authError, setAuthError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
-  const validate = () => {
-    const r = schema.safeParse({ email, password });
+  const validate = (values: { email: string; password: string }) => {
+    const r = schema.safeParse(values);
     if (r.success) { setErrors({}); return true; }
     const e: typeof errors = {};
     r.error.issues.forEach((i) => { e[i.path[0] as 'email' | 'password'] = i.message; });
@@ -65,7 +67,11 @@ function LoginPage() {
   const handleSubmit = async () => {
     if (loading) return;
     setAuthError(null);
-    if (!validate()) {
+    const nextEmail = emailRef.current?.value ?? email;
+    const nextPassword = passwordRef.current?.value ?? password;
+    setEmail(nextEmail);
+    setPassword(nextPassword);
+    if (!validate({ email: nextEmail, password: nextPassword })) {
       showAuthError('Confira os campos antes de continuar.');
       return;
     }
@@ -73,7 +79,7 @@ function LoginPage() {
     try {
       // Pré-checagem de rate limit (server-side) — não bloqueia em caso de falha de rede
       try {
-        await checkLoginAttempt({ data: { email } });
+        await checkLoginAttempt({ data: { email: nextEmail } });
       } catch (rlErr: unknown) {
         if (rlErr instanceof Response && rlErr.status === 429) {
           showAuthError('Muitas tentativas. Aguarde alguns minutos e tente novamente.');
@@ -84,9 +90,9 @@ function LoginPage() {
         console.warn('Rate limit check falhou, prosseguindo:', rlErr);
       }
 
-      const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+      const { data, error } = await supabase.auth.signInWithPassword({ email: nextEmail, password: nextPassword });
       if (error) {
-        void recordAuthFailure({ data: { email, reason: error.message } }).catch(() => {});
+        void recordAuthFailure({ data: { email: nextEmail, reason: error.message } }).catch(() => {});
         const msg = error.message?.toLowerCase() ?? '';
         if (msg.includes('invalid login credentials') || msg.includes('invalid_credentials')) {
           showAuthError('E-mail ou senha incorretos. Verifique e tente novamente.');
@@ -174,6 +180,7 @@ function LoginPage() {
 
         <FieldLabel htmlFor="email">E-mail</FieldLabel>
         <input
+          ref={emailRef}
           id="email" name="email" type="email" autoComplete="email" placeholder="seu@email.com"
           value={email} onChange={(e) => { setEmail(e.target.value); setAuthError(null); }}
           className={inputClass} style={inputStyle} {...inputFocusHandlers}
@@ -184,6 +191,7 @@ function LoginPage() {
           <FieldLabel htmlFor="password">Senha</FieldLabel>
           <div className="relative">
             <input
+              ref={passwordRef}
               id="password" name="password" type={showPwd ? 'text' : 'password'} autoComplete="current-password"
               placeholder="••••••••"
               value={password} onChange={(e) => { setPassword(e.target.value); setAuthError(null); }}
