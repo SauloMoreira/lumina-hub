@@ -16,7 +16,17 @@ export const Route = createFileRoute('/admin/settings/company')({
   component: AdminCompanyPage,
 });
 
-const FIELDS: Array<{ section: string; items: Array<{ key: string; label: string; type?: string; placeholder?: string; full?: boolean }> }> = [
+type FieldDef = {
+  key: string;
+  label: string;
+  type?: string;
+  placeholder?: string;
+  full?: boolean;
+  multiline?: boolean;
+  boolean?: boolean;
+};
+
+const FIELDS: Array<{ section: string; items: Array<FieldDef> }> = [
   {
     section: 'Identificação',
     items: [
@@ -46,6 +56,18 @@ const FIELDS: Array<{ section: string; items: Array<{ key: string; label: string
       { key: 'support_phone', label: 'Telefone' },
       { key: 'support_whatsapp', label: 'WhatsApp' },
       { key: 'business_hours', label: 'Horário de atendimento', placeholder: 'Seg–Sex 9h–18h', full: true },
+    ],
+  },
+  {
+    section: 'Retirada na Loja',
+    items: [
+      { key: 'pickup_enabled', label: 'Habilitar retirada na loja no checkout', boolean: true, full: true },
+      { key: 'pickup_store_name', label: 'Nome da loja para retirada', full: true },
+      { key: 'pickup_address', label: 'Endereço completo de retirada', full: true, multiline: true },
+      { key: 'pickup_phone', label: 'Telefone / WhatsApp da loja' },
+      { key: 'pickup_ready_eta', label: 'Prazo estimado de liberação', placeholder: 'Ex.: 1 dia útil' },
+      { key: 'pickup_business_hours', label: 'Horário de retirada', placeholder: 'Seg–Sex 9h–18h, Sáb 9h–13h', full: true },
+      { key: 'pickup_instructions', label: 'Instruções para retirada', full: true, multiline: true, placeholder: 'O que o cliente precisa apresentar, onde estacionar, etc.' },
     ],
   },
   {
