@@ -81,11 +81,11 @@ export function CartDrawer() {
                         <div className="font-display font-bold text-primary text-sm mb-2">{formatBRL(item.price)}</div>
                         <div className="flex items-center justify-between">
                           <div className="inline-flex items-center border border-border rounded-md">
-                            <button onClick={() => cart.updateQty(item.productId, item.qty - 1)} className="w-7 h-7 flex items-center justify-center hover:bg-surface">
+                            <button onClick={() => cart.decrementQty(item.productId)} className="w-7 h-7 flex items-center justify-center hover:bg-surface">
                               <Minus className="w-3 h-3" />
                             </button>
                             <span className="w-8 text-center text-xs font-medium">{item.qty}</span>
-                            <button onClick={() => cart.updateQty(item.productId, item.qty + 1)} className="w-7 h-7 flex items-center justify-center hover:bg-surface">
+                            <button onClick={() => cart.incrementQty(item.productId)} className="w-7 h-7 flex items-center justify-center hover:bg-surface">
                               <Plus className="w-3 h-3" />
                             </button>
                           </div>
@@ -93,6 +93,13 @@ export function CartDrawer() {
                             <Trash2 className="w-3.5 h-3.5" />
                           </button>
                         </div>
+                        {(item.source === 'b2b' || (item.qtyMultiple ?? 1) > 1 || (item.minQty ?? 1) > 1) && (
+                          <p className="text-[10px] text-muted-foreground mt-1">
+                            {(item.minQty ?? 1) > 1 && <>Mín. {item.minQty} un</>}
+                            {(item.minQty ?? 1) > 1 && (item.qtyMultiple ?? 1) > 1 && ' · '}
+                            {(item.qtyMultiple ?? 1) > 1 && <>Múltiplo de {item.qtyMultiple}</>}
+                          </p>
+                        )}
                       </div>
                     </div>
                   ))}
