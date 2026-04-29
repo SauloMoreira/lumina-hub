@@ -480,6 +480,7 @@ function B2bProductCard({ product, index }: { product: Product; index: number })
   const savePct = hasB2b && retail > 0 ? Math.round(((retail - (b2bPrice as number)) / retail) * 100) : 0;
   const finalPrice = hasB2b ? (b2bPrice as number) : retail;
 
+  const router = useRouter();
   const handleAdd = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
@@ -498,6 +499,16 @@ function B2bProductCard({ product, index }: { product: Product; index: number })
       },
       minQty
     );
+    toast.success('Adicionado ao carrinho', {
+      description: `${product.name} · ${minQty} un`,
+      action: {
+        label: 'Ir ao carrinho',
+        onClick: () => {
+          cart.close();
+          router.navigate({ to: '/carrinho' });
+        },
+      },
+    });
   };
 
   const isAboveFold = index < 3;
