@@ -142,6 +142,10 @@ function RootShell({ children }: { children: React.ReactNode }) {
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
   useEffect(() => { installAuthFetch(); }, []);
+  useEffect(() => {
+    // Captura UTMs/origem na URL atual e guarda no sessionStorage
+    void import("@/lib/leadTracking").then((m) => m.captureTrackingFromCurrentUrl());
+  }, []);
   return (
     <QueryClientProvider client={queryClient}>
       <AuthProvider>

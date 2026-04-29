@@ -28,6 +28,7 @@ import {
   Briefcase,
   Globe,
   AlertCircle,
+  MessageSquareText,
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import logo from '@/assets/logo-navbar.png';
@@ -132,7 +133,7 @@ const groups: Group[] = [
         icon: Users,
         counterIds: ['new-leads', 'leads-no-response'],
       },
-      { to: '/admin/leads', label: 'Funil comercial', icon: LayoutDashboard },
+      { to: '/admin/funil', label: 'Funil comercial', icon: LayoutDashboard },
       { to: '/admin/contact-messages', label: 'Atendimentos', icon: Mail },
       { to: '/admin/whatsapp-templates', label: 'Modelos de WhatsApp', icon: MessageSquareText },
       { label: 'Histórico de contatos', soon: true },

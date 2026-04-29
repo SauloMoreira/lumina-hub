@@ -198,12 +198,14 @@ export function ChatWidget() {
     }
     setHandoffLoading(true);
     try {
+      const { getLeadTrackingPayload } = await import("@/lib/leadTracking");
       const res = await handoff({
         data: {
           name: trimmedName,
           phone: digits,
           sessionId,
           pageUrl: typeof window !== "undefined" ? window.location.href : null,
+          tracking: getLeadTrackingPayload({ origin_context: "chat" }),
         },
       });
       setWhatsappUrl(res.whatsappUrl);
