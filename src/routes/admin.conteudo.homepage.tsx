@@ -348,11 +348,10 @@ function AdminHomepageContentPage() {
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <Field label="Ícone superior (lucide-react)">
-                    <Input
-                      value={form.main_cta_icon ?? ''}
-                      onChange={(e) => set('main_cta_icon', e.target.value)}
-                      placeholder="Sparkles"
+                  <Field label="Ícone superior">
+                    <IconPicker
+                      value={form.main_cta_icon}
+                      onChange={(v) => set('main_cta_icon', v)}
                     />
                   </Field>
                   <Field label="Imagem de fundo (URL, opcional)">
