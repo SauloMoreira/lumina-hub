@@ -173,7 +173,6 @@ function AdminCompanyPage() {
                     );
                   })}
                 </div>
-                </div>
               </CardContent>
             </Card>
           ))}
