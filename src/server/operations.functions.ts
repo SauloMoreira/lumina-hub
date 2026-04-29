@@ -431,6 +431,24 @@ export const getAdminOperations = createServerFn({ method: 'GET' })
         ctaHref: '/admin/settings/frete-local',
         group: 'Logística',
       },
+      {
+        id: 'abandoned-carts',
+        title: 'Carrinhos abandonados',
+        description:
+          abandonedTotalValue > 0
+            ? `Valor total parado: ${new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(abandonedTotalValue)}.`
+            : 'Clientes que adicionaram produtos mas não finalizaram a compra.',
+        qty: abandonedNew,
+        status:
+          abandonedNew === 0
+            ? 'ok'
+            : abandonedHighValue > 0 || abandonedStuck24h > 0
+              ? 'danger'
+              : 'warn',
+        ctaLabel: 'Ver carrinhos',
+        ctaHref: '/admin/carrinhos-abandonados',
+        group: 'Pedidos',
+      },
     ];
 
     // ============================================================
