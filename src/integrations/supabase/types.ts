@@ -258,6 +258,13 @@ export type Database = {
           linkedin_url: string | null
           logo_url: string | null
           municipal_registration: string | null
+          pickup_address: string | null
+          pickup_business_hours: string | null
+          pickup_enabled: boolean
+          pickup_instructions: string | null
+          pickup_phone: string | null
+          pickup_ready_eta: string | null
+          pickup_store_name: string | null
           state_registration: string | null
           support_email: string | null
           support_phone: string | null
@@ -285,6 +292,13 @@ export type Database = {
           linkedin_url?: string | null
           logo_url?: string | null
           municipal_registration?: string | null
+          pickup_address?: string | null
+          pickup_business_hours?: string | null
+          pickup_enabled?: boolean
+          pickup_instructions?: string | null
+          pickup_phone?: string | null
+          pickup_ready_eta?: string | null
+          pickup_store_name?: string | null
           state_registration?: string | null
           support_email?: string | null
           support_phone?: string | null
@@ -312,6 +326,13 @@ export type Database = {
           linkedin_url?: string | null
           logo_url?: string | null
           municipal_registration?: string | null
+          pickup_address?: string | null
+          pickup_business_hours?: string | null
+          pickup_enabled?: boolean
+          pickup_instructions?: string | null
+          pickup_phone?: string | null
+          pickup_ready_eta?: string | null
+          pickup_store_name?: string | null
           state_registration?: string | null
           support_email?: string | null
           support_phone?: string | null
@@ -832,6 +853,7 @@ export type Database = {
           checkout_url: string | null
           coupon_code: string | null
           created_at: string | null
+          delivery_method: string
           discount: number
           estimated_delivery: string | null
           external_reference: string | null
@@ -850,6 +872,11 @@ export type Database = {
           payment_method: string | null
           payment_provider: string
           payment_status: string | null
+          pickup_instructions: string | null
+          pickup_status: string | null
+          pickup_store_address: string | null
+          pickup_store_name: string | null
+          pickup_store_phone: string | null
           public_access_token: string | null
           shipping_carrier: string | null
           shipping_cost: number
@@ -870,6 +897,7 @@ export type Database = {
           checkout_url?: string | null
           coupon_code?: string | null
           created_at?: string | null
+          delivery_method?: string
           discount?: number
           estimated_delivery?: string | null
           external_reference?: string | null
@@ -888,6 +916,11 @@ export type Database = {
           payment_method?: string | null
           payment_provider?: string
           payment_status?: string | null
+          pickup_instructions?: string | null
+          pickup_status?: string | null
+          pickup_store_address?: string | null
+          pickup_store_name?: string | null
+          pickup_store_phone?: string | null
           public_access_token?: string | null
           shipping_carrier?: string | null
           shipping_cost?: number
@@ -908,6 +941,7 @@ export type Database = {
           checkout_url?: string | null
           coupon_code?: string | null
           created_at?: string | null
+          delivery_method?: string
           discount?: number
           estimated_delivery?: string | null
           external_reference?: string | null
@@ -926,6 +960,11 @@ export type Database = {
           payment_method?: string | null
           payment_provider?: string
           payment_status?: string | null
+          pickup_instructions?: string | null
+          pickup_status?: string | null
+          pickup_store_address?: string | null
+          pickup_store_name?: string | null
+          pickup_store_phone?: string | null
           public_access_token?: string | null
           shipping_carrier?: string | null
           shipping_cost?: number
