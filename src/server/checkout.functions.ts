@@ -168,25 +168,32 @@ const CreateOrderInput = z.object({
       })
     )
     .min(1),
-  shipping: z.object({
-    carrier: z.string(),
-    service: z.string(),
-    cost: z.number().min(0),
-  }),
-  address: z.object({
-    recipient: z.string().min(1),
-    zipCode: z
-      .string()
-      .transform((v) => v.replace(/\D/g, ''))
-      .pipe(z.string().regex(/^\d{8}$/, 'CEP deve ter 8 dígitos')),
-    street: z.string().min(1),
-    number: z.string().min(1),
-    complement: z.string().optional().nullable(),
-    neighborhood: z.string().optional().nullable(),
-    city: z.string().min(1),
-    state: z.string().length(2),
-    saveAddress: z.boolean().default(false),
-  }),
+  deliveryMethod: z.enum(['delivery', 'pickup']).default('delivery'),
+  shipping: z
+    .object({
+      carrier: z.string(),
+      service: z.string(),
+      cost: z.number().min(0),
+    })
+    .optional()
+    .nullable(),
+  address: z
+    .object({
+      recipient: z.string().min(1),
+      zipCode: z
+        .string()
+        .transform((v) => v.replace(/\D/g, ''))
+        .pipe(z.string().regex(/^\d{8}$/, 'CEP deve ter 8 dígitos').or(z.literal(''))),
+      street: z.string().optional().nullable(),
+      number: z.string().optional().nullable(),
+      complement: z.string().optional().nullable(),
+      neighborhood: z.string().optional().nullable(),
+      city: z.string().optional().nullable(),
+      state: z.string().optional().nullable(),
+      saveAddress: z.boolean().default(false),
+    })
+    .nullable()
+    .optional(),
   couponCode: z.string().optional().nullable(),
   notes: z.string().optional().nullable(),
 });
