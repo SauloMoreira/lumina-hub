@@ -487,10 +487,22 @@ function CheckoutPage() {
 
                 <section className="mb-5 pb-5 border-b border-border">
                   <h3 className="font-semibold text-sm mb-2 text-muted-foreground uppercase tracking-wide">Entrega</h3>
-                  <p className="text-sm">{recipient}</p>
-                  <p className="text-sm text-muted-foreground">{street}, {number}{complement ? `, ${complement}` : ''} — {neighborhood}</p>
-                  <p className="text-sm text-muted-foreground">{city}/{state} · CEP {zip}</p>
-                  <p className="text-sm mt-2 font-medium">{selectedShipping?.name} · {selectedShipping?.carrier} ({selectedShipping?.days}d)</p>
+                  {isPickup ? (
+                    <>
+                      <p className="text-sm font-medium">Retirada na loja — Grátis</p>
+                      {company?.pickup_store_name && <p className="text-sm">{company.pickup_store_name as string}</p>}
+                      {company?.pickup_address && <p className="text-sm text-muted-foreground whitespace-pre-line">{company.pickup_address as string}</p>}
+                      <p className="text-sm text-muted-foreground">Retirada por: {recipient}</p>
+                      <p className="text-xs text-warning mt-2">⚠️ Aguarde a confirmação de disponibilidade antes de comparecer.</p>
+                    </>
+                  ) : (
+                    <>
+                      <p className="text-sm">{recipient}</p>
+                      <p className="text-sm text-muted-foreground">{street}, {number}{complement ? `, ${complement}` : ''} — {neighborhood}</p>
+                      <p className="text-sm text-muted-foreground">{city}/{state} · CEP {zip}</p>
+                      <p className="text-sm mt-2 font-medium">{selectedShipping?.name} · {selectedShipping?.carrier} ({selectedShipping?.days}d)</p>
+                    </>
+                  )}
                 </section>
 
                 <section className="mb-5">
