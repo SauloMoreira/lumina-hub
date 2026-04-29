@@ -502,10 +502,13 @@ function B2bProductCard({ product, index }: { product: Product; index: number })
         qtyMultiple: product.b2b_qty_multiple ?? 1,
         source: 'b2b',
       },
-      minQty
+      minQty,
+      { openDrawer: false }
     );
-    toast.success('Adicionado ao carrinho', {
+    toast.success('Produto adicionado ao carrinho', {
       description: `${product.name} · ${minQty} un`,
+      duration: 6000,
+      position: 'top-center',
       action: {
         label: 'Ir ao carrinho',
         onClick: () => {

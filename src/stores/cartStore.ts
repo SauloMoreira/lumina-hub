@@ -5,7 +5,7 @@ import type { CartLine } from '@/lib/domain';
 type CartState = {
   items: CartLine[];
   isOpen: boolean;
-  addItem: (line: Omit<CartLine, 'qty'>, qty?: number) => void;
+  addItem: (line: Omit<CartLine, 'qty'>, qty?: number, opts?: { openDrawer?: boolean }) => void;
   removeItem: (productId: string) => void;
   updateQty: (productId: string, qty: number) => void;
   clear: () => void;
@@ -26,9 +26,10 @@ export const useCart = create<CartState>()(
       // Sempre faz merge dos metadados (minQty / qtyMultiple / source) para
       // que itens persistidos antes da feature B2B passem a respeitar as
       // regras assim que forem adicionados de novo.
-      addItem: (line, qty) =>
+      addItem: (line, qty, opts) =>
         set((s) => {
           const desired = Math.max(1, qty ?? line.minQty ?? 1);
+          const openDrawer = opts?.openDrawer ?? true;
           const existing = s.items.find((i) => i.productId === line.productId);
           if (existing) {
             const nextQty = Math.min(existing.qty + desired, line.stock || existing.stock);
@@ -37,7 +38,6 @@ export const useCart = create<CartState>()(
                 i.productId === line.productId
                   ? {
                       ...i,
-                      // refresh metadata vindo da origem mais recente
                       price: line.price,
                       stock: line.stock,
                       image: line.image,
@@ -49,7 +49,7 @@ export const useCart = create<CartState>()(
                     }
                   : i
               ),
-              isOpen: true,
+              isOpen: openDrawer ? true : s.isOpen,
             };
           }
           return {
@@ -57,7 +57,7 @@ export const useCart = create<CartState>()(
               ...s.items,
               { ...line, qty: Math.min(desired, line.stock || desired) },
             ],
-            isOpen: true,
+            isOpen: openDrawer ? true : s.isOpen,
           };
         }),
       removeItem: (productId) =>
