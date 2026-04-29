@@ -275,6 +275,32 @@ export const getAdminOperations = createServerFn({ method: 'GET' })
       (q) => q.gte('created_at', todayISO),
     );
 
+    // Carrinhos abandonados
+    const abandonedNew = await safeCount(
+      () => supabaseAdmin.from('abandoned_carts'),
+      (q) => q.in('status', ['novo', 'contato_enviado']),
+    );
+    const abandonedStuck24h = await safeCount(
+      () => supabaseAdmin.from('abandoned_carts'),
+      (q) => q.in('status', ['novo', 'contato_enviado']).lt('abandoned_at', stale24h),
+    );
+    let abandonedHighValue = 0;
+    let abandonedTotalValue = 0;
+    let abandonedB2bCount = 0;
+    try {
+      const { data: ac } = await supabaseAdmin
+        .from('abandoned_carts')
+        .select('subtotal_amount, company_id')
+        .in('status', ['novo', 'contato_enviado'])
+        .limit(500);
+      (ac ?? []).forEach((c) => {
+        const v = Number(c.subtotal_amount ?? 0);
+        abandonedTotalValue += v;
+        if (v >= 1000) abandonedHighValue += 1;
+        if (c.company_id) abandonedB2bCount += 1;
+      });
+    } catch {}
+
     // ============================================================
     // Monta cards
     // ============================================================
