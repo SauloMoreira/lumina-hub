@@ -267,9 +267,28 @@ function isItemActive(path: string, item: Item): boolean {
   return path === item.to || path.startsWith(item.to + '/');
 }
 
+function aggregateCounter(
+  item: Item,
+  counters: Record<string, { qty: number; severity: CounterSeverity }>,
+): { qty: number; severity: CounterSeverity } {
+  const ids = item.counterIds ?? (item.counterId ? [item.counterId] : []);
+  if (ids.length === 0) return { qty: 0, severity: 'info' };
+  let qty = 0;
+  let sev: CounterSeverity = 'info';
+  const order: Record<CounterSeverity, number> = { danger: 3, warn: 2, info: 1 };
+  for (const id of ids) {
+    const c = counters[id];
+    if (!c) continue;
+    qty += c.qty;
+    if (order[c.severity] > order[sev]) sev = c.severity;
+  }
+  return { qty, severity: sev };
+}
+
 function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
   const loc = useLocation();
   const path = loc.pathname;
+  const { counters } = useAdminCounters();
 
   const initialOpen = useMemo(() => {
     // Open the group containing the active route by default
@@ -315,6 +334,14 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
       {groups.map((g) => {
         const groupActive = g.items.some((it) => isItemActive(path, it));
         const isOpen = !!open[g.id];
+        // Soma os contadores de todos os itens do grupo (sem duplicar entre itens
+        // que apontam para o mesmo card — usamos um Set de ids únicos).
+        const groupIds = new Set<string>();
+        for (const it of g.items) {
+          const ids = it.counterIds ?? (it.counterId ? [it.counterId] : []);
+          ids.forEach((id) => groupIds.add(id));
+        }
+        const groupAgg = aggregateCounter({ label: '', counterIds: Array.from(groupIds) }, counters);
         return (
           <div key={g.id} className="space-y-1">
             <button
@@ -330,6 +357,7 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
             >
               <g.icon className="w-4 h-4 shrink-0" />
               <span className="flex-1 text-left">{g.label}</span>
+              {!isOpen && <CounterBadge qty={groupAgg.qty} severity={groupAgg.severity} />}
               <ChevronDown
                 className={cn('w-3.5 h-3.5 transition-transform', isOpen && 'rotate-180')}
               />
@@ -352,6 +380,7 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
                     );
                   }
                   const active = isItemActive(path, it);
+                  const agg = aggregateCounter(it, counters);
                   return (
                     <Link
                       key={`${g.id}-${idx}`}
@@ -365,7 +394,8 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
                       )}
                     >
                       {it.icon && <it.icon className="w-3.5 h-3.5 shrink-0" />}
-                      <span className="truncate">{it.label}</span>
+                      <span className="flex-1 truncate">{it.label}</span>
+                      <CounterBadge qty={agg.qty} severity={agg.severity} />
                     </Link>
                   );
                 })}
