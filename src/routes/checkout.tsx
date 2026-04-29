@@ -39,7 +39,18 @@ function CheckoutPage() {
   const [submitting, setSubmitting] = useState(false);
 
   // Modalidade de entrega
-  const [deliveryMethod, setDeliveryMethod] = useState<'delivery' | 'pickup'>('delivery');
+  const [deliveryMethod, setDeliveryMethod] = useState<'delivery' | 'local_delivery' | 'pickup'>('delivery');
+
+  // Zona de frete local (Maricá/RJ) detectada após CEP
+  type LocalZone = {
+    zoneId: string;
+    displayName: string;
+    district: string;
+    price: number;
+    eta: string | null;
+  };
+  const [localZone, setLocalZone] = useState<LocalZone | null>(null);
+  const [localZoneChecking, setLocalZoneChecking] = useState(false);
 
   // Dados públicos da empresa (para info de retirada)
   const { data: companyData } = useQuery({
