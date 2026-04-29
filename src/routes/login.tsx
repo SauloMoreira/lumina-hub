@@ -1,13 +1,14 @@
 import { createFileRoute, Link, useNavigate, redirect } from '@tanstack/react-router';
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { z } from 'zod';
 import { toast } from 'sonner';
-import { Eye, EyeOff } from 'lucide-react';
+import { AlertCircle, Eye, EyeOff } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import {
   AuthCard, FieldLabel, FieldError, inputClass, inputStyle, inputFocusHandlers,
   PrimaryButton, GoogleButton, Divider,
 } from '@/components/auth/AuthCard';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import { checkLoginAttempt, recordAuthFailure } from '@/server/auth.functions';
 
 import { buildSeo } from '@/lib/seo';
@@ -40,14 +41,15 @@ const schema = z.object({
 function LoginPage() {
   const navigate = useNavigate();
   const { redirect: redirectTo } = Route.useSearch();
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const emailRef = useRef<HTMLInputElement>(null);
+  const passwordRef = useRef<HTMLInputElement>(null);
   const [showPwd, setShowPwd] = useState(false);
   const [errors, setErrors] = useState<{ email?: string; password?: string }>({});
+  const [authError, setAuthError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
-  const validate = () => {
-    const r = schema.safeParse({ email, password });
+  const validate = (values: { email: string; password: string }) => {
+    const r = schema.safeParse(values);
     if (r.success) { setErrors({}); return true; }
     const e: typeof errors = {};
     r.error.issues.forEach((i) => { e[i.path[0] as 'email' | 'password'] = i.message; });
@@ -55,22 +57,28 @@ function LoginPage() {
     return false;
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
+  const showAuthError = (message: string) => {
+    setAuthError(message);
+    toast.error(message);
+  };
+
+  const handleSubmit = async () => {
     if (loading) return;
-    if (!validate()) {
-      toast.error('Confira os campos antes de continuar.');
+    setAuthError(null);
+    const nextEmail = emailRef.current?.value.trim() ?? '';
+    const nextPassword = passwordRef.current?.value ?? '';
+    if (!validate({ email: nextEmail, password: nextPassword })) {
+      showAuthError('Confira os campos antes de continuar.');
       return;
     }
     setLoading(true);
     try {
       // Pré-checagem de rate limit (server-side) — não bloqueia em caso de falha de rede
       try {
-        await checkLoginAttempt({ data: { email } });
+        await checkLoginAttempt({ data: { email: nextEmail } });
       } catch (rlErr: unknown) {
         if (rlErr instanceof Response && rlErr.status === 429) {
-          toast.error('Muitas tentativas. Aguarde alguns minutos e tente novamente.');
+          showAuthError('Muitas tentativas. Aguarde alguns minutos e tente novamente.');
           setLoading(false);
           return;
         }
@@ -78,24 +86,24 @@ function LoginPage() {
         console.warn('Rate limit check falhou, prosseguindo:', rlErr);
       }
 
-      const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+      const { data, error } = await supabase.auth.signInWithPassword({ email: nextEmail, password: nextPassword });
       if (error) {
-        void recordAuthFailure({ data: { email, reason: error.message } }).catch(() => {});
+        void recordAuthFailure({ data: { email: nextEmail, reason: error.message } }).catch(() => {});
         const msg = error.message?.toLowerCase() ?? '';
         if (msg.includes('invalid login credentials') || msg.includes('invalid_credentials')) {
-          toast.error('E-mail ou senha incorretos. Verifique e tente novamente.');
+          showAuthError('E-mail ou senha incorretos. Verifique e tente novamente.');
         } else if (msg.includes('email not confirmed')) {
-          toast.error('Confirme seu e-mail antes de entrar. Verifique sua caixa de entrada.');
+          showAuthError('Confirme seu e-mail antes de entrar. Verifique sua caixa de entrada.');
         } else if (msg.includes('too many') || msg.includes('rate')) {
-          toast.error('Muitas tentativas. Aguarde alguns minutos.');
+          showAuthError('Muitas tentativas. Aguarde alguns minutos.');
         } else {
-          toast.error(error.message || 'Não foi possível entrar. Tente novamente.');
+          showAuthError(error.message || 'Não foi possível entrar. Tente novamente.');
         }
         return;
       }
       const userId = data.user?.id;
       if (!userId) {
-        toast.error('Sessão inválida. Tente novamente.');
+        showAuthError('Sessão inválida. Tente novamente.');
         return;
       }
       const { data: profile } = await supabase
@@ -109,10 +117,16 @@ function LoginPage() {
     } catch (err) {
       console.error('Login error:', err);
       const msg = err instanceof Error ? err.message : 'Erro desconhecido ao entrar.';
-      toast.error(msg);
+      showAuthError(msg);
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleEnter = (e: React.KeyboardEvent) => {
+    if (e.key !== 'Enter') return;
+    e.preventDefault();
+    void handleSubmit();
   };
 
   const handleGoogle = async () => {
@@ -152,11 +166,19 @@ function LoginPage() {
         </p>
       }
     >
-      <form onSubmit={handleSubmit} noValidate method="post" action="#">
+      <div role="form" onKeyDown={handleEnter}>
+        {authError && (
+          <Alert variant="destructive" className="mb-4">
+            <AlertCircle className="h-4 w-4" />
+            <AlertDescription>{authError}</AlertDescription>
+          </Alert>
+        )}
+
         <FieldLabel htmlFor="email">E-mail</FieldLabel>
         <input
+          ref={emailRef}
           id="email" name="email" type="email" autoComplete="email" placeholder="seu@email.com"
-          value={email} onChange={(e) => setEmail(e.target.value)}
+          onChange={() => setAuthError(null)}
           className={inputClass} style={inputStyle} {...inputFocusHandlers}
         />
         <FieldError message={errors.email} />
@@ -165,9 +187,10 @@ function LoginPage() {
           <FieldLabel htmlFor="password">Senha</FieldLabel>
           <div className="relative">
             <input
+              ref={passwordRef}
               id="password" name="password" type={showPwd ? 'text' : 'password'} autoComplete="current-password"
               placeholder="••••••••"
-              value={password} onChange={(e) => setPassword(e.target.value)}
+              onChange={() => setAuthError(null)}
               className={inputClass + ' pr-10'} style={inputStyle} {...inputFocusHandlers}
             />
             <button
@@ -187,8 +210,10 @@ function LoginPage() {
           </Link>
         </div>
 
-        <PrimaryButton loading={loading}>{loading ? 'Entrando...' : 'Entrar'}</PrimaryButton>
-      </form>
+        <PrimaryButton type="button" loading={loading} onClick={() => void handleSubmit()}>
+          {loading ? 'Entrando...' : 'Entrar'}
+        </PrimaryButton>
+      </div>
 
       <Divider />
       <GoogleButton onClick={handleGoogle} />
