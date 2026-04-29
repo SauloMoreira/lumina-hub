@@ -26,10 +26,12 @@ export type Database = {
           customer_name: string | null
           customer_phone: string | null
           id: string
+          items_count: number
           last_activity_at: string | null
           last_contacted_at: string | null
           lead_id: string | null
           notes: string | null
+          origin_context: string | null
           origin_page: string | null
           origin_path: string | null
           recovered_at: string | null
@@ -55,10 +57,12 @@ export type Database = {
           customer_name?: string | null
           customer_phone?: string | null
           id?: string
+          items_count?: number
           last_activity_at?: string | null
           last_contacted_at?: string | null
           lead_id?: string | null
           notes?: string | null
+          origin_context?: string | null
           origin_page?: string | null
           origin_path?: string | null
           recovered_at?: string | null
@@ -84,10 +88,12 @@ export type Database = {
           customer_name?: string | null
           customer_phone?: string | null
           id?: string
+          items_count?: number
           last_activity_at?: string | null
           last_contacted_at?: string | null
           lead_id?: string | null
           notes?: string | null
+          origin_context?: string | null
           origin_page?: string | null
           origin_path?: string | null
           recovered_at?: string | null
@@ -2222,6 +2228,13 @@ export type Database = {
         Returns: {
           decremented: boolean
           reason: string
+        }[]
+      }
+      detect_abandoned_carts: {
+        Args: { _minutes?: number }
+        Returns: {
+          created_count: number
+          skipped_count: number
         }[]
       }
       get_user_approved_company_id: {
