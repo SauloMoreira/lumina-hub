@@ -131,7 +131,15 @@ export const adminUpdateCompanyStatus = createServerFn({ method: 'POST' })
       .maybeSingle();
     if (prof?.role !== 'admin') throw new Error('Acesso negado');
 
-    const patch: Record<string, unknown> = {
+    const patch: Partial<{
+      status: string;
+      admin_notes: string | null;
+      rejection_reason: string | null;
+      approved_at: string | null;
+      approved_by: string | null;
+      blocked_at: string | null;
+      blocked_by: string | null;
+    }> = {
       status: data.status,
       admin_notes: data.admin_notes ?? null,
       rejection_reason: data.status === 'rejected' ? (data.rejection_reason ?? null) : null,
