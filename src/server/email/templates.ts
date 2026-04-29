@@ -209,6 +209,16 @@ export function buildOrderEmailTemplate(p: OrderEmailParams): {
     </div>`
     : '';
 
+  const localBlock = (isLocalDelivery && p.localDelivery)
+    ? `
+    <div style="margin-top:20px;padding:16px;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;">
+      <h3 style="margin:0 0 8px;font-size:14px;color:#111;">🚚 Frete Local Maricá/RJ</h3>
+      ${p.localDelivery.district ? `<p style="margin:0 0 4px;font-size:14px;color:#111;font-weight:600;">${esc(p.localDelivery.district)}</p>` : ''}
+      ${p.localDelivery.eta ? `<p style="margin:0 0 4px;font-size:13px;color:#444;">Prazo estimado: ${esc(p.localDelivery.eta)}</p>` : ''}
+      <p style="margin:8px 0 0;font-size:12px;color:#666;">Entrega realizada por nossa equipe local após confirmação do pagamento.</p>
+    </div>`
+    : '';
+
   const secondaryBtn = c.secondaryCta
     ? `<a href="${esc(c.secondaryCta.url)}" style="display:inline-block;margin-left:8px;padding:12px 22px;border:1px solid #d4d4d8;color:#333;text-decoration:none;border-radius:8px;font-weight:600;font-size:14px;">${esc(c.secondaryCta.label)}</a>`
     : '';
