@@ -342,9 +342,11 @@ function OrderTrackingPage() {
                 <p className="text-sm text-muted-foreground">Endereço não disponível.</p>
               )}
 
-              {(order.shippingCarrier || order.shippingService || order.estimatedDelivery) && (
+              {(order.shippingCarrier || order.shippingService || order.estimatedDelivery || (isLocal && order.localDelivery)) && (
                 <div className="mt-3 pt-3 border-t border-border text-xs text-muted-foreground space-y-0.5">
-                  {order.shippingCarrier && <p>Transportadora: <span className="text-foreground">{order.shippingCarrier}</span></p>}
+                  {isLocal && order.localDelivery?.district && <p>Localidade: <span className="text-foreground">{order.localDelivery.district}</span></p>}
+                  {isLocal && order.localDelivery?.eta && <p>Prazo estimado: <span className="text-foreground">{order.localDelivery.eta}</span></p>}
+                  {!isLocal && order.shippingCarrier && <p>Transportadora: <span className="text-foreground">{order.shippingCarrier}</span></p>}
                   {order.estimatedDelivery && <p>Previsão: <span className="text-foreground">{new Date(order.estimatedDelivery).toLocaleDateString('pt-BR')}</span></p>}
                   {order.trackingCode && <p>Código: <span className="text-foreground font-mono">{order.trackingCode}</span></p>}
                 </div>
