@@ -21,6 +21,10 @@ function CartPage() {
   const shipping = freeShip.qualifies ? 0 : 25;
   const total = subtotal + shipping;
 
+  const hasB2b = cart.hasB2bItems();
+  const continueLink = hasB2b ? '/atacado' : '/catalogo';
+  const continueLabel = hasB2b ? 'Continuar comprando no atacado' : 'Continuar comprando';
+
   if (cart.items.length === 0) {
     return (
       <StoreLayout>
