@@ -510,6 +510,25 @@ function CheckoutPage() {
                       <input type="checkbox" checked={saveAddress} onChange={(e) => setSaveAddress(e.target.checked)} className="rounded border-border" />
                       Salvar este endereço na minha conta
                     </label>
+                    {(localZoneChecking || localZone) && (
+                      <div className={`mt-4 p-3 rounded-lg border text-sm flex items-start gap-2 ${
+                        localZone ? 'bg-success/10 border-success/30' : 'bg-surface border-border'
+                      }`}>
+                        {localZoneChecking ? (
+                          <><Loader2 className="w-4 h-4 animate-spin shrink-0 mt-0.5" /> Verificando frete local…</>
+                        ) : (
+                          <>
+                            <Truck className="w-4 h-4 text-success shrink-0 mt-0.5" />
+                            <div className="min-w-0">
+                              <div className="font-medium">Frete Local disponível para {localZone!.displayName}</div>
+                              <div className="text-xs text-muted-foreground">
+                                {formatBRL(localZone!.price)}{localZone!.eta ? ` · ${localZone!.eta}` : ''} — você poderá escolher na próxima etapa.
+                              </div>
+                            </div>
+                          </>
+                        )}
+                      </div>
+                    )}
                     <Button onClick={goToShipping} size="lg" className="w-full mt-6 h-12">
                       Continuar para o frete <ArrowRight className="w-4 h-4 ml-1.5" />
                     </Button>
