@@ -59,7 +59,7 @@ function HomePage() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('home_banners')
-        .select('id, title, subtitle, description, image_desktop, image_mobile, cta_label, cta_link, badge, bg_color, text_color')
+        .select('id, title, subtitle, description, image_desktop, image_mobile, cta_label, cta_link, badge, bg_color, text_color, title_color')
         .order('sort_order', { ascending: true });
       if (error) throw error;
       return (data ?? []) as HeroBanner[];
