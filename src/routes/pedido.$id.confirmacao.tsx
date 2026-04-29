@@ -288,7 +288,7 @@ function OrderTrackingPage() {
           <div className="mt-4 pt-4 border-t border-border space-y-1.5 text-sm">
             <div className="flex justify-between"><span className="text-muted-foreground">Subtotal</span><span>{formatBRL(order.subtotal)}</span></div>
             {order.discount > 0 && <div className="flex justify-between text-success"><span>Desconto{order.couponCode ? ` (${order.couponCode})` : ''}</span><span>−{formatBRL(order.discount)}</span></div>}
-            <div className="flex justify-between"><span className="text-muted-foreground">Frete{order.shippingService ? ` (${order.shippingService})` : ''}</span><span>{order.shippingCost === 0 ? 'Grátis' : formatBRL(order.shippingCost)}</span></div>
+            <div className="flex justify-between"><span className="text-muted-foreground">{isPickup ? 'Retirada na loja' : `Frete${order.shippingService ? ` (${order.shippingService})` : ''}`}</span><span>{order.shippingCost === 0 ? 'Grátis' : formatBRL(order.shippingCost)}</span></div>
             <div className="flex justify-between font-display font-bold text-lg pt-2 border-t border-border"><span>Total</span><span className="text-primary">{formatBRL(order.total)}</span></div>
           </div>
         </div>
