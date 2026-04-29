@@ -40,6 +40,14 @@ type CustomerOrder = {
   estimatedDelivery: string | null;
   createdAt: string | null;
   paidAt: string | null;
+  deliveryMethod: 'delivery' | 'pickup' | string;
+  pickup: {
+    status: string | null;
+    storeName: string | null;
+    storeAddress: string | null;
+    storePhone: string | null;
+    instructions: string | null;
+  } | null;
   address: {
     recipient: string | null;
     street: string | null;
