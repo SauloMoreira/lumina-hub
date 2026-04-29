@@ -1,7 +1,7 @@
 import { createFileRoute, Link, useNavigate, useSearch } from '@tanstack/react-router';
 import { useCallback, useEffect, useState } from 'react';
 import { z } from 'zod';
-import { CheckCircle2, Package, Truck, Clock, ShoppingBag, ArrowRight, Loader2, CreditCard, RefreshCw, MapPin, AlertCircle, MessageCircle } from 'lucide-react';
+import { CheckCircle2, Package, Truck, Clock, ShoppingBag, ArrowRight, Loader2, CreditCard, RefreshCw, MapPin, AlertCircle, MessageCircle, Store, Phone } from 'lucide-react';
 import { toast } from 'sonner';
 import { StoreLayout } from '@/components/layout/StoreLayout';
 import { Button } from '@/components/ui/button';
