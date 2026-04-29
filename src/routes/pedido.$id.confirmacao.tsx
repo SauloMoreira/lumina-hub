@@ -293,39 +293,67 @@ function OrderTrackingPage() {
           </div>
         </div>
 
-        {/* Entrega */}
+        {/* Entrega ou Retirada */}
         <div className="bg-card border border-border rounded-xl p-6 mb-6">
           <div className="flex items-center gap-2 mb-3">
-            <MapPin className="w-4 h-4 text-primary" />
-            <h2 className="font-display font-semibold">Entrega</h2>
+            {isPickup ? <Store className="w-4 h-4 text-primary" /> : <MapPin className="w-4 h-4 text-primary" />}
+            <h2 className="font-display font-semibold">{isPickup ? 'Retirada na loja' : 'Entrega'}</h2>
           </div>
-          {order.address ? (
-            <div className="text-sm space-y-0.5">
-              {order.address.recipient && <p className="font-medium">{order.address.recipient}</p>}
-              <p className="text-muted-foreground">
-                {order.address.street}{order.address.number ? `, ${order.address.number}` : ''}{order.address.complement ? `, ${order.address.complement}` : ''}
-              </p>
-              <p className="text-muted-foreground">
-                {[order.address.neighborhood, order.address.city && `${order.address.city}/${order.address.state ?? ''}`].filter(Boolean).join(' · ')}
-                {order.address.zipCode ? ` · CEP ${order.address.zipCode}` : ''}
-              </p>
+
+          {isPickup ? (
+            <div className="text-sm space-y-2">
+              {order.pickup?.storeName && <p className="font-medium">{order.pickup.storeName}</p>}
+              {order.pickup?.storeAddress && (
+                <p className="text-muted-foreground whitespace-pre-line">{order.pickup.storeAddress}</p>
+              )}
+              {order.pickup?.storePhone && (
+                <p className="text-muted-foreground flex items-center gap-1.5">
+                  <Phone className="w-3.5 h-3.5" />
+                  <a href={`tel:${order.pickup.storePhone.replace(/\D/g, '')}`} className="text-foreground hover:underline">{order.pickup.storePhone}</a>
+                </p>
+              )}
+              {order.pickup?.instructions && (
+                <div className="mt-3 pt-3 border-t border-border text-xs text-muted-foreground whitespace-pre-line">
+                  {order.pickup.instructions}
+                </div>
+              )}
+              {order.address?.recipient && (
+                <div className="mt-3 pt-3 border-t border-border text-xs text-muted-foreground">
+                  Retirada por: <span className="text-foreground">{order.address.recipient}</span>
+                </div>
+              )}
             </div>
           ) : (
-            <p className="text-sm text-muted-foreground">Endereço não disponível.</p>
-          )}
+            <>
+              {order.address ? (
+                <div className="text-sm space-y-0.5">
+                  {order.address.recipient && <p className="font-medium">{order.address.recipient}</p>}
+                  <p className="text-muted-foreground">
+                    {order.address.street}{order.address.number ? `, ${order.address.number}` : ''}{order.address.complement ? `, ${order.address.complement}` : ''}
+                  </p>
+                  <p className="text-muted-foreground">
+                    {[order.address.neighborhood, order.address.city && `${order.address.city}/${order.address.state ?? ''}`].filter(Boolean).join(' · ')}
+                    {order.address.zipCode ? ` · CEP ${order.address.zipCode}` : ''}
+                  </p>
+                </div>
+              ) : (
+                <p className="text-sm text-muted-foreground">Endereço não disponível.</p>
+              )}
 
-          {(order.shippingCarrier || order.shippingService || order.estimatedDelivery) && (
-            <div className="mt-3 pt-3 border-t border-border text-xs text-muted-foreground space-y-0.5">
-              {order.shippingCarrier && <p>Transportadora: <span className="text-foreground">{order.shippingCarrier}</span></p>}
-              {order.estimatedDelivery && <p>Previsão: <span className="text-foreground">{new Date(order.estimatedDelivery).toLocaleDateString('pt-BR')}</span></p>}
-              {order.trackingCode && <p>Código: <span className="text-foreground font-mono">{order.trackingCode}</span></p>}
-            </div>
-          )}
+              {(order.shippingCarrier || order.shippingService || order.estimatedDelivery) && (
+                <div className="mt-3 pt-3 border-t border-border text-xs text-muted-foreground space-y-0.5">
+                  {order.shippingCarrier && <p>Transportadora: <span className="text-foreground">{order.shippingCarrier}</span></p>}
+                  {order.estimatedDelivery && <p>Previsão: <span className="text-foreground">{new Date(order.estimatedDelivery).toLocaleDateString('pt-BR')}</span></p>}
+                  {order.trackingCode && <p>Código: <span className="text-foreground font-mono">{order.trackingCode}</span></p>}
+                </div>
+              )}
 
-          {trackUrl && (
-            <Button asChild variant="outline" size="sm" className="mt-3">
-              <a href={trackUrl} target="_blank" rel="noopener noreferrer"><Truck className="w-4 h-4" />Rastrear pedido</a>
-            </Button>
+              {trackUrl && (
+                <Button asChild variant="outline" size="sm" className="mt-3">
+                  <a href={trackUrl} target="_blank" rel="noopener noreferrer"><Truck className="w-4 h-4" />Rastrear pedido</a>
+                </Button>
+              )}
+            </>
           )}
         </div>
 
