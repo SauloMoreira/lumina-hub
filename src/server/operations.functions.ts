@@ -109,11 +109,11 @@ export const getAdminOperations = createServerFn({ method: 'GET' })
     // ============================================================
     const newLeads = await safeCount(
       () => supabaseAdmin.from('leads'),
-      (q) => q.eq('status', 'new'),
+      (q) => q.in('status', ['novo', 'new']),
     );
     const leadsNoResponse24h = await safeCount(
       () => supabaseAdmin.from('leads'),
-      (q) => q.eq('status', 'new').lt('created_at', stale24h),
+      (q) => q.in('status', ['novo', 'new']).lt('created_at', stale24h),
     );
 
     // ============================================================

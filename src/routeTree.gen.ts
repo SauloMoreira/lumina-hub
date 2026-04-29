@@ -36,6 +36,7 @@ import { Route as ContaEmpresaRouteImport } from './routes/conta.empresa'
 import { Route as CheckoutSuccessRouteImport } from './routes/checkout.success'
 import { Route as CheckoutPendingRouteImport } from './routes/checkout.pending'
 import { Route as CheckoutFailureRouteImport } from './routes/checkout.failure'
+import { Route as AdminWhatsappTemplatesRouteImport } from './routes/admin.whatsapp-templates'
 import { Route as AdminSegurancaRouteImport } from './routes/admin.seguranca'
 import { Route as AdminPendenciasRouteImport } from './routes/admin.pendencias'
 import { Route as AdminPedidosRouteImport } from './routes/admin.pedidos'
@@ -45,8 +46,10 @@ import { Route as AdminEmpresasRouteImport } from './routes/admin.empresas'
 import { Route as AdminCuponsRouteImport } from './routes/admin.cupons'
 import { Route as AdminContactMessagesRouteImport } from './routes/admin.contact-messages'
 import { Route as AdminCategoriasRouteImport } from './routes/admin.categorias'
+import { Route as AdminCarrinhosAbandonadosRouteImport } from './routes/admin.carrinhos-abandonados'
 import { Route as AdminCampanhasRouteImport } from './routes/admin.campanhas'
 import { Route as AdminBannersRouteImport } from './routes/admin.banners'
+import { Route as AdminAutomacoesRouteImport } from './routes/admin.automacoes'
 import { Route as AdminProdutosIndexRouteImport } from './routes/admin.produtos.index'
 import { Route as AdminInstitutionalPagesIndexRouteImport } from './routes/admin.institutional-pages.index'
 import { Route as PedidoIdConfirmacaoRouteImport } from './routes/pedido.$id.confirmacao'
@@ -195,6 +198,11 @@ const CheckoutFailureRoute = CheckoutFailureRouteImport.update({
   path: '/failure',
   getParentRoute: () => CheckoutRoute,
 } as any)
+const AdminWhatsappTemplatesRoute = AdminWhatsappTemplatesRouteImport.update({
+  id: '/admin/whatsapp-templates',
+  path: '/admin/whatsapp-templates',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AdminSegurancaRoute = AdminSegurancaRouteImport.update({
   id: '/admin/seguranca',
   path: '/admin/seguranca',
@@ -240,6 +248,12 @@ const AdminCategoriasRoute = AdminCategoriasRouteImport.update({
   path: '/admin/categorias',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AdminCarrinhosAbandonadosRoute =
+  AdminCarrinhosAbandonadosRouteImport.update({
+    id: '/admin/carrinhos-abandonados',
+    path: '/admin/carrinhos-abandonados',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const AdminCampanhasRoute = AdminCampanhasRouteImport.update({
   id: '/admin/campanhas',
   path: '/admin/campanhas',
@@ -248,6 +262,11 @@ const AdminCampanhasRoute = AdminCampanhasRouteImport.update({
 const AdminBannersRoute = AdminBannersRouteImport.update({
   id: '/admin/banners',
   path: '/admin/banners',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminAutomacoesRoute = AdminAutomacoesRouteImport.update({
+  id: '/admin/automacoes',
+  path: '/admin/automacoes',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AdminProdutosIndexRoute = AdminProdutosIndexRouteImport.update({
@@ -334,8 +353,10 @@ export interface FileRoutesByFullPath {
   '/robots.txt': typeof RobotsDottxtRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/troca': typeof TrocaRoute
+  '/admin/automacoes': typeof AdminAutomacoesRoute
   '/admin/banners': typeof AdminBannersRoute
   '/admin/campanhas': typeof AdminCampanhasRoute
+  '/admin/carrinhos-abandonados': typeof AdminCarrinhosAbandonadosRoute
   '/admin/categorias': typeof AdminCategoriasRoute
   '/admin/contact-messages': typeof AdminContactMessagesRoute
   '/admin/cupons': typeof AdminCuponsRoute
@@ -345,6 +366,7 @@ export interface FileRoutesByFullPath {
   '/admin/pedidos': typeof AdminPedidosRouteWithChildren
   '/admin/pendencias': typeof AdminPendenciasRoute
   '/admin/seguranca': typeof AdminSegurancaRoute
+  '/admin/whatsapp-templates': typeof AdminWhatsappTemplatesRoute
   '/checkout/failure': typeof CheckoutFailureRoute
   '/checkout/pending': typeof CheckoutPendingRoute
   '/checkout/success': typeof CheckoutSuccessRoute
@@ -386,8 +408,10 @@ export interface FileRoutesByTo {
   '/robots.txt': typeof RobotsDottxtRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/troca': typeof TrocaRoute
+  '/admin/automacoes': typeof AdminAutomacoesRoute
   '/admin/banners': typeof AdminBannersRoute
   '/admin/campanhas': typeof AdminCampanhasRoute
+  '/admin/carrinhos-abandonados': typeof AdminCarrinhosAbandonadosRoute
   '/admin/categorias': typeof AdminCategoriasRoute
   '/admin/contact-messages': typeof AdminContactMessagesRoute
   '/admin/cupons': typeof AdminCuponsRoute
@@ -397,6 +421,7 @@ export interface FileRoutesByTo {
   '/admin/pedidos': typeof AdminPedidosRouteWithChildren
   '/admin/pendencias': typeof AdminPendenciasRoute
   '/admin/seguranca': typeof AdminSegurancaRoute
+  '/admin/whatsapp-templates': typeof AdminWhatsappTemplatesRoute
   '/checkout/failure': typeof CheckoutFailureRoute
   '/checkout/pending': typeof CheckoutPendingRoute
   '/checkout/success': typeof CheckoutSuccessRoute
@@ -439,8 +464,10 @@ export interface FileRoutesById {
   '/robots.txt': typeof RobotsDottxtRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/troca': typeof TrocaRoute
+  '/admin/automacoes': typeof AdminAutomacoesRoute
   '/admin/banners': typeof AdminBannersRoute
   '/admin/campanhas': typeof AdminCampanhasRoute
+  '/admin/carrinhos-abandonados': typeof AdminCarrinhosAbandonadosRoute
   '/admin/categorias': typeof AdminCategoriasRoute
   '/admin/contact-messages': typeof AdminContactMessagesRoute
   '/admin/cupons': typeof AdminCuponsRoute
@@ -450,6 +477,7 @@ export interface FileRoutesById {
   '/admin/pedidos': typeof AdminPedidosRouteWithChildren
   '/admin/pendencias': typeof AdminPendenciasRoute
   '/admin/seguranca': typeof AdminSegurancaRoute
+  '/admin/whatsapp-templates': typeof AdminWhatsappTemplatesRoute
   '/checkout/failure': typeof CheckoutFailureRoute
   '/checkout/pending': typeof CheckoutPendingRoute
   '/checkout/success': typeof CheckoutSuccessRoute
@@ -493,8 +521,10 @@ export interface FileRouteTypes {
     | '/robots.txt'
     | '/sitemap.xml'
     | '/troca'
+    | '/admin/automacoes'
     | '/admin/banners'
     | '/admin/campanhas'
+    | '/admin/carrinhos-abandonados'
     | '/admin/categorias'
     | '/admin/contact-messages'
     | '/admin/cupons'
@@ -504,6 +534,7 @@ export interface FileRouteTypes {
     | '/admin/pedidos'
     | '/admin/pendencias'
     | '/admin/seguranca'
+    | '/admin/whatsapp-templates'
     | '/checkout/failure'
     | '/checkout/pending'
     | '/checkout/success'
@@ -545,8 +576,10 @@ export interface FileRouteTypes {
     | '/robots.txt'
     | '/sitemap.xml'
     | '/troca'
+    | '/admin/automacoes'
     | '/admin/banners'
     | '/admin/campanhas'
+    | '/admin/carrinhos-abandonados'
     | '/admin/categorias'
     | '/admin/contact-messages'
     | '/admin/cupons'
@@ -556,6 +589,7 @@ export interface FileRouteTypes {
     | '/admin/pedidos'
     | '/admin/pendencias'
     | '/admin/seguranca'
+    | '/admin/whatsapp-templates'
     | '/checkout/failure'
     | '/checkout/pending'
     | '/checkout/success'
@@ -597,8 +631,10 @@ export interface FileRouteTypes {
     | '/robots.txt'
     | '/sitemap.xml'
     | '/troca'
+    | '/admin/automacoes'
     | '/admin/banners'
     | '/admin/campanhas'
+    | '/admin/carrinhos-abandonados'
     | '/admin/categorias'
     | '/admin/contact-messages'
     | '/admin/cupons'
@@ -608,6 +644,7 @@ export interface FileRouteTypes {
     | '/admin/pedidos'
     | '/admin/pendencias'
     | '/admin/seguranca'
+    | '/admin/whatsapp-templates'
     | '/checkout/failure'
     | '/checkout/pending'
     | '/checkout/success'
@@ -650,8 +687,10 @@ export interface RootRouteChildren {
   RobotsDottxtRoute: typeof RobotsDottxtRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   TrocaRoute: typeof TrocaRoute
+  AdminAutomacoesRoute: typeof AdminAutomacoesRoute
   AdminBannersRoute: typeof AdminBannersRoute
   AdminCampanhasRoute: typeof AdminCampanhasRoute
+  AdminCarrinhosAbandonadosRoute: typeof AdminCarrinhosAbandonadosRoute
   AdminCategoriasRoute: typeof AdminCategoriasRoute
   AdminContactMessagesRoute: typeof AdminContactMessagesRoute
   AdminCuponsRoute: typeof AdminCuponsRoute
@@ -661,6 +700,7 @@ export interface RootRouteChildren {
   AdminPedidosRoute: typeof AdminPedidosRouteWithChildren
   AdminPendenciasRoute: typeof AdminPendenciasRoute
   AdminSegurancaRoute: typeof AdminSegurancaRoute
+  AdminWhatsappTemplatesRoute: typeof AdminWhatsappTemplatesRoute
   InstitucionalSlugRoute: typeof InstitucionalSlugRoute
   ProdutoSlugRoute: typeof ProdutoSlugRoute
   AdminIndexRoute: typeof AdminIndexRoute
@@ -868,6 +908,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof CheckoutFailureRouteImport
       parentRoute: typeof CheckoutRoute
     }
+    '/admin/whatsapp-templates': {
+      id: '/admin/whatsapp-templates'
+      path: '/admin/whatsapp-templates'
+      fullPath: '/admin/whatsapp-templates'
+      preLoaderRoute: typeof AdminWhatsappTemplatesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/admin/seguranca': {
       id: '/admin/seguranca'
       path: '/admin/seguranca'
@@ -931,6 +978,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminCategoriasRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/admin/carrinhos-abandonados': {
+      id: '/admin/carrinhos-abandonados'
+      path: '/admin/carrinhos-abandonados'
+      fullPath: '/admin/carrinhos-abandonados'
+      preLoaderRoute: typeof AdminCarrinhosAbandonadosRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/admin/campanhas': {
       id: '/admin/campanhas'
       path: '/admin/campanhas'
@@ -943,6 +997,13 @@ declare module '@tanstack/react-router' {
       path: '/admin/banners'
       fullPath: '/admin/banners'
       preLoaderRoute: typeof AdminBannersRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin/automacoes': {
+      id: '/admin/automacoes'
+      path: '/admin/automacoes'
+      fullPath: '/admin/automacoes'
+      preLoaderRoute: typeof AdminAutomacoesRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/admin/produtos/': {
@@ -1092,8 +1153,10 @@ const rootRouteChildren: RootRouteChildren = {
   RobotsDottxtRoute: RobotsDottxtRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
   TrocaRoute: TrocaRoute,
+  AdminAutomacoesRoute: AdminAutomacoesRoute,
   AdminBannersRoute: AdminBannersRoute,
   AdminCampanhasRoute: AdminCampanhasRoute,
+  AdminCarrinhosAbandonadosRoute: AdminCarrinhosAbandonadosRoute,
   AdminCategoriasRoute: AdminCategoriasRoute,
   AdminContactMessagesRoute: AdminContactMessagesRoute,
   AdminCuponsRoute: AdminCuponsRoute,
@@ -1103,6 +1166,7 @@ const rootRouteChildren: RootRouteChildren = {
   AdminPedidosRoute: AdminPedidosRouteWithChildren,
   AdminPendenciasRoute: AdminPendenciasRoute,
   AdminSegurancaRoute: AdminSegurancaRoute,
+  AdminWhatsappTemplatesRoute: AdminWhatsappTemplatesRoute,
   InstitucionalSlugRoute: InstitucionalSlugRoute,
   ProdutoSlugRoute: ProdutoSlugRoute,
   AdminIndexRoute: AdminIndexRoute,
