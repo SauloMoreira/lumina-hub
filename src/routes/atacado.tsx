@@ -15,6 +15,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { buildSeo } from '@/lib/seo';
 import { formatCNPJ } from '@/lib/cnpj';
 import { ProductCard } from '@/components/store/ProductCard';
+import { StoreLayout } from '@/components/layout/StoreLayout';
 import { ProductImagePlaceholder } from '@/components/store/ProductImagePlaceholder';
 import { formatBRL, STORE_WHATSAPP } from '@/lib/domain';
 import { useCart } from '@/stores/cartStore';
