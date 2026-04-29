@@ -86,6 +86,7 @@ function dataUrlToFile(dataUrl: string, baseName: string): File {
 }
 
 function BannersPage() {
+  const queryClient = useQueryClient();
   const [list, setList] = useState<Banner[]>([]);
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<Banner | null>(null);
@@ -96,6 +97,10 @@ function BannersPage() {
   const [uploadingMobile, setUploadingMobile] = useState(false);
   const desktopInputRef = useRef<HTMLInputElement>(null);
   const mobileInputRef = useRef<HTMLInputElement>(null);
+
+  const invalidateHome = () => {
+    queryClient.invalidateQueries({ queryKey: ['home-banners'] });
+  };
 
   const load = async () => {
     const { data, error } = await supabase
