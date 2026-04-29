@@ -5,6 +5,7 @@ import type { CartLine } from '@/lib/domain';
 type CartState = {
   items: CartLine[];
   isOpen: boolean;
+  lastSource: 'b2b' | 'b2c' | null;
   addItem: (line: Omit<CartLine, 'qty'>, qty?: number, opts?: { openDrawer?: boolean }) => void;
   removeItem: (productId: string) => void;
   updateQty: (productId: string, qty: number) => void;
