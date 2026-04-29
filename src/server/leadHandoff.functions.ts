@@ -10,6 +10,20 @@ interface HandoffInput {
   productId?: string | null;
   productName?: string | null;
   productUrl?: string | null;
+  tracking?: {
+    utm_source?: string | null;
+    utm_medium?: string | null;
+    utm_campaign?: string | null;
+    utm_term?: string | null;
+    utm_content?: string | null;
+    origin_page?: string | null;
+    origin_path?: string | null;
+    referrer_url?: string | null;
+    origin_context?: string | null;
+    origin_product_id?: string | null;
+    origin_product_name?: string | null;
+    origin_category_id?: string | null;
+  } | null;
 }
 
 const STORE_WHATSAPP_FALLBACK = "5521982126467";
@@ -89,6 +103,7 @@ export const requestHumanHandoff = createServerFn({ method: "POST" })
       productId: input.productId ?? null,
       productName: input.productName?.slice(0, 200) ?? null,
       productUrl: input.productUrl?.slice(0, 500) ?? null,
+      tracking: input.tracking ?? null,
     };
   })
   .handler(async ({ data }) => {
@@ -139,11 +154,12 @@ export const requestHumanHandoff = createServerFn({ method: "POST" })
         .limit(1)
         .maybeSingle();
 
+      const t = data.tracking ?? {};
       const payload = {
         name: data.name,
         phone: data.phone,
         origin: "ai_chat",
-        origin_context: "chat",
+        origin_context: t.origin_context ?? "chat",
         status: "novo",
         interest: "atendimento_humano",
         conversation_summary: summary,
@@ -154,6 +170,17 @@ export const requestHumanHandoff = createServerFn({ method: "POST" })
         page_url: data.pageUrl,
         whatsapp_message: whatsappText,
         notes: `chat:${data.sessionId}`,
+        utm_source: t.utm_source ?? null,
+        utm_medium: t.utm_medium ?? null,
+        utm_campaign: t.utm_campaign ?? null,
+        utm_term: t.utm_term ?? null,
+        utm_content: t.utm_content ?? null,
+        origin_page: t.origin_page ?? data.pageUrl ?? null,
+        origin_path: t.origin_path ?? null,
+        referrer_url: t.referrer_url ?? null,
+        origin_product_id: t.origin_product_id ?? data.productId ?? null,
+        origin_product_name: t.origin_product_name ?? data.productName ?? null,
+        origin_category_id: t.origin_category_id ?? null,
         metadata: {
           session_id: data.sessionId,
           intent: "human_handoff",
