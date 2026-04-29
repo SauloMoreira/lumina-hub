@@ -125,6 +125,16 @@ function CheckoutPage() {
   }
 
   async function goToShipping() {
+    if (isPickup) {
+      if (!recipient.trim()) {
+        toast.error('Informe o nome de quem irá retirar o pedido.');
+        return;
+      }
+      setSelectedShipping(null);
+      setShippingOptions([]);
+      setStep(3);
+      return;
+    }
     const cleanZip = zip.replace(/\D/g, '');
     if (!recipient || !cleanZip || !street || !number || !city || !state) {
       toast.error('Preencha todos os campos obrigatórios');
