@@ -31,6 +31,14 @@ export interface OrderEmailParams {
   retryUrl?: string | null;
   trackingCode?: string | null;
   messageType: EmailMessageType;
+  deliveryMethod?: 'delivery' | 'pickup' | string;
+  pickup?: {
+    storeName?: string | null;
+    storeAddress?: string | null;
+    storePhone?: string | null;
+    instructions?: string | null;
+    readyEta?: string | null;
+  } | null;
 }
 
 const BRL = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' });
@@ -153,12 +161,18 @@ export function buildOrderEmailTemplate(p: OrderEmailParams): {
         .join('')
     : '';
 
+  const isPickup = p.deliveryMethod === 'pickup';
+  const shippingLabel = isPickup ? 'Retirada na loja' : 'Frete';
+  const shippingValue = isPickup
+    ? 'Grátis'
+    : (p.shippingTotal > 0 ? BRL.format(p.shippingTotal) : 'Grátis');
+
   const totalsBlock = c.showItems
     ? `
     <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin-top:16px;font-size:14px;color:#444;">
       <tr><td>Subtotal</td><td style="text-align:right;">${BRL.format(p.subtotal)}</td></tr>
       ${p.discountTotal > 0 ? `<tr><td>Desconto</td><td style="text-align:right;color:#0a7a3e;">- ${BRL.format(p.discountTotal)}</td></tr>` : ''}
-      <tr><td>Frete</td><td style="text-align:right;">${p.shippingTotal > 0 ? BRL.format(p.shippingTotal) : 'Grátis'}</td></tr>
+      <tr><td>${shippingLabel}</td><td style="text-align:right;">${shippingValue}</td></tr>
       <tr><td style="padding-top:8px;font-weight:bold;color:#111;border-top:1px solid #eee;">Total</td>
           <td style="padding-top:8px;text-align:right;font-weight:bold;color:#111;border-top:1px solid #eee;">${BRL.format(p.total)}</td></tr>
     </table>`
@@ -171,6 +185,18 @@ export function buildOrderEmailTemplate(p: OrderEmailParams): {
       ${itemsRows}
     </table>
     ${totalsBlock}`
+    : '';
+
+  const pickupBlock = (isPickup && p.pickup)
+    ? `
+    <div style="margin-top:20px;padding:16px;background:#f8f9fb;border:1px solid #e5e7eb;border-radius:8px;">
+      <h3 style="margin:0 0 8px;font-size:14px;color:#111;">📍 Retirada na loja</h3>
+      ${p.pickup.storeName ? `<p style="margin:0 0 4px;font-size:14px;color:#111;font-weight:600;">${esc(p.pickup.storeName)}</p>` : ''}
+      ${p.pickup.storeAddress ? `<p style="margin:0 0 4px;font-size:13px;color:#444;white-space:pre-line;">${esc(p.pickup.storeAddress)}</p>` : ''}
+      ${p.pickup.storePhone ? `<p style="margin:0 0 4px;font-size:13px;color:#444;">Telefone: ${esc(p.pickup.storePhone)}</p>` : ''}
+      ${p.pickup.readyEta ? `<p style="margin:8px 0 0;font-size:13px;color:#444;"><strong>Tempo estimado de preparo:</strong> ${esc(p.pickup.readyEta)}</p>` : ''}
+      ${p.pickup.instructions ? `<p style="margin:8px 0 0;font-size:12px;color:#666;white-space:pre-line;">${esc(p.pickup.instructions)}</p>` : ''}
+    </div>`
     : '';
 
   const secondaryBtn = c.secondaryCta
@@ -200,6 +226,7 @@ export function buildOrderEmailTemplate(p: OrderEmailParams): {
         <a href="${esc(c.ctaUrl)}" style="display:inline-block;padding:12px 22px;background:#111111;color:#ffffff;text-decoration:none;border-radius:8px;font-weight:600;font-size:14px;">${esc(c.ctaLabel)}</a>
         ${secondaryBtn}
         ${itemsBlock}
+        ${pickupBlock}
         ${supportLine}
       </td></tr>
       <tr><td style="padding:18px 28px;background:#fafafa;border-top:1px solid #eee;font-size:11px;color:#999;text-align:center;">
@@ -215,8 +242,17 @@ export function buildOrderEmailTemplate(p: OrderEmailParams): {
       p.items.map((i) => `- ${i.name} x${i.qty} — ${BRL.format(i.totalPrice)}`).join('\n') +
       `\nSubtotal: ${BRL.format(p.subtotal)}` +
       (p.discountTotal > 0 ? `\nDesconto: -${BRL.format(p.discountTotal)}` : '') +
-      `\nFrete: ${p.shippingTotal > 0 ? BRL.format(p.shippingTotal) : 'Grátis'}` +
+      `\n${shippingLabel}: ${shippingValue}` +
       `\nTotal: ${BRL.format(p.total)}`
+    : '';
+
+  const pickupTxt = (isPickup && p.pickup)
+    ? `\n\nRetirada na loja:` +
+      (p.pickup.storeName ? `\n${p.pickup.storeName}` : '') +
+      (p.pickup.storeAddress ? `\n${p.pickup.storeAddress}` : '') +
+      (p.pickup.storePhone ? `\nTelefone: ${p.pickup.storePhone}` : '') +
+      (p.pickup.readyEta ? `\nTempo estimado: ${p.pickup.readyEta}` : '') +
+      (p.pickup.instructions ? `\n${p.pickup.instructions}` : '')
     : '';
 
   const text = `${greeting}
@@ -225,7 +261,7 @@ ${c.headline}
 
 ${c.intro.replace(/<[^>]+>/g, '')}
 
-${c.ctaLabel}: ${c.ctaUrl}${itemsTxt}
+${c.ctaLabel}: ${c.ctaUrl}${itemsTxt}${pickupTxt}
 
 — ${p.storeName}`;
 

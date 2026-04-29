@@ -60,7 +60,7 @@ export const getOrderForCustomer = createServerFn({ method: 'POST' })
     const { data: order, error } = await supabaseAdmin
       .from('orders')
       .select(
-        'id, order_number, user_id, status, payment_status, payment_method, subtotal, discount, shipping_cost, total, coupon_code, shipping_carrier, shipping_service, tracking_code, estimated_delivery, address_snapshot, created_at, paid_at, public_access_token, order_items(id, product_name, product_image, qty, unit_price, total_price)'
+        'id, order_number, user_id, status, payment_status, payment_method, subtotal, discount, shipping_cost, total, coupon_code, shipping_carrier, shipping_service, tracking_code, estimated_delivery, address_snapshot, created_at, paid_at, public_access_token, delivery_method, pickup_status, pickup_store_name, pickup_store_address, pickup_store_phone, pickup_instructions, order_items(id, product_name, product_image, qty, unit_price, total_price)'
       )
       .eq('id', data.id)
       .single();
@@ -102,6 +102,16 @@ export const getOrderForCustomer = createServerFn({ method: 'POST' })
         estimatedDelivery: order.estimated_delivery,
         createdAt: order.created_at,
         paidAt: order.paid_at,
+        deliveryMethod: (order as any).delivery_method ?? 'delivery',
+        pickup: ((order as any).delivery_method === 'pickup')
+          ? {
+              status: (order as any).pickup_status ?? null,
+              storeName: (order as any).pickup_store_name ?? null,
+              storeAddress: (order as any).pickup_store_address ?? null,
+              storePhone: (order as any).pickup_store_phone ?? null,
+              instructions: (order as any).pickup_instructions ?? null,
+            }
+          : null,
         address: addr
           ? {
               recipient: addr.recipient ?? null,

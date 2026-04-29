@@ -37,7 +37,7 @@ export async function sendOrderEmail(opts: SendOrderEmailOptions): Promise<{
     const { data: order, error: orderErr } = await supabaseAdmin
       .from('orders')
       .select(
-        'id, order_number, user_id, status, payment_status, subtotal, discount, shipping_cost, total, tracking_code, address_snapshot, public_access_token, order_items(product_name, qty, unit_price, total_price)'
+        'id, order_number, user_id, status, payment_status, subtotal, discount, shipping_cost, total, tracking_code, address_snapshot, public_access_token, delivery_method, pickup_store_name, pickup_store_address, pickup_store_phone, pickup_instructions, order_items(product_name, qty, unit_price, total_price)'
       )
       .eq('id', opts.orderId)
       .single();
@@ -97,6 +97,9 @@ export async function sendOrderEmail(opts: SendOrderEmailOptions): Promise<{
       totalPrice: Number(i.total_price),
     }));
 
+    const orderAny = order as any;
+    const deliveryMethod = (orderAny.delivery_method ?? 'delivery') as 'delivery' | 'pickup';
+
     const { subject, html, text } = buildOrderEmailTemplate({
       storeName: getStoreName(),
       customerName,
@@ -111,6 +114,16 @@ export async function sendOrderEmail(opts: SendOrderEmailOptions): Promise<{
       supportEmail: getSupportEmail(),
       trackingCode: order.tracking_code ?? null,
       messageType: opts.type,
+      deliveryMethod,
+      pickup: deliveryMethod === 'pickup'
+        ? {
+            storeName: orderAny.pickup_store_name ?? null,
+            storeAddress: orderAny.pickup_store_address ?? null,
+            storePhone: orderAny.pickup_store_phone ?? null,
+            instructions: orderAny.pickup_instructions ?? null,
+            readyEta: null,
+          }
+        : null,
     });
 
     // 5) Registrar pending (provider real é resolvido no transport)

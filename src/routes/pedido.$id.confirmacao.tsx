@@ -1,7 +1,7 @@
 import { createFileRoute, Link, useNavigate, useSearch } from '@tanstack/react-router';
 import { useCallback, useEffect, useState } from 'react';
 import { z } from 'zod';
-import { CheckCircle2, Package, Truck, Clock, ShoppingBag, ArrowRight, Loader2, CreditCard, RefreshCw, MapPin, AlertCircle, MessageCircle } from 'lucide-react';
+import { CheckCircle2, Package, Truck, Clock, ShoppingBag, ArrowRight, Loader2, CreditCard, RefreshCw, MapPin, AlertCircle, MessageCircle, Store, Phone } from 'lucide-react';
 import { toast } from 'sonner';
 import { StoreLayout } from '@/components/layout/StoreLayout';
 import { Button } from '@/components/ui/button';
@@ -40,6 +40,14 @@ type CustomerOrder = {
   estimatedDelivery: string | null;
   createdAt: string | null;
   paidAt: string | null;
+  deliveryMethod: 'delivery' | 'pickup' | string;
+  pickup: {
+    status: string | null;
+    storeName: string | null;
+    storeAddress: string | null;
+    storePhone: string | null;
+    instructions: string | null;
+  } | null;
   address: {
     recipient: string | null;
     street: string | null;
@@ -75,11 +83,20 @@ function statusMessage(status: string, paymentStatus: string | null) {
   return { tone: 'info' as const, title: 'Pedido recebido', text: 'Acompanhe aqui o status do seu pedido.' };
 }
 
-function timelineSteps(status: string, paymentStatus: string | null) {
+function timelineSteps(status: string, paymentStatus: string | null, deliveryMethod: string) {
   const isPaid = paymentStatus === 'paid' || paymentStatus === 'approved';
-  const isPreparing = ['preparing', 'shipped', 'out_for_delivery', 'delivered', 'completed'].includes(status);
-  const isShipped = ['shipped', 'out_for_delivery', 'delivered', 'completed'].includes(status);
-  const isDelivered = ['delivered', 'completed'].includes(status);
+  const isPreparing = ['preparing', 'shipped', 'out_for_delivery', 'delivered', 'completed', 'ready_for_pickup', 'picked_up'].includes(status);
+  const isShipped = ['shipped', 'out_for_delivery', 'delivered', 'completed', 'ready_for_pickup', 'picked_up'].includes(status);
+  const isDelivered = ['delivered', 'completed', 'picked_up'].includes(status);
+  if (deliveryMethod === 'pickup') {
+    return [
+      { icon: CheckCircle2, label: 'Recebido', active: true },
+      { icon: CreditCard, label: 'Pagamento', active: isPaid },
+      { icon: Package, label: 'Preparando', active: isPreparing },
+      { icon: Store, label: 'Pronto p/ retirar', active: isShipped },
+      { icon: CheckCircle2, label: 'Retirado', active: isDelivered },
+    ];
+  }
   return [
     { icon: CheckCircle2, label: 'Recebido', active: true },
     { icon: CreditCard, label: 'Pagamento', active: isPaid },
@@ -186,7 +203,8 @@ function OrderTrackingPage() {
   }
 
   const msg = statusMessage(order.status, order.paymentStatus);
-  const steps = timelineSteps(order.status, order.paymentStatus);
+  const isPickup = order.deliveryMethod === 'pickup';
+  const steps = timelineSteps(order.status, order.paymentStatus, order.deliveryMethod);
   const trackUrl = trackingUrlFor(order.shippingCarrier, order.trackingCode);
   const isPaymentPending = order.paymentStatus === 'pending' || order.paymentStatus === 'in_process';
   const isPaymentRejected = order.paymentStatus === 'rejected' || order.paymentStatus === 'failed';
@@ -270,44 +288,72 @@ function OrderTrackingPage() {
           <div className="mt-4 pt-4 border-t border-border space-y-1.5 text-sm">
             <div className="flex justify-between"><span className="text-muted-foreground">Subtotal</span><span>{formatBRL(order.subtotal)}</span></div>
             {order.discount > 0 && <div className="flex justify-between text-success"><span>Desconto{order.couponCode ? ` (${order.couponCode})` : ''}</span><span>−{formatBRL(order.discount)}</span></div>}
-            <div className="flex justify-between"><span className="text-muted-foreground">Frete{order.shippingService ? ` (${order.shippingService})` : ''}</span><span>{order.shippingCost === 0 ? 'Grátis' : formatBRL(order.shippingCost)}</span></div>
+            <div className="flex justify-between"><span className="text-muted-foreground">{isPickup ? 'Retirada na loja' : `Frete${order.shippingService ? ` (${order.shippingService})` : ''}`}</span><span>{order.shippingCost === 0 ? 'Grátis' : formatBRL(order.shippingCost)}</span></div>
             <div className="flex justify-between font-display font-bold text-lg pt-2 border-t border-border"><span>Total</span><span className="text-primary">{formatBRL(order.total)}</span></div>
           </div>
         </div>
 
-        {/* Entrega */}
+        {/* Entrega ou Retirada */}
         <div className="bg-card border border-border rounded-xl p-6 mb-6">
           <div className="flex items-center gap-2 mb-3">
-            <MapPin className="w-4 h-4 text-primary" />
-            <h2 className="font-display font-semibold">Entrega</h2>
+            {isPickup ? <Store className="w-4 h-4 text-primary" /> : <MapPin className="w-4 h-4 text-primary" />}
+            <h2 className="font-display font-semibold">{isPickup ? 'Retirada na loja' : 'Entrega'}</h2>
           </div>
-          {order.address ? (
-            <div className="text-sm space-y-0.5">
-              {order.address.recipient && <p className="font-medium">{order.address.recipient}</p>}
-              <p className="text-muted-foreground">
-                {order.address.street}{order.address.number ? `, ${order.address.number}` : ''}{order.address.complement ? `, ${order.address.complement}` : ''}
-              </p>
-              <p className="text-muted-foreground">
-                {[order.address.neighborhood, order.address.city && `${order.address.city}/${order.address.state ?? ''}`].filter(Boolean).join(' · ')}
-                {order.address.zipCode ? ` · CEP ${order.address.zipCode}` : ''}
-              </p>
+
+          {isPickup ? (
+            <div className="text-sm space-y-2">
+              {order.pickup?.storeName && <p className="font-medium">{order.pickup.storeName}</p>}
+              {order.pickup?.storeAddress && (
+                <p className="text-muted-foreground whitespace-pre-line">{order.pickup.storeAddress}</p>
+              )}
+              {order.pickup?.storePhone && (
+                <p className="text-muted-foreground flex items-center gap-1.5">
+                  <Phone className="w-3.5 h-3.5" />
+                  <a href={`tel:${order.pickup.storePhone.replace(/\D/g, '')}`} className="text-foreground hover:underline">{order.pickup.storePhone}</a>
+                </p>
+              )}
+              {order.pickup?.instructions && (
+                <div className="mt-3 pt-3 border-t border-border text-xs text-muted-foreground whitespace-pre-line">
+                  {order.pickup.instructions}
+                </div>
+              )}
+              {order.address?.recipient && (
+                <div className="mt-3 pt-3 border-t border-border text-xs text-muted-foreground">
+                  Retirada por: <span className="text-foreground">{order.address.recipient}</span>
+                </div>
+              )}
             </div>
           ) : (
-            <p className="text-sm text-muted-foreground">Endereço não disponível.</p>
-          )}
+            <>
+              {order.address ? (
+                <div className="text-sm space-y-0.5">
+                  {order.address.recipient && <p className="font-medium">{order.address.recipient}</p>}
+                  <p className="text-muted-foreground">
+                    {order.address.street}{order.address.number ? `, ${order.address.number}` : ''}{order.address.complement ? `, ${order.address.complement}` : ''}
+                  </p>
+                  <p className="text-muted-foreground">
+                    {[order.address.neighborhood, order.address.city && `${order.address.city}/${order.address.state ?? ''}`].filter(Boolean).join(' · ')}
+                    {order.address.zipCode ? ` · CEP ${order.address.zipCode}` : ''}
+                  </p>
+                </div>
+              ) : (
+                <p className="text-sm text-muted-foreground">Endereço não disponível.</p>
+              )}
 
-          {(order.shippingCarrier || order.shippingService || order.estimatedDelivery) && (
-            <div className="mt-3 pt-3 border-t border-border text-xs text-muted-foreground space-y-0.5">
-              {order.shippingCarrier && <p>Transportadora: <span className="text-foreground">{order.shippingCarrier}</span></p>}
-              {order.estimatedDelivery && <p>Previsão: <span className="text-foreground">{new Date(order.estimatedDelivery).toLocaleDateString('pt-BR')}</span></p>}
-              {order.trackingCode && <p>Código: <span className="text-foreground font-mono">{order.trackingCode}</span></p>}
-            </div>
-          )}
+              {(order.shippingCarrier || order.shippingService || order.estimatedDelivery) && (
+                <div className="mt-3 pt-3 border-t border-border text-xs text-muted-foreground space-y-0.5">
+                  {order.shippingCarrier && <p>Transportadora: <span className="text-foreground">{order.shippingCarrier}</span></p>}
+                  {order.estimatedDelivery && <p>Previsão: <span className="text-foreground">{new Date(order.estimatedDelivery).toLocaleDateString('pt-BR')}</span></p>}
+                  {order.trackingCode && <p>Código: <span className="text-foreground font-mono">{order.trackingCode}</span></p>}
+                </div>
+              )}
 
-          {trackUrl && (
-            <Button asChild variant="outline" size="sm" className="mt-3">
-              <a href={trackUrl} target="_blank" rel="noopener noreferrer"><Truck className="w-4 h-4" />Rastrear pedido</a>
-            </Button>
+              {trackUrl && (
+                <Button asChild variant="outline" size="sm" className="mt-3">
+                  <a href={trackUrl} target="_blank" rel="noopener noreferrer"><Truck className="w-4 h-4" />Rastrear pedido</a>
+                </Button>
+              )}
+            </>
           )}
         </div>
 
