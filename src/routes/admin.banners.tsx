@@ -27,6 +27,7 @@ interface Banner {
   badge: string | null;
   bg_color: string | null;
   text_color: string | null;
+  title_color: string | null;
   campaign_type: string;
   sort_order: number;
   active: boolean;
