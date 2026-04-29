@@ -1,8 +1,8 @@
 import { createFileRoute, Link } from '@tanstack/react-router';
-import { Trash2, Plus, Minus, ShoppingBag, ArrowRight } from 'lucide-react';
+import { Trash2, Plus, Minus, ShoppingBag, ArrowRight, AlertCircle } from 'lucide-react';
 import { StoreLayout } from '@/components/layout/StoreLayout';
 import { Button } from '@/components/ui/button';
-import { useCart } from '@/stores/cartStore';
+import { useCart, validateB2bLine } from '@/stores/cartStore';
 import { formatBRL, FREE_SHIPPING_THRESHOLD, calcFreeShippingProgress } from '@/lib/domain';
 
 import { buildSeo } from '@/lib/seo';
@@ -24,6 +24,8 @@ function CartPage() {
   const hasB2b = cart.hasB2bItems();
   const continueLink = hasB2b ? '/atacado' : '/catalogo';
   const continueLabel = hasB2b ? 'Continuar comprando no atacado' : 'Continuar comprando';
+  const lineValidations = cart.items.map((i) => ({ id: i.productId, validation: validateB2bLine(i) }));
+  const hasB2bIssue = lineValidations.some((r) => !r.validation.ok);
 
   if (cart.items.length === 0) {
     return (
@@ -47,37 +49,47 @@ function CartPage() {
 
         <div className="grid lg:grid-cols-3 gap-6">
           <div className="lg:col-span-2 bg-card border border-border rounded-xl divide-y divide-border">
-            {cart.items.map((item) => (
-              <div key={item.productId} className="p-5 flex gap-4">
-                <div className="w-20 h-20 rounded-md bg-surface flex items-center justify-center shrink-0 overflow-hidden">
-                  {item.image ? <img src={item.image} alt={item.name} className="w-full h-full object-cover" /> : <ShoppingBag className="w-7 h-7 text-text-faint" />}
-                </div>
-                <div className="flex-1">
-                  <Link to="/produto/$slug" params={{ slug: item.slug }} className="text-sm font-medium hover:text-primary line-clamp-2">{item.name}</Link>
-                  <div className="font-display font-bold text-primary mt-1 mb-3">{formatBRL(item.price)}</div>
-                  <div className="flex items-center justify-between">
-                    <div className="inline-flex items-center border border-border rounded-md">
-                      <button onClick={() => cart.decrementQty(item.productId)} className="w-8 h-8 hover:bg-surface flex items-center justify-center"><Minus className="w-3 h-3" /></button>
-                      <span className="w-10 text-center text-sm font-medium">{item.qty}</span>
-                      <button onClick={() => cart.incrementQty(item.productId)} className="w-8 h-8 hover:bg-surface flex items-center justify-center"><Plus className="w-3 h-3" /></button>
-                    </div>
-                    <button onClick={() => cart.removeItem(item.productId)} className="text-text-faint hover:text-destructive p-1.5">
-                      <Trash2 className="w-4 h-4" />
-                    </button>
+            {cart.items.map((item) => {
+              const v = validateB2bLine(item);
+              const invalid = !v.ok;
+              return (
+                <div key={item.productId} className="p-5 flex gap-4">
+                  <div className="w-20 h-20 rounded-md bg-surface flex items-center justify-center shrink-0 overflow-hidden">
+                    {item.image ? <img src={item.image} alt={item.name} className="w-full h-full object-cover" /> : <ShoppingBag className="w-7 h-7 text-text-faint" />}
                   </div>
-                  {(item.source === 'b2b' || (item.qtyMultiple ?? 1) > 1 || (item.minQty ?? 1) > 1) && (
-                    <p className="text-xs text-muted-foreground mt-1.5">
-                      {(item.minQty ?? 1) > 1 && <>Mín. {item.minQty} un</>}
-                      {(item.minQty ?? 1) > 1 && (item.qtyMultiple ?? 1) > 1 && ' · '}
-                      {(item.qtyMultiple ?? 1) > 1 && <>Múltiplo de {item.qtyMultiple}</>}
-                    </p>
-                  )}
+                  <div className="flex-1">
+                    <Link to="/produto/$slug" params={{ slug: item.slug }} className="text-sm font-medium hover:text-primary line-clamp-2">{item.name}</Link>
+                    <div className="font-display font-bold text-primary mt-1 mb-3">{formatBRL(item.price)}</div>
+                    <div className="flex items-center justify-between">
+                      <div className="inline-flex items-center border border-border rounded-md">
+                        <button onClick={() => cart.updateQty(item.productId, item.qty - 1)} className="w-8 h-8 hover:bg-surface flex items-center justify-center"><Minus className="w-3 h-3" /></button>
+                        <span className="w-10 text-center text-sm font-medium">{item.qty}</span>
+                        <button onClick={() => cart.updateQty(item.productId, item.qty + 1)} className="w-8 h-8 hover:bg-surface flex items-center justify-center"><Plus className="w-3 h-3" /></button>
+                      </div>
+                      <button onClick={() => cart.removeItem(item.productId)} className="text-text-faint hover:text-destructive p-1.5">
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
+                    {item.source === 'b2b' && ((item.minQty ?? 1) > 1 || (item.qtyMultiple ?? 1) > 1) && (
+                      <p className="text-xs text-muted-foreground mt-1.5">
+                        {(item.minQty ?? 1) > 1 && <>Mín. {item.minQty} un</>}
+                        {(item.minQty ?? 1) > 1 && (item.qtyMultiple ?? 1) > 1 && ' · '}
+                        {(item.qtyMultiple ?? 1) > 1 && <>Múltiplo de {item.qtyMultiple}</>}
+                      </p>
+                    )}
+                    {invalid && (
+                      <div className="mt-2 flex items-start gap-1.5 rounded-md border border-destructive/40 bg-destructive/5 px-2.5 py-1.5 text-xs text-destructive">
+                        <AlertCircle className="w-3.5 h-3.5 mt-0.5 shrink-0" />
+                        <span>{(v as { ok: false; reason: string }).reason}</span>
+                      </div>
+                    )}
+                  </div>
+                  <div className="text-right hidden md:block">
+                    <div className="font-display font-bold">{formatBRL(item.price * item.qty)}</div>
+                  </div>
                 </div>
-                <div className="text-right hidden md:block">
-                  <div className="font-display font-bold">{formatBRL(item.price * item.qty)}</div>
-                </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
 
           <aside className="bg-card border border-border rounded-xl p-6 h-fit sticky top-20">
@@ -104,9 +116,21 @@ function CartPage() {
               </div>
               <p className="text-xs text-muted-foreground text-right">em até 12x de {formatBRL(total / 12)}</p>
             </div>
-            <Button asChild size="lg" className="w-full h-12">
-              <Link to="/checkout">Finalizar pedido <ArrowRight className="w-4 h-4 ml-1.5" /></Link>
-            </Button>
+            {hasB2bIssue && (
+              <div className="mb-3 flex items-start gap-2 rounded-md border border-destructive/40 bg-destructive/5 px-3 py-2 text-xs text-destructive">
+                <AlertCircle className="w-4 h-4 mt-0.5 shrink-0" />
+                <span>Ajuste a quantidade dos itens em atacado para respeitar mínimo e múltiplo antes de finalizar.</span>
+              </div>
+            )}
+            {hasB2bIssue ? (
+              <Button size="lg" className="w-full h-12" disabled>
+                Finalizar pedido
+              </Button>
+            ) : (
+              <Button asChild size="lg" className="w-full h-12">
+                <Link to="/checkout">Finalizar pedido <ArrowRight className="w-4 h-4 ml-1.5" /></Link>
+              </Button>
+            )}
             <Button asChild variant="ghost" size="sm" className="w-full mt-2">
               <Link to={continueLink}>{continueLabel}</Link>
             </Button>

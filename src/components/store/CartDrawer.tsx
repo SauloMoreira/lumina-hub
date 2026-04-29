@@ -1,7 +1,7 @@
 import { Link } from '@tanstack/react-router';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Trash2, Plus, Minus, ShoppingBag } from 'lucide-react';
-import { useCart } from '@/stores/cartStore';
+import { X, Trash2, Plus, Minus, ShoppingBag, AlertCircle } from 'lucide-react';
+import { useCart, validateB2bLine } from '@/stores/cartStore';
 import { Button } from '@/components/ui/button';
 import { formatBRL, FREE_SHIPPING_THRESHOLD, calcFreeShippingProgress } from '@/lib/domain';
 
@@ -12,6 +12,10 @@ export function CartDrawer() {
     cart.items.map((i) => ({ price: i.price, qty: i.qty, freeShippingEligible: i.freeShippingEligible }))
   );
   const progress = Math.min(100, (freeShip.eligibleSubtotal / FREE_SHIPPING_THRESHOLD) * 100);
+  const b2bIssues = cart.items
+    .map((i) => ({ item: i, validation: validateB2bLine(i) }))
+    .filter((r) => !r.validation.ok) as Array<{ item: typeof cart.items[number]; validation: { ok: false; reason: string } }>;
+  const hasB2bIssue = b2bIssues.length > 0;
 
   return (
     <AnimatePresence>
@@ -67,42 +71,52 @@ export function CartDrawer() {
                 </div>
 
                 <div className="flex-1 overflow-y-auto px-5 py-4 space-y-4">
-                  {cart.items.map((item) => (
-                    <div key={item.productId} className="flex gap-3 pb-4 border-b border-border last:border-0">
-                      <div className="w-16 h-16 rounded-md bg-surface flex items-center justify-center shrink-0 overflow-hidden">
-                        {item.image ? (
-                          <img src={item.image} alt={item.name} className="w-full h-full object-cover" />
-                        ) : (
-                          <ShoppingBag className="w-6 h-6 text-text-faint" />
-                        )}
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium line-clamp-2 mb-1">{item.name}</p>
-                        <div className="font-display font-bold text-primary text-sm mb-2">{formatBRL(item.price)}</div>
-                        <div className="flex items-center justify-between">
-                          <div className="inline-flex items-center border border-border rounded-md">
-                            <button onClick={() => cart.decrementQty(item.productId)} className="w-7 h-7 flex items-center justify-center hover:bg-surface">
-                              <Minus className="w-3 h-3" />
-                            </button>
-                            <span className="w-8 text-center text-xs font-medium">{item.qty}</span>
-                            <button onClick={() => cart.incrementQty(item.productId)} className="w-7 h-7 flex items-center justify-center hover:bg-surface">
-                              <Plus className="w-3 h-3" />
+                  {cart.items.map((item) => {
+                    const v = validateB2bLine(item);
+                    const invalid = !v.ok;
+                    return (
+                      <div key={item.productId} className="flex gap-3 pb-4 border-b border-border last:border-0">
+                        <div className="w-16 h-16 rounded-md bg-surface flex items-center justify-center shrink-0 overflow-hidden">
+                          {item.image ? (
+                            <img src={item.image} alt={item.name} className="w-full h-full object-cover" />
+                          ) : (
+                            <ShoppingBag className="w-6 h-6 text-text-faint" />
+                          )}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-medium line-clamp-2 mb-1">{item.name}</p>
+                          <div className="font-display font-bold text-primary text-sm mb-2">{formatBRL(item.price)}</div>
+                          <div className="flex items-center justify-between">
+                            <div className="inline-flex items-center border border-border rounded-md">
+                              <button onClick={() => cart.updateQty(item.productId, item.qty - 1)} className="w-7 h-7 flex items-center justify-center hover:bg-surface">
+                                <Minus className="w-3 h-3" />
+                              </button>
+                              <span className="w-8 text-center text-xs font-medium">{item.qty}</span>
+                              <button onClick={() => cart.updateQty(item.productId, item.qty + 1)} className="w-7 h-7 flex items-center justify-center hover:bg-surface">
+                                <Plus className="w-3 h-3" />
+                              </button>
+                            </div>
+                            <button onClick={() => cart.removeItem(item.productId)} className="text-text-faint hover:text-destructive p-1">
+                              <Trash2 className="w-3.5 h-3.5" />
                             </button>
                           </div>
-                          <button onClick={() => cart.removeItem(item.productId)} className="text-text-faint hover:text-destructive p-1">
-                            <Trash2 className="w-3.5 h-3.5" />
-                          </button>
+                          {item.source === 'b2b' && ((item.minQty ?? 1) > 1 || (item.qtyMultiple ?? 1) > 1) && (
+                            <p className="text-[10px] text-muted-foreground mt-1">
+                              {(item.minQty ?? 1) > 1 && <>Mín. {item.minQty} un</>}
+                              {(item.minQty ?? 1) > 1 && (item.qtyMultiple ?? 1) > 1 && ' · '}
+                              {(item.qtyMultiple ?? 1) > 1 && <>Múltiplo de {item.qtyMultiple}</>}
+                            </p>
+                          )}
+                          {invalid && (
+                            <div className="mt-1.5 flex items-start gap-1 text-[11px] text-destructive">
+                              <AlertCircle className="w-3 h-3 mt-px shrink-0" />
+                              <span>{(v as { ok: false; reason: string }).reason}</span>
+                            </div>
+                          )}
                         </div>
-                        {(item.source === 'b2b' || (item.qtyMultiple ?? 1) > 1 || (item.minQty ?? 1) > 1) && (
-                          <p className="text-[10px] text-muted-foreground mt-1">
-                            {(item.minQty ?? 1) > 1 && <>Mín. {item.minQty} un</>}
-                            {(item.minQty ?? 1) > 1 && (item.qtyMultiple ?? 1) > 1 && ' · '}
-                            {(item.qtyMultiple ?? 1) > 1 && <>Múltiplo de {item.qtyMultiple}</>}
-                          </p>
-                        )}
                       </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
 
                 <div className="border-t border-border p-5 space-y-3 bg-card">
@@ -110,9 +124,21 @@ export function CartDrawer() {
                     <span className="text-muted-foreground">Subtotal</span>
                     <span className="font-display font-bold text-lg text-foreground">{formatBRL(subtotal)}</span>
                   </div>
-                  <Button asChild className="w-full h-11" onClick={cart.close}>
-                    <Link to="/checkout">Finalizar pedido</Link>
-                  </Button>
+                  {hasB2bIssue && (
+                    <div className="flex items-start gap-2 rounded-md border border-destructive/40 bg-destructive/5 px-3 py-2 text-xs text-destructive">
+                      <AlertCircle className="w-3.5 h-3.5 mt-0.5 shrink-0" />
+                      <span>Ajuste a quantidade dos itens em atacado para respeitar mínimo e múltiplo antes de finalizar.</span>
+                    </div>
+                  )}
+                  {hasB2bIssue ? (
+                    <Button className="w-full h-11" disabled>
+                      Finalizar pedido
+                    </Button>
+                  ) : (
+                    <Button asChild className="w-full h-11" onClick={cart.close}>
+                      <Link to="/checkout">Finalizar pedido</Link>
+                    </Button>
+                  )}
                   <Button asChild variant="outline" size="sm" className="w-full" onClick={cart.close}>
                     <Link to="/carrinho">Ver carrinho completo</Link>
                   </Button>

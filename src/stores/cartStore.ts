@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import { snapQty, type CartLine } from '@/lib/domain';
+import type { CartLine } from '@/lib/domain';
 
 type CartState = {
   items: CartLine[];
@@ -8,8 +8,6 @@ type CartState = {
   addItem: (line: Omit<CartLine, 'qty'>, qty?: number) => void;
   removeItem: (productId: string) => void;
   updateQty: (productId: string, qty: number) => void;
-  incrementQty: (productId: string) => void;
-  decrementQty: (productId: string) => void;
   clear: () => void;
   open: () => void;
   close: () => void;
@@ -24,31 +22,41 @@ export const useCart = create<CartState>()(
     (set, get) => ({
       items: [],
       isOpen: false,
+      // Adiciona item ao carrinho. Para itens B2B, o "qty" deve ser o mínimo.
+      // Sempre faz merge dos metadados (minQty / qtyMultiple / source) para
+      // que itens persistidos antes da feature B2B passem a respeitar as
+      // regras assim que forem adicionados de novo.
       addItem: (line, qty) =>
         set((s) => {
+          const desired = Math.max(1, qty ?? line.minQty ?? 1);
           const existing = s.items.find((i) => i.productId === line.productId);
-          const min = line.minQty ?? 1;
-          const desired = qty ?? min;
           if (existing) {
-            const target = snapQty(existing.qty + desired, {
-              minQty: existing.minQty ?? line.minQty,
-              qtyMultiple: existing.qtyMultiple ?? line.qtyMultiple,
-              stock: existing.stock,
-            });
+            const nextQty = Math.min(existing.qty + desired, line.stock || existing.stock);
             return {
               items: s.items.map((i) =>
-                i.productId === line.productId ? { ...i, qty: target } : i
+                i.productId === line.productId
+                  ? {
+                      ...i,
+                      // refresh metadata vindo da origem mais recente
+                      price: line.price,
+                      stock: line.stock,
+                      image: line.image,
+                      freeShippingEligible: line.freeShippingEligible,
+                      minQty: line.minQty ?? i.minQty,
+                      qtyMultiple: line.qtyMultiple ?? i.qtyMultiple,
+                      source: line.source ?? i.source,
+                      qty: nextQty,
+                    }
+                  : i
               ),
               isOpen: true,
             };
           }
-          const target = snapQty(desired, {
-            minQty: line.minQty,
-            qtyMultiple: line.qtyMultiple,
-            stock: line.stock,
-          });
           return {
-            items: [...s.items, { ...line, qty: target }],
+            items: [
+              ...s.items,
+              { ...line, qty: Math.min(desired, line.stock || desired) },
+            ],
             isOpen: true,
           };
         }),
@@ -58,48 +66,9 @@ export const useCart = create<CartState>()(
         set((s) => ({
           items: s.items.map((i) =>
             i.productId === productId
-              ? {
-                  ...i,
-                  qty: snapQty(qty, {
-                    minQty: i.minQty,
-                    qtyMultiple: i.qtyMultiple,
-                    stock: i.stock,
-                  }),
-                }
+              ? { ...i, qty: Math.max(1, Math.min(qty, i.stock || qty)) }
               : i
           ),
-        })),
-      incrementQty: (productId) =>
-        set((s) => ({
-          items: s.items.map((i) => {
-            if (i.productId !== productId) return i;
-            const step = Math.max(1, i.qtyMultiple ?? 1);
-            return {
-              ...i,
-              qty: snapQty(i.qty + step, {
-                minQty: i.minQty,
-                qtyMultiple: i.qtyMultiple,
-                stock: i.stock,
-              }),
-            };
-          }),
-        })),
-      decrementQty: (productId) =>
-        set((s) => ({
-          items: s.items.map((i) => {
-            if (i.productId !== productId) return i;
-            const step = Math.max(1, i.qtyMultiple ?? 1);
-            const min = Math.max(1, i.minQty ?? 1);
-            const next = Math.max(min, i.qty - step);
-            return {
-              ...i,
-              qty: snapQty(next, {
-                minQty: i.minQty,
-                qtyMultiple: i.qtyMultiple,
-                stock: i.stock,
-              }),
-            };
-          }),
         })),
       clear: () => set({ items: [] }),
       open: () => set({ isOpen: true }),
@@ -112,3 +81,20 @@ export const useCart = create<CartState>()(
     { name: 'led-marica-cart', partialize: (s) => ({ items: s.items }) }
   )
 );
+
+/** Valida regras B2B (mínimo + múltiplo) de uma linha do carrinho. */
+export function validateB2bLine(item: CartLine): { ok: true } | { ok: false; reason: string } {
+  if (item.source !== 'b2b') return { ok: true };
+  const min = item.minQty ?? 1;
+  const mult = item.qtyMultiple ?? 1;
+  if (item.qty < min) {
+    return { ok: false, reason: `Quantidade mínima de ${min} un` };
+  }
+  if (mult > 1) {
+    const offset = item.qty - min;
+    if (offset % mult !== 0) {
+      return { ok: false, reason: `Quantidade deve ser múltipla de ${mult} (a partir de ${min})` };
+    }
+  }
+  return { ok: true };
+}
