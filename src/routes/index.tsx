@@ -410,19 +410,61 @@ function HomePage() {
         </div>
       </section>
 
-      {/* MARKETING / CONFIANÇA */}
-      <section className="container mx-auto px-4 pb-12">
-        <div className="rounded-2xl bg-gradient-to-br from-primary via-primary to-primary/80 text-primary-foreground p-8 md:p-12 text-center shadow-elevated">
-          <Sparkles className="w-8 h-8 mx-auto mb-3 opacity-90" />
-          <h3 className="font-display font-bold text-2xl md:text-3xl mb-3">A loja certa para o seu projeto</h3>
-          <p className="text-sm md:text-base opacity-90 max-w-xl mx-auto mb-6 leading-relaxed">
-            Nota fiscal garantida, suporte técnico de verdade, atendimento com IA 24h e entrega rápida em Maricá e região.
-          </p>
-          <Button asChild size="lg" variant="secondary" className="h-12 px-6 font-semibold">
-            <Link to="/catalogo">Ver catálogo completo <ArrowRight className="w-4 h-4 ml-1.5" /></Link>
-          </Button>
-        </div>
-      </section>
+      {/* MARKETING / CONFIANÇA (administrável) */}
+      {(homepage?.main_cta_is_active ?? true) && (() => {
+        const CtaIcon = getLucideIcon(homepage?.main_cta_icon, Sparkles);
+        const title = homepage?.main_cta_title ?? 'A loja certa para o seu projeto';
+        const desc = homepage?.main_cta_description ?? 'Nota fiscal garantida, suporte técnico de verdade, atendimento com IA 24h e entrega rápida em Maricá e região.';
+        const btnActive = homepage?.main_cta_button_active ?? true;
+        const btnText = homepage?.main_cta_button_text ?? 'Ver catálogo completo';
+        const btnUrl = homepage?.main_cta_button_url ?? '/catalogo';
+        const bg = homepage?.main_cta_background_color;
+        const fg = homepage?.main_cta_text_color;
+        const bgImage = homepage?.main_cta_image_url;
+        const containerStyle: React.CSSProperties = {};
+        if (bgImage) {
+          containerStyle.backgroundImage = `linear-gradient(135deg, rgba(0,0,0,0.55), rgba(0,0,0,0.35)), url(${bgImage})`;
+          containerStyle.backgroundSize = 'cover';
+          containerStyle.backgroundPosition = 'center';
+        } else if (bg) {
+          containerStyle.background = bg;
+        }
+        if (fg) containerStyle.color = fg;
+        const baseCls = bg || bgImage
+          ? 'rounded-2xl text-primary-foreground p-8 md:p-12 text-center shadow-elevated'
+          : 'rounded-2xl bg-gradient-to-br from-primary via-primary to-primary/80 text-primary-foreground p-8 md:p-12 text-center shadow-elevated';
+
+        const renderBtn = () => {
+          if (!btnActive) return null;
+          const btnStyle: React.CSSProperties = {};
+          if (homepage?.main_cta_button_color) btnStyle.background = homepage.main_cta_button_color;
+          if (isExternalLink(btnUrl)) {
+            return (
+              <Button asChild size="lg" variant="secondary" className="h-12 px-6 font-semibold" style={btnStyle}>
+                <a href={btnUrl} rel="noreferrer">{btnText} <ArrowRight className="w-4 h-4 ml-1.5" /></a>
+              </Button>
+            );
+          }
+          return (
+            <Button asChild size="lg" variant="secondary" className="h-12 px-6 font-semibold" style={btnStyle}>
+              <Link to={btnUrl as any}>{btnText} <ArrowRight className="w-4 h-4 ml-1.5" /></Link>
+            </Button>
+          );
+        };
+
+        return (
+          <section className="container mx-auto px-4 pb-12">
+            <div className={baseCls} style={containerStyle}>
+              <CtaIcon className="w-8 h-8 mx-auto mb-3 opacity-90" />
+              <h3 className="font-display font-bold text-2xl md:text-3xl mb-3">{title}</h3>
+              {desc && (
+                <p className="text-sm md:text-base opacity-90 max-w-xl mx-auto mb-6 leading-relaxed">{desc}</p>
+              )}
+              {renderBtn()}
+            </div>
+          </section>
+        );
+      })()}
     </StoreLayout>
   );
 }
