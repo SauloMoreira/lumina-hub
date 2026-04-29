@@ -142,7 +142,7 @@ function LoginPage() {
       <form onSubmit={handleSubmit} noValidate method="post" action="#">
         <FieldLabel htmlFor="email">E-mail</FieldLabel>
         <input
-          id="email" type="email" autoComplete="email" placeholder="seu@email.com"
+          id="email" name="email" type="email" autoComplete="email" placeholder="seu@email.com"
           value={email} onChange={(e) => setEmail(e.target.value)}
           className={inputClass} style={inputStyle} {...inputFocusHandlers}
         />
@@ -152,7 +152,7 @@ function LoginPage() {
           <FieldLabel htmlFor="password">Senha</FieldLabel>
           <div className="relative">
             <input
-              id="password" type={showPwd ? 'text' : 'password'} autoComplete="current-password"
+              id="password" name="password" type={showPwd ? 'text' : 'password'} autoComplete="current-password"
               placeholder="••••••••"
               value={password} onChange={(e) => setPassword(e.target.value)}
               className={inputClass + ' pr-10'} style={inputStyle} {...inputFocusHandlers}
