@@ -23,14 +23,12 @@ export const useCart = create<CartState>()(
     (set, get) => ({
       items: [],
       isOpen: false,
-      // Adiciona item ao carrinho. Para itens B2B, o "qty" deve ser o mínimo.
-      // Sempre faz merge dos metadados (minQty / qtyMultiple / source) para
-      // que itens persistidos antes da feature B2B passem a respeitar as
-      // regras assim que forem adicionados de novo.
+      lastSource: null,
       addItem: (line, qty, opts) =>
         set((s) => {
           const desired = Math.max(1, qty ?? line.minQty ?? 1);
           const openDrawer = opts?.openDrawer ?? true;
+          const nextLastSource: 'b2b' | 'b2c' = line.source === 'b2b' ? 'b2b' : 'b2c';
           const existing = s.items.find((i) => i.productId === line.productId);
           if (existing) {
             const nextQty = Math.min(existing.qty + desired, line.stock || existing.stock);
@@ -51,6 +49,7 @@ export const useCart = create<CartState>()(
                   : i
               ),
               isOpen: openDrawer ? true : s.isOpen,
+              lastSource: nextLastSource,
             };
           }
           return {
@@ -59,6 +58,7 @@ export const useCart = create<CartState>()(
               { ...line, qty: Math.min(desired, line.stock || desired) },
             ],
             isOpen: openDrawer ? true : s.isOpen,
+            lastSource: nextLastSource,
           };
         }),
       removeItem: (productId) =>
