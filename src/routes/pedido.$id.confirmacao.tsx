@@ -205,6 +205,7 @@ function OrderTrackingPage() {
 
   const msg = statusMessage(order.status, order.paymentStatus);
   const isPickup = order.deliveryMethod === 'pickup';
+  const isLocal = order.deliveryMethod === 'local_delivery';
   const steps = timelineSteps(order.status, order.paymentStatus, order.deliveryMethod);
   const trackUrl = trackingUrlFor(order.shippingCarrier, order.trackingCode);
   const isPaymentPending = order.paymentStatus === 'pending' || order.paymentStatus === 'in_process';
