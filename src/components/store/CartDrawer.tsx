@@ -1,7 +1,7 @@
 import { Link } from '@tanstack/react-router';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Trash2, Plus, Minus, ShoppingBag } from 'lucide-react';
-import { useCart } from '@/stores/cartStore';
+import { X, Trash2, Plus, Minus, ShoppingBag, AlertCircle } from 'lucide-react';
+import { useCart, validateB2bLine } from '@/stores/cartStore';
 import { Button } from '@/components/ui/button';
 import { formatBRL, FREE_SHIPPING_THRESHOLD, calcFreeShippingProgress } from '@/lib/domain';
 
@@ -12,6 +12,10 @@ export function CartDrawer() {
     cart.items.map((i) => ({ price: i.price, qty: i.qty, freeShippingEligible: i.freeShippingEligible }))
   );
   const progress = Math.min(100, (freeShip.eligibleSubtotal / FREE_SHIPPING_THRESHOLD) * 100);
+  const b2bIssues = cart.items
+    .map((i) => ({ item: i, validation: validateB2bLine(i) }))
+    .filter((r) => !r.validation.ok) as Array<{ item: typeof cart.items[number]; validation: { ok: false; reason: string } }>;
+  const hasB2bIssue = b2bIssues.length > 0;
 
   return (
     <AnimatePresence>
