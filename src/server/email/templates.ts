@@ -31,13 +31,18 @@ export interface OrderEmailParams {
   retryUrl?: string | null;
   trackingCode?: string | null;
   messageType: EmailMessageType;
-  deliveryMethod?: 'delivery' | 'pickup' | string;
+  deliveryMethod?: 'delivery' | 'pickup' | 'local_delivery' | string;
   pickup?: {
     storeName?: string | null;
     storeAddress?: string | null;
     storePhone?: string | null;
     instructions?: string | null;
     readyEta?: string | null;
+  } | null;
+  localDelivery?: {
+    district?: string | null;
+    eta?: string | null;
+    service?: string | null;
   } | null;
 }
 
