@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useState, type ElementType } from 'react';
 import * as Icons from 'lucide-react';
 import { Check, ChevronDown, Search, X } from 'lucide-react';
 
@@ -66,14 +66,22 @@ export const ICON_GROUPS: { label: string; icons: string[] }[] = [
   },
 ];
 
+function isRenderableIcon(value: unknown): value is ElementType {
+  // lucide-react icons are React forwardRef components. Depending on the
+  // build/runtime they can appear as either functions or objects.
+  return !!value && (typeof value === 'function' || typeof value === 'object');
+}
+
+const LUCIDE_ICON_MAP = (Icons as any).icons as Record<string, unknown> | undefined;
+
 const ALL_ICONS: string[] = Array.from(
   new Set(ICON_GROUPS.flatMap((g) => g.icons)),
-).filter((name) => typeof (Icons as any)[name] === 'function');
+).filter((name) => isRenderableIcon(LUCIDE_ICON_MAP?.[name] ?? (Icons as any)[name]));
 
 export function getLucideIconComponent(name?: string | null) {
   if (!name) return null;
-  const Comp = (Icons as any)[name];
-  return typeof Comp === 'function' ? (Comp as React.ComponentType<{ className?: string }>) : null;
+  const Comp = LUCIDE_ICON_MAP?.[name] ?? (Icons as any)[name];
+  return isRenderableIcon(Comp) ? (Comp as ElementType) : null;
 }
 
 interface IconPickerProps {
