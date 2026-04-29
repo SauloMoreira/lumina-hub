@@ -1,6 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { useEffect, useRef, useState, type FormEvent, type ChangeEvent } from 'react';
 import { Plus, Pencil, Trash2, ArrowUp, ArrowDown, Wand2, Upload, Loader2, Image as ImageIcon } from 'lucide-react';
+import { useQueryClient } from '@tanstack/react-query';
 import { AdminLayout } from '@/components/admin/AdminLayout';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -85,6 +86,7 @@ function dataUrlToFile(dataUrl: string, baseName: string): File {
 }
 
 function BannersPage() {
+  const queryClient = useQueryClient();
   const [list, setList] = useState<Banner[]>([]);
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<Banner | null>(null);
@@ -95,6 +97,10 @@ function BannersPage() {
   const [uploadingMobile, setUploadingMobile] = useState(false);
   const desktopInputRef = useRef<HTMLInputElement>(null);
   const mobileInputRef = useRef<HTMLInputElement>(null);
+
+  const invalidateHome = () => {
+    queryClient.invalidateQueries({ queryKey: ['home-banners'] });
+  };
 
   const load = async () => {
     const { data, error } = await supabase
@@ -169,6 +175,7 @@ function BannersPage() {
       toast.success(editing ? 'Banner atualizado' : 'Banner criado');
       setOpen(false);
       await load();
+      invalidateHome();
     } catch (err) {
       toast.error(err instanceof Error ? err.message : 'Erro ao salvar');
     } finally {
@@ -182,12 +189,14 @@ function BannersPage() {
     if (error) return toast.error(error.message);
     toast.success('Banner removido');
     await load();
+    invalidateHome();
   };
 
   const toggleActive = async (b: Banner) => {
     const { error } = await supabase.from('home_banners').update({ active: !b.active }).eq('id', b.id);
     if (error) return toast.error(error.message);
     await load();
+    invalidateHome();
   };
 
   const move = async (b: Banner, dir: 'up' | 'down') => {
@@ -200,6 +209,7 @@ function BannersPage() {
       supabase.from('home_banners').update({ sort_order: b.sort_order }).eq('id', other.id),
     ]);
     await load();
+    invalidateHome();
   };
 
   const handleUpload = async (e: ChangeEvent<HTMLInputElement>, target: 'desktop' | 'mobile') => {
@@ -229,6 +239,7 @@ function BannersPage() {
         data: {
           title: form.title.trim(),
           subtitle: form.subtitle.trim() || null,
+          description: form.description.trim() || null,
           campaignType: form.campaign_type,
         },
       });

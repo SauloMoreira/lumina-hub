@@ -10,7 +10,7 @@ const AI_IMAGE_URL = 'https://ai.gateway.lovable.dev/v1/chat/completions';
  */
 export const generateBannerImage = createServerFn({ method: 'POST' })
   .middleware([requireAdmin])
-  .inputValidator((input: { title: string; subtitle?: string | null; campaignType?: string | null; extraHint?: string | null }) => input)
+  .inputValidator((input: { title: string; subtitle?: string | null; description?: string | null; campaignType?: string | null; extraHint?: string | null }) => input)
   .handler(async ({ data }) => {
     const apiKey = process.env.LOVABLE_API_KEY;
     if (!apiKey) throw new Error('LOVABLE_API_KEY não configurada');
@@ -18,6 +18,7 @@ export const generateBannerImage = createServerFn({ method: 'POST' })
     const title = (data.title ?? '').trim();
     if (!title) throw new Error('Título é obrigatório para gerar banner');
     const subtitle = (data.subtitle ?? '').trim();
+    const description = (data.description ?? '').trim();
     const type = (data.campaignType ?? 'promotion').trim();
     const hint = (data.extraHint ?? '').trim();
 
@@ -31,8 +32,9 @@ export const generateBannerImage = createServerFn({ method: 'POST' })
 
     const prompt =
       `Banner promocional premium para e-commerce de iluminação e materiais elétricos brasileiro. ` +
-      `Tema: "${title}"${subtitle ? `, subtítulo: "${subtitle}"` : ''}. ` +
+      `Tema: "${title}"${subtitle ? `, subtítulo: "${subtitle}"` : ''}${description ? `, contexto: "${description}"` : ''}. ` +
       `${themeHint} ` +
+      `IMPORTANTE: o visual deve refletir literalmente o tema, subtítulo e contexto acima — represente os produtos/conceitos mencionados (ex.: se o título cita "lâmpadas LED", mostre lâmpadas LED; se cita "ferramentas", mostre ferramentas; se cita "frete grátis", mostre logística/entrega). ` +
       `Composição: lado esquerdo VAZIO/limpo (espaço negativo) para sobreposição de texto, lado direito com o elemento visual principal. ` +
       `Sem texto algum na imagem, sem logos, sem marcas d'água, sem pessoas. ` +
       `Formato widescreen 1920x768, fotorealista ou ilustração premium moderna, iluminação dramática, qualidade de hero banner de e-commerce de alto padrão. ` +
