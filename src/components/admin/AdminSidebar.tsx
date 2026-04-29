@@ -80,6 +80,7 @@ const groups: Group[] = [
           'no-price',
           'no-weight',
           'local-zones-no-price',
+          'abandoned-carts',
         ],
       },
       { label: 'Indicadores', soon: true },
