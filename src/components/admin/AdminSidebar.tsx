@@ -27,6 +27,7 @@ const items: { to: string; label: string; icon: typeof LayoutDashboard; exact?: 
   { to: '/admin/pedidos', label: 'Pedidos', icon: ShoppingBag },
   { to: '/admin/cupons', label: 'Cupons', icon: Ticket },
   { to: '/admin/leads', label: 'Leads', icon: Users },
+  { to: '/admin/empresas', label: 'Empresas B2B', icon: Building2 },
   { to: '/admin/campanhas', label: 'Campanhas', icon: Megaphone },
   { to: '/admin/banners', label: 'Banners', icon: ImageIcon },
   { to: '/admin/institutional-pages', label: 'Páginas', icon: FileText },
