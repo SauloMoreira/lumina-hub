@@ -57,29 +57,47 @@ function LoginPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!validate()) return;
+    e.stopPropagation();
+    if (loading) return;
+    if (!validate()) {
+      toast.error('Confira os campos antes de continuar.');
+      return;
+    }
     setLoading(true);
     try {
-      // Pré-checagem de rate limit (server-side)
+      // Pré-checagem de rate limit (server-side) — não bloqueia em caso de falha de rede
       try {
         await checkLoginAttempt({ data: { email } });
       } catch (rlErr: unknown) {
         if (rlErr instanceof Response && rlErr.status === 429) {
-          toast.error('Muitas tentativas. Aguarde alguns minutos.');
+          toast.error('Muitas tentativas. Aguarde alguns minutos e tente novamente.');
           setLoading(false);
           return;
         }
-        throw rlErr;
+        // Erro de rede no rate-limit não deve impedir login
+        console.warn('Rate limit check falhou, prosseguindo:', rlErr);
       }
 
       const { data, error } = await supabase.auth.signInWithPassword({ email, password });
       if (error) {
-        // Auditoria de falha
-        void recordAuthFailure({ data: { email, reason: error.message } });
-        throw error;
+        void recordAuthFailure({ data: { email, reason: error.message } }).catch(() => {});
+        const msg = error.message?.toLowerCase() ?? '';
+        if (msg.includes('invalid login credentials') || msg.includes('invalid_credentials')) {
+          toast.error('E-mail ou senha incorretos. Verifique e tente novamente.');
+        } else if (msg.includes('email not confirmed')) {
+          toast.error('Confirme seu e-mail antes de entrar. Verifique sua caixa de entrada.');
+        } else if (msg.includes('too many') || msg.includes('rate')) {
+          toast.error('Muitas tentativas. Aguarde alguns minutos.');
+        } else {
+          toast.error(error.message || 'Não foi possível entrar. Tente novamente.');
+        }
+        return;
       }
       const userId = data.user?.id;
-      if (!userId) throw new Error('Sessão inválida');
+      if (!userId) {
+        toast.error('Sessão inválida. Tente novamente.');
+        return;
+      }
       const { data: profile } = await supabase
         .from('profiles').select('role').eq('id', userId).maybeSingle();
       toast.success('Bem-vindo de volta!');
@@ -88,8 +106,10 @@ function LoginPage() {
       } else {
         navigate({ to: profile?.role === 'admin' ? '/admin' : '/conta' });
       }
-    } catch {
-      toast.error('E-mail ou senha incorretos. Tente novamente.');
+    } catch (err) {
+      console.error('Login error:', err);
+      const msg = err instanceof Error ? err.message : 'Erro desconhecido ao entrar.';
+      toast.error(msg);
     } finally {
       setLoading(false);
     }
@@ -119,10 +139,10 @@ function LoginPage() {
         </p>
       }
     >
-      <form onSubmit={handleSubmit} noValidate>
+      <form onSubmit={handleSubmit} noValidate method="post" action="#">
         <FieldLabel htmlFor="email">E-mail</FieldLabel>
         <input
-          id="email" type="email" autoComplete="email" placeholder="seu@email.com"
+          id="email" name="email" type="email" autoComplete="email" placeholder="seu@email.com"
           value={email} onChange={(e) => setEmail(e.target.value)}
           className={inputClass} style={inputStyle} {...inputFocusHandlers}
         />
@@ -132,7 +152,7 @@ function LoginPage() {
           <FieldLabel htmlFor="password">Senha</FieldLabel>
           <div className="relative">
             <input
-              id="password" type={showPwd ? 'text' : 'password'} autoComplete="current-password"
+              id="password" name="password" type={showPwd ? 'text' : 'password'} autoComplete="current-password"
               placeholder="••••••••"
               value={password} onChange={(e) => setPassword(e.target.value)}
               className={inputClass + ' pr-10'} style={inputStyle} {...inputFocusHandlers}
