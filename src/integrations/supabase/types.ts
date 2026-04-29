@@ -115,6 +115,164 @@ export type Database = {
         }
         Relationships: []
       }
+      b2b_negotiations: {
+        Row: {
+          admin_notes: string | null
+          assigned_admin_id: string | null
+          cart_snapshot: Json | null
+          closed_at: string | null
+          cnpj: string | null
+          company_id: string | null
+          company_name: string | null
+          contact_email: string | null
+          contact_name: string | null
+          contact_phone: string | null
+          converted_order_id: string | null
+          created_at: string
+          discount_amount: number | null
+          discount_percentage: number | null
+          id: string
+          message_sent: string | null
+          product_id: string | null
+          source: string
+          status: Database["public"]["Enums"]["b2b_negotiation_status"]
+          subtotal_b2b: number | null
+          subtotal_retail: number | null
+          updated_at: string
+          user_id: string | null
+        }
+        Insert: {
+          admin_notes?: string | null
+          assigned_admin_id?: string | null
+          cart_snapshot?: Json | null
+          closed_at?: string | null
+          cnpj?: string | null
+          company_id?: string | null
+          company_name?: string | null
+          contact_email?: string | null
+          contact_name?: string | null
+          contact_phone?: string | null
+          converted_order_id?: string | null
+          created_at?: string
+          discount_amount?: number | null
+          discount_percentage?: number | null
+          id?: string
+          message_sent?: string | null
+          product_id?: string | null
+          source?: string
+          status?: Database["public"]["Enums"]["b2b_negotiation_status"]
+          subtotal_b2b?: number | null
+          subtotal_retail?: number | null
+          updated_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          admin_notes?: string | null
+          assigned_admin_id?: string | null
+          cart_snapshot?: Json | null
+          closed_at?: string | null
+          cnpj?: string | null
+          company_id?: string | null
+          company_name?: string | null
+          contact_email?: string | null
+          contact_name?: string | null
+          contact_phone?: string | null
+          converted_order_id?: string | null
+          created_at?: string
+          discount_amount?: number | null
+          discount_percentage?: number | null
+          id?: string
+          message_sent?: string | null
+          product_id?: string | null
+          source?: string
+          status?: Database["public"]["Enums"]["b2b_negotiation_status"]
+          subtotal_b2b?: number | null
+          subtotal_retail?: number | null
+          updated_at?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "b2b_negotiations_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      b2b_settings: {
+        Row: {
+          benefits: Json
+          created_at: string
+          hero_description: string | null
+          hero_image_url: string | null
+          hero_primary_button_text: string | null
+          hero_primary_button_url: string | null
+          hero_secondary_button_text: string | null
+          hero_secondary_button_url: string | null
+          hero_subtitle: string | null
+          hero_title: string | null
+          id: string
+          institutional_text: string | null
+          og_image_url: string | null
+          require_admin_approval: boolean
+          seo_description: string | null
+          seo_title: string | null
+          show_b2b_prices_to_guests: boolean
+          updated_at: string
+          vitrine_is_active: boolean
+          vitrine_slug: string
+          whatsapp_cta_text: string | null
+        }
+        Insert: {
+          benefits?: Json
+          created_at?: string
+          hero_description?: string | null
+          hero_image_url?: string | null
+          hero_primary_button_text?: string | null
+          hero_primary_button_url?: string | null
+          hero_secondary_button_text?: string | null
+          hero_secondary_button_url?: string | null
+          hero_subtitle?: string | null
+          hero_title?: string | null
+          id?: string
+          institutional_text?: string | null
+          og_image_url?: string | null
+          require_admin_approval?: boolean
+          seo_description?: string | null
+          seo_title?: string | null
+          show_b2b_prices_to_guests?: boolean
+          updated_at?: string
+          vitrine_is_active?: boolean
+          vitrine_slug?: string
+          whatsapp_cta_text?: string | null
+        }
+        Update: {
+          benefits?: Json
+          created_at?: string
+          hero_description?: string | null
+          hero_image_url?: string | null
+          hero_primary_button_text?: string | null
+          hero_primary_button_url?: string | null
+          hero_secondary_button_text?: string | null
+          hero_secondary_button_url?: string | null
+          hero_subtitle?: string | null
+          hero_title?: string | null
+          id?: string
+          institutional_text?: string | null
+          og_image_url?: string | null
+          require_admin_approval?: boolean
+          seo_description?: string | null
+          seo_title?: string | null
+          show_b2b_prices_to_guests?: boolean
+          updated_at?: string
+          vitrine_is_active?: boolean
+          vitrine_slug?: string
+          whatsapp_cta_text?: string | null
+        }
+        Relationships: []
+      }
       cart_items: {
         Row: {
           created_at: string | null
@@ -239,6 +397,90 @@ export type Database = {
           },
         ]
       }
+      companies: {
+        Row: {
+          address_city: string | null
+          address_complement: string | null
+          address_neighborhood: string | null
+          address_number: string | null
+          address_state: string | null
+          address_street: string | null
+          address_zipcode: string | null
+          admin_notes: string | null
+          approved_at: string | null
+          approved_by: string | null
+          blocked_at: string | null
+          blocked_by: string | null
+          cnpj: string
+          contact_email: string
+          contact_name: string
+          contact_phone: string
+          contact_role: string | null
+          created_at: string
+          id: string
+          legal_name: string
+          rejection_reason: string | null
+          state_registration: string | null
+          status: Database["public"]["Enums"]["company_status"]
+          trade_name: string | null
+          updated_at: string
+        }
+        Insert: {
+          address_city?: string | null
+          address_complement?: string | null
+          address_neighborhood?: string | null
+          address_number?: string | null
+          address_state?: string | null
+          address_street?: string | null
+          address_zipcode?: string | null
+          admin_notes?: string | null
+          approved_at?: string | null
+          approved_by?: string | null
+          blocked_at?: string | null
+          blocked_by?: string | null
+          cnpj: string
+          contact_email: string
+          contact_name: string
+          contact_phone: string
+          contact_role?: string | null
+          created_at?: string
+          id?: string
+          legal_name: string
+          rejection_reason?: string | null
+          state_registration?: string | null
+          status?: Database["public"]["Enums"]["company_status"]
+          trade_name?: string | null
+          updated_at?: string
+        }
+        Update: {
+          address_city?: string | null
+          address_complement?: string | null
+          address_neighborhood?: string | null
+          address_number?: string | null
+          address_state?: string | null
+          address_street?: string | null
+          address_zipcode?: string | null
+          admin_notes?: string | null
+          approved_at?: string | null
+          approved_by?: string | null
+          blocked_at?: string | null
+          blocked_by?: string | null
+          cnpj?: string
+          contact_email?: string
+          contact_name?: string
+          contact_phone?: string
+          contact_role?: string | null
+          created_at?: string
+          id?: string
+          legal_name?: string
+          rejection_reason?: string | null
+          state_registration?: string | null
+          status?: Database["public"]["Enums"]["company_status"]
+          trade_name?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       company_settings: {
         Row: {
           address_city: string | null
@@ -343,6 +585,38 @@ export type Database = {
           website_url?: string | null
         }
         Relationships: []
+      }
+      company_users: {
+        Row: {
+          company_id: string
+          created_at: string
+          id: string
+          role: Database["public"]["Enums"]["company_user_role"]
+          user_id: string
+        }
+        Insert: {
+          company_id: string
+          created_at?: string
+          id?: string
+          role?: Database["public"]["Enums"]["company_user_role"]
+          user_id: string
+        }
+        Update: {
+          company_id?: string
+          created_at?: string
+          id?: string
+          role?: Database["public"]["Enums"]["company_user_role"]
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "company_users_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       contact_messages: {
         Row: {
@@ -1370,6 +1644,13 @@ export type Database = {
       products: {
         Row: {
           active: boolean | null
+          b2b_commercial_note: string | null
+          b2b_enabled: boolean
+          b2b_min_qty: number | null
+          b2b_price: number | null
+          b2b_qty_multiple: number | null
+          b2b_show_in_vitrine: boolean
+          b2b_valid_until: string | null
           brand: string | null
           category_id: string | null
           cost_price: number | null
@@ -1400,6 +1681,13 @@ export type Database = {
         }
         Insert: {
           active?: boolean | null
+          b2b_commercial_note?: string | null
+          b2b_enabled?: boolean
+          b2b_min_qty?: number | null
+          b2b_price?: number | null
+          b2b_qty_multiple?: number | null
+          b2b_show_in_vitrine?: boolean
+          b2b_valid_until?: string | null
           brand?: string | null
           category_id?: string | null
           cost_price?: number | null
@@ -1430,6 +1718,13 @@ export type Database = {
         }
         Update: {
           active?: boolean | null
+          b2b_commercial_note?: string | null
+          b2b_enabled?: boolean
+          b2b_min_qty?: number | null
+          b2b_price?: number | null
+          b2b_qty_multiple?: number | null
+          b2b_show_in_vitrine?: boolean
+          b2b_valid_until?: string | null
           brand?: string | null
           category_id?: string | null
           cost_price?: number | null
@@ -1617,6 +1912,11 @@ export type Database = {
           reason: string
         }[]
       }
+      get_user_approved_company_id: {
+        Args: { _user_id: string }
+        Returns: string
+      }
+      get_user_company_id: { Args: { _user_id: string }; Returns: string }
       increment_coupon_usage: { Args: { _code: string }; Returns: undefined }
       is_admin: { Args: { _user_id: string }; Returns: boolean }
       log_admin_action: {
@@ -1662,9 +1962,22 @@ export type Database = {
         Args: { _product_id: string }
         Returns: undefined
       }
+      user_belongs_to_company: {
+        Args: { _company_id: string; _user_id: string }
+        Returns: boolean
+      }
     }
     Enums: {
-      [_ in never]: never
+      b2b_negotiation_status:
+        | "nova"
+        | "em_atendimento"
+        | "proposta_enviada"
+        | "aguardando_cliente"
+        | "convertida_em_pedido"
+        | "perdida"
+        | "cancelada"
+      company_status: "pending" | "approved" | "blocked" | "rejected"
+      company_user_role: "owner" | "member"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -1791,6 +2104,18 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      b2b_negotiation_status: [
+        "nova",
+        "em_atendimento",
+        "proposta_enviada",
+        "aguardando_cliente",
+        "convertida_em_pedido",
+        "perdida",
+        "cancelada",
+      ],
+      company_status: ["pending", "approved", "blocked", "rejected"],
+      company_user_role: ["owner", "member"],
+    },
   },
 } as const
