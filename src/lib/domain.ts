@@ -21,6 +21,11 @@ export type Product = {
   featured: boolean;
   free_shipping_eligible: boolean;
   specs: Record<string, unknown>;
+  b2b_enabled?: boolean;
+  b2b_price?: number | null;
+  b2b_min_qty?: number | null;
+  b2b_qty_multiple?: number | null;
+  b2b_show_in_vitrine?: boolean;
 };
 
 export type Category = {
