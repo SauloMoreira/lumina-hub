@@ -71,7 +71,7 @@ function CadastroEmpresaPage() {
   const [form, setForm] = useState<FormState>(initial);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(false);
-  const [success, setSuccess] = useState(false);
+  const [success, setSuccess] = useState<{ approved: boolean; reason: string } | null>(null);
 
   const set =
     <K extends keyof FormState>(k: K) =>
@@ -96,11 +96,13 @@ function CadastroEmpresaPage() {
     setErrors({});
     setLoading(true);
     try {
-      await createCompany({
+      const res = await createCompany({
         data: { ...r.data, cnpj: onlyDigits(r.data.cnpj) },
       });
-      toast.success('Cadastro enviado para aprovação!');
-      setSuccess(true);
+      const approved = Boolean((res as { auto_approved?: boolean })?.auto_approved);
+      const reason = String((res as { reason?: string })?.reason ?? '');
+      toast.success(approved ? 'Empresa aprovada automaticamente!' : 'Cadastro enviado para aprovação!');
+      setSuccess({ approved, reason });
       setTimeout(() => {
         navigate({ to: '/conta/empresa' as never });
       }, 3500);
