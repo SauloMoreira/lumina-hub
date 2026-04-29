@@ -79,7 +79,7 @@ export const useCart = create<CartState>()(
       subtotal: () => get().items.reduce((acc, i) => acc + i.price * i.qty, 0),
       hasB2bItems: () => get().items.some((i) => i.source === 'b2b'),
     }),
-    { name: 'led-marica-cart', partialize: (s) => ({ items: s.items }) }
+    { name: 'led-marica-cart', partialize: (s) => ({ items: s.items, lastSource: s.lastSource }) }
   )
 );
 
