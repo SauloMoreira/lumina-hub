@@ -276,13 +276,19 @@ export function buildOrderEmailTemplate(p: OrderEmailParams): {
       (p.pickup.instructions ? `\n${p.pickup.instructions}` : '')
     : '';
 
+  const localTxt = (isLocalDelivery && p.localDelivery)
+    ? `\n\nFrete Local Maricá/RJ:` +
+      (p.localDelivery.district ? `\n${p.localDelivery.district}` : '') +
+      (p.localDelivery.eta ? `\nPrazo: ${p.localDelivery.eta}` : '')
+    : '';
+
   const text = `${greeting}
 
 ${c.headline}
 
 ${c.intro.replace(/<[^>]+>/g, '')}
 
-${c.ctaLabel}: ${c.ctaUrl}${itemsTxt}${pickupTxt}
+${c.ctaLabel}: ${c.ctaUrl}${itemsTxt}${pickupTxt}${localTxt}
 
 — ${p.storeName}`;
 
