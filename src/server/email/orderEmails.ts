@@ -98,7 +98,7 @@ export async function sendOrderEmail(opts: SendOrderEmailOptions): Promise<{
     }));
 
     const orderAny = order as any;
-    const deliveryMethod = (orderAny.delivery_method ?? 'delivery') as 'delivery' | 'pickup';
+    const deliveryMethod = (orderAny.delivery_method ?? 'delivery') as 'delivery' | 'pickup' | 'local_delivery';
 
     const { subject, html, text } = buildOrderEmailTemplate({
       storeName: getStoreName(),
@@ -122,6 +122,13 @@ export async function sendOrderEmail(opts: SendOrderEmailOptions): Promise<{
             storePhone: orderAny.pickup_store_phone ?? null,
             instructions: orderAny.pickup_instructions ?? null,
             readyEta: null,
+          }
+        : null,
+      localDelivery: deliveryMethod === 'local_delivery'
+        ? {
+            district: orderAny.local_delivery_district ?? null,
+            eta: orderAny.local_delivery_eta ?? null,
+            service: orderAny.shipping_service ?? null,
           }
         : null,
     });
