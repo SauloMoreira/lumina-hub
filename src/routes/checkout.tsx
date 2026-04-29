@@ -528,7 +528,7 @@ function CheckoutPage() {
                 </section>
 
                 <div className="flex gap-3">
-                  <Button variant="outline" onClick={() => setStep(2)} className="flex-1">Voltar</Button>
+                  <Button variant="outline" onClick={() => setStep(isPickup ? 1 : 2)} className="flex-1">Voltar</Button>
                   <Button onClick={handleSubmit} disabled={submitting} className="flex-1 h-12">
                     {submitting ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Processando...</> : <>Finalizar pedido <ArrowRight className="w-4 h-4 ml-1.5" /></>}
                   </Button>
