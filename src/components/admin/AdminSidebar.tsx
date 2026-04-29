@@ -1,4 +1,5 @@
 import { Link, useLocation, useNavigate } from '@tanstack/react-router';
+import { useEffect, useMemo, useState } from 'react';
 import {
   LayoutDashboard,
   Package,
@@ -15,83 +16,413 @@ import {
   Mail,
   Shield,
   Truck,
+  ChevronDown,
+  Menu,
+  X,
+  Receipt,
+  BarChart3,
+  Settings as SettingsIcon,
+  Boxes,
+  Sparkles,
+  Lock,
+  Briefcase,
+  Globe,
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import logo from '@/assets/logo-navbar.png';
 import { cn } from '@/lib/utils';
 
-const items: { to: string; label: string; icon: typeof LayoutDashboard; exact?: boolean }[] = [
-  { to: '/admin', label: 'Dashboard', icon: LayoutDashboard, exact: true },
-  { to: '/admin/produtos', label: 'Produtos', icon: Package },
-  { to: '/admin/categorias', label: 'Categorias', icon: Tags },
-  { to: '/admin/pedidos', label: 'Pedidos', icon: ShoppingBag },
-  { to: '/admin/cupons', label: 'Cupons', icon: Ticket },
-  { to: '/admin/leads', label: 'Leads', icon: Users },
-  { to: '/admin/empresas', label: 'Empresas B2B', icon: Building2 },
-  { to: '/admin/campanhas', label: 'Campanhas', icon: Megaphone },
-  { to: '/admin/banners', label: 'Banners', icon: ImageIcon },
-  { to: '/admin/institutional-pages', label: 'Páginas', icon: FileText },
-  { to: '/admin/conteudo/homepage', label: 'Conteúdo Home', icon: LayoutDashboard },
-  { to: '/admin/contact-messages', label: 'Mensagens', icon: Mail },
-  { to: '/admin/settings/company', label: 'Empresa', icon: Building2 },
-  { to: '/admin/settings/frete-local', label: 'Frete Local', icon: Truck },
-  { to: '/admin/seguranca', label: 'Segurança', icon: Shield },
+type Item = {
+  to?: string;
+  label: string;
+  icon?: typeof LayoutDashboard;
+  exact?: boolean;
+  soon?: boolean;
+};
+
+type Group = {
+  id: string;
+  label: string;
+  icon: typeof LayoutDashboard;
+  items: Item[];
+};
+
+const groups: Group[] = [
+  {
+    id: 'painel',
+    label: 'Painel',
+    icon: LayoutDashboard,
+    items: [
+      { to: '/admin', label: 'Visão geral', icon: LayoutDashboard, exact: true },
+      { label: 'Painel do dia', soon: true },
+      { label: 'Pendências', soon: true },
+      { label: 'Indicadores', soon: true },
+    ],
+  },
+  {
+    id: 'vendas',
+    label: 'Vendas',
+    icon: ShoppingBag,
+    items: [
+      { to: '/admin/pedidos', label: 'Pedidos', icon: ShoppingBag },
+      { label: 'Carrinhos abandonados', soon: true },
+      { label: 'Cupons utilizados', soon: true },
+      { label: 'Pagamentos', soon: true },
+      { label: 'Pós-venda', soon: true },
+    ],
+  },
+  {
+    id: 'produtos',
+    label: 'Produtos',
+    icon: Package,
+    items: [
+      { to: '/admin/produtos', label: 'Produtos', icon: Package },
+      { to: '/admin/categorias', label: 'Categorias', icon: Tags },
+      { label: 'Estoque', soon: true },
+      { label: 'Preços e promoções', soon: true },
+      { label: 'Condições B2B', soon: true },
+      { label: 'Importar produtos', soon: true },
+      { label: 'Qualidade do cadastro', soon: true },
+    ],
+  },
+  {
+    id: 'crm',
+    label: 'Clientes & CRM',
+    icon: Users,
+    items: [
+      { label: 'Clientes', soon: true },
+      { to: '/admin/leads', label: 'Leads', icon: Users },
+      { label: 'Funil comercial', soon: true },
+      { to: '/admin/contact-messages', label: 'Atendimentos', icon: Mail },
+      { label: 'Modelos de WhatsApp', soon: true },
+      { label: 'Histórico de contatos', soon: true },
+    ],
+  },
+  {
+    id: 'b2b',
+    label: 'B2B / Atacado',
+    icon: Briefcase,
+    items: [
+      { to: '/admin/empresas', label: 'Empresas B2B', icon: Building2 },
+      { label: 'Aprovações pendentes', soon: true },
+      { label: 'Vitrine atacado', soon: true },
+      { label: 'Negociações B2B', soon: true },
+      { label: 'Pedidos B2B', soon: true },
+      { label: 'Dashboard B2B', soon: true },
+    ],
+  },
+  {
+    id: 'marketing',
+    label: 'Marketing',
+    icon: Megaphone,
+    items: [
+      { to: '/admin/campanhas', label: 'Campanhas', icon: Megaphone },
+      { to: '/admin/banners', label: 'Banners', icon: ImageIcon },
+      { to: '/admin/cupons', label: 'Cupons', icon: Ticket },
+      { label: 'SEO', soon: true },
+      { label: 'Pixels e Analytics', soon: true },
+      { label: 'E-mail e WhatsApp marketing', soon: true },
+      { label: 'Performance de campanhas', soon: true },
+    ],
+  },
+  {
+    id: 'logistica',
+    label: 'Logística',
+    icon: Truck,
+    items: [
+      { label: 'Retirada na loja', soon: true },
+      { to: '/admin/settings/frete-local', label: 'Frete local Maricá/RJ', icon: Truck },
+      { label: 'Frete convencional', soon: true },
+      { label: 'Melhor Envio', soon: true },
+      { label: 'Entregas', soon: true },
+      { label: 'Rastreamento', soon: true },
+    ],
+  },
+  {
+    id: 'conteudo',
+    label: 'Conteúdo do site',
+    icon: Globe,
+    items: [
+      { to: '/admin/conteudo/homepage', label: 'Homepage', icon: LayoutDashboard },
+      { label: 'Vitrine B2B', soon: true },
+      { to: '/admin/institutional-pages', label: 'Páginas institucionais', icon: FileText },
+      { label: 'Política de privacidade', soon: true },
+      { label: 'Termos de uso', soon: true },
+      { label: 'Trocas e devoluções', soon: true },
+      { label: 'FAQ', soon: true },
+    ],
+  },
+  {
+    id: 'financeiro',
+    label: 'Financeiro & Fiscal',
+    icon: Receipt,
+    items: [
+      { label: 'Resumo financeiro', soon: true },
+      { label: 'Mercado Pago', soon: true },
+      { label: 'Notas fiscais', soon: true },
+      { label: 'Impostos', soon: true },
+      { label: 'Margem de lucro', soon: true },
+      { label: 'Relatórios financeiros', soon: true },
+    ],
+  },
+  {
+    id: 'relatorios',
+    label: 'Relatórios',
+    icon: BarChart3,
+    items: [
+      { label: 'Vendas', soon: true },
+      { label: 'Produtos', soon: true },
+      { label: 'Clientes', soon: true },
+      { label: 'Leads', soon: true },
+      { label: 'Marketing', soon: true },
+      { label: 'B2B', soon: true },
+      { label: 'Logística', soon: true },
+    ],
+  },
+  {
+    id: 'config',
+    label: 'Configurações',
+    icon: SettingsIcon,
+    items: [
+      { to: '/admin/settings/company', label: 'Dados da empresa', icon: Building2 },
+      { label: 'Usuários e permissões', soon: true },
+      { label: 'WhatsApp', soon: true },
+      { label: 'E-mail', soon: true },
+      { label: 'Checkout', soon: true },
+      { label: 'Pagamentos', soon: true },
+      { label: 'LGPD e cookies', soon: true },
+      { label: 'Integrações', soon: true },
+    ],
+  },
+  {
+    id: 'seguranca',
+    label: 'Segurança',
+    icon: Shield,
+    items: [
+      { to: '/admin/seguranca', label: 'Segurança', icon: Shield },
+      { label: 'Usuários administrativos', soon: true },
+      { label: 'MFA', soon: true },
+      { label: 'Logs de segurança', soon: true },
+      { label: 'Auditoria', soon: true },
+      { label: 'Chaves e webhooks', soon: true },
+    ],
+  },
 ];
 
-export function AdminSidebar() {
+const STORAGE_KEY = 'admin.sidebar.openGroups';
+
+function isItemActive(path: string, item: Item): boolean {
+  if (!item.to) return false;
+  if (item.exact) return path === item.to;
+  return path === item.to || path.startsWith(item.to + '/');
+}
+
+function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
   const loc = useLocation();
-  const nav = useNavigate();
   const path = loc.pathname;
 
+  const initialOpen = useMemo(() => {
+    // Open the group containing the active route by default
+    const map: Record<string, boolean> = {};
+    for (const g of groups) {
+      map[g.id] = g.items.some((it) => isItemActive(path, it));
+    }
+    // Always open Painel by default
+    map['painel'] = map['painel'] || path === '/admin';
+    return map;
+  }, [path]);
+
+  const [open, setOpen] = useState<Record<string, boolean>>(() => {
+    if (typeof window === 'undefined') return initialOpen;
+    try {
+      const saved = localStorage.getItem(STORAGE_KEY);
+      if (saved) return { ...initialOpen, ...JSON.parse(saved) };
+    } catch {}
+    return initialOpen;
+  });
+
+  useEffect(() => {
+    // Make sure the group of the current route is open after navigation
+    setOpen((prev) => {
+      const next = { ...prev };
+      for (const g of groups) {
+        if (g.items.some((it) => isItemActive(path, it))) next[g.id] = true;
+      }
+      return next;
+    });
+  }, [path]);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(open));
+    } catch {}
+  }, [open]);
+
+  const toggle = (id: string) => setOpen((p) => ({ ...p, [id]: !p[id] }));
+
+  return (
+    <nav className="flex-1 p-3 space-y-1 overflow-y-auto">
+      {groups.map((g) => {
+        const groupActive = g.items.some((it) => isItemActive(path, it));
+        const isOpen = !!open[g.id];
+        return (
+          <div key={g.id} className="space-y-1">
+            <button
+              type="button"
+              onClick={() => toggle(g.id)}
+              className={cn(
+                'w-full flex items-center gap-2 px-3 py-2 rounded-lg text-sm transition-colors',
+                groupActive
+                  ? 'text-foreground font-medium'
+                  : 'text-muted-foreground hover:bg-muted hover:text-foreground',
+              )}
+              aria-expanded={isOpen}
+            >
+              <g.icon className="w-4 h-4 shrink-0" />
+              <span className="flex-1 text-left">{g.label}</span>
+              <ChevronDown
+                className={cn('w-3.5 h-3.5 transition-transform', isOpen && 'rotate-180')}
+              />
+            </button>
+            {isOpen && (
+              <div className="ml-2 pl-3 border-l border-border space-y-0.5">
+                {g.items.map((it, idx) => {
+                  if (it.soon || !it.to) {
+                    return (
+                      <div
+                        key={`${g.id}-${idx}`}
+                        className="flex items-center gap-2 px-3 py-1.5 rounded-md text-xs text-muted-foreground/60 cursor-not-allowed select-none"
+                        title="Em breve"
+                      >
+                        <span className="flex-1 truncate">{it.label}</span>
+                        <span className="text-[9px] uppercase tracking-wider px-1.5 py-0.5 rounded bg-muted text-muted-foreground/70">
+                          em breve
+                        </span>
+                      </div>
+                    );
+                  }
+                  const active = isItemActive(path, it);
+                  return (
+                    <Link
+                      key={`${g.id}-${idx}`}
+                      to={it.to as any}
+                      onClick={onNavigate}
+                      className={cn(
+                        'flex items-center gap-2 px-3 py-1.5 rounded-md text-sm transition-colors',
+                        active
+                          ? 'bg-primary text-primary-foreground font-medium'
+                          : 'text-muted-foreground hover:bg-muted hover:text-foreground',
+                      )}
+                    >
+                      {it.icon && <it.icon className="w-3.5 h-3.5 shrink-0" />}
+                      <span className="truncate">{it.label}</span>
+                    </Link>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        );
+      })}
+    </nav>
+  );
+}
+
+function SidebarFooter() {
+  const nav = useNavigate();
   const handleLogout = async () => {
     await supabase.auth.signOut();
     nav({ to: '/login' });
   };
+  return (
+    <div className="p-3 border-t border-border space-y-1">
+      <Link
+        to="/"
+        className="flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
+      >
+        <Store className="w-4 h-4" /> Ver loja
+      </Link>
+      <button
+        onClick={handleLogout}
+        className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
+      >
+        <LogOut className="w-4 h-4" /> Sair
+      </button>
+    </div>
+  );
+}
+
+function SidebarHeader() {
+  return (
+    <div className="h-16 px-4 flex items-center border-b border-border shrink-0">
+      <Link to={'/admin' as any} className="flex items-center gap-2">
+        <img src={logo} alt="Led Maricá" className="h-8 w-auto" />
+        <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+          Admin
+        </span>
+      </Link>
+    </div>
+  );
+}
+
+export function AdminSidebar() {
+  const [mobileOpen, setMobileOpen] = useState(false);
+  const loc = useLocation();
+
+  // Close mobile drawer on route change
+  useEffect(() => {
+    setMobileOpen(false);
+  }, [loc.pathname]);
 
   return (
-    <aside className="w-60 shrink-0 bg-card border-r border-border flex flex-col h-screen sticky top-0">
-      <div className="h-16 px-4 flex items-center border-b border-border">
-        <Link to={'/admin' as any} className="flex items-center gap-2">
-          <img src={logo} alt="Led Maricá" className="h-8 w-auto" />
-          <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Admin</span>
-        </Link>
-      </div>
+    <>
+      {/* Mobile top bar trigger */}
+      <button
+        type="button"
+        onClick={() => setMobileOpen(true)}
+        className="lg:hidden fixed top-3 left-3 z-40 inline-flex items-center justify-center h-10 w-10 rounded-lg bg-card border border-border shadow-sm"
+        aria-label="Abrir menu"
+      >
+        <Menu className="w-5 h-5" />
+      </button>
 
-      <nav className="flex-1 p-3 space-y-1 overflow-y-auto">
-        {items.map((it) => {
-          const active = it.exact ? path === it.to : path.startsWith(it.to);
-          return (
-            <Link
-              key={it.to}
-              to={it.to as any}
-              className={cn(
-                'flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors',
-                active
-                  ? 'bg-primary text-primary-foreground font-medium'
-                  : 'text-muted-foreground hover:bg-muted hover:text-foreground',
-              )}
-            >
-              <it.icon className="w-4 h-4" />
-              {it.label}
-            </Link>
-          );
-        })}
-      </nav>
+      {/* Desktop sidebar */}
+      <aside className="hidden lg:flex w-64 shrink-0 bg-card border-r border-border flex-col h-screen sticky top-0">
+        <SidebarHeader />
+        <SidebarContent />
+        <SidebarFooter />
+      </aside>
 
-      <div className="p-3 border-t border-border space-y-1">
-        <Link
-          to="/"
-          className="flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
-        >
-          <Store className="w-4 h-4" /> Ver loja
-        </Link>
-        <button
-          onClick={handleLogout}
-          className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
-        >
-          <LogOut className="w-4 h-4" /> Sair
-        </button>
-      </div>
-    </aside>
+      {/* Mobile drawer */}
+      {mobileOpen && (
+        <div className="lg:hidden fixed inset-0 z-50 flex">
+          <div
+            className="absolute inset-0 bg-black/50"
+            onClick={() => setMobileOpen(false)}
+            aria-hidden
+          />
+          <aside className="relative w-72 max-w-[85vw] bg-card border-r border-border flex flex-col h-full">
+            <div className="flex items-center justify-between border-b border-border h-16 px-4">
+              <Link to={'/admin' as any} className="flex items-center gap-2">
+                <img src={logo} alt="Led Maricá" className="h-7 w-auto" />
+                <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                  Admin
+                </span>
+              </Link>
+              <button
+                type="button"
+                onClick={() => setMobileOpen(false)}
+                className="h-9 w-9 inline-flex items-center justify-center rounded-md hover:bg-muted"
+                aria-label="Fechar menu"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <SidebarContent onNavigate={() => setMobileOpen(false)} />
+            <SidebarFooter />
+          </aside>
+        </div>
+      )}
+    </>
   );
 }
