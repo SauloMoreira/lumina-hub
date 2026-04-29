@@ -56,6 +56,7 @@ const emptyForm = {
   badge: '',
   bg_color: '',
   text_color: '#FFFFFF',
+  title_color: '#FFFFFF',
   campaign_type: 'promotion',
   sort_order: '0',
   active: true,
