@@ -20,6 +20,9 @@ interface Product {
   brand: string | null;
   sku: string | null;
   images: string[] | null;
+  b2b_enabled: boolean;
+  b2b_price: number | null;
+  b2b_min_qty: number | null;
 }
 
 function ProdutosList() {
@@ -82,14 +85,15 @@ function ProdutosList() {
                 <th className="px-4 py-3 font-medium">Produto</th>
                 <th className="px-4 py-3 font-medium">SKU</th>
                 <th className="px-4 py-3 font-medium">Preço</th>
+                <th className="px-4 py-3 font-medium">Atacado</th>
                 <th className="px-4 py-3 font-medium">Estoque</th>
                 <th className="px-4 py-3 font-medium">Status</th>
                 <th className="px-4 py-3 font-medium w-24"></th>
               </tr>
             </thead>
             <tbody>
-              {loading && <tr><td colSpan={6} className="px-4 py-8 text-center text-muted-foreground">Carregando…</td></tr>}
-              {!loading && filtered.length === 0 && <tr><td colSpan={6} className="px-4 py-8 text-center text-muted-foreground">Nenhum produto encontrado.</td></tr>}
+              {loading && <tr><td colSpan={7} className="px-4 py-8 text-center text-muted-foreground">Carregando…</td></tr>}
+              {!loading && filtered.length === 0 && <tr><td colSpan={7} className="px-4 py-8 text-center text-muted-foreground">Nenhum produto encontrado.</td></tr>}
               {filtered.map((p) => (
                 <tr key={p.id} className="border-t border-border hover:bg-muted/20">
                   <td className="px-4 py-3">
@@ -114,6 +118,18 @@ function ProdutosList() {
                       </div>
                     ) : (
                       <span>R$ {Number(p.price).toFixed(2)}</span>
+                    )}
+                  </td>
+                  <td className="px-4 py-3">
+                    {p.b2b_enabled && p.b2b_price ? (
+                      <div>
+                        <span className="font-semibold text-foreground">R$ {Number(p.b2b_price).toFixed(2)}</span>
+                        {p.b2b_min_qty ? (
+                          <span className="text-xs text-muted-foreground block">a partir de {p.b2b_min_qty} un</span>
+                        ) : null}
+                      </div>
+                    ) : (
+                      <span className="text-xs text-muted-foreground">—</span>
                     )}
                   </td>
                   <td className="px-4 py-3">
