@@ -212,16 +212,19 @@ function AtacadoPage() {
               Condições especiais para compras em quantidade.
             </p>
           </div>
-          {isApproved && (
-            <a
-              href={whatsappLink}
-              target="_blank"
-              rel="noreferrer"
-              className="hidden sm:inline-flex items-center gap-2 h-10 px-4 rounded-md border border-border bg-card text-sm font-semibold text-foreground hover:bg-muted transition"
-            >
-              <MessageSquareText className="w-4 h-4" /> Solicitar negociação
-            </a>
-          )}
+          <div className="flex items-center gap-2">
+            <CartButton />
+            {isApproved && (
+              <a
+                href={whatsappLink}
+                target="_blank"
+                rel="noreferrer"
+                className="hidden sm:inline-flex items-center gap-2 h-10 px-4 rounded-md border border-border bg-card text-sm font-semibold text-foreground hover:bg-muted transition"
+              >
+                <MessageSquareText className="w-4 h-4" /> Solicitar negociação
+              </a>
+            )}
+          </div>
         </div>
 
         {/* Filtros B2B */}
