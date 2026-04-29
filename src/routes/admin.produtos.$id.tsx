@@ -74,6 +74,13 @@ function ProductForm() {
           seo_title: (data as any).seo_title ?? '',
           seo_description: (data as any).seo_description ?? '',
           seo_keywords: (data as any).seo_keywords ?? '',
+          b2b_enabled: !!(data as any).b2b_enabled,
+          b2b_price: (data as any).b2b_price != null ? String((data as any).b2b_price) : '',
+          b2b_min_qty: (data as any).b2b_min_qty != null ? String((data as any).b2b_min_qty) : '',
+          b2b_qty_multiple: (data as any).b2b_qty_multiple != null ? String((data as any).b2b_qty_multiple) : '',
+          b2b_commercial_note: (data as any).b2b_commercial_note ?? '',
+          b2b_valid_until: (data as any).b2b_valid_until ? String((data as any).b2b_valid_until).slice(0, 10) : '',
+          b2b_show_in_vitrine: (data as any).b2b_show_in_vitrine !== false,
         });
         setLoading(false);
       });
