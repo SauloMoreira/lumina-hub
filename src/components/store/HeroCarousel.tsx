@@ -15,6 +15,7 @@ export type HeroBanner = {
   badge: string | null;
   bg_color: string | null;
   text_color: string | null;
+  title_color: string | null;
 };
 
 const AUTOPLAY_MS = 6000;
@@ -114,7 +115,10 @@ export function HeroCarousel({ banners }: { banners: HeroBanner[] }) {
                       {b.badge}
                     </span>
                   )}
-                  <h2 className="font-display font-extrabold text-xl sm:text-3xl md:text-5xl leading-tight tracking-tight mb-2 sm:mb-3 drop-shadow-lg break-words">
+                  <h2
+                    className="font-display font-extrabold text-xl sm:text-3xl md:text-5xl leading-tight tracking-tight mb-2 sm:mb-3 drop-shadow-lg break-words"
+                    style={{ color: b.title_color ?? b.text_color ?? '#FFFFFF' }}
+                  >
                     {b.title}
                   </h2>
                   {b.subtitle && (

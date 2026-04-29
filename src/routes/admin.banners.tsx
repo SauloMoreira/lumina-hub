@@ -27,6 +27,7 @@ interface Banner {
   badge: string | null;
   bg_color: string | null;
   text_color: string | null;
+  title_color: string | null;
   campaign_type: string;
   sort_order: number;
   active: boolean;
@@ -55,6 +56,7 @@ const emptyForm = {
   badge: '',
   bg_color: '',
   text_color: '#FFFFFF',
+  title_color: '#FFFFFF',
   campaign_type: 'promotion',
   sort_order: '0',
   active: true,
@@ -136,6 +138,7 @@ function BannersPage() {
       badge: b.badge ?? '',
       bg_color: b.bg_color ?? '',
       text_color: b.text_color ?? '#FFFFFF',
+      title_color: b.title_color ?? b.text_color ?? '#FFFFFF',
       campaign_type: b.campaign_type,
       sort_order: String(b.sort_order),
       active: b.active,
@@ -162,6 +165,7 @@ function BannersPage() {
         badge: form.badge.trim() || null,
         bg_color: form.bg_color.trim() || null,
         text_color: form.text_color.trim() || null,
+        title_color: form.title_color.trim() || null,
         campaign_type: form.campaign_type,
         sort_order: Number(form.sort_order) || 0,
         active: form.active,
@@ -418,11 +422,39 @@ function BannersPage() {
               </div>
               <div>
                 <Label>Cor de fundo (fallback)</Label>
-                <Input value={form.bg_color} onChange={(e) => setForm({ ...form, bg_color: e.target.value })} placeholder="#0B1B3A" />
+                <div className="flex gap-2 items-center">
+                  <input
+                    type="color"
+                    value={/^#[0-9a-fA-F]{6}$/.test(form.bg_color) ? form.bg_color : '#0B1B3A'}
+                    onChange={(e) => setForm({ ...form, bg_color: e.target.value })}
+                    className="h-10 w-12 rounded border border-input bg-background cursor-pointer p-1"
+                  />
+                  <Input value={form.bg_color} onChange={(e) => setForm({ ...form, bg_color: e.target.value })} placeholder="#0B1B3A" />
+                </div>
               </div>
               <div>
-                <Label>Cor do texto</Label>
-                <Input value={form.text_color} onChange={(e) => setForm({ ...form, text_color: e.target.value })} placeholder="#FFFFFF" />
+                <Label>Cor do título</Label>
+                <div className="flex gap-2 items-center">
+                  <input
+                    type="color"
+                    value={/^#[0-9a-fA-F]{6}$/.test(form.title_color) ? form.title_color : '#FFFFFF'}
+                    onChange={(e) => setForm({ ...form, title_color: e.target.value })}
+                    className="h-10 w-12 rounded border border-input bg-background cursor-pointer p-1"
+                  />
+                  <Input value={form.title_color} onChange={(e) => setForm({ ...form, title_color: e.target.value })} placeholder="#FFFFFF" />
+                </div>
+              </div>
+              <div>
+                <Label>Cor do subtítulo / descrição</Label>
+                <div className="flex gap-2 items-center">
+                  <input
+                    type="color"
+                    value={/^#[0-9a-fA-F]{6}$/.test(form.text_color) ? form.text_color : '#FFFFFF'}
+                    onChange={(e) => setForm({ ...form, text_color: e.target.value })}
+                    className="h-10 w-12 rounded border border-input bg-background cursor-pointer p-1"
+                  />
+                  <Input value={form.text_color} onChange={(e) => setForm({ ...form, text_color: e.target.value })} placeholder="#FFFFFF" />
+                </div>
               </div>
               <div>
                 <Label>Início (opcional)</Label>
