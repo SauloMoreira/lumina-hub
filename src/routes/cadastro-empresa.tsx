@@ -1,7 +1,7 @@
 import { createFileRoute, Link, useNavigate, redirect } from '@tanstack/react-router';
 import { useState } from 'react';
 import { toast } from 'sonner';
-import { Building2, ShieldCheck, Tag } from 'lucide-react';
+import { Building2, ShieldCheck, Tag, CheckCircle2 } from 'lucide-react';
 import { z } from 'zod';
 import { supabase } from '@/integrations/supabase/client';
 import { buildSeo } from '@/lib/seo';
@@ -71,6 +71,7 @@ function CadastroEmpresaPage() {
   const [form, setForm] = useState<FormState>(initial);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(false);
+  const [success, setSuccess] = useState(false);
 
   const set =
     <K extends keyof FormState>(k: K) =>
@@ -98,8 +99,11 @@ function CadastroEmpresaPage() {
       await createCompany({
         data: { ...r.data, cnpj: onlyDigits(r.data.cnpj) },
       });
-      toast.success('Empresa cadastrada! Aguarde a aprovação.');
-      navigate({ to: '/conta/empresa' as never });
+      toast.success('Cadastro enviado para aprovação!');
+      setSuccess(true);
+      setTimeout(() => {
+        navigate({ to: '/conta/empresa' as never });
+      }, 3500);
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'Falha ao cadastrar';
       toast.error(msg);
@@ -107,6 +111,28 @@ function CadastroEmpresaPage() {
       setLoading(false);
     }
   };
+
+  if (success) {
+    return (
+      <div className="min-h-screen bg-background py-10 flex items-center justify-center px-4">
+        <div className="max-w-md w-full bg-card border border-border rounded-xl p-8 shadow-soft text-center">
+          <div className="w-16 h-16 rounded-full bg-success/15 text-success flex items-center justify-center mx-auto mb-4">
+            <CheckCircle2 className="w-9 h-9" />
+          </div>
+          <h1 className="text-2xl font-display font-bold text-foreground mb-2">
+            Cadastro enviado!
+          </h1>
+          <p className="text-sm text-muted-foreground mb-6">
+            Recebemos os dados da sua empresa. Nosso time vai analisar e liberar
+            os preços B2B em breve. Você receberá um e-mail assim que for aprovado.
+          </p>
+          <div className="text-xs text-muted-foreground">
+            Redirecionando para "Minha empresa"...
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background py-10">
