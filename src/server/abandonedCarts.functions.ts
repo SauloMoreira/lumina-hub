@@ -205,7 +205,7 @@ export const updateAbandonedCart = createServerFn({ method: 'POST' })
     if (data.notes !== undefined) patch.notes = data.notes;
     const { error } = await supabaseAdmin
       .from('abandoned_carts')
-      .update(patch)
+      .update(patch as never)
       .eq('id', data.id);
     if (error) throw new Error(error.message);
     return { ok: true };
@@ -244,7 +244,7 @@ export const logContactAttempt = createServerFn({ method: 'POST' })
     if (data.markAsContacted && cart?.status === 'novo') {
       patch.status = 'contato_enviado';
     }
-    await supabaseAdmin.from('abandoned_carts').update(patch).eq('id', data.id);
+    await supabaseAdmin.from('abandoned_carts').update(patch as never).eq('id', data.id);
 
     // Histórico vinculado ao lead, se houver — referenciamos o id do carrinho
     // dentro do conteúdo para encontrar via ilike no detalhe.
