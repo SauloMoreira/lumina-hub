@@ -741,3 +741,26 @@ function Benefit({
 
 // Garante que formatCNPJ siga incluído (uso futuro nas próximas fases)
 void formatCNPJ;
+
+/* ----------------------------- CART BUTTON ----------------------------- */
+
+function CartButton() {
+  const cart = useCart();
+  const count = cart.count();
+  return (
+    <button
+      type="button"
+      onClick={() => cart.open()}
+      className="relative inline-flex items-center gap-2 h-10 px-4 rounded-md border border-border bg-card text-sm font-semibold text-foreground hover:bg-muted transition"
+      aria-label={`Abrir carrinho (${count} ${count === 1 ? 'item' : 'itens'})`}
+    >
+      <ShoppingCart className="w-4 h-4" />
+      <span className="hidden sm:inline">Carrinho</span>
+      {count > 0 && (
+        <span className="inline-flex items-center justify-center min-w-[20px] h-5 px-1.5 rounded-full bg-primary text-primary-foreground text-[10px] font-bold leading-none">
+          {count}
+        </span>
+      )}
+    </button>
+  );
+}
