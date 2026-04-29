@@ -175,6 +175,7 @@ function BannersPage() {
       toast.success(editing ? 'Banner atualizado' : 'Banner criado');
       setOpen(false);
       await load();
+      invalidateHome();
     } catch (err) {
       toast.error(err instanceof Error ? err.message : 'Erro ao salvar');
     } finally {
