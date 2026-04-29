@@ -1,6 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { useEffect, useRef, useState, type FormEvent, type ChangeEvent } from 'react';
 import { Plus, Pencil, Trash2, ArrowUp, ArrowDown, Wand2, Upload, Loader2, Image as ImageIcon } from 'lucide-react';
+import { useQueryClient } from '@tanstack/react-query';
 import { AdminLayout } from '@/components/admin/AdminLayout';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
