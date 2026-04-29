@@ -41,6 +41,67 @@ export const lookupCep = createServerFn({ method: 'POST' })
   });
 
 // ============================================================
+// Lookup zona de frete local Maricá/RJ (com normalização + alias)
+// Retornado para o front mostrar/ocultar opção e exibir mensagens.
+// O valor final é SEMPRE recalculado no servidor em createOrder.
+// ============================================================
+export const lookupLocalDeliveryZone = createServerFn({ method: 'POST' })
+  .inputValidator((input: unknown) =>
+    z
+      .object({
+        city: z.string().max(120).optional().default(''),
+        state: z.string().max(2).optional().default(''),
+        neighborhood: z.string().max(120).optional().default(''),
+      })
+      .parse(input)
+  )
+  .handler(async ({ data }) => {
+    const { supabaseAdmin } = await import('@/integrations/supabase/client.server');
+    const state = (data.state || '').toUpperCase();
+    if (state !== 'RJ' || !data.city || !data.neighborhood) {
+      return { ok: false as const, reason: 'out_of_area' as const };
+    }
+    const { data: rows, error } = await supabaseAdmin.rpc('lookup_local_delivery_zone' as never, {
+      _city: data.city,
+      _state: state,
+      _neighborhood: data.neighborhood,
+    } as never);
+    if (error) {
+      console.error('[lookupLocalDeliveryZone] rpc err', error);
+      return { ok: false as const, reason: 'error' as const };
+    }
+    const row = (Array.isArray(rows) ? rows[0] : rows) as
+      | {
+          zone_id: string;
+          matched_via: string;
+          display_name: string;
+          district: string;
+          shipping_price: number | null;
+          estimated_delivery_time: string | null;
+          is_active: boolean;
+          has_price: boolean;
+        }
+      | null
+      | undefined;
+    if (!row) return { ok: false as const, reason: 'not_configured' as const };
+    if (!row.is_active) {
+      return { ok: false as const, reason: 'inactive' as const, displayName: row.display_name, district: row.district };
+    }
+    if (!row.has_price || row.shipping_price === null) {
+      return { ok: false as const, reason: 'no_price' as const, displayName: row.display_name, district: row.district };
+    }
+    return {
+      ok: true as const,
+      zoneId: row.zone_id,
+      displayName: row.display_name,
+      district: row.district,
+      price: Number(row.shipping_price),
+      eta: row.estimated_delivery_time,
+      matchedVia: row.matched_via,
+    };
+  });
+
+// ============================================================
 // Cálculo de frete — STUB local
 // TODO: substituir pela chamada real ao Melhor Envio quando token disponível
 // ============================================================
