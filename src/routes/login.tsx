@@ -139,7 +139,7 @@ function LoginPage() {
         </p>
       }
     >
-      <form onSubmit={handleSubmit} noValidate>
+      <form onSubmit={handleSubmit} noValidate method="post" action="#">
         <FieldLabel htmlFor="email">E-mail</FieldLabel>
         <input
           id="email" type="email" autoComplete="email" placeholder="seu@email.com"
