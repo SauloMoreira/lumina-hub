@@ -1,9 +1,10 @@
-import { createFileRoute } from '@tanstack/react-router';
+import { createFileRoute, Link } from '@tanstack/react-router';
 import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
-import { Building2, Search, CheckCircle2, ShieldX, XCircle, Clock } from 'lucide-react';
+import { ArrowLeft, Building2, Search, CheckCircle2, ShieldX, XCircle, Clock } from 'lucide-react';
 import { buildSeo } from '@/lib/seo';
 import { formatCNPJ } from '@/lib/cnpj';
+import { AdminLayout } from '@/components/admin/AdminLayout';
 import {
   adminListCompanies,
   adminUpdateCompanyStatus,
