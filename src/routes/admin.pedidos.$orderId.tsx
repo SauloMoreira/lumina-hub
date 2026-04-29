@@ -276,7 +276,7 @@ function OrderDetailPage() {
             <Separator className="my-3" />
             <div className="space-y-1 text-sm">
               <Row label="Subtotal" value={fmt(order.subtotal)} />
-              <Row label="Frete" value={fmt(order.shipping_cost)} />
+              <Row label={(order as any).delivery_method === 'pickup' ? 'Retirada na loja' : 'Frete'} value={Number(order.shipping_cost) === 0 ? 'Grátis' : fmt(order.shipping_cost)} />
               {Number(order.discount) > 0 && (
                 <Row label={`Desconto${order.coupon_code ? ` (${order.coupon_code})` : ''}`} value={`-${fmt(order.discount)}`} valueClass="text-emerald-600" />
               )}
