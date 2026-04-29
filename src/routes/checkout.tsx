@@ -573,8 +573,12 @@ function CheckoutPage() {
                 <div className="flex justify-between text-success"><span>Desconto ({couponCode})</span><span>−{formatBRL(discount)}</span></div>
               )}
               <div className="flex justify-between">
-                <span className="text-muted-foreground">Frete</span>
-                <span>{selectedShipping ? (selectedShipping.price === 0 ? <span className="text-success">Grátis</span> : formatBRL(selectedShipping.price)) : '—'}</span>
+                <span className="text-muted-foreground">{isPickup ? 'Retirada na loja' : 'Frete'}</span>
+                <span>
+                  {isPickup
+                    ? <span className="text-success">Grátis</span>
+                    : (selectedShipping ? (selectedShipping.price === 0 ? <span className="text-success">Grátis</span> : formatBRL(selectedShipping.price)) : '—')}
+                </span>
               </div>
               <div className="border-t border-border pt-3 flex justify-between items-end">
                 <span className="font-medium">Total</span>
