@@ -718,6 +718,109 @@ export type Database = {
           },
         ]
       }
+      local_delivery_zone_aliases: {
+        Row: {
+          alias_name: string
+          alias_normalized: string
+          created_at: string
+          id: string
+          updated_at: string
+          zone_id: string
+        }
+        Insert: {
+          alias_name: string
+          alias_normalized: string
+          created_at?: string
+          id?: string
+          updated_at?: string
+          zone_id: string
+        }
+        Update: {
+          alias_name?: string
+          alias_normalized?: string
+          created_at?: string
+          id?: string
+          updated_at?: string
+          zone_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "local_delivery_zone_aliases_zone_id_fkey"
+            columns: ["zone_id"]
+            isOneToOne: false
+            referencedRelation: "local_delivery_zones"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      local_delivery_zones: {
+        Row: {
+          city: string
+          created_at: string
+          display_name: string
+          district: string
+          estimated_delivery_time: string | null
+          id: string
+          inherits_parent_price: boolean
+          is_active: boolean
+          is_alias: boolean
+          name: string
+          normalized_name: string
+          notes: string | null
+          parent_zone_id: string | null
+          shipping_price: number | null
+          sort_order: number
+          state: string
+          updated_at: string
+        }
+        Insert: {
+          city?: string
+          created_at?: string
+          display_name: string
+          district: string
+          estimated_delivery_time?: string | null
+          id?: string
+          inherits_parent_price?: boolean
+          is_active?: boolean
+          is_alias?: boolean
+          name: string
+          normalized_name: string
+          notes?: string | null
+          parent_zone_id?: string | null
+          shipping_price?: number | null
+          sort_order?: number
+          state?: string
+          updated_at?: string
+        }
+        Update: {
+          city?: string
+          created_at?: string
+          display_name?: string
+          district?: string
+          estimated_delivery_time?: string | null
+          id?: string
+          inherits_parent_price?: boolean
+          is_active?: boolean
+          is_alias?: boolean
+          name?: string
+          normalized_name?: string
+          notes?: string | null
+          parent_zone_id?: string | null
+          shipping_price?: number | null
+          sort_order?: number
+          state?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "local_delivery_zones_parent_zone_id_fkey"
+            columns: ["parent_zone_id"]
+            isOneToOne: false
+            referencedRelation: "local_delivery_zones"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       marketing_campaigns: {
         Row: {
           click_count: number | null
@@ -860,6 +963,9 @@ export type Database = {
           id: string
           invoice_number: string | null
           invoice_url: string | null
+          local_delivery_district: string | null
+          local_delivery_eta: string | null
+          local_delivery_zone_id: string | null
           mp_merchant_order_id: string | null
           mp_payment_id: string | null
           mp_preference_id: string | null
@@ -904,6 +1010,9 @@ export type Database = {
           id?: string
           invoice_number?: string | null
           invoice_url?: string | null
+          local_delivery_district?: string | null
+          local_delivery_eta?: string | null
+          local_delivery_zone_id?: string | null
           mp_merchant_order_id?: string | null
           mp_payment_id?: string | null
           mp_preference_id?: string | null
@@ -948,6 +1057,9 @@ export type Database = {
           id?: string
           invoice_number?: string | null
           invoice_url?: string | null
+          local_delivery_district?: string | null
+          local_delivery_eta?: string | null
+          local_delivery_zone_id?: string | null
           mp_merchant_order_id?: string | null
           mp_payment_id?: string | null
           mp_preference_id?: string | null
@@ -983,6 +1095,13 @@ export type Database = {
             columns: ["address_id"]
             isOneToOne: false
             referencedRelation: "addresses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "orders_local_delivery_zone_id_fkey"
+            columns: ["local_delivery_zone_id"]
+            isOneToOne: false
+            referencedRelation: "local_delivery_zones"
             referencedColumns: ["id"]
           },
           {
@@ -1384,6 +1503,20 @@ export type Database = {
         }
         Returns: string
       }
+      lookup_local_delivery_zone: {
+        Args: { _city: string; _neighborhood: string; _state: string }
+        Returns: {
+          display_name: string
+          district: string
+          estimated_delivery_time: string
+          has_price: boolean
+          is_active: boolean
+          matched_via: string
+          shipping_price: number
+          zone_id: string
+        }[]
+      }
+      normalize_zone_name: { Args: { _text: string }; Returns: string }
       sync_product_images_array: {
         Args: { _product_id: string }
         Returns: undefined
