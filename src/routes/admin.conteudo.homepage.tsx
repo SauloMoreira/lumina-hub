@@ -196,11 +196,10 @@ function AdminHomepageContentPage() {
                         onChange={(e) => set('hero_primary_button_url', e.target.value)}
                       />
                     </Field>
-                    <Field label="Ícone (lucide-react)">
-                      <Input
-                        value={form.hero_primary_button_icon ?? ''}
-                        onChange={(e) => set('hero_primary_button_icon', e.target.value)}
-                        placeholder="ArrowRight"
+                    <Field label="Ícone">
+                      <IconPicker
+                        value={form.hero_primary_button_icon}
+                        onChange={(v) => set('hero_primary_button_icon', v)}
                       />
                     </Field>
                     <Field label="Abrir em nova aba">
