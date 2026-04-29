@@ -112,7 +112,7 @@ function FreteLocalAdmin() {
   }, [aliases]);
 
   return (
-    <AdminLayout>
+    <AdminLayout title="Frete Local Maricá/RJ">
       <div className="space-y-6">
         <div>
           <h1 className="font-display font-bold text-2xl">Frete Local Maricá/RJ</h1>
