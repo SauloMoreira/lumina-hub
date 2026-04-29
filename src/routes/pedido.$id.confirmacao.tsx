@@ -83,11 +83,20 @@ function statusMessage(status: string, paymentStatus: string | null) {
   return { tone: 'info' as const, title: 'Pedido recebido', text: 'Acompanhe aqui o status do seu pedido.' };
 }
 
-function timelineSteps(status: string, paymentStatus: string | null) {
+function timelineSteps(status: string, paymentStatus: string | null, deliveryMethod: string) {
   const isPaid = paymentStatus === 'paid' || paymentStatus === 'approved';
-  const isPreparing = ['preparing', 'shipped', 'out_for_delivery', 'delivered', 'completed'].includes(status);
-  const isShipped = ['shipped', 'out_for_delivery', 'delivered', 'completed'].includes(status);
-  const isDelivered = ['delivered', 'completed'].includes(status);
+  const isPreparing = ['preparing', 'shipped', 'out_for_delivery', 'delivered', 'completed', 'ready_for_pickup', 'picked_up'].includes(status);
+  const isShipped = ['shipped', 'out_for_delivery', 'delivered', 'completed', 'ready_for_pickup', 'picked_up'].includes(status);
+  const isDelivered = ['delivered', 'completed', 'picked_up'].includes(status);
+  if (deliveryMethod === 'pickup') {
+    return [
+      { icon: CheckCircle2, label: 'Recebido', active: true },
+      { icon: CreditCard, label: 'Pagamento', active: isPaid },
+      { icon: Package, label: 'Preparando', active: isPreparing },
+      { icon: Store, label: 'Pronto p/ retirar', active: isShipped },
+      { icon: CheckCircle2, label: 'Retirado', active: isDelivered },
+    ];
+  }
   return [
     { icon: CheckCircle2, label: 'Recebido', active: true },
     { icon: CreditCard, label: 'Pagamento', active: isPaid },
