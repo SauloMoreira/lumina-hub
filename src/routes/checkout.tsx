@@ -89,7 +89,12 @@ function CheckoutPage() {
   const [notes, setNotes] = useState('');
 
   const isPickup = deliveryMethod === 'pickup';
-  const shippingCost = isPickup ? 0 : (selectedShipping?.price ?? 0);
+  const isLocal = deliveryMethod === 'local_delivery';
+  const shippingCost = isPickup
+    ? 0
+    : isLocal
+    ? (localZone?.price ?? 0)
+    : (selectedShipping?.price ?? 0);
 
   const subtotal = cart.subtotal();
   const total = useMemo(
