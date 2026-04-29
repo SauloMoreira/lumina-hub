@@ -75,10 +75,19 @@ function AdminEmpresasPage() {
   };
 
   return (
-    <div className="p-6 max-w-7xl mx-auto">
+    <AdminLayout title="Empresas B2B">
+    <div className="max-w-7xl mx-auto">
+      <div className="flex items-center justify-between mb-6">
+        <Link
+          to={'/admin' as never}
+          className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition"
+        >
+          <ArrowLeft className="w-4 h-4" /> Voltar ao painel
+        </Link>
+      </div>
       <div className="flex items-center gap-3 mb-6">
         <Building2 className="w-6 h-6 text-primary" />
-        <h1 className="text-2xl font-display font-bold text-foreground">Empresas B2B</h1>
+        <h2 className="text-xl font-display font-bold text-foreground">Empresas cadastradas</h2>
       </div>
 
       {/* Filtros */}
