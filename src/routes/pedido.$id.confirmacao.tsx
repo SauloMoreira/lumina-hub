@@ -98,6 +98,15 @@ function timelineSteps(status: string, paymentStatus: string | null, deliveryMet
       { icon: CheckCircle2, label: 'Retirado', active: isDelivered },
     ];
   }
+  if (deliveryMethod === 'local_delivery') {
+    return [
+      { icon: CheckCircle2, label: 'Recebido', active: true },
+      { icon: CreditCard, label: 'Pagamento', active: isPaid },
+      { icon: Package, label: 'Preparando', active: isPreparing },
+      { icon: Truck, label: 'A caminho', active: isShipped },
+      { icon: CheckCircle2, label: 'Entregue', active: isDelivered },
+    ];
+  }
   return [
     { icon: CheckCircle2, label: 'Recebido', active: true },
     { icon: CreditCard, label: 'Pagamento', active: isPaid },
