@@ -112,6 +112,12 @@ export const getOrderForCustomer = createServerFn({ method: 'POST' })
               instructions: (order as any).pickup_instructions ?? null,
             }
           : null,
+        localDelivery: ((order as any).delivery_method === 'local_delivery')
+          ? {
+              district: (order as any).local_delivery_district ?? null,
+              eta: (order as any).local_delivery_eta ?? null,
+            }
+          : null,
         address: addr
           ? {
               recipient: addr.recipient ?? null,
