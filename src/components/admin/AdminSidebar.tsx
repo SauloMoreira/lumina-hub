@@ -39,6 +39,10 @@ type Item = {
   icon?: typeof LayoutDashboard;
   exact?: boolean;
   soon?: boolean;
+  /** Id de um card de operations.functions cujo qty/severity vira badge. */
+  counterId?: string;
+  /** Soma de múltiplos counterIds (usado em itens "guarda-chuva"). */
+  counterIds?: string[];
 };
 
 type Group = {
