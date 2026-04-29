@@ -96,20 +96,19 @@ function FunilKanbanPage() {
   }
 
   return (
-    <AdminLayout>
-      <div className="mb-6 flex items-center justify-between gap-4">
-        <div>
-          <h1 className="font-display text-2xl font-bold">Funil de Leads</h1>
-          <p className="text-sm text-muted-foreground">
-            Arraste os cards entre as colunas para atualizar o status. Total: {leads.length} leads.
-          </p>
-        </div>
+    <AdminLayout
+      title="Funil de Leads"
+      action={
         <Link
           to="/admin/leads"
           className="rounded-md border border-input bg-background px-3 py-2 text-sm hover:bg-accent"
         >
           Ver lista completa
         </Link>
+      }
+    >
+      <div className="mb-4 text-sm text-muted-foreground">
+        Arraste os cards entre as colunas para atualizar o status. Total: {leads.length} leads.
       </div>
 
       {loading ? (
