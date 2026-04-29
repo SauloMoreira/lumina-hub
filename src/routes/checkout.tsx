@@ -694,7 +694,7 @@ function CheckoutPage() {
                 <div className="flex justify-between text-success"><span>Desconto ({couponCode})</span><span>−{formatBRL(discount)}</span></div>
               )}
               <div className="flex justify-between">
-                <span className="text-muted-foreground">{isPickup ? 'Retirada na loja' : 'Frete'}</span>
+                <span className="text-muted-foreground">{isPickup ? 'Retirada na loja' : isLocal ? 'Frete Local Maricá' : 'Frete'}</span>
                 <span>
                   {isPickup
                     ? <span className="text-success">Grátis</span>
