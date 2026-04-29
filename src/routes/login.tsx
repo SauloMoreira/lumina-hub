@@ -116,14 +116,27 @@ function LoginPage() {
   };
 
   const handleGoogle = async () => {
-    const loginUrl = redirectTo
-      ? `${window.location.origin}/login?redirect=${encodeURIComponent(redirectTo)}`
-      : `${window.location.origin}/login`;
-    const { error } = await supabase.auth.signInWithOAuth({
-      provider: 'google',
-      options: { redirectTo: loginUrl },
-    });
-    if (error) toast.error('Não foi possível conectar ao Google');
+    try {
+      const { lovable } = await import('@/integrations/lovable/index');
+      const loginUrl = redirectTo
+        ? `${window.location.origin}/login?redirect=${encodeURIComponent(redirectTo)}`
+        : `${window.location.origin}/login`;
+      const result = await lovable.auth.signInWithOAuth('google', {
+        redirect_uri: loginUrl,
+      });
+      if (result.error) {
+        toast.error('Não foi possível conectar ao Google', {
+          description: result.error.message ?? 'Tente novamente em instantes.',
+        });
+        return;
+      }
+      if (result.redirected) return;
+      navigate({ to: redirectTo || '/' });
+    } catch (e: any) {
+      toast.error('Não foi possível conectar ao Google', {
+        description: e?.message ?? 'Erro inesperado.',
+      });
+    }
   };
 
   return (
