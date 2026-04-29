@@ -48,6 +48,13 @@ function ProductForm() {
     images: [] as string[],
     tags: '',
     seo_title: '', seo_description: '', seo_keywords: '',
+    b2b_enabled: false,
+    b2b_price: '',
+    b2b_min_qty: '',
+    b2b_qty_multiple: '',
+    b2b_commercial_note: '',
+    b2b_valid_until: '',
+    b2b_show_in_vitrine: true,
   });
 
   useEffect(() => {
@@ -67,6 +74,13 @@ function ProductForm() {
           seo_title: (data as any).seo_title ?? '',
           seo_description: (data as any).seo_description ?? '',
           seo_keywords: (data as any).seo_keywords ?? '',
+          b2b_enabled: !!(data as any).b2b_enabled,
+          b2b_price: (data as any).b2b_price != null ? String((data as any).b2b_price) : '',
+          b2b_min_qty: (data as any).b2b_min_qty != null ? String((data as any).b2b_min_qty) : '',
+          b2b_qty_multiple: (data as any).b2b_qty_multiple != null ? String((data as any).b2b_qty_multiple) : '',
+          b2b_commercial_note: (data as any).b2b_commercial_note ?? '',
+          b2b_valid_until: (data as any).b2b_valid_until ? String((data as any).b2b_valid_until).slice(0, 10) : '',
+          b2b_show_in_vitrine: (data as any).b2b_show_in_vitrine !== false,
         });
         setLoading(false);
       });
@@ -157,6 +171,13 @@ function ProductForm() {
         seo_title: form.seo_title.trim() || null,
         seo_description: form.seo_description.trim() || null,
         seo_keywords: form.seo_keywords.trim() || null,
+        b2b_enabled: form.b2b_enabled,
+        b2b_price: form.b2b_enabled && form.b2b_price ? Number(form.b2b_price) : null,
+        b2b_min_qty: form.b2b_enabled && form.b2b_min_qty ? Number(form.b2b_min_qty) : null,
+        b2b_qty_multiple: form.b2b_enabled && form.b2b_qty_multiple ? Number(form.b2b_qty_multiple) : null,
+        b2b_commercial_note: form.b2b_enabled && form.b2b_commercial_note.trim() ? form.b2b_commercial_note.trim() : null,
+        b2b_valid_until: form.b2b_enabled && form.b2b_valid_until ? form.b2b_valid_until : null,
+        b2b_show_in_vitrine: form.b2b_show_in_vitrine,
       } as any;
 
       const res = isNew
@@ -235,6 +256,85 @@ function ProductForm() {
               <Field label="Quantidade em estoque"><Input type="number" value={form.stock_qty} onChange={(e) => setForm({ ...form, stock_qty: e.target.value })} /></Field>
               <Field label="Alerta de estoque baixo"><Input type="number" value={form.stock_min_alert} onChange={(e) => setForm({ ...form, stock_min_alert: e.target.value })} /></Field>
             </div>
+          </Section>
+
+          <Section title="Atacado / B2B">
+            <div className="flex items-start justify-between gap-4">
+              <div className="flex-1">
+                <Label>Habilitar venda no atacado</Label>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Quando ativo, empresas aprovadas verão o preço de atacado e este produto pode aparecer na vitrine /atacado.
+                </p>
+              </div>
+              <Switch
+                checked={form.b2b_enabled}
+                onCheckedChange={(v) => setForm({ ...form, b2b_enabled: v })}
+              />
+            </div>
+
+            {form.b2b_enabled && (
+              <>
+                <div className="grid sm:grid-cols-3 gap-3">
+                  <Field label="Preço atacado (R$) *">
+                    <Input
+                      type="number"
+                      step="0.01"
+                      value={form.b2b_price}
+                      onChange={(e) => setForm({ ...form, b2b_price: e.target.value })}
+                      placeholder="Ex.: 19.90"
+                    />
+                  </Field>
+                  <Field label="Quantidade mínima">
+                    <Input
+                      type="number"
+                      min="1"
+                      value={form.b2b_min_qty}
+                      onChange={(e) => setForm({ ...form, b2b_min_qty: e.target.value })}
+                      placeholder="Ex.: 10"
+                    />
+                  </Field>
+                  <Field label="Múltiplo de compra">
+                    <Input
+                      type="number"
+                      min="1"
+                      value={form.b2b_qty_multiple}
+                      onChange={(e) => setForm({ ...form, b2b_qty_multiple: e.target.value })}
+                      placeholder="Ex.: 5 (vende de 5 em 5)"
+                    />
+                  </Field>
+                </div>
+                <Field label="Observação comercial">
+                  <Textarea
+                    rows={2}
+                    value={form.b2b_commercial_note}
+                    onChange={(e) => setForm({ ...form, b2b_commercial_note: e.target.value })}
+                    placeholder="Ex.: Pronta entrega. Faturamento em até 30 dias para clientes aprovados."
+                  />
+                </Field>
+                <div className="grid sm:grid-cols-2 gap-3">
+                  <Field label="Preço válido até">
+                    <Input
+                      type="date"
+                      value={form.b2b_valid_until}
+                      onChange={(e) => setForm({ ...form, b2b_valid_until: e.target.value })}
+                    />
+                  </Field>
+                  <div className="flex items-end justify-between gap-2 pb-1">
+                    <div>
+                      <Label>Mostrar na vitrine /atacado</Label>
+                      <p className="text-xs text-muted-foreground mt-1">Exibe este produto na lista pública de atacado.</p>
+                    </div>
+                    <Switch
+                      checked={form.b2b_show_in_vitrine}
+                      onCheckedChange={(v) => setForm({ ...form, b2b_show_in_vitrine: v })}
+                    />
+                  </div>
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  O preço de atacado nunca aparece para visitantes — só para empresas com cadastro aprovado.
+                </p>
+              </>
+            )}
           </Section>
 
           <Section title="Dimensões (para frete)">
