@@ -14,9 +14,10 @@ import { buildSeo } from '@/lib/seo';
 
 export const Route = createFileRoute('/login')({
   head: () => buildSeo({ title: 'Entrar na sua conta', url: '/login', noindex: true }),
-  validateSearch: (search: Record<string, unknown>) => ({
-    redirect: typeof search.redirect === 'string' ? search.redirect : undefined,
-  }),
+  validateSearch: (search: Record<string, unknown>): { redirect?: string } =>
+    typeof search.redirect === 'string'
+      ? { redirect: search.redirect }
+      : {},
   beforeLoad: async ({ search }) => {
     const { data } = await supabase.auth.getSession();
     if (data.session) {
