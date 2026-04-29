@@ -298,8 +298,8 @@ function OrderTrackingPage() {
         {/* Entrega ou Retirada */}
         <div className="bg-card border border-border rounded-xl p-6 mb-6">
           <div className="flex items-center gap-2 mb-3">
-            {isPickup ? <Store className="w-4 h-4 text-primary" /> : <MapPin className="w-4 h-4 text-primary" />}
-            <h2 className="font-display font-semibold">{isPickup ? 'Retirada na loja' : 'Entrega'}</h2>
+            {isPickup ? <Store className="w-4 h-4 text-primary" /> : isLocal ? <Truck className="w-4 h-4 text-primary" /> : <MapPin className="w-4 h-4 text-primary" />}
+            <h2 className="font-display font-semibold">{isPickup ? 'Retirada na loja' : isLocal ? 'Frete Local Maricá/RJ' : 'Entrega'}</h2>
           </div>
 
           {isPickup ? (
