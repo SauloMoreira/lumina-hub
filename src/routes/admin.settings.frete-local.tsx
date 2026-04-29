@@ -87,7 +87,8 @@ function FreteLocalAdmin() {
   }, [zones]);
 
   const updateMut = useMutation({
-    mutationFn: (vars: Parameters<typeof updateLocalDeliveryZone>[0]['data']) => updateLocalDeliveryZone({ data: vars }),
+    mutationFn: (vars: { id: string; is_active?: boolean; shipping_price?: number | null; estimated_delivery_time?: string | null; notes?: string | null }) =>
+      updateLocalDeliveryZone({ data: vars }),
     onSuccess: (r) => {
       if (!r.ok) {
         toast.error(r.error);
