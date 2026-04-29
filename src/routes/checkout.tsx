@@ -1,6 +1,7 @@
 import { createFileRoute, Link, useNavigate } from '@tanstack/react-router';
 import { useEffect, useMemo, useState } from 'react';
-import { ArrowLeft, ArrowRight, Check, Loader2, MapPin, Truck, CreditCard, ShoppingBag } from 'lucide-react';
+import { useQuery } from '@tanstack/react-query';
+import { ArrowLeft, ArrowRight, Check, Loader2, MapPin, Truck, CreditCard, ShoppingBag, Store } from 'lucide-react';
 import { toast } from 'sonner';
 import { StoreLayout } from '@/components/layout/StoreLayout';
 import { Button } from '@/components/ui/button';
@@ -11,6 +12,7 @@ import { useCart } from '@/stores/cartStore';
 import { formatBRL } from '@/lib/domain';
 import { lookupCep, calculateShipping, applyCoupon, createOrder } from '@/server/checkout.functions';
 import { createMercadoPagoPreference } from '@/server/payment.functions';
+import { getPublicCompanySettings } from '@/server/institutional.functions';
 import { buildSeo } from '@/lib/seo';
 import { trackPurchase, trackBeginCheckout } from '@/lib/tracking';
 import { redirectToExternalCheckout } from '@/lib/externalCheckout';
