@@ -116,9 +116,15 @@ export function CartDrawer() {
                   <Button asChild variant="outline" size="sm" className="w-full" onClick={cart.close}>
                     <Link to="/carrinho">Ver carrinho completo</Link>
                   </Button>
-                  <button onClick={cart.close} className="w-full text-xs text-muted-foreground hover:text-foreground py-1">
-                    Continuar comprando
-                  </button>
+                  {cart.hasB2bItems() ? (
+                    <Button asChild variant="ghost" size="sm" className="w-full" onClick={cart.close}>
+                      <Link to="/atacado">Continuar comprando no atacado</Link>
+                    </Button>
+                  ) : (
+                    <button onClick={cart.close} className="w-full text-xs text-muted-foreground hover:text-foreground py-1">
+                      Continuar comprando
+                    </button>
+                  )}
                 </div>
               </>
             )}
