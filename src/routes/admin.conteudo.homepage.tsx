@@ -138,11 +138,10 @@ function AdminHomepageContentPage() {
                       onChange={(e) => set('hero_logo_alt', e.target.value)}
                     />
                   </Field>
-                  <Field label="Ícone do badge (nome lucide-react, ex: Sparkles)">
-                    <Input
-                      value={form.hero_badge_icon ?? ''}
-                      onChange={(e) => set('hero_badge_icon', e.target.value)}
-                      placeholder="Sparkles"
+                  <Field label="Ícone do badge">
+                    <IconPicker
+                      value={form.hero_badge_icon}
+                      onChange={(v) => set('hero_badge_icon', v)}
                     />
                   </Field>
                   <Field label="Texto do badge superior" full>
