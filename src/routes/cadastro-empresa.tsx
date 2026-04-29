@@ -158,10 +158,43 @@ function CadastroEmpresaPage() {
           </p>
         </div>
 
-        <div className="grid sm:grid-cols-3 gap-3 mb-8">
+        <div className="grid sm:grid-cols-3 gap-3 mb-6">
           <Benefit icon={Tag} title="Preço empresa" desc="Condições especiais para CNPJ" />
           <Benefit icon={ShieldCheck} title="Compra segura" desc="Mesmo checkout da loja" />
           <Benefit icon={Building2} title="Negociação direta" desc="Atendimento via WhatsApp" />
+        </div>
+
+        <div className="mb-8 rounded-xl border border-primary/20 bg-primary/5 p-4">
+          <div className="flex items-start gap-3">
+            <div className="w-9 h-9 rounded-md bg-primary/15 text-primary flex items-center justify-center shrink-0">
+              <ShieldCheck className="w-5 h-5" />
+            </div>
+            <div className="text-sm text-foreground/90 space-y-2">
+              <p className="font-semibold text-foreground">Como funciona a aprovação</p>
+              <div>
+                <p className="text-xs font-semibold text-success mb-1">
+                  ✓ Aprovação automática (acesso B2B liberado na hora) se:
+                </p>
+                <ul className="text-xs text-muted-foreground list-disc pl-4 space-y-0.5">
+                  <li>CNPJ com situação <strong>ATIVA</strong> na Receita Federal</li>
+                  <li>Sem situação especial ou restrições</li>
+                  <li>Empresa aberta há <strong>mais de 6 meses</strong></li>
+                </ul>
+              </div>
+              <div>
+                <p className="text-xs font-semibold text-warning mb-1">
+                  ⏱ Análise manual pelo administrador se:
+                </p>
+                <ul className="text-xs text-muted-foreground list-disc pl-4 space-y-0.5">
+                  <li>CNPJ recente, suspenso, baixado ou com restrição</li>
+                  <li>Consulta à Receita indisponível no momento</li>
+                </ul>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Nesses casos, você recebe a resposta por e-mail em até 1 dia útil.
+                </p>
+              </div>
+            </div>
+          </div>
         </div>
 
         <form
