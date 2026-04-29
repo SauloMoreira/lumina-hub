@@ -495,7 +495,7 @@ function CheckoutPage() {
                       </div>
                       <div>
                         <Label htmlFor="neighborhood">Bairro</Label>
-                        <Input id="neighborhood" value={neighborhood} onChange={(e) => setNeighborhood(e.target.value)} className="mt-1.5" />
+                        <Input id="neighborhood" value={neighborhood} onChange={(e) => setNeighborhood(e.target.value)} onBlur={handleNeighborhoodBlur} className="mt-1.5" />
                       </div>
                       <div>
                         <Label htmlFor="city">Cidade</Label>
