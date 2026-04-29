@@ -189,12 +189,14 @@ function BannersPage() {
     if (error) return toast.error(error.message);
     toast.success('Banner removido');
     await load();
+    invalidateHome();
   };
 
   const toggleActive = async (b: Banner) => {
     const { error } = await supabase.from('home_banners').update({ active: !b.active }).eq('id', b.id);
     if (error) return toast.error(error.message);
     await load();
+    invalidateHome();
   };
 
   const move = async (b: Banner, dir: 'up' | 'down') => {
@@ -207,6 +209,7 @@ function BannersPage() {
       supabase.from('home_banners').update({ sort_order: b.sort_order }).eq('id', other.id),
     ]);
     await load();
+    invalidateHome();
   };
 
   const handleUpload = async (e: ChangeEvent<HTMLInputElement>, target: 'desktop' | 'mobile') => {
