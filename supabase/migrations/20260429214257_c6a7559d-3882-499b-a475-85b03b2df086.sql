@@ -1,0 +1,1 @@
+ALTER TABLE public.home_banners ADD COLUMN IF NOT EXISTS title_color TEXT;

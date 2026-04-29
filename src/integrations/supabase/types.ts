@@ -766,6 +766,7 @@ export type Database = {
           subtitle: string | null
           text_color: string | null
           title: string
+          title_color: string | null
           updated_at: string
         }
         Insert: {
@@ -786,6 +787,7 @@ export type Database = {
           subtitle?: string | null
           text_color?: string | null
           title: string
+          title_color?: string | null
           updated_at?: string
         }
         Update: {
@@ -806,6 +808,7 @@ export type Database = {
           subtitle?: string | null
           text_color?: string | null
           title?: string
+          title_color?: string | null
           updated_at?: string
         }
         Relationships: []
