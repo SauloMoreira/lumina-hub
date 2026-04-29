@@ -138,6 +138,7 @@ function BannersPage() {
       badge: b.badge ?? '',
       bg_color: b.bg_color ?? '',
       text_color: b.text_color ?? '#FFFFFF',
+      title_color: b.title_color ?? b.text_color ?? '#FFFFFF',
       campaign_type: b.campaign_type,
       sort_order: String(b.sort_order),
       active: b.active,
