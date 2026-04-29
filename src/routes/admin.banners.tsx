@@ -239,6 +239,7 @@ function BannersPage() {
         data: {
           title: form.title.trim(),
           subtitle: form.subtitle.trim() || null,
+          description: form.description.trim() || null,
           campaignType: form.campaign_type,
         },
       });
