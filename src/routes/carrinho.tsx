@@ -108,7 +108,7 @@ function CartPage() {
               <Link to="/checkout">Finalizar pedido <ArrowRight className="w-4 h-4 ml-1.5" /></Link>
             </Button>
             <Button asChild variant="ghost" size="sm" className="w-full mt-2">
-              <Link to="/catalogo">Continuar comprando</Link>
+              <Link to={continueLink}>{continueLabel}</Link>
             </Button>
           </aside>
         </div>
