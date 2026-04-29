@@ -102,6 +102,16 @@ export const getOrderForCustomer = createServerFn({ method: 'POST' })
         estimatedDelivery: order.estimated_delivery,
         createdAt: order.created_at,
         paidAt: order.paid_at,
+        deliveryMethod: (order as any).delivery_method ?? 'delivery',
+        pickup: ((order as any).delivery_method === 'pickup')
+          ? {
+              status: (order as any).pickup_status ?? null,
+              storeName: (order as any).pickup_store_name ?? null,
+              storeAddress: (order as any).pickup_store_address ?? null,
+              storePhone: (order as any).pickup_store_phone ?? null,
+              instructions: (order as any).pickup_instructions ?? null,
+            }
+          : null,
         address: addr
           ? {
               recipient: addr.recipient ?? null,
