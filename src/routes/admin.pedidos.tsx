@@ -25,7 +25,7 @@ function PedidosAdmin() {
     const to = from + PAGE_SIZE;
     let query = supabase
       .from('orders')
-      .select('id, order_number, status, payment_status, total, created_at, address_snapshot')
+      .select('id, order_number, status, payment_status, total, created_at, address_snapshot, delivery_method')
       .order('created_at', { ascending: false })
       .range(from, to);
     if (filterStatus) query = query.eq('status', filterStatus);
