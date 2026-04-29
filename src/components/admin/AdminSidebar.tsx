@@ -32,6 +32,8 @@ import {
 import { supabase } from '@/integrations/supabase/client';
 import logo from '@/assets/logo-navbar.png';
 import { cn } from '@/lib/utils';
+import { useAdminCounters, type CounterSeverity } from '@/hooks/useAdminCounters';
+import { CounterBadge } from './CounterBadge';
 
 type Item = {
   to?: string;
@@ -39,6 +41,10 @@ type Item = {
   icon?: typeof LayoutDashboard;
   exact?: boolean;
   soon?: boolean;
+  /** Id de um card de operations.functions cujo qty/severity vira badge. */
+  counterId?: string;
+  /** Soma de múltiplos counterIds (usado em itens "guarda-chuva"). */
+  counterIds?: string[];
 };
 
 type Group = {
@@ -56,7 +62,25 @@ const groups: Group[] = [
     items: [
       { to: '/admin', label: 'Visão geral', icon: LayoutDashboard, exact: true },
       { to: '/admin/painel-do-dia', label: 'Painel do dia', icon: Sparkles },
-      { to: '/admin/pendencias', label: 'Pendências', icon: AlertCircle },
+      {
+        to: '/admin/pendencias',
+        label: 'Pendências',
+        icon: AlertCircle,
+        counterIds: [
+          'paid-awaiting-shipping',
+          'orders-awaiting-payment',
+          'new-leads',
+          'leads-no-response',
+          'pending-companies',
+          'b2b-open-negotiations',
+          'low-stock',
+          'out-of-stock',
+          'no-image',
+          'no-price',
+          'no-weight',
+          'local-zones-no-price',
+        ],
+      },
       { label: 'Indicadores', soon: true },
     ],
   },
@@ -65,7 +89,12 @@ const groups: Group[] = [
     label: 'Vendas',
     icon: ShoppingBag,
     items: [
-      { to: '/admin/pedidos', label: 'Pedidos', icon: ShoppingBag },
+      {
+        to: '/admin/pedidos',
+        label: 'Pedidos',
+        icon: ShoppingBag,
+        counterIds: ['paid-awaiting-shipping', 'orders-awaiting-payment'],
+      },
       { label: 'Carrinhos abandonados', soon: true },
       { label: 'Cupons utilizados', soon: true },
       { label: 'Pagamentos', soon: true },
@@ -77,7 +106,12 @@ const groups: Group[] = [
     label: 'Produtos',
     icon: Package,
     items: [
-      { to: '/admin/produtos', label: 'Produtos', icon: Package },
+      {
+        to: '/admin/produtos',
+        label: 'Produtos',
+        icon: Package,
+        counterIds: ['no-image', 'no-price', 'no-weight', 'low-stock', 'out-of-stock'],
+      },
       { to: '/admin/categorias', label: 'Categorias', icon: Tags },
       { label: 'Estoque', soon: true },
       { label: 'Preços e promoções', soon: true },
@@ -92,7 +126,12 @@ const groups: Group[] = [
     icon: Users,
     items: [
       { label: 'Clientes', soon: true },
-      { to: '/admin/leads', label: 'Leads', icon: Users },
+      {
+        to: '/admin/leads',
+        label: 'Leads',
+        icon: Users,
+        counterIds: ['new-leads', 'leads-no-response'],
+      },
       { label: 'Funil comercial', soon: true },
       { to: '/admin/contact-messages', label: 'Atendimentos', icon: Mail },
       { label: 'Modelos de WhatsApp', soon: true },
@@ -104,7 +143,12 @@ const groups: Group[] = [
     label: 'B2B / Atacado',
     icon: Briefcase,
     items: [
-      { to: '/admin/empresas', label: 'Empresas B2B', icon: Building2 },
+      {
+        to: '/admin/empresas',
+        label: 'Empresas B2B',
+        icon: Building2,
+        counterId: 'pending-companies',
+      },
       { label: 'Aprovações pendentes', soon: true },
       { label: 'Vitrine atacado', soon: true },
       { label: 'Negociações B2B', soon: true },
@@ -132,7 +176,12 @@ const groups: Group[] = [
     icon: Truck,
     items: [
       { label: 'Retirada na loja', soon: true },
-      { to: '/admin/settings/frete-local', label: 'Frete local Maricá/RJ', icon: Truck },
+      {
+        to: '/admin/settings/frete-local',
+        label: 'Frete local Maricá/RJ',
+        icon: Truck,
+        counterId: 'local-zones-no-price',
+      },
       { label: 'Frete convencional', soon: true },
       { label: 'Melhor Envio', soon: true },
       { label: 'Entregas', soon: true },
@@ -218,9 +267,28 @@ function isItemActive(path: string, item: Item): boolean {
   return path === item.to || path.startsWith(item.to + '/');
 }
 
+function aggregateCounter(
+  item: Item,
+  counters: Record<string, { qty: number; severity: CounterSeverity }>,
+): { qty: number; severity: CounterSeverity } {
+  const ids = item.counterIds ?? (item.counterId ? [item.counterId] : []);
+  if (ids.length === 0) return { qty: 0, severity: 'info' };
+  let qty = 0;
+  let sev: CounterSeverity = 'info';
+  const order: Record<CounterSeverity, number> = { danger: 3, warn: 2, info: 1 };
+  for (const id of ids) {
+    const c = counters[id];
+    if (!c) continue;
+    qty += c.qty;
+    if (order[c.severity] > order[sev]) sev = c.severity;
+  }
+  return { qty, severity: sev };
+}
+
 function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
   const loc = useLocation();
   const path = loc.pathname;
+  const { counters } = useAdminCounters();
 
   const initialOpen = useMemo(() => {
     // Open the group containing the active route by default
@@ -266,6 +334,14 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
       {groups.map((g) => {
         const groupActive = g.items.some((it) => isItemActive(path, it));
         const isOpen = !!open[g.id];
+        // Soma os contadores de todos os itens do grupo (sem duplicar entre itens
+        // que apontam para o mesmo card — usamos um Set de ids únicos).
+        const groupIds = new Set<string>();
+        for (const it of g.items) {
+          const ids = it.counterIds ?? (it.counterId ? [it.counterId] : []);
+          ids.forEach((id) => groupIds.add(id));
+        }
+        const groupAgg = aggregateCounter({ label: '', counterIds: Array.from(groupIds) }, counters);
         return (
           <div key={g.id} className="space-y-1">
             <button
@@ -281,6 +357,7 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
             >
               <g.icon className="w-4 h-4 shrink-0" />
               <span className="flex-1 text-left">{g.label}</span>
+              {!isOpen && <CounterBadge qty={groupAgg.qty} severity={groupAgg.severity} />}
               <ChevronDown
                 className={cn('w-3.5 h-3.5 transition-transform', isOpen && 'rotate-180')}
               />
@@ -303,6 +380,7 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
                     );
                   }
                   const active = isItemActive(path, it);
+                  const agg = aggregateCounter(it, counters);
                   return (
                     <Link
                       key={`${g.id}-${idx}`}
@@ -316,7 +394,8 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
                       )}
                     >
                       {it.icon && <it.icon className="w-3.5 h-3.5 shrink-0" />}
-                      <span className="truncate">{it.label}</span>
+                      <span className="flex-1 truncate">{it.label}</span>
+                      <CounterBadge qty={agg.qty} severity={agg.severity} />
                     </Link>
                   );
                 })}
