@@ -226,6 +226,7 @@ export function buildOrderEmailTemplate(p: OrderEmailParams): {
         <a href="${esc(c.ctaUrl)}" style="display:inline-block;padding:12px 22px;background:#111111;color:#ffffff;text-decoration:none;border-radius:8px;font-weight:600;font-size:14px;">${esc(c.ctaLabel)}</a>
         ${secondaryBtn}
         ${itemsBlock}
+        ${pickupBlock}
         ${supportLine}
       </td></tr>
       <tr><td style="padding:18px 28px;background:#fafafa;border-top:1px solid #eee;font-size:11px;color:#999;text-align:center;">
