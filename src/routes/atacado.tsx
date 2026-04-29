@@ -324,7 +324,8 @@ function AtacadoPage() {
           </a>
         </div>
       </section>
-    </div>
+      </div>
+    </StoreLayout>
   );
 }
 
