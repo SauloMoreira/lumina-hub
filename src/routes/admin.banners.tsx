@@ -165,6 +165,7 @@ function BannersPage() {
         badge: form.badge.trim() || null,
         bg_color: form.bg_color.trim() || null,
         text_color: form.text_color.trim() || null,
+        title_color: form.title_color.trim() || null,
         campaign_type: form.campaign_type,
         sort_order: Number(form.sort_order) || 0,
         active: form.active,
