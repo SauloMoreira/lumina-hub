@@ -200,6 +200,24 @@ function CheckoutPage() {
     setStep(2);
     setShippingLoading(true);
     try {
+      // Garante lookup atualizado da zona local (caso bairro tenha sido editado)
+      let zone = localZone;
+      if (!zone && neighborhood && city && state) {
+        try {
+          const lz = await lookupLocalDeliveryZone({ data: { city, state, neighborhood } });
+          if (lz.ok) {
+            zone = {
+              zoneId: lz.zoneId,
+              displayName: lz.displayName,
+              district: lz.district,
+              price: lz.price,
+              eta: lz.eta,
+            };
+            setLocalZone(zone);
+          }
+        } catch { /* ignore */ }
+      }
+
       const weight = cart.items.reduce((s, i) => s + i.qty * 0.5, 0);
       const eligibleSubtotal = cart.items
         .filter((i) => i.freeShippingEligible)
@@ -214,13 +232,34 @@ function CheckoutPage() {
         setStep(1);
         return;
       }
-      setShippingOptions(r.services);
-      setSelectedShipping(r.services[0] ?? null);
+
+      // Adiciona opção de Frete Local se zona configurada e ativa
+      const services: ShippingService[] = [];
+      if (zone) {
+        services.push({
+          id: 'local-zone',
+          name: `Frete Local Maricá — ${zone.displayName}`,
+          carrier: 'Frete Local Maricá/RJ',
+          price: zone.price,
+          days: 1,
+        });
+      }
+      services.push(...r.services);
+
+      setShippingOptions(services);
+      // Pré-seleciona frete local se disponível, senão a primeira opção
+      setSelectedShipping(services[0] ?? null);
+      setDeliveryMethod(services[0]?.id === 'local-zone' ? 'local_delivery' : 'delivery');
     } catch {
       toast.error('Erro ao calcular frete');
     } finally {
       setShippingLoading(false);
     }
+  }
+
+  function handleSelectShipping(s: ShippingService) {
+    setSelectedShipping(s);
+    setDeliveryMethod(s.id === 'local-zone' ? 'local_delivery' : 'delivery');
   }
 
   async function handleApplyCoupon() {
