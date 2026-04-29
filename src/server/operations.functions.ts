@@ -275,6 +275,32 @@ export const getAdminOperations = createServerFn({ method: 'GET' })
       (q) => q.gte('created_at', todayISO),
     );
 
+    // Carrinhos abandonados
+    const abandonedNew = await safeCount(
+      () => supabaseAdmin.from('abandoned_carts'),
+      (q) => q.in('status', ['novo', 'contato_enviado']),
+    );
+    const abandonedStuck24h = await safeCount(
+      () => supabaseAdmin.from('abandoned_carts'),
+      (q) => q.in('status', ['novo', 'contato_enviado']).lt('abandoned_at', stale24h),
+    );
+    let abandonedHighValue = 0;
+    let abandonedTotalValue = 0;
+    let abandonedB2bCount = 0;
+    try {
+      const { data: ac } = await supabaseAdmin
+        .from('abandoned_carts')
+        .select('subtotal_amount, company_id')
+        .in('status', ['novo', 'contato_enviado'])
+        .limit(500);
+      (ac ?? []).forEach((c) => {
+        const v = Number(c.subtotal_amount ?? 0);
+        abandonedTotalValue += v;
+        if (v >= 1000) abandonedHighValue += 1;
+        if (c.company_id) abandonedB2bCount += 1;
+      });
+    } catch {}
+
     // ============================================================
     // Monta cards
     // ============================================================
@@ -405,6 +431,24 @@ export const getAdminOperations = createServerFn({ method: 'GET' })
         ctaHref: '/admin/settings/frete-local',
         group: 'Logística',
       },
+      {
+        id: 'abandoned-carts',
+        title: 'Carrinhos abandonados',
+        description:
+          abandonedTotalValue > 0
+            ? `Valor total parado: ${new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(abandonedTotalValue)}.`
+            : 'Clientes que adicionaram produtos mas não finalizaram a compra.',
+        qty: abandonedNew,
+        status:
+          abandonedNew === 0
+            ? 'ok'
+            : abandonedHighValue > 0 || abandonedStuck24h > 0
+              ? 'danger'
+              : 'warn',
+        ctaLabel: 'Ver carrinhos',
+        ctaHref: '/admin/carrinhos-abandonados',
+        group: 'Pedidos',
+      },
     ];
 
     // ============================================================
@@ -490,6 +534,36 @@ export const getAdminOperations = createServerFn({ method: 'GET' })
         severity: 'medium',
         ctaLabel: 'Corrigir produtos',
         ctaHref: '/admin/produtos',
+      });
+    }
+    if (abandonedHighValue > 0) {
+      alerts.push({
+        id: 'alert-abandoned-high-value',
+        title: 'Carrinho abandonado de alto valor',
+        description: `${abandonedHighValue} carrinho(s) acima de R$ 1.000 aguardando contato pelo WhatsApp.`,
+        severity: 'high',
+        ctaLabel: 'Ver carrinhos',
+        ctaHref: '/admin/carrinhos-abandonados',
+      });
+    }
+    if (abandonedStuck24h > 0) {
+      alerts.push({
+        id: 'alert-abandoned-stuck',
+        title: 'Carrinhos sem retorno há +24h',
+        description: `${abandonedStuck24h} carrinho(s) abandonado(s) sem retorno do cliente.`,
+        severity: 'medium',
+        ctaLabel: 'Ver carrinhos',
+        ctaHref: '/admin/carrinhos-abandonados',
+      });
+    }
+    if (abandonedB2bCount > 0) {
+      alerts.push({
+        id: 'alert-abandoned-b2b',
+        title: 'Carrinho B2B abandonado',
+        description: `${abandonedB2bCount} carrinho(s) B2B aguardando recuperação.`,
+        severity: 'medium',
+        ctaLabel: 'Ver carrinhos',
+        ctaHref: '/admin/carrinhos-abandonados',
       });
     }
     if (productsNoImage > 0) {
