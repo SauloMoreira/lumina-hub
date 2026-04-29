@@ -170,7 +170,7 @@ export function IconPicker({
             </div>
           )}
 
-          <ScrollArea className="h-[320px]">
+          <div className="h-[320px] overflow-y-auto">
             <div className="p-2 space-y-3">
               {filteredGroups.length === 0 && (
                 <p className="text-xs text-muted-foreground p-3 text-center">
@@ -214,7 +214,7 @@ export function IconPicker({
                 </div>
               ))}
             </div>
-          </ScrollArea>
+          </div>
 
           <div className="p-2 border-t text-[11px] text-muted-foreground">
             {ALL_ICONS.length} ícones curados · busca por nome (PascalCase)
