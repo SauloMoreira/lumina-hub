@@ -38,6 +38,20 @@ function CheckoutPage() {
   const [step, setStep] = useState<1 | 2 | 3>(1);
   const [submitting, setSubmitting] = useState(false);
 
+  // Modalidade de entrega
+  const [deliveryMethod, setDeliveryMethod] = useState<'delivery' | 'pickup'>('delivery');
+
+  // Dados públicos da empresa (para info de retirada)
+  const { data: companyData } = useQuery({
+    queryKey: ['public-company'],
+    queryFn: () => getPublicCompanySettings(),
+  });
+  const company = companyData?.company as
+    | (Record<string, string | boolean | null> & { pickup_enabled?: boolean | null })
+    | null
+    | undefined;
+  const pickupEnabled = Boolean(company?.pickup_enabled);
+
   // Endereço
   const [zip, setZip] = useState('');
   const [zipLoading, setZipLoading] = useState(false);
@@ -63,10 +77,13 @@ function CheckoutPage() {
 
   const [notes, setNotes] = useState('');
 
+  const isPickup = deliveryMethod === 'pickup';
+  const shippingCost = isPickup ? 0 : (selectedShipping?.price ?? 0);
+
   const subtotal = cart.subtotal();
   const total = useMemo(
-    () => Math.max(0, subtotal - discount + (selectedShipping?.price ?? 0)),
-    [subtotal, discount, selectedShipping]
+    () => Math.max(0, subtotal - discount + shippingCost),
+    [subtotal, discount, shippingCost]
   );
 
   useEffect(() => {
