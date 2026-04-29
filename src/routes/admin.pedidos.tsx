@@ -72,6 +72,9 @@ function PedidosAdmin() {
                     {o.delivery_method === 'pickup' && (
                       <span className="ml-2 inline-block px-1.5 py-0.5 rounded bg-amber-100 text-amber-900 text-[10px] uppercase font-bold tracking-wide">Retirada</span>
                     )}
+                    {o.delivery_method === 'local_delivery' && (
+                      <span className="ml-2 inline-block px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-900 text-[10px] uppercase font-bold tracking-wide">Frete Local</span>
+                    )}
                   </td>
                   <td className="px-4 py-3 font-medium">{fmt(Number(o.total))}</td>
                   <td className="px-4 py-3"><Badge value={o.payment_status} kind="payment" /></td>
