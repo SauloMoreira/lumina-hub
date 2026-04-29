@@ -16,7 +16,17 @@ export const Route = createFileRoute('/admin/settings/company')({
   component: AdminCompanyPage,
 });
 
-const FIELDS: Array<{ section: string; items: Array<{ key: string; label: string; type?: string; placeholder?: string; full?: boolean }> }> = [
+type FieldDef = {
+  key: string;
+  label: string;
+  type?: string;
+  placeholder?: string;
+  full?: boolean;
+  multiline?: boolean;
+  boolean?: boolean;
+};
+
+const FIELDS: Array<{ section: string; items: Array<FieldDef> }> = [
   {
     section: 'Identificação',
     items: [
@@ -49,6 +59,18 @@ const FIELDS: Array<{ section: string; items: Array<{ key: string; label: string
     ],
   },
   {
+    section: 'Retirada na Loja',
+    items: [
+      { key: 'pickup_enabled', label: 'Habilitar retirada na loja no checkout', boolean: true, full: true },
+      { key: 'pickup_store_name', label: 'Nome da loja para retirada', full: true },
+      { key: 'pickup_address', label: 'Endereço completo de retirada', full: true, multiline: true },
+      { key: 'pickup_phone', label: 'Telefone / WhatsApp da loja' },
+      { key: 'pickup_ready_eta', label: 'Prazo estimado de liberação', placeholder: 'Ex.: 1 dia útil' },
+      { key: 'pickup_business_hours', label: 'Horário de retirada', placeholder: 'Seg–Sex 9h–18h, Sáb 9h–13h', full: true },
+      { key: 'pickup_instructions', label: 'Instruções para retirada', full: true, multiline: true, placeholder: 'O que o cliente precisa apresentar, onde estacionar, etc.' },
+    ],
+  },
+  {
     section: 'Web e redes sociais',
     items: [
       { key: 'website_url', label: 'Site', type: 'url', placeholder: 'https://' },
@@ -68,12 +90,13 @@ function AdminCompanyPage() {
     queryFn: () => adminGetCompanySettings({ data: undefined as never }),
   });
 
-  const [form, setForm] = useState<Record<string, string>>({});
+  const [form, setForm] = useState<Record<string, string | boolean>>({});
   useEffect(() => {
     if (data?.company) {
-      const f: Record<string, string> = {};
+      const f: Record<string, string | boolean> = {};
       for (const [k, v] of Object.entries(data.company)) {
-        if (typeof v === 'string') f[k] = v;
+        if (typeof v === 'boolean') f[k] = v;
+        else if (typeof v === 'string') f[k] = v;
         else if (v == null) f[k] = '';
       }
       setForm(f);
@@ -110,18 +133,45 @@ function AdminCompanyPage() {
               <CardContent className="p-6">
                 <h2 className="font-semibold mb-4">{sec.section}</h2>
                 <div className="grid sm:grid-cols-2 gap-4">
-                  {sec.items.map((it) => (
-                    <div key={it.key} className={it.full ? 'sm:col-span-2 space-y-1.5' : 'space-y-1.5'}>
-                      <Label htmlFor={it.key}>{it.label}</Label>
-                      <Input
-                        id={it.key}
-                        type={it.type ?? 'text'}
-                        placeholder={it.placeholder}
-                        value={form[it.key] ?? ''}
-                        onChange={(e) => setForm({ ...form, [it.key]: e.target.value })}
-                      />
-                    </div>
-                  ))}
+                  {sec.items.map((it) => {
+                    const cls = it.full ? 'sm:col-span-2 space-y-1.5' : 'space-y-1.5';
+                    if (it.boolean) {
+                      return (
+                        <label key={it.key} className={`${cls} flex items-center gap-2 cursor-pointer`}>
+                          <input
+                            type="checkbox"
+                            id={it.key}
+                            checked={Boolean(form[it.key])}
+                            onChange={(e) => setForm({ ...form, [it.key]: e.target.checked })}
+                            className="rounded border-border"
+                          />
+                          <span className="text-sm">{it.label}</span>
+                        </label>
+                      );
+                    }
+                    return (
+                      <div key={it.key} className={cls}>
+                        <Label htmlFor={it.key}>{it.label}</Label>
+                        {it.multiline ? (
+                          <Textarea
+                            id={it.key}
+                            placeholder={it.placeholder}
+                            rows={3}
+                            value={(form[it.key] as string) ?? ''}
+                            onChange={(e) => setForm({ ...form, [it.key]: e.target.value })}
+                          />
+                        ) : (
+                          <Input
+                            id={it.key}
+                            type={it.type ?? 'text'}
+                            placeholder={it.placeholder}
+                            value={(form[it.key] as string) ?? ''}
+                            onChange={(e) => setForm({ ...form, [it.key]: e.target.value })}
+                          />
+                        )}
+                      </div>
+                    );
+                  })}
                 </div>
               </CardContent>
             </Card>

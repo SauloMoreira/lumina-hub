@@ -14,7 +14,7 @@ export const getPublicCompanySettings = createServerFn({ method: 'GET' }).handle
   const { data, error } = await supabaseAdmin
     .from('company_settings')
     .select(
-      'id, trade_name, logo_url, support_email, support_phone, support_whatsapp, business_hours, instagram_url, facebook_url, tiktok_url, linkedin_url, website_url, address_street, address_number, address_complement, address_neighborhood, address_city, address_state, address_zipcode'
+      'id, trade_name, logo_url, support_email, support_phone, support_whatsapp, business_hours, instagram_url, facebook_url, tiktok_url, linkedin_url, website_url, address_street, address_number, address_complement, address_neighborhood, address_city, address_state, address_zipcode, pickup_enabled, pickup_store_name, pickup_address, pickup_phone, pickup_business_hours, pickup_instructions, pickup_ready_eta'
     )
     .order('created_at', { ascending: true })
     .limit(1)
@@ -120,6 +120,13 @@ const companyUpdateSchema = z.object({
   linkedin_url: z.string().url().max(255).nullable().optional().or(z.literal('')),
   website_url: z.string().url().max(255).nullable().optional().or(z.literal('')),
   logo_url: z.string().max(500).nullable().optional(),
+  pickup_enabled: z.union([z.boolean(), z.string()]).optional(),
+  pickup_store_name: z.string().max(200).nullable().optional(),
+  pickup_address: z.string().max(500).nullable().optional(),
+  pickup_phone: z.string().max(40).nullable().optional(),
+  pickup_business_hours: z.string().max(300).nullable().optional(),
+  pickup_instructions: z.string().max(1000).nullable().optional(),
+  pickup_ready_eta: z.string().max(120).nullable().optional(),
 });
 
 export const adminGetCompanySettings = createServerFn({ method: 'POST' })
@@ -155,11 +162,15 @@ export const adminUpdateCompanySettings = createServerFn({ method: 'POST' })
       .order('created_at', { ascending: true })
       .limit(1)
       .maybeSingle();
-    const cleaned: Record<string, string | null> = {};
+    const cleaned: Record<string, string | boolean | null> = {};
     for (const [k, v] of Object.entries(data)) {
-      cleaned[k] = v === '' || v === undefined ? null : (v as string | null);
+      if (k === 'pickup_enabled') {
+        cleaned[k] = v === true || v === 'true' || v === '1' || v === 'on';
+      } else {
+        cleaned[k] = v === '' || v === undefined ? null : (v as string | null);
+      }
     }
-    const payload = cleaned as typeof data;
+    const payload = cleaned as never;
     if (existing?.id) {
       const { error } = await supabaseAdmin.from('company_settings').update(payload).eq('id', existing.id);
       if (error) throw new Error(error.message);

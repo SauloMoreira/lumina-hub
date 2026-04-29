@@ -168,25 +168,32 @@ const CreateOrderInput = z.object({
       })
     )
     .min(1),
-  shipping: z.object({
-    carrier: z.string(),
-    service: z.string(),
-    cost: z.number().min(0),
-  }),
-  address: z.object({
-    recipient: z.string().min(1),
-    zipCode: z
-      .string()
-      .transform((v) => v.replace(/\D/g, ''))
-      .pipe(z.string().regex(/^\d{8}$/, 'CEP deve ter 8 dígitos')),
-    street: z.string().min(1),
-    number: z.string().min(1),
-    complement: z.string().optional().nullable(),
-    neighborhood: z.string().optional().nullable(),
-    city: z.string().min(1),
-    state: z.string().length(2),
-    saveAddress: z.boolean().default(false),
-  }),
+  deliveryMethod: z.enum(['delivery', 'pickup']).default('delivery'),
+  shipping: z
+    .object({
+      carrier: z.string(),
+      service: z.string(),
+      cost: z.number().min(0),
+    })
+    .optional()
+    .nullable(),
+  address: z
+    .object({
+      recipient: z.string().min(1),
+      zipCode: z
+        .string()
+        .transform((v) => v.replace(/\D/g, ''))
+        .pipe(z.string().regex(/^\d{8}$/, 'CEP deve ter 8 dígitos').or(z.literal(''))),
+      street: z.string().optional().nullable(),
+      number: z.string().optional().nullable(),
+      complement: z.string().optional().nullable(),
+      neighborhood: z.string().optional().nullable(),
+      city: z.string().optional().nullable(),
+      state: z.string().optional().nullable(),
+      saveAddress: z.boolean().default(false),
+    })
+    .nullable()
+    .optional(),
   couponCode: z.string().optional().nullable(),
   notes: z.string().optional().nullable(),
 });
@@ -258,11 +265,56 @@ export const createOrder = createServerFn({ method: 'POST' })
       if (row?.valid) discount = Number(row.discount);
     }
 
-    const total = Math.max(0, subtotal - discount + data.shipping.cost);
+    const isPickup = data.deliveryMethod === 'pickup';
 
-    // Salvar endereço (opcional)
+    // Validações específicas por método
+    if (isPickup) {
+      if (!data.address?.recipient) {
+        return { ok: false as const, error: 'Informe o nome para retirada.' };
+      }
+    } else {
+      if (!data.shipping) {
+        return { ok: false as const, error: 'Selecione uma opção de frete.' };
+      }
+      if (!data.address?.street || !data.address?.number || !data.address?.city || !data.address?.state || !data.address?.zipCode) {
+        return { ok: false as const, error: 'Endereço de entrega incompleto.' };
+      }
+    }
+
+    const shippingCost = isPickup ? 0 : Number(data.shipping?.cost ?? 0);
+    const shippingCarrier = isPickup ? 'Retirada na loja' : data.shipping?.carrier ?? null;
+    const shippingService = isPickup ? 'Retirada na loja' : data.shipping?.service ?? null;
+    const total = Math.max(0, subtotal - discount + shippingCost);
+
+    // Snapshot dos dados de retirada (loja) — em pickup
+    let pickupSnap: {
+      pickup_store_name: string | null;
+      pickup_store_address: string | null;
+      pickup_store_phone: string | null;
+      pickup_instructions: string | null;
+      pickup_status: string | null;
+    } | null = null;
+    if (isPickup) {
+      const { supabaseAdmin } = await import('@/integrations/supabase/client.server');
+      const { data: company } = await supabaseAdmin
+        .from('company_settings')
+        .select('pickup_store_name, pickup_address, pickup_phone, pickup_instructions, trade_name')
+        .order('created_at', { ascending: true })
+        .limit(1)
+        .maybeSingle();
+      const c = (company ?? {}) as Record<string, string | null>;
+      pickupSnap = {
+        pickup_store_name: c.pickup_store_name || c.trade_name || null,
+        pickup_store_address: c.pickup_address || null,
+        pickup_store_phone: c.pickup_phone || null,
+        pickup_instructions: c.pickup_instructions || null,
+        pickup_status: 'awaiting_release',
+      };
+    }
+
+    // Salvar endereço (opcional) — apenas em entrega
     let addressId: string | null = null;
-    if (data.address.saveAddress) {
+    if (!isPickup && data.address?.saveAddress && data.address.street && data.address.number && data.address.city && data.address.state) {
       const { data: addr } = await supabase
         .from('addresses')
         .insert({
@@ -275,7 +327,7 @@ export const createOrder = createServerFn({ method: 'POST' })
           neighborhood: data.address.neighborhood ?? null,
           city: data.address.city,
           state: data.address.state,
-        })
+        } as never)
         .select('id')
         .single();
       addressId = addr?.id ?? null;
@@ -291,15 +343,17 @@ export const createOrder = createServerFn({ method: 'POST' })
         payment_method: 'mercadopago',
         subtotal,
         discount,
-        shipping_cost: data.shipping.cost,
+        shipping_cost: shippingCost,
         total,
         coupon_code: data.couponCode ?? null,
-        shipping_carrier: data.shipping.carrier,
-        shipping_service: data.shipping.service,
+        shipping_carrier: shippingCarrier,
+        shipping_service: shippingService,
         address_id: addressId,
-        address_snapshot: data.address as never,
+        address_snapshot: (data.address ?? null) as never,
         notes: data.notes ?? null,
-      })
+        delivery_method: isPickup ? 'pickup' : 'delivery',
+        ...(pickupSnap ?? {}),
+      } as never)
       .select('id, order_number')
       .single();
 
