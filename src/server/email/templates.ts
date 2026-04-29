@@ -167,7 +167,12 @@ export function buildOrderEmailTemplate(p: OrderEmailParams): {
     : '';
 
   const isPickup = p.deliveryMethod === 'pickup';
-  const shippingLabel = isPickup ? 'Retirada na loja' : 'Frete';
+  const isLocalDelivery = p.deliveryMethod === 'local_delivery';
+  const shippingLabel = isPickup
+    ? 'Retirada na loja'
+    : isLocalDelivery
+    ? 'Frete Local Maricá'
+    : 'Frete';
   const shippingValue = isPickup
     ? 'Grátis'
     : (p.shippingTotal > 0 ? BRL.format(p.shippingTotal) : 'Grátis');
