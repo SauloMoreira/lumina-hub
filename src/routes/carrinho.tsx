@@ -116,9 +116,21 @@ function CartPage() {
               </div>
               <p className="text-xs text-muted-foreground text-right">em até 12x de {formatBRL(total / 12)}</p>
             </div>
-            <Button asChild size="lg" className="w-full h-12">
-              <Link to="/checkout">Finalizar pedido <ArrowRight className="w-4 h-4 ml-1.5" /></Link>
-            </Button>
+            {hasB2bIssue && (
+              <div className="mb-3 flex items-start gap-2 rounded-md border border-destructive/40 bg-destructive/5 px-3 py-2 text-xs text-destructive">
+                <AlertCircle className="w-4 h-4 mt-0.5 shrink-0" />
+                <span>Ajuste a quantidade dos itens em atacado para respeitar mínimo e múltiplo antes de finalizar.</span>
+              </div>
+            )}
+            {hasB2bIssue ? (
+              <Button size="lg" className="w-full h-12" disabled>
+                Finalizar pedido
+              </Button>
+            ) : (
+              <Button asChild size="lg" className="w-full h-12">
+                <Link to="/checkout">Finalizar pedido <ArrowRight className="w-4 h-4 ml-1.5" /></Link>
+              </Button>
+            )}
             <Button asChild variant="ghost" size="sm" className="w-full mt-2">
               <Link to={continueLink}>{continueLabel}</Link>
             </Button>
