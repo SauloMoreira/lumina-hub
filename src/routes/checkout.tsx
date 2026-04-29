@@ -190,7 +190,7 @@ function CheckoutPage() {
   }
 
   async function handleSubmit() {
-    if (!selectedShipping) return;
+    if (!isPickup && !selectedShipping) return;
     if (submitting) return;
     setSubmitting(true);
     try {
@@ -203,21 +203,24 @@ function CheckoutPage() {
             unitPrice: i.price,
             qty: i.qty,
           })),
-          shipping: {
-            carrier: selectedShipping.carrier,
-            service: selectedShipping.name,
-            cost: selectedShipping.price,
-          },
+          deliveryMethod,
+          shipping: isPickup
+            ? null
+            : {
+                carrier: selectedShipping!.carrier,
+                service: selectedShipping!.name,
+                cost: selectedShipping!.price,
+              },
           address: {
             recipient,
-            zipCode: zip.replace(/\D/g, ''),
-            street,
-            number,
+            zipCode: isPickup ? '' : zip.replace(/\D/g, ''),
+            street: isPickup ? null : street,
+            number: isPickup ? null : number,
             complement: complement || null,
-            neighborhood: neighborhood || null,
-            city,
-            state,
-            saveAddress,
+            neighborhood: isPickup ? null : (neighborhood || null),
+            city: isPickup ? null : city,
+            state: isPickup ? null : state,
+            saveAddress: isPickup ? false : saveAddress,
           },
           couponCode,
           notes: notes || null,
