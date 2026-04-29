@@ -479,18 +479,8 @@ function B2bProductCard({ product, index }: { product: Product; index: number })
   const handleAdd = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    cart.addItem({
-      productId: product.id,
-      name: product.name,
-      slug: product.slug,
-      price: finalPrice,
-      image: product.images[0] ?? null,
-      stock: product.stock_qty,
-      freeShippingEligible: !!product.free_shipping_eligible,
-    });
-    // Atinge o mínimo já adicionando minQty - 1 a mais
-    for (let i = 1; i < minQty; i++) {
-      cart.addItem({
+    cart.addItem(
+      {
         productId: product.id,
         name: product.name,
         slug: product.slug,
@@ -498,8 +488,12 @@ function B2bProductCard({ product, index }: { product: Product; index: number })
         image: product.images[0] ?? null,
         stock: product.stock_qty,
         freeShippingEligible: !!product.free_shipping_eligible,
-      });
-    }
+        minQty,
+        qtyMultiple: product.b2b_qty_multiple ?? 1,
+        source: 'b2b',
+      },
+      minQty
+    );
   };
 
   const isAboveFold = index < 3;
