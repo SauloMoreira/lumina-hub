@@ -190,7 +190,7 @@ function AtacadoPage() {
                 <div className="absolute z-10 top-2 left-2 inline-flex items-center gap-1 bg-primary text-primary-foreground text-[10px] font-bold uppercase px-2 py-1 rounded">
                   Preço empresa
                 </div>
-                <ProductCard product={p} index={i} />
+                <ProductCard product={p} index={i} b2bApproved={companyStatus === 'approved'} />
               </div>
             ))}
           </div>
