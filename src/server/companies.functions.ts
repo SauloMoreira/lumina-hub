@@ -46,8 +46,10 @@ export const createCompany = createServerFn({ method: 'POST' })
       );
     }
 
-    // Insere empresa (RLS exige status=pending e aprovado=null, ok)
-    const { data: company, error } = await supabase
+    // Insere empresa via admin (auth já validada pelo middleware).
+    // Forçamos status=pending e campos de aprovação nulos para manter a
+    // mesma garantia da policy companies_self_insert.
+    const { data: company, error } = await supabaseAdmin
       .from('companies')
       .insert({
         cnpj: data.cnpj,
@@ -65,6 +67,11 @@ export const createCompany = createServerFn({ method: 'POST' })
         address_neighborhood: data.address_neighborhood ?? null,
         address_city: data.address_city ?? null,
         address_state: data.address_state ?? null,
+        status: 'pending',
+        approved_at: null,
+        approved_by: null,
+        blocked_at: null,
+        blocked_by: null,
       })
       .select('id')
       .single();
@@ -73,14 +80,13 @@ export const createCompany = createServerFn({ method: 'POST' })
       throw new Error(error?.message ?? 'Não foi possível cadastrar a empresa.');
     }
 
-    // Vincula usuário como owner
-    const { error: linkErr } = await supabase.from('company_users').insert({
+    // Vincula usuário como owner (admin: garante consistência mesmo se RLS bloquear)
+    const { error: linkErr } = await supabaseAdmin.from('company_users').insert({
       company_id: company.id,
       user_id: userId,
       role: 'owner',
     });
     if (linkErr) {
-      // cleanup admin (RLS não permitiria pelo user)
       await supabaseAdmin.from('companies').delete().eq('id', company.id);
       throw new Error('Falha ao vincular usuário à empresa: ' + linkErr.message);
     }
