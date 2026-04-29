@@ -31,6 +31,14 @@ export interface OrderEmailParams {
   retryUrl?: string | null;
   trackingCode?: string | null;
   messageType: EmailMessageType;
+  deliveryMethod?: 'delivery' | 'pickup' | string;
+  pickup?: {
+    storeName?: string | null;
+    storeAddress?: string | null;
+    storePhone?: string | null;
+    instructions?: string | null;
+    readyEta?: string | null;
+  } | null;
 }
 
 const BRL = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' });
