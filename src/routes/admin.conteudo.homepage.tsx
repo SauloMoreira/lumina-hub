@@ -14,6 +14,7 @@ import { Switch } from '@/components/ui/switch';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { fetchHomepageSettings, type HomepageSettings } from '@/lib/homepageContent';
 import { supabase } from '@/integrations/supabase/client';
+import { IconPicker } from '@/components/admin/IconPicker';
 
 export const Route = createFileRoute('/admin/conteudo/homepage')({
   component: AdminHomepageContentPage,
@@ -137,11 +138,10 @@ function AdminHomepageContentPage() {
                       onChange={(e) => set('hero_logo_alt', e.target.value)}
                     />
                   </Field>
-                  <Field label="Ícone do badge (nome lucide-react, ex: Sparkles)">
-                    <Input
-                      value={form.hero_badge_icon ?? ''}
-                      onChange={(e) => set('hero_badge_icon', e.target.value)}
-                      placeholder="Sparkles"
+                  <Field label="Ícone do badge">
+                    <IconPicker
+                      value={form.hero_badge_icon}
+                      onChange={(v) => set('hero_badge_icon', v)}
                     />
                   </Field>
                   <Field label="Texto do badge superior" full>
@@ -196,11 +196,10 @@ function AdminHomepageContentPage() {
                         onChange={(e) => set('hero_primary_button_url', e.target.value)}
                       />
                     </Field>
-                    <Field label="Ícone (lucide-react)">
-                      <Input
-                        value={form.hero_primary_button_icon ?? ''}
-                        onChange={(e) => set('hero_primary_button_icon', e.target.value)}
-                        placeholder="ArrowRight"
+                    <Field label="Ícone">
+                      <IconPicker
+                        value={form.hero_primary_button_icon}
+                        onChange={(v) => set('hero_primary_button_icon', v)}
                       />
                     </Field>
                     <Field label="Abrir em nova aba">
@@ -235,11 +234,10 @@ function AdminHomepageContentPage() {
                         onChange={(e) => set('hero_secondary_button_url', e.target.value)}
                       />
                     </Field>
-                    <Field label="Ícone (lucide-react)">
-                      <Input
-                        value={form.hero_secondary_button_icon ?? ''}
-                        onChange={(e) => set('hero_secondary_button_icon', e.target.value)}
-                        placeholder="MessageSquareText"
+                    <Field label="Ícone">
+                      <IconPicker
+                        value={form.hero_secondary_button_icon}
+                        onChange={(v) => set('hero_secondary_button_icon', v)}
                       />
                     </Field>
                     <Field label="Abrir em nova aba">
@@ -275,11 +273,12 @@ function AdminHomepageContentPage() {
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <Field label="Ícone / emoji">
-                    <Input
-                      value={form.promo_bar_icon ?? ''}
-                      onChange={(e) => set('promo_bar_icon', e.target.value)}
-                      placeholder="🚚"
+                  <Field label="Ícone / emoji" hint="Escolha um ícone ou cole um emoji no campo do popover">
+                    <IconPicker
+                      value={form.promo_bar_icon}
+                      onChange={(v) => set('promo_bar_icon', v)}
+                      allowEmoji
+                      placeholder="Escolher ícone ou emoji"
                     />
                   </Field>
                   <Field label="Link (opcional)">
@@ -349,11 +348,10 @@ function AdminHomepageContentPage() {
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <Field label="Ícone superior (lucide-react)">
-                    <Input
-                      value={form.main_cta_icon ?? ''}
-                      onChange={(e) => set('main_cta_icon', e.target.value)}
-                      placeholder="Sparkles"
+                  <Field label="Ícone superior">
+                    <IconPicker
+                      value={form.main_cta_icon}
+                      onChange={(v) => set('main_cta_icon', v)}
                     />
                   </Field>
                   <Field label="Imagem de fundo (URL, opcional)">
