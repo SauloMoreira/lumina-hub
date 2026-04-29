@@ -14,6 +14,7 @@ import { Switch } from '@/components/ui/switch';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { fetchHomepageSettings, type HomepageSettings } from '@/lib/homepageContent';
 import { supabase } from '@/integrations/supabase/client';
+import { IconPicker } from '@/components/admin/IconPicker';
 
 export const Route = createFileRoute('/admin/conteudo/homepage')({
   component: AdminHomepageContentPage,
