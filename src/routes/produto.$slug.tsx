@@ -14,6 +14,7 @@ import { ProductGallery } from '@/components/store/ProductGallery';
 import { pickUrl, type ProductImageRow } from '@/lib/productImages';
 import { RelatedProductsBlock } from '@/components/store/RelatedProductsBlock';
 import { ProductInBundlesBlock } from '@/components/store/ProductInBundlesBlock';
+import { ProductSpecsBlock } from '@/components/store/ProductSpecsBlock';
 
 type FaqItem = { question: string; answer: string };
 type ProductWithSeo = Product & {
@@ -239,6 +240,8 @@ function ProductPage() {
                 <p className="text-sm text-muted-foreground leading-relaxed whitespace-pre-line">{product.description}</p>
               </section>
             )}
+
+            <ProductSpecsBlock productId={product.id} />
           </div>
 
           {/* COLUNA DIREITA: PAINEL DE COMPRA (sticky) */}
