@@ -255,7 +255,7 @@ function HomePage() {
       {/* CARDS PROMOCIONAIS DE APOIO */}
       <section className="container mx-auto px-4 py-6">
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-          {PROMO_CARDS.map((c) => {
+          {promoCardsToRender.map((c) => {
             const inner = (
               <>
                 <div className={`absolute inset-0 opacity-10 group-hover:opacity-20 bg-gradient-to-br ${c.tone} transition-opacity`} />
@@ -264,22 +264,42 @@ function HomePage() {
                     <c.icon className="w-4 h-4 text-white" />
                   </div>
                   <div className="font-display font-semibold text-sm leading-tight">{c.title}</div>
-                  <div className="text-xs text-muted-foreground mt-0.5">{c.desc}</div>
+                  {c.desc && <div className="text-xs text-muted-foreground mt-0.5">{c.desc}</div>}
                 </div>
               </>
             );
             const cls = "group relative overflow-hidden rounded-xl bg-card border border-border p-4 hover:shadow-elevated transition-all hover:-translate-y-0.5 text-left";
             if (c.onClick) {
               return (
-                <button key={c.title} type="button" onClick={c.onClick} className={cls}>
+                <button key={c.key} type="button" onClick={c.onClick} className={cls}>
                   {inner}
                 </button>
               );
             }
+            if (c.href) {
+              return (
+                <a
+                  key={c.key}
+                  href={c.href}
+                  target={c.newTab ? '_blank' : undefined}
+                  rel={c.newTab ? 'noopener noreferrer' : undefined}
+                  className={cls}
+                >
+                  {inner}
+                </a>
+              );
+            }
+            if (c.to) {
+              return (
+                <Link key={c.key} to={c.to as any} search={(c.searchParams ?? {}) as any} className={cls}>
+                  {inner}
+                </Link>
+              );
+            }
             return (
-              <Link key={c.title} to={c.to as any} search={(c.searchParams ?? {}) as any} className={cls}>
+              <div key={c.key} className={cls}>
                 {inner}
-              </Link>
+              </div>
             );
           })}
         </div>
