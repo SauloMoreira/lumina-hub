@@ -1144,6 +1144,16 @@ export const getAdminOperations = createServerFn({ method: 'GET' })
         ctaHref: '/admin/produtos/qualidade',
       });
     }
+    if (productQuality.missingTech > 0) {
+      alerts.push({
+        id: 'alert-products-missing-tech-attrs',
+        title: 'Produtos sem atributos técnicos',
+        description: `${productQuality.missingTech} produto(s) ativo(s) sem atributos técnicos cadastrados — prejudica busca, filtros e SEO.`,
+        severity: 'low',
+        ctaLabel: 'Ver qualidade do cadastro',
+        ctaHref: '/admin/produtos/qualidade',
+      });
+    }
     if (fiscal.companyFiscalIncomplete) {
       alerts.push({
         id: 'alert-fiscal-company-data',
