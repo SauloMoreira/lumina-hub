@@ -39,6 +39,7 @@ function ProductForm() {
   const [cats, setCats] = useState<Cat[]>([]);
   const imageManagerRef = useRef<ProductImageManagerHandle>(null);
   const [barcodeOpen, setBarcodeOpen] = useState(false);
+  const [extra, setExtra] = useState<{ specs: Record<string, unknown>; ncm: string | null; product_images: Array<{ alt_text: string | null; original_url: string | null }> }>({ specs: {}, ncm: null, product_images: [] });
 
   const [form, setForm] = useState({
     name: '', slug: '', sku: '', brand: '', description: '',
