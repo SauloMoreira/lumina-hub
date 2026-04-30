@@ -236,7 +236,11 @@ export const adminUpdateRelation = createServerFn({ method: 'POST' })
   .inputValidator((i: unknown) => AdminUpdateInput.parse(i))
   .handler(async ({ data }) => {
     await requireAdmin();
-    const patch: Record<string, unknown> = {};
+    const patch: {
+      sort_order?: number;
+      is_active?: boolean;
+      relation_type?: RelationType;
+    } = {};
     if (data.sortOrder !== undefined) patch.sort_order = data.sortOrder;
     if (data.isActive !== undefined) patch.is_active = data.isActive;
     if (data.relationType !== undefined) patch.relation_type = data.relationType;
