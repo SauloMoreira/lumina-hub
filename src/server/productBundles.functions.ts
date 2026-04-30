@@ -377,6 +377,24 @@ export const adminGetBundle = createServerFn({ method: 'POST' })
 // ----------------------------------------------------------------------------
 const slugRegex = /^[a-z0-9-]+$/;
 
+const DiscountTypeEnum = z.enum(['none', 'fixed_amount', 'percentage']);
+
+function validateDiscount(input: { discountType?: BundleDiscountType; discountValue?: number }) {
+  const t = input.discountType ?? 'none';
+  const v = Number(input.discountValue ?? 0);
+  if (t === 'none') return { discount_type: 'none' as const, discount_value: 0 };
+  if (!Number.isFinite(v) || v <= 0) {
+    throw new Error('bundle_discount_value_invalid');
+  }
+  if (t === 'percentage' && v > BUNDLE_PERCENT_LIMIT) {
+    throw new Error('bundle_discount_percent_over_limit');
+  }
+  if (t === 'fixed_amount' && v > 100000) {
+    throw new Error('bundle_discount_value_invalid');
+  }
+  return { discount_type: t, discount_value: Math.round(v * 100) / 100 };
+}
+
 const AdminCreateInput = z.object({
   name: z.string().trim().min(2).max(160),
   slug: z.string().trim().min(2).max(160).regex(slugRegex).optional(),
@@ -387,6 +405,8 @@ const AdminCreateInput = z.object({
   startDate: z.string().datetime().optional().nullable(),
   endDate: z.string().datetime().optional().nullable(),
   notes: z.string().trim().max(2000).optional().nullable(),
+  discountType: DiscountTypeEnum.optional(),
+  discountValue: z.number().min(0).max(100000).optional(),
 });
 
 function slugify(s: string) {
