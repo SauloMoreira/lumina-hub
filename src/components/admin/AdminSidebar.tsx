@@ -212,6 +212,7 @@ const groups: Group[] = [
     items: [
       { to: '/admin/financeiro/resumo', label: 'Resumo financeiro', icon: Receipt },
       { to: '/admin/financeiro/margem', label: 'Margem de lucro', icon: Receipt },
+      { to: '/admin/financeiro/mercadopago', label: 'Mercado Pago', icon: Receipt },
       { to: '/admin/financeiro/configuracoes', label: 'Configurações financeiras', icon: Receipt },
       { label: 'Mercado Pago', soon: true },
       { label: 'Notas fiscais', soon: true },
