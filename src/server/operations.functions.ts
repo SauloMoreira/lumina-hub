@@ -700,7 +700,7 @@ export const getAdminOperations = createServerFn({ method: 'GET' })
         qty: financeAlerts.ordersPaidNegativeMargin,
         status: financeAlerts.ordersPaidNegativeMargin === 0 ? 'ok' : 'danger',
         ctaLabel: 'Ver relatório de margem',
-        ctaHref: '/admin/financeiro/relatorios',
+        ctaHref: '/admin/financeiro/relatorios?tab=margem',
         group: 'Financeiro',
       },
       {
@@ -717,8 +717,8 @@ export const getAdminOperations = createServerFn({ method: 'GET' })
             : financeAlerts.ordersPaidWithMissingCost > 0
               ? 'danger'
               : 'warn',
-        ctaLabel: 'Ver produtos',
-        ctaHref: '/admin/produtos',
+        ctaLabel: 'Ver produtos sem custo',
+        ctaHref: '/admin/financeiro/relatorios?tab=produtos',
         group: 'Financeiro',
       },
       {
@@ -738,7 +738,7 @@ export const getAdminOperations = createServerFn({ method: 'GET' })
               ? 'warn'
               : 'ok',
         ctaLabel: 'Ver Mercado Pago',
-        ctaHref: '/admin/financeiro/relatorios',
+        ctaHref: '/admin/financeiro/relatorios?tab=mercado-pago',
         group: 'Financeiro',
       },
     ];
@@ -1013,7 +1013,7 @@ export const getAdminOperations = createServerFn({ method: 'GET' })
         description: `${financeAlerts.ordersPaidNegativeMargin} pedido(s) pago(s) nos últimos 30 dias estão dando prejuízo. Revise preços e custos.`,
         severity: 'high',
         ctaLabel: 'Ver relatório de margem',
-        ctaHref: '/admin/financeiro/relatorios',
+        ctaHref: '/admin/financeiro/relatorios?tab=margem',
       });
     }
     if (financeAlerts.ordersPaidWithMissingCost > 0) {
@@ -1023,7 +1023,7 @@ export const getAdminOperations = createServerFn({ method: 'GET' })
         description: `${financeAlerts.ordersPaidWithMissingCost} pedido(s) pago(s) recente(s) com item sem custo — margem real impossível de calcular.`,
         severity: 'high',
         ctaLabel: 'Ver relatório de margem',
-        ctaHref: '/admin/financeiro/relatorios',
+        ctaHref: '/admin/financeiro/relatorios?tab=margem',
       });
     }
     if (financeAlerts.productsWithoutCost > 0) {
@@ -1043,7 +1043,7 @@ export const getAdminOperations = createServerFn({ method: 'GET' })
         description: `${financeAlerts.productsBelowMinMargin} produto(s) com preço atual abaixo da margem mínima configurada.`,
         severity: 'medium',
         ctaLabel: 'Ver relatório de margem',
-        ctaHref: '/admin/financeiro/relatorios',
+        ctaHref: '/admin/financeiro/relatorios?tab=margem',
       });
     }
     if (financeAlerts.invoicesPendingB2bOver24h > 0) {
@@ -1063,7 +1063,7 @@ export const getAdminOperations = createServerFn({ method: 'GET' })
         description: `${financeAlerts.mpWebhookErrors7d} webhook(s) com erro nos últimos 7 dias. Pagamentos podem não estar sendo confirmados.`,
         severity: 'high',
         ctaLabel: 'Ver Mercado Pago',
-        ctaHref: '/admin/financeiro/relatorios',
+        ctaHref: '/admin/financeiro/relatorios?tab=mercado-pago',
       });
     }
     if (financeAlerts.mpPaidNoFee30d > 0) {
@@ -1073,7 +1073,7 @@ export const getAdminOperations = createServerFn({ method: 'GET' })
         description: `${financeAlerts.mpPaidNoFee30d} pagamento(s) sem taxa real nem estimada — lucro líquido pode estar incorreto.`,
         severity: 'medium',
         ctaLabel: 'Ver Mercado Pago',
-        ctaHref: '/admin/financeiro/relatorios',
+        ctaHref: '/admin/financeiro/relatorios?tab=mercado-pago',
       });
     }
     if (financeAlerts.mpPaidEstimatedFee30d > 0) {
@@ -1083,7 +1083,7 @@ export const getAdminOperations = createServerFn({ method: 'GET' })
         description: `${financeAlerts.mpPaidEstimatedFee30d} pagamento(s) com taxa estimada — webhook do Mercado Pago ainda não confirmou a taxa real.`,
         severity: 'low',
         ctaLabel: 'Ver Mercado Pago',
-        ctaHref: '/admin/financeiro/relatorios',
+        ctaHref: '/admin/financeiro/relatorios?tab=mercado-pago',
       });
     }
 

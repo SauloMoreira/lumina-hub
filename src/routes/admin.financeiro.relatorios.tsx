@@ -243,8 +243,24 @@ function ReportsPage() {
   const [paymentMethod, setPaymentMethod] = useState<string>('');
   const [deliveryMethod, setDeliveryMethod] = useState<string>('');
 
-  // Aba ativa
-  const [tab, setTab] = useState<'sales' | 'margin' | 'products' | 'b2b' | 'coupons' | 'shipping' | 'mp' | 'invoices' | 'utm'>('sales');
+  // Aba ativa — aceita ?tab=... na URL (com aliases pt-BR)
+  const initialTab = (() => {
+    if (typeof window === 'undefined') return 'sales' as const;
+    const raw = new URLSearchParams(window.location.search).get('tab')?.toLowerCase() ?? '';
+    const map: Record<string, 'sales' | 'margin' | 'products' | 'b2b' | 'coupons' | 'shipping' | 'mp' | 'invoices' | 'utm'> = {
+      sales: 'sales', vendas: 'sales',
+      margin: 'margin', margem: 'margin',
+      products: 'products', produtos: 'products',
+      b2b: 'b2b', atacado: 'b2b',
+      coupons: 'coupons', cupons: 'coupons',
+      shipping: 'shipping', frete: 'shipping',
+      mp: 'mp', 'mercado-pago': 'mp', mercadopago: 'mp',
+      invoices: 'invoices', notas: 'invoices', 'notas-fiscais': 'invoices',
+      utm: 'utm', campanhas: 'utm',
+    };
+    return map[raw] ?? 'sales';
+  })();
+  const [tab, setTab] = useState<'sales' | 'margin' | 'products' | 'b2b' | 'coupons' | 'shipping' | 'mp' | 'invoices' | 'utm'>(initialTab);
 
   // Dados
   const [cards, setCards] = useState<FinanceReportCards | null>(null);
