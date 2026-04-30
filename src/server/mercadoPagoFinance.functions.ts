@@ -234,6 +234,7 @@ function round2(n: number) {
 
 // Ajuda compartilhada para reaproveitar no detalhe do pedido
 export async function getMpFinanceForOrder(orderId: string) {
+  const { supabaseAdmin } = await import('@/integrations/supabase/client.server');
   const { data: o } = await supabaseAdmin
     .from('orders')
     .select('mp_payment_id, mp_payment_method, mp_payment_type, mp_gross_amount, mp_fee_amount, mp_net_amount, estimated_fee_amount, estimated_net_amount, payment_fee_source, payment_fee_calculated_at, mp_last_webhook_at, mp_webhook_status, mp_webhook_error, payment_status')
@@ -241,8 +242,3 @@ export async function getMpFinanceForOrder(orderId: string) {
     .maybeSingle();
   return o ?? null;
 }
-
-// Re-export tipo p/ consumo no cliente
-export type { MpFeeBreakdown } from './mercadoPagoFees.server';
-// (placeholder para evitar shake; computeMpFees é server-only)
-void computeMpFees;
