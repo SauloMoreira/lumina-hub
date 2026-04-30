@@ -137,7 +137,7 @@ export const getCommercialReviewReport = createServerFn({ method: 'GET' })
     let query = supabaseAdmin
       .from('products')
       .select(
-        'id, name, sku, active, category_id, brand, price, sale_price, cost_price, min_margin_percent, b2b_enabled, b2b_price, b2b_min_qty, categories:category_id(name)',
+        'id, name, sku, slug, active, category_id, brand, price, sale_price, cost_price, min_margin_percent, b2b_enabled, b2b_price, b2b_min_qty, categories:category_id(name)',
       )
       .eq('active', true)
       .limit(2000);
