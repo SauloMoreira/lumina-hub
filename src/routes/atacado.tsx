@@ -1,5 +1,6 @@
 import { createFileRoute, Link, useRouter } from '@tanstack/react-router';
 import { useEffect, useMemo, useState } from 'react';
+import { useQuery, keepPreviousData } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import {
   Building2,
@@ -20,6 +21,14 @@ import { ProductImagePlaceholder } from '@/components/store/ProductImagePlacehol
 import { formatBRL, STORE_WHATSAPP } from '@/lib/domain';
 import { useCart } from '@/stores/cartStore';
 import type { Product } from '@/lib/domain';
+import { searchProducts } from '@/server/productSearch.functions';
+import { getPublicCompanySettings } from '@/server/institutional.functions';
+import {
+  B2BProductFilters,
+  DEFAULT_B2B_FILTERS,
+  type B2bFiltersState,
+} from '@/components/b2b/B2BProductFilters';
+import { B2BEmptyState } from '@/components/b2b/B2BEmptyState';
 
 type B2bSettings = {
   hero_title: string | null;
