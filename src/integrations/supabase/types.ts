@@ -1220,6 +1220,65 @@ export type Database = {
           },
         ]
       }
+      homepage_product_showcases: {
+        Row: {
+          category_id: string | null
+          created_at: string
+          id: string
+          is_active: boolean
+          mode: Database["public"]["Enums"]["homepage_showcase_mode"]
+          product_limit: number
+          show_view_all_button: boolean
+          showcase_type: Database["public"]["Enums"]["homepage_showcase_type"]
+          sort_order: number
+          subtitle: string | null
+          title: string
+          updated_at: string
+          view_all_url: string | null
+          visual_variant: Database["public"]["Enums"]["homepage_showcase_visual"]
+        }
+        Insert: {
+          category_id?: string | null
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          mode?: Database["public"]["Enums"]["homepage_showcase_mode"]
+          product_limit?: number
+          show_view_all_button?: boolean
+          showcase_type?: Database["public"]["Enums"]["homepage_showcase_type"]
+          sort_order?: number
+          subtitle?: string | null
+          title: string
+          updated_at?: string
+          view_all_url?: string | null
+          visual_variant?: Database["public"]["Enums"]["homepage_showcase_visual"]
+        }
+        Update: {
+          category_id?: string | null
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          mode?: Database["public"]["Enums"]["homepage_showcase_mode"]
+          product_limit?: number
+          show_view_all_button?: boolean
+          showcase_type?: Database["public"]["Enums"]["homepage_showcase_type"]
+          sort_order?: number
+          subtitle?: string | null
+          title?: string
+          updated_at?: string
+          view_all_url?: string | null
+          visual_variant?: Database["public"]["Enums"]["homepage_showcase_visual"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "homepage_product_showcases_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "categories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       homepage_settings: {
         Row: {
           created_at: string
@@ -1360,6 +1419,64 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      homepage_showcase_items: {
+        Row: {
+          combo_id: string | null
+          created_at: string
+          id: string
+          is_active: boolean
+          item_type: Database["public"]["Enums"]["homepage_showcase_item_type"]
+          product_id: string | null
+          showcase_id: string
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          combo_id?: string | null
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          item_type: Database["public"]["Enums"]["homepage_showcase_item_type"]
+          product_id?: string | null
+          showcase_id: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          combo_id?: string | null
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          item_type?: Database["public"]["Enums"]["homepage_showcase_item_type"]
+          product_id?: string | null
+          showcase_id?: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "homepage_showcase_items_combo_id_fkey"
+            columns: ["combo_id"]
+            isOneToOne: false
+            referencedRelation: "product_bundles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "homepage_showcase_items_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "homepage_showcase_items_showcase_id_fkey"
+            columns: ["showcase_id"]
+            isOneToOne: false
+            referencedRelation: "homepage_product_showcases"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       institutional_pages: {
         Row: {
@@ -3231,6 +3348,21 @@ export type Database = {
       company_status: "pending" | "approved" | "blocked" | "rejected"
       company_user_role: "owner" | "member"
       homepage_card_type: "benefit" | "promo"
+      homepage_showcase_item_type: "product" | "combo"
+      homepage_showcase_mode: "auto" | "manual"
+      homepage_showcase_type:
+        | "featured"
+        | "offers"
+        | "best_sellers"
+        | "new_arrivals"
+        | "category"
+        | "bundles"
+        | "custom"
+      homepage_showcase_visual:
+        | "default"
+        | "premium"
+        | "compact"
+        | "highlighted"
       product_relation_type:
         | "related"
         | "frequently_bought_together"
@@ -3379,6 +3511,23 @@ export const Constants = {
       company_status: ["pending", "approved", "blocked", "rejected"],
       company_user_role: ["owner", "member"],
       homepage_card_type: ["benefit", "promo"],
+      homepage_showcase_item_type: ["product", "combo"],
+      homepage_showcase_mode: ["auto", "manual"],
+      homepage_showcase_type: [
+        "featured",
+        "offers",
+        "best_sellers",
+        "new_arrivals",
+        "category",
+        "bundles",
+        "custom",
+      ],
+      homepage_showcase_visual: [
+        "default",
+        "premium",
+        "compact",
+        "highlighted",
+      ],
       product_relation_type: [
         "related",
         "frequently_bought_together",
