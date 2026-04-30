@@ -157,15 +157,95 @@ function HomePage() {
     return () => clearTimeout(t);
   }, [queryClient]);
 
-  const PROMO_CARDS: Array<{
-    icon: any; title: string; desc: string; tone: string;
-    to?: string; searchParams?: Record<string, any>; onClick?: () => void;
-  }> = [
-    { icon: Flame, title: 'Ofertas da semana', desc: 'Descontos imperdíveis', to: '/catalogo', searchParams: { oferta: true }, tone: 'from-orange-500 to-red-500' },
-    { icon: Star, title: 'Destaques da loja', desc: 'O que está bombando', to: '/catalogo', searchParams: { sort: 'best_sellers' }, tone: 'from-amber-400 to-yellow-500' },
-    { icon: Truck, title: 'Frete grátis', desc: `Acima de ${formatBRL(FREE_SHIPPING_THRESHOLD)}`, to: '/catalogo', searchParams: { shipping: 'free' }, tone: 'from-emerald-500 to-teal-500' },
-    { icon: Sparkles, title: 'Atendimento IA 24h', desc: 'Tire dúvidas técnicas', tone: 'from-violet-500 to-indigo-500', onClick: () => { if (typeof window !== 'undefined') window.dispatchEvent(new Event('open-chat')); } },
+  type PromoCardItem = {
+    key: string;
+    icon: any;
+    title: string;
+    desc: string;
+    tone: string;
+    to?: string;
+    searchParams?: Record<string, any>;
+    href?: string;
+    newTab?: boolean;
+    onClick?: () => void;
+  };
+
+  const PROMO_CARDS_FALLBACK: PromoCardItem[] = [
+    { key: 'fb-ofertas', icon: Flame, title: 'Ofertas da semana', desc: 'Descontos imperdíveis', to: '/catalogo', searchParams: { oferta: true }, tone: 'from-orange-500 to-red-500' },
+    { key: 'fb-destaques', icon: Star, title: 'Destaques da loja', desc: 'O que está bombando', to: '/catalogo', searchParams: { sort: 'best_sellers' }, tone: 'from-amber-400 to-yellow-500' },
+    { key: 'fb-frete', icon: Truck, title: 'Frete grátis', desc: `Acima de ${formatBRL(FREE_SHIPPING_THRESHOLD)}`, to: '/catalogo', searchParams: { shipping: 'free' }, tone: 'from-emerald-500 to-teal-500' },
+    { key: 'fb-ia', icon: Sparkles, title: 'Atendimento IA 24h', desc: 'Tire dúvidas técnicas', tone: 'from-violet-500 to-indigo-500', onClick: () => { if (typeof window !== 'undefined') window.dispatchEvent(new Event('open-chat')); } },
   ];
+
+  const PROMO_TONES = [
+    'from-orange-500 to-red-500',
+    'from-amber-400 to-yellow-500',
+    'from-emerald-500 to-teal-500',
+    'from-violet-500 to-indigo-500',
+    'from-sky-500 to-blue-500',
+    'from-pink-500 to-rose-500',
+  ];
+
+  const promoCardsToRender: PromoCardItem[] = (promoCards && promoCards.length > 0)
+    ? promoCards.map((c, i) => {
+        const Icon = getLucideIcon(c.icon, Sparkles);
+        const link = (c.link_url ?? '').trim();
+        const isChat = link === '#chat';
+        const ext = isExternalLink(link);
+        return {
+          key: c.id,
+          icon: Icon,
+          title: c.title,
+          desc: c.description ?? '',
+          tone: c.visual_variant?.trim() || PROMO_TONES[i % PROMO_TONES.length],
+          to: !isChat && !ext && link ? link : undefined,
+          href: !isChat && ext ? link : undefined,
+          newTab: ext,
+          onClick: isChat ? () => { if (typeof window !== 'undefined') window.dispatchEvent(new Event('open-chat')); } : undefined,
+        };
+      })
+    : PROMO_CARDS_FALLBACK;
+
+  type BenefitCardItem = { key: string; icon: any; title: string; desc: string; href?: string; to?: string; newTab?: boolean };
+  const BENEFITS_FALLBACK: BenefitCardItem[] = [
+    { key: 'fb-ia', icon: Sparkles, title: 'IA 24h', desc: 'Atendimento inteligente sempre disponível' },
+    { key: 'fb-truck', icon: Truck, title: 'Entrega Rápida', desc: 'Logística otimizada via Melhor Envio' },
+    { key: 'fb-nf', icon: Shield, title: 'NF Garantida', desc: 'Nota fiscal em todos os pedidos' },
+  ];
+  const benefitsToRender: BenefitCardItem[] = (benefitCards && benefitCards.length > 0)
+    ? benefitCards.map((c) => {
+        const link = (c.link_url ?? '').trim();
+        const ext = isExternalLink(link);
+        return {
+          key: c.id,
+          icon: getLucideIcon(c.icon, Sparkles),
+          title: c.title,
+          desc: c.description ?? '',
+          to: !ext && link ? link : undefined,
+          href: ext ? link : undefined,
+          newTab: ext,
+        };
+      })
+    : BENEFITS_FALLBACK;
+
+  type FeaturedCategoryItem = { key: string; slug: string; name: string; icon: any; imageUrl?: string | null };
+  const featuredCategoriesToRender: FeaturedCategoryItem[] = (featuredCategories && featuredCategories.length > 0)
+    ? featuredCategories
+        .filter((fc) => fc.category && fc.category.active !== false)
+        .map((fc) => ({
+          key: fc.id,
+          slug: fc.category!.slug,
+          name: fc.custom_title?.trim() || fc.category!.name,
+          icon: getLucideIcon(fc.icon ?? fc.category!.icon, Package),
+          imageUrl: fc.custom_image_url ?? null,
+        }))
+    : (categories ?? []).map((c) => ({
+        key: c.id,
+        slug: c.slug,
+        name: c.name,
+        icon: ICONS[c.icon ?? 'Package'] ?? Package,
+        imageUrl: null,
+      }));
 
   return (
     <StoreLayout>
@@ -175,7 +255,7 @@ function HomePage() {
       {/* CARDS PROMOCIONAIS DE APOIO */}
       <section className="container mx-auto px-4 py-6">
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-          {PROMO_CARDS.map((c) => {
+          {promoCardsToRender.map((c) => {
             const inner = (
               <>
                 <div className={`absolute inset-0 opacity-10 group-hover:opacity-20 bg-gradient-to-br ${c.tone} transition-opacity`} />
@@ -184,22 +264,42 @@ function HomePage() {
                     <c.icon className="w-4 h-4 text-white" />
                   </div>
                   <div className="font-display font-semibold text-sm leading-tight">{c.title}</div>
-                  <div className="text-xs text-muted-foreground mt-0.5">{c.desc}</div>
+                  {c.desc && <div className="text-xs text-muted-foreground mt-0.5">{c.desc}</div>}
                 </div>
               </>
             );
             const cls = "group relative overflow-hidden rounded-xl bg-card border border-border p-4 hover:shadow-elevated transition-all hover:-translate-y-0.5 text-left";
             if (c.onClick) {
               return (
-                <button key={c.title} type="button" onClick={c.onClick} className={cls}>
+                <button key={c.key} type="button" onClick={c.onClick} className={cls}>
                   {inner}
                 </button>
               );
             }
+            if (c.href) {
+              return (
+                <a
+                  key={c.key}
+                  href={c.href}
+                  target={c.newTab ? '_blank' : undefined}
+                  rel={c.newTab ? 'noopener noreferrer' : undefined}
+                  className={cls}
+                >
+                  {inner}
+                </a>
+              );
+            }
+            if (c.to) {
+              return (
+                <Link key={c.key} to={c.to as any} search={(c.searchParams ?? {}) as any} className={cls}>
+                  {inner}
+                </Link>
+              );
+            }
             return (
-              <Link key={c.title} to={c.to as any} search={(c.searchParams ?? {}) as any} className={cls}>
+              <div key={c.key} className={cls}>
                 {inner}
-              </Link>
+              </div>
             );
           })}
         </div>
@@ -350,21 +450,39 @@ function HomePage() {
       {/* DIFERENCIAIS */}
       <section className="container mx-auto px-4 py-10">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          {[
-            { icon: Sparkles, title: 'IA 24h', desc: 'Atendimento inteligente sempre disponível' },
-            { icon: Truck, title: 'Entrega Rápida', desc: 'Logística otimizada via Melhor Envio' },
-            { icon: Shield, title: 'NF Garantida', desc: 'Nota fiscal em todos os pedidos' },
-          ].map((d) => (
-            <div key={d.title} className="bg-card border border-border rounded-xl p-5 flex items-center gap-4 shadow-soft">
-              <div className="w-12 h-12 rounded-lg bg-primary-tint flex items-center justify-center shrink-0">
-                <d.icon className="w-5 h-5 text-primary" />
+          {benefitsToRender.map((d) => {
+            const inner = (
+              <>
+                <div className="w-12 h-12 rounded-lg bg-primary-tint flex items-center justify-center shrink-0">
+                  <d.icon className="w-5 h-5 text-primary" />
+                </div>
+                <div>
+                  <h3 className="font-display font-semibold text-base mb-0.5">{d.title}</h3>
+                  {d.desc && <p className="text-xs text-muted-foreground leading-relaxed">{d.desc}</p>}
+                </div>
+              </>
+            );
+            const cls = "bg-card border border-border rounded-xl p-5 flex items-center gap-4 shadow-soft";
+            if (d.href) {
+              return (
+                <a key={d.key} href={d.href} target={d.newTab ? '_blank' : undefined} rel={d.newTab ? 'noopener noreferrer' : undefined} className={`${cls} hover:border-primary transition-colors`}>
+                  {inner}
+                </a>
+              );
+            }
+            if (d.to) {
+              return (
+                <Link key={d.key} to={d.to as any} className={`${cls} hover:border-primary transition-colors`}>
+                  {inner}
+                </Link>
+              );
+            }
+            return (
+              <div key={d.key} className={cls}>
+                {inner}
               </div>
-              <div>
-                <h3 className="font-display font-semibold text-base mb-0.5">{d.title}</h3>
-                <p className="text-xs text-muted-foreground leading-relaxed">{d.desc}</p>
-              </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </section>
 
@@ -399,18 +517,28 @@ function HomePage() {
           </div>
         </div>
         <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-3">
-          {categories?.map((c) => {
-            const Icon = ICONS[c.icon ?? 'Package'] ?? Package;
+          {featuredCategoriesToRender.map((c) => {
+            const Icon = c.icon;
             return (
               <Link
-                key={c.id}
+                key={c.key}
                 to="/catalogo"
                 search={{ cat: c.slug } as any}
                 className="group flex flex-col items-center text-center p-5 bg-card border border-border rounded-xl hover:border-primary hover:shadow-elevated transition-all"
               >
-                <div className="w-12 h-12 rounded-full bg-primary-tint flex items-center justify-center mb-3 group-hover:bg-primary group-hover:text-primary-foreground transition-colors">
-                  <Icon className="w-5 h-5 text-primary group-hover:text-primary-foreground" />
-                </div>
+                {c.imageUrl ? (
+                  <img
+                    src={c.imageUrl}
+                    alt={c.name}
+                    loading="lazy"
+                    decoding="async"
+                    className="w-12 h-12 rounded-full object-cover mb-3"
+                  />
+                ) : (
+                  <div className="w-12 h-12 rounded-full bg-primary-tint flex items-center justify-center mb-3 group-hover:bg-primary group-hover:text-primary-foreground transition-colors">
+                    <Icon className="w-5 h-5 text-primary group-hover:text-primary-foreground" />
+                  </div>
+                )}
                 <div className="text-xs font-medium leading-tight">{c.name}</div>
               </Link>
             );
