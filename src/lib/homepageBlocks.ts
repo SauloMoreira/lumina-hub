@@ -266,3 +266,97 @@ export async function adminDeleteShowcaseItem(id: string): Promise<void> {
     .eq('id', id);
   if (error) throw error;
 }
+
+// =====================================================================
+// Ordem e visibilidade das seções (Onda Homepage E)
+// =====================================================================
+
+export type HomepageSectionKey =
+  | 'promo_bar'
+  | 'hero'
+  | 'benefits_cards'
+  | 'promo_cards'
+  | 'featured_categories'
+  | 'offers_showcase'
+  | 'featured_showcase'
+  | 'dynamic_showcases'
+  | 'combos_showcase'
+  | 'institutional_block'
+  | 'main_cta';
+
+export interface HomepageSection {
+  id: string;
+  section_key: HomepageSectionKey | string;
+  title: string;
+  description: string | null;
+  sort_order: number;
+  is_active: boolean;
+  is_locked: boolean;
+}
+
+/** Ordem padrão usada como fallback se a tabela estiver vazia ou falhar. */
+export const DEFAULT_HOMEPAGE_SECTION_ORDER: Array<{
+  section_key: HomepageSectionKey;
+  title: string;
+  description: string;
+  sort_order: number;
+  is_active: boolean;
+}> = [
+  { section_key: 'promo_bar',           title: 'Faixa promocional',      description: 'Barra fina no topo com aviso/promoção.',                       sort_order: 10,  is_active: true },
+  { section_key: 'hero',                title: 'Hero principal',         description: 'Carrossel/imagem de destaque do topo.',                        sort_order: 20,  is_active: true },
+  { section_key: 'benefits_cards',      title: 'Cards de benefícios',    description: 'Diferenciais (entrega, garantia, atendimento etc.).',         sort_order: 30,  is_active: true },
+  { section_key: 'promo_cards',         title: 'Cards promocionais',     description: 'Cards de campanhas e promoções rápidas.',                     sort_order: 40,  is_active: true },
+  { section_key: 'featured_categories', title: 'Categorias em destaque', description: 'Atalhos para categorias principais.',                         sort_order: 50,  is_active: true },
+  { section_key: 'offers_showcase',     title: 'Ofertas da semana',      description: 'Vitrine de produtos em oferta (configurável ou fallback).',   sort_order: 60,  is_active: true },
+  { section_key: 'featured_showcase',   title: 'Produtos em destaque',   description: 'Vitrine principal de destaques (configurável ou fallback).',  sort_order: 70,  is_active: true },
+  { section_key: 'dynamic_showcases',   title: 'Vitrines configuráveis', description: 'Demais vitrines criadas no admin (bundles, categoria, etc.).', sort_order: 80,  is_active: true },
+  { section_key: 'combos_showcase',     title: 'Kits e combos',          description: 'Bloco de combos/kits (em breve).',                            sort_order: 90,  is_active: false },
+  { section_key: 'institutional_block', title: 'Bloco institucional',    description: 'Bloco institucional / sobre a loja (em breve).',              sort_order: 100, is_active: false },
+  { section_key: 'main_cta',            title: 'CTA principal',          description: 'Chamada final administrável da home.',                        sort_order: 110, is_active: true },
+];
+
+const SECTION_COLS = 'id, section_key, title, description, sort_order, is_active, is_locked';
+
+/** Pública: usada pela home para decidir ordem/visibilidade. Fallback seguro. */
+export async function fetchHomepageSections(): Promise<HomepageSection[]> {
+  const { data, error } = await (supabase as any)
+    .from('homepage_sections')
+    .select(SECTION_COLS)
+    .order('sort_order', { ascending: true });
+  if (error) {
+    console.warn('[homepageBlocks] fetchHomepageSections error', error);
+    return [];
+  }
+  return (data ?? []) as HomepageSection[];
+}
+
+export async function adminListHomepageSections(): Promise<HomepageSection[]> {
+  const { data, error } = await (supabase as any)
+    .from('homepage_sections')
+    .select(SECTION_COLS)
+    .order('sort_order', { ascending: true });
+  if (error) throw error;
+  return (data ?? []) as HomepageSection[];
+}
+
+export async function adminUpdateHomepageSection(
+  id: string,
+  payload: Partial<Pick<HomepageSection, 'is_active' | 'sort_order'>>,
+): Promise<void> {
+  const { error } = await (supabase as any)
+    .from('homepage_sections')
+    .update(payload)
+    .eq('id', id);
+  if (error) throw error;
+}
+
+/** Restaura a ordem padrão (sort_order + is_active dos defaults). Mantém section_key/título. */
+export async function adminResetHomepageSections(): Promise<void> {
+  for (const def of DEFAULT_HOMEPAGE_SECTION_ORDER) {
+    const { error } = await (supabase as any)
+      .from('homepage_sections')
+      .update({ sort_order: def.sort_order, is_active: def.is_active })
+      .eq('section_key', def.section_key);
+    if (error) throw error;
+  }
+}

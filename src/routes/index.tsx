@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from '@tanstack/react-router';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { useEffect } from 'react';
+import React, { useEffect } from 'react';
 import * as LucideIcons from 'lucide-react';
 import { Sparkles, Truck, Shield, MessageSquareText, ArrowRight, Lightbulb, Zap, Cable, Plug, Sun, LayoutGrid, Wrench, Package, Tag, Flame, Star } from 'lucide-react';
 import { StoreLayout } from '@/components/layout/StoreLayout';
@@ -12,7 +12,7 @@ import type { Product, Category } from '@/lib/domain';
 import { FREE_SHIPPING_THRESHOLD, formatBRL } from '@/lib/domain';
 import { imageUrlsFromProductImages } from '@/lib/productImages';
 import { fetchHomepageSettings, isPromoBarVisible } from '@/lib/homepageContent';
-import { fetchHomepageCards, fetchHomepageFeaturedCategories, fetchHomepageShowcasesPublic } from '@/lib/homepageBlocks';
+import { fetchHomepageCards, fetchHomepageFeaturedCategories, fetchHomepageShowcasesPublic, fetchHomepageSections, DEFAULT_HOMEPAGE_SECTION_ORDER, type HomepageSection } from '@/lib/homepageBlocks';
 import { HomepageShowcaseSection } from '@/components/store/HomepageShowcaseSection';
 import logoHero from '@/assets/logo-hero.webp';
 
@@ -135,6 +135,12 @@ function HomePage() {
     queryKey: ['homepage-showcases'],
     staleTime: 1000 * 60 * 5,
     queryFn: fetchHomepageShowcasesPublic,
+  });
+
+  const { data: sectionsConfig } = useQuery({
+    queryKey: ['homepage_sections', 'public'],
+    staleTime: 1000 * 60 * 5,
+    queryFn: fetchHomepageSections,
   });
 
   const validShowcases = (showcases ?? []).filter((s) => (s.items?.length ?? 0) > 0);
@@ -261,63 +267,14 @@ function HomePage() {
         imageUrl: null,
       }));
 
-  return (
-    <StoreLayout>
+  // ---- Renderizadores por section_key ----
+  // Cada bloco continua exatamente o mesmo JSX da versão anterior, apenas envolvido
+  // em uma função para que a ordem/visibilidade possa ser controlada via homepage_sections.
+
+  const renderHero = () => (
+    <div key="hero">
       {/* CARROSSEL HERO PRINCIPAL */}
       {banners && banners.length > 0 && <HeroCarousel banners={banners} />}
-
-      {/* CARDS PROMOCIONAIS DE APOIO */}
-      <section className="container mx-auto px-4 py-6">
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-          {promoCardsToRender.map((c) => {
-            const inner = (
-              <>
-                <div className={`absolute inset-0 opacity-10 group-hover:opacity-20 bg-gradient-to-br ${c.tone} transition-opacity`} />
-                <div className="relative">
-                  <div className={`w-9 h-9 rounded-lg bg-gradient-to-br ${c.tone} flex items-center justify-center mb-3 shadow-md`}>
-                    <c.icon className="w-4 h-4 text-white" />
-                  </div>
-                  <div className="font-display font-semibold text-sm leading-tight">{c.title}</div>
-                  {c.desc && <div className="text-xs text-muted-foreground mt-0.5">{c.desc}</div>}
-                </div>
-              </>
-            );
-            const cls = "group relative overflow-hidden rounded-xl bg-card border border-border p-4 hover:shadow-elevated transition-all hover:-translate-y-0.5 text-left";
-            if (c.onClick) {
-              return (
-                <button key={c.key} type="button" onClick={c.onClick} className={cls}>
-                  {inner}
-                </button>
-              );
-            }
-            if (c.href) {
-              return (
-                <a
-                  key={c.key}
-                  href={c.href}
-                  target={c.newTab ? '_blank' : undefined}
-                  rel={c.newTab ? 'noopener noreferrer' : undefined}
-                  className={cls}
-                >
-                  {inner}
-                </a>
-              );
-            }
-            if (c.to) {
-              return (
-                <Link key={c.key} to={c.to as any} search={(c.searchParams ?? {}) as any} className={cls}>
-                  {inner}
-                </Link>
-              );
-            }
-            return (
-              <div key={c.key} className={cls}>
-                {inner}
-              </div>
-            );
-          })}
-        </div>
-      </section>
 
       {/* HERO INSTITUCIONAL (administrável via /admin/conteudo/homepage) */}
       {(homepage?.hero_is_active ?? true) && (() => {
@@ -422,226 +379,329 @@ function HomePage() {
                 </div>
               </div>
             </div>
-
-            {/* BARRA PROMOCIONAL (administrável) */}
-            {isPromoBarVisible(homepage) ? (
-              (() => {
-                const bg = homepage?.promo_bar_background_color;
-                const fg = homepage?.promo_bar_text_color;
-                const style: React.CSSProperties = {};
-                if (bg) style.background = bg;
-                if (fg) style.color = fg;
-                const promoIconValue = homepage?.promo_bar_icon;
-                const PromoIcon = getLucideIcon(promoIconValue, null);
-                const inner = (
-                  <span className="inline-flex items-center justify-center gap-1.5">
-                    {PromoIcon ? (
-                      <PromoIcon className="w-4 h-4 shrink-0" aria-hidden="true" />
-                    ) : promoIconValue ? (
-                      <span className="leading-none" aria-hidden="true">{promoIconValue}</span>
-                    ) : null}
-                    <strong className="font-semibold">{homepage?.promo_bar_text}</strong>
-                  </span>
-                );
-                const baseCls = 'py-3 text-center text-sm font-medium';
-                const themeCls = bg || fg ? '' : 'bg-accent text-accent-foreground';
-                if (homepage?.promo_bar_url) {
-                  const ext = isExternalLink(homepage.promo_bar_url);
-                  return ext ? (
-                    <a href={homepage.promo_bar_url} className={`${baseCls} ${themeCls} block hover:opacity-90`} style={style}>{inner}</a>
-                  ) : (
-                    <Link to={homepage.promo_bar_url as any} className={`${baseCls} ${themeCls} block hover:opacity-90`} style={style}>{inner}</Link>
-                  );
-                }
-                return <div className={`${baseCls} ${themeCls}`} style={style}>{inner}</div>;
-              })()
-            ) : null}
           </section>
         );
       })()}
+    </div>
+  );
 
+  const renderPromoBar = () => {
+    if (!isPromoBarVisible(homepage)) return null;
+    const bg = homepage?.promo_bar_background_color;
+    const fg = homepage?.promo_bar_text_color;
+    const style: React.CSSProperties = {};
+    if (bg) style.background = bg;
+    if (fg) style.color = fg;
+    const promoIconValue = homepage?.promo_bar_icon;
+    const PromoIcon = getLucideIcon(promoIconValue, null);
+    const inner = (
+      <span className="inline-flex items-center justify-center gap-1.5">
+        {PromoIcon ? (
+          <PromoIcon className="w-4 h-4 shrink-0" aria-hidden="true" />
+        ) : promoIconValue ? (
+          <span className="leading-none" aria-hidden="true">{promoIconValue}</span>
+        ) : null}
+        <strong className="font-semibold">{homepage?.promo_bar_text}</strong>
+      </span>
+    );
+    const baseCls = 'py-3 text-center text-sm font-medium';
+    const themeCls = bg || fg ? '' : 'bg-accent text-accent-foreground';
+    let body: React.ReactNode;
+    if (homepage?.promo_bar_url) {
+      const ext = isExternalLink(homepage.promo_bar_url);
+      body = ext ? (
+        <a href={homepage.promo_bar_url} className={`${baseCls} ${themeCls} block hover:opacity-90`} style={style}>{inner}</a>
+      ) : (
+        <Link to={homepage.promo_bar_url as any} className={`${baseCls} ${themeCls} block hover:opacity-90`} style={style}>{inner}</Link>
+      );
+    } else {
+      body = <div className={`${baseCls} ${themeCls}`} style={style}>{inner}</div>;
+    }
+    return <div key="promo_bar" className="border-b border-border">{body}</div>;
+  };
 
-      {/* DIFERENCIAIS */}
-      <section className="container mx-auto px-4 py-10">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          {benefitsToRender.map((d) => {
-            const inner = (
-              <>
-                <div className="w-12 h-12 rounded-lg bg-primary-tint flex items-center justify-center shrink-0">
-                  <d.icon className="w-5 h-5 text-primary" />
+  const renderPromoCards = () => (
+    <section key="promo_cards" className="container mx-auto px-4 py-6">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        {promoCardsToRender.map((c) => {
+          const inner = (
+            <>
+              <div className={`absolute inset-0 opacity-10 group-hover:opacity-20 bg-gradient-to-br ${c.tone} transition-opacity`} />
+              <div className="relative">
+                <div className={`w-9 h-9 rounded-lg bg-gradient-to-br ${c.tone} flex items-center justify-center mb-3 shadow-md`}>
+                  <c.icon className="w-4 h-4 text-white" />
                 </div>
-                <div>
-                  <h3 className="font-display font-semibold text-base mb-0.5">{d.title}</h3>
-                  {d.desc && <p className="text-xs text-muted-foreground leading-relaxed">{d.desc}</p>}
-                </div>
-              </>
-            );
-            const cls = "bg-card border border-border rounded-xl p-5 flex items-center gap-4 shadow-soft";
-            if (d.href) {
-              return (
-                <a key={d.key} href={d.href} target={d.newTab ? '_blank' : undefined} rel={d.newTab ? 'noopener noreferrer' : undefined} className={`${cls} hover:border-primary transition-colors`}>
-                  {inner}
-                </a>
-              );
-            }
-            if (d.to) {
-              return (
-                <Link key={d.key} to={d.to as any} className={`${cls} hover:border-primary transition-colors`}>
-                  {inner}
-                </Link>
-              );
-            }
+                <div className="font-display font-semibold text-sm leading-tight">{c.title}</div>
+                {c.desc && <div className="text-xs text-muted-foreground mt-0.5">{c.desc}</div>}
+              </div>
+            </>
+          );
+          const cls = "group relative overflow-hidden rounded-xl bg-card border border-border p-4 hover:shadow-elevated transition-all hover:-translate-y-0.5 text-left";
+          if (c.onClick) {
             return (
-              <div key={d.key} className={cls}>
+              <button key={c.key} type="button" onClick={c.onClick} className={cls}>
                 {inner}
-              </div>
+              </button>
             );
-          })}
-        </div>
-      </section>
-
-      {/* OFERTAS DA SEMANA — vitrine configurável substitui hardcoded quando ativa */}
-      {offersShowcase ? (
-        <HomepageShowcaseSection showcase={offersShowcase} />
-      ) : (deals && deals.length > 0 && (
-        <section className="container mx-auto px-4 py-8">
-          <div className="flex items-end justify-between mb-6">
-            <div>
-              <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-accent/10 text-accent-foreground mb-2">
-                <Tag className="w-3.5 h-3.5 text-accent" />
-                <span className="label-meta !text-accent">Promoção</span>
-              </div>
-              <h2 className="font-display font-bold text-2xl tracking-tight">Ofertas da semana</h2>
-              <p className="text-sm text-muted-foreground mt-1">Produtos com desconto direto no preço</p>
-            </div>
-            <Link to="/catalogo" className="text-sm text-primary hover:underline font-medium hidden sm:inline-flex items-center gap-1">
-              Ver todos <ArrowRight className="w-3.5 h-3.5" />
-            </Link>
-          </div>
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-            {deals.map((p, i) => <ProductCard key={p.id} product={p} index={i} />)}
-          </div>
-        </section>
-      ))}
-
-      {/* CATEGORIAS */}
-      <section className="container mx-auto px-4 py-8">
-        <div className="flex items-end justify-between mb-6">
-          <div>
-            <div className="label-meta mb-2">Categorias</div>
-            <h2 className="font-display font-bold text-2xl tracking-tight">Encontre por departamento</h2>
-          </div>
-        </div>
-        <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-3">
-          {featuredCategoriesToRender.map((c) => {
-            const Icon = c.icon;
+          }
+          if (c.href) {
             return (
-              <Link
+              <a
                 key={c.key}
-                to="/catalogo"
-                search={{ cat: c.slug } as any}
-                className="group flex flex-col items-center text-center p-5 bg-card border border-border rounded-xl hover:border-primary hover:shadow-elevated transition-all"
+                href={c.href}
+                target={c.newTab ? '_blank' : undefined}
+                rel={c.newTab ? 'noopener noreferrer' : undefined}
+                className={cls}
               >
-                {c.imageUrl ? (
-                  <img
-                    src={c.imageUrl}
-                    alt={c.name}
-                    loading="lazy"
-                    decoding="async"
-                    className="w-12 h-12 rounded-full object-cover mb-3"
-                  />
-                ) : (
-                  <div className="w-12 h-12 rounded-full bg-primary-tint flex items-center justify-center mb-3 group-hover:bg-primary group-hover:text-primary-foreground transition-colors">
-                    <Icon className="w-5 h-5 text-primary group-hover:text-primary-foreground" />
-                  </div>
-                )}
-                <div className="text-xs font-medium leading-tight">{c.name}</div>
-              </Link>
+                {inner}
+              </a>
             );
-          })}
-        </div>
-      </section>
-
-      {/* OUTRAS VITRINES CONFIGURÁVEIS (bundles, category, new_arrivals, custom) */}
-      {otherShowcases.map((s) => (
-        <HomepageShowcaseSection key={s.id} showcase={s} />
-      ))}
-
-      {/* PRODUTOS DESTAQUE — vitrine configurável substitui hardcoded quando ativa */}
-      {featuredShowcase ? (
-        <HomepageShowcaseSection showcase={featuredShowcase} />
-      ) : (featured && featured.length > 0 && (
-        <section className="container mx-auto px-4 py-12">
-          <div className="flex items-end justify-between mb-6">
-            <div>
-              <div className="label-meta mb-2">Mais procurados</div>
-              <h2 className="font-display font-bold text-2xl tracking-tight">Produtos em destaque</h2>
-            </div>
-            <Link to="/catalogo" className="text-sm text-primary hover:underline font-medium hidden sm:inline-flex items-center gap-1">
-              Ver tudo <ArrowRight className="w-3.5 h-3.5" />
-            </Link>
-          </div>
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-            {featured.map((p, i) => <ProductCard key={p.id} product={p} index={i} />)}
-          </div>
-        </section>
-      ))}
-
-      {/* MARKETING / CONFIANÇA (administrável) */}
-      {(homepage?.main_cta_is_active ?? true) && (() => {
-        const CtaIcon = getLucideIcon(homepage?.main_cta_icon, Sparkles);
-        const title = homepage?.main_cta_title ?? 'A loja certa para o seu projeto';
-        const desc = homepage?.main_cta_description ?? 'Nota fiscal garantida, suporte técnico de verdade, atendimento com IA 24h e entrega rápida em Maricá e região.';
-        const btnActive = homepage?.main_cta_button_active ?? true;
-        const btnText = homepage?.main_cta_button_text ?? 'Ver catálogo completo';
-        const btnUrl = homepage?.main_cta_button_url ?? '/catalogo';
-        const bg = homepage?.main_cta_background_color;
-        const fg = homepage?.main_cta_text_color;
-        const bgImage = homepage?.main_cta_image_url;
-        const containerStyle: React.CSSProperties = {};
-        if (bgImage) {
-          containerStyle.backgroundImage = `linear-gradient(135deg, rgba(0,0,0,0.55), rgba(0,0,0,0.35)), url(${bgImage})`;
-          containerStyle.backgroundSize = 'cover';
-          containerStyle.backgroundPosition = 'center';
-        } else if (bg) {
-          containerStyle.background = bg;
-        }
-        if (fg) containerStyle.color = fg;
-        const baseCls = bg || bgImage
-          ? 'rounded-2xl text-primary-foreground p-8 md:p-12 text-center shadow-elevated'
-          : 'rounded-2xl bg-gradient-to-br from-primary via-primary to-primary/80 text-primary-foreground p-8 md:p-12 text-center shadow-elevated';
-
-        const renderBtn = () => {
-          if (!btnActive) return null;
-          const btnStyle: React.CSSProperties = {};
-          if (homepage?.main_cta_button_color) btnStyle.background = homepage.main_cta_button_color;
-          if (isExternalLink(btnUrl)) {
+          }
+          if (c.to) {
             return (
-              <Button asChild size="lg" variant="secondary" className="h-12 px-6 font-semibold" style={btnStyle}>
-                <a href={btnUrl} rel="noreferrer">{btnText} <ArrowRight className="w-4 h-4 ml-1.5" /></a>
-              </Button>
+              <Link key={c.key} to={c.to as any} search={(c.searchParams ?? {}) as any} className={cls}>
+                {inner}
+              </Link>
             );
           }
           return (
-            <Button asChild size="lg" variant="secondary" className="h-12 px-6 font-semibold" style={btnStyle}>
-              <Link to={btnUrl as any}>{btnText} <ArrowRight className="w-4 h-4 ml-1.5" /></Link>
-            </Button>
-          );
-        };
-
-        return (
-          <section className="container mx-auto px-4 pb-12">
-            <div className={baseCls} style={containerStyle}>
-              <CtaIcon className="w-8 h-8 mx-auto mb-3 opacity-90" />
-              <h3 className="font-display font-bold text-2xl md:text-3xl mb-3">{title}</h3>
-              {desc && (
-                <p className="text-sm md:text-base opacity-90 max-w-xl mx-auto mb-6 leading-relaxed">{desc}</p>
-              )}
-              {renderBtn()}
+            <div key={c.key} className={cls}>
+              {inner}
             </div>
-          </section>
+          );
+        })}
+      </div>
+    </section>
+  );
+
+  const renderBenefits = () => (
+    <section key="benefits_cards" className="container mx-auto px-4 py-10">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        {benefitsToRender.map((d) => {
+          const inner = (
+            <>
+              <div className="w-12 h-12 rounded-lg bg-primary-tint flex items-center justify-center shrink-0">
+                <d.icon className="w-5 h-5 text-primary" />
+              </div>
+              <div>
+                <h3 className="font-display font-semibold text-base mb-0.5">{d.title}</h3>
+                {d.desc && <p className="text-xs text-muted-foreground leading-relaxed">{d.desc}</p>}
+              </div>
+            </>
+          );
+          const cls = "bg-card border border-border rounded-xl p-5 flex items-center gap-4 shadow-soft";
+          if (d.href) {
+            return (
+              <a key={d.key} href={d.href} target={d.newTab ? '_blank' : undefined} rel={d.newTab ? 'noopener noreferrer' : undefined} className={`${cls} hover:border-primary transition-colors`}>
+                {inner}
+              </a>
+            );
+          }
+          if (d.to) {
+            return (
+              <Link key={d.key} to={d.to as any} className={`${cls} hover:border-primary transition-colors`}>
+                {inner}
+              </Link>
+            );
+          }
+          return (
+            <div key={d.key} className={cls}>
+              {inner}
+            </div>
+          );
+        })}
+      </div>
+    </section>
+  );
+
+  const renderOffersShowcase = () => {
+    if (offersShowcase) return <HomepageShowcaseSection key="offers_showcase" showcase={offersShowcase} />;
+    if (!deals || deals.length === 0) return null;
+    return (
+      <section key="offers_showcase" className="container mx-auto px-4 py-8">
+        <div className="flex items-end justify-between mb-6">
+          <div>
+            <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-accent/10 text-accent-foreground mb-2">
+              <Tag className="w-3.5 h-3.5 text-accent" />
+              <span className="label-meta !text-accent">Promoção</span>
+            </div>
+            <h2 className="font-display font-bold text-2xl tracking-tight">Ofertas da semana</h2>
+            <p className="text-sm text-muted-foreground mt-1">Produtos com desconto direto no preço</p>
+          </div>
+          <Link to="/catalogo" className="text-sm text-primary hover:underline font-medium hidden sm:inline-flex items-center gap-1">
+            Ver todos <ArrowRight className="w-3.5 h-3.5" />
+          </Link>
+        </div>
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+          {deals.map((p, i) => <ProductCard key={p.id} product={p} index={i} />)}
+        </div>
+      </section>
+    );
+  };
+
+  const renderFeaturedCategories = () => (
+    <section key="featured_categories" className="container mx-auto px-4 py-8">
+      <div className="flex items-end justify-between mb-6">
+        <div>
+          <div className="label-meta mb-2">Categorias</div>
+          <h2 className="font-display font-bold text-2xl tracking-tight">Encontre por departamento</h2>
+        </div>
+      </div>
+      <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-3">
+        {featuredCategoriesToRender.map((c) => {
+          const Icon = c.icon;
+          return (
+            <Link
+              key={c.key}
+              to="/catalogo"
+              search={{ cat: c.slug } as any}
+              className="group flex flex-col items-center text-center p-5 bg-card border border-border rounded-xl hover:border-primary hover:shadow-elevated transition-all"
+            >
+              {c.imageUrl ? (
+                <img
+                  src={c.imageUrl}
+                  alt={c.name}
+                  loading="lazy"
+                  decoding="async"
+                  className="w-12 h-12 rounded-full object-cover mb-3"
+                />
+              ) : (
+                <div className="w-12 h-12 rounded-full bg-primary-tint flex items-center justify-center mb-3 group-hover:bg-primary group-hover:text-primary-foreground transition-colors">
+                  <Icon className="w-5 h-5 text-primary group-hover:text-primary-foreground" />
+                </div>
+              )}
+              <div className="text-xs font-medium leading-tight">{c.name}</div>
+            </Link>
+          );
+        })}
+      </div>
+    </section>
+  );
+
+  const renderDynamicShowcases = () => {
+    if (otherShowcases.length === 0) return null;
+    return (
+      <div key="dynamic_showcases">
+        {otherShowcases.map((s) => (
+          <HomepageShowcaseSection key={s.id} showcase={s} />
+        ))}
+      </div>
+    );
+  };
+
+  const renderFeaturedShowcase = () => {
+    if (featuredShowcase) return <HomepageShowcaseSection key="featured_showcase" showcase={featuredShowcase} />;
+    if (!featured || featured.length === 0) return null;
+    return (
+      <section key="featured_showcase" className="container mx-auto px-4 py-12">
+        <div className="flex items-end justify-between mb-6">
+          <div>
+            <div className="label-meta mb-2">Mais procurados</div>
+            <h2 className="font-display font-bold text-2xl tracking-tight">Produtos em destaque</h2>
+          </div>
+          <Link to="/catalogo" className="text-sm text-primary hover:underline font-medium hidden sm:inline-flex items-center gap-1">
+            Ver tudo <ArrowRight className="w-3.5 h-3.5" />
+          </Link>
+        </div>
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+          {featured.map((p, i) => <ProductCard key={p.id} product={p} index={i} />)}
+        </div>
+      </section>
+    );
+  };
+
+  const renderMainCta = () => {
+    if (!(homepage?.main_cta_is_active ?? true)) return null;
+    const CtaIcon = getLucideIcon(homepage?.main_cta_icon, Sparkles);
+    const title = homepage?.main_cta_title ?? 'A loja certa para o seu projeto';
+    const desc = homepage?.main_cta_description ?? 'Nota fiscal garantida, suporte técnico de verdade, atendimento com IA 24h e entrega rápida em Maricá e região.';
+    const btnActive = homepage?.main_cta_button_active ?? true;
+    const btnText = homepage?.main_cta_button_text ?? 'Ver catálogo completo';
+    const btnUrl = homepage?.main_cta_button_url ?? '/catalogo';
+    const bg = homepage?.main_cta_background_color;
+    const fg = homepage?.main_cta_text_color;
+    const bgImage = homepage?.main_cta_image_url;
+    const containerStyle: React.CSSProperties = {};
+    if (bgImage) {
+      containerStyle.backgroundImage = `linear-gradient(135deg, rgba(0,0,0,0.55), rgba(0,0,0,0.35)), url(${bgImage})`;
+      containerStyle.backgroundSize = 'cover';
+      containerStyle.backgroundPosition = 'center';
+    } else if (bg) {
+      containerStyle.background = bg;
+    }
+    if (fg) containerStyle.color = fg;
+    const baseCls = bg || bgImage
+      ? 'rounded-2xl text-primary-foreground p-8 md:p-12 text-center shadow-elevated'
+      : 'rounded-2xl bg-gradient-to-br from-primary via-primary to-primary/80 text-primary-foreground p-8 md:p-12 text-center shadow-elevated';
+
+    const renderBtn = () => {
+      if (!btnActive) return null;
+      const btnStyle: React.CSSProperties = {};
+      if (homepage?.main_cta_button_color) btnStyle.background = homepage.main_cta_button_color;
+      if (isExternalLink(btnUrl)) {
+        return (
+          <Button asChild size="lg" variant="secondary" className="h-12 px-6 font-semibold" style={btnStyle}>
+            <a href={btnUrl} rel="noreferrer">{btnText} <ArrowRight className="w-4 h-4 ml-1.5" /></a>
+          </Button>
         );
-      })()}
+      }
+      return (
+        <Button asChild size="lg" variant="secondary" className="h-12 px-6 font-semibold" style={btnStyle}>
+          <Link to={btnUrl as any}>{btnText} <ArrowRight className="w-4 h-4 ml-1.5" /></Link>
+        </Button>
+      );
+    };
+
+    return (
+      <section key="main_cta" className="container mx-auto px-4 pb-12">
+        <div className={baseCls} style={containerStyle}>
+          <CtaIcon className="w-8 h-8 mx-auto mb-3 opacity-90" />
+          <h3 className="font-display font-bold text-2xl md:text-3xl mb-3">{title}</h3>
+          {desc && (
+            <p className="text-sm md:text-base opacity-90 max-w-xl mx-auto mb-6 leading-relaxed">{desc}</p>
+          )}
+          {renderBtn()}
+        </div>
+      </section>
+    );
+  };
+
+  const SECTION_RENDERERS: Record<string, () => React.ReactNode> = {
+    promo_bar: renderPromoBar,
+    hero: renderHero,
+    benefits_cards: renderBenefits,
+    promo_cards: renderPromoCards,
+    featured_categories: renderFeaturedCategories,
+    offers_showcase: renderOffersShowcase,
+    featured_showcase: renderFeaturedShowcase,
+    dynamic_showcases: renderDynamicShowcases,
+    combos_showcase: () => null,
+    institutional_block: () => null,
+    main_cta: renderMainCta,
+  };
+
+  // Fallback se a tabela falhar/voltar vazia: usa a ordem padrão hardcoded.
+  const effectiveSections: Array<Pick<HomepageSection, 'section_key' | 'is_active' | 'sort_order'>> =
+    sectionsConfig && sectionsConfig.length > 0
+      ? sectionsConfig
+      : DEFAULT_HOMEPAGE_SECTION_ORDER.map((d) => ({
+          section_key: d.section_key,
+          is_active: d.is_active,
+          sort_order: d.sort_order,
+        }));
+
+  const orderedSections = effectiveSections
+    .filter((s) => s.is_active && SECTION_RENDERERS[s.section_key])
+    .slice()
+    .sort((a, b) => a.sort_order - b.sort_order);
+
+  return (
+    <StoreLayout>
+      {orderedSections.map((s) => {
+        const node = SECTION_RENDERERS[s.section_key]();
+        if (!node) return null;
+        return <React.Fragment key={s.section_key}>{node}</React.Fragment>;
+      })}
     </StoreLayout>
   );
 }

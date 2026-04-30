@@ -18,6 +18,7 @@ import { IconPicker } from '@/components/admin/IconPicker';
 import { HomepageCardsManager } from '@/components/admin/homepage/HomepageCardsManager';
 import { HomepageFeaturedCategoriesManager } from '@/components/admin/homepage/HomepageFeaturedCategoriesManager';
 import { HomepageShowcasesManager } from '@/components/admin/homepage/HomepageShowcasesManager';
+import { HomepageSectionsManager } from '@/components/admin/homepage/HomepageSectionsManager';
 
 export const Route = createFileRoute('/admin/conteudo/homepage')({
   component: AdminHomepageContentPage,
@@ -110,12 +111,19 @@ function AdminHomepageContentPage() {
             <TabsTrigger value="promo-cards">Cards promocionais</TabsTrigger>
             <TabsTrigger value="categories">Categorias destaque</TabsTrigger>
             <TabsTrigger value="showcases">Vitrines de produtos</TabsTrigger>
+            <TabsTrigger value="sections">Ordem das seções</TabsTrigger>
             <TabsTrigger value="seo">SEO</TabsTrigger>
           </TabsList>
 
           <TabsContent value="showcases" className="mt-4">
             <Card><CardContent className="p-6">
               <HomepageShowcasesManager />
+            </CardContent></Card>
+          </TabsContent>
+
+          <TabsContent value="sections" className="mt-4">
+            <Card><CardContent className="p-6">
+              <HomepageSectionsManager />
             </CardContent></Card>
           </TabsContent>
 
