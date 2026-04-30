@@ -599,15 +599,41 @@ function CheckoutPage() {
               <>
                 <h2 className="font-display font-bold text-xl mb-5">Revisão e pagamento</h2>
 
+                {pricing?.company_approved && pricing.company && (
+                  <section className="mb-5 pb-5 border-b border-border">
+                    <h3 className="font-semibold text-sm mb-2 text-muted-foreground uppercase tracking-wide">Compra empresa</h3>
+                    <div className="flex items-start gap-3 rounded-lg border border-primary/30 bg-primary-tint/40 p-3">
+                      <Building2 className="w-5 h-5 text-primary mt-0.5 shrink-0" />
+                      <div className="text-sm">
+                        <p className="font-medium">{pricing.company.trade_name || pricing.company.legal_name}</p>
+                        <p className="text-xs text-muted-foreground">CNPJ {maskCnpj(pricing.company.cnpj)} · Responsável: {pricing.company.contact_name}</p>
+                        {b2bSavings > 0 && (
+                          <p className="text-xs text-success mt-1 inline-flex items-center gap-1">
+                            <BadgePercent className="w-3 h-3" /> Você economiza {formatBRL(b2bSavings)} com preço empresa.
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  </section>
+                )}
+
                 <section className="mb-5 pb-5 border-b border-border">
                   <h3 className="font-semibold text-sm mb-2 text-muted-foreground uppercase tracking-wide">Itens</h3>
                   <div className="space-y-2.5">
-                    {cart.items.map((i) => (
-                      <div key={i.productId} className="flex justify-between items-center text-sm">
-                        <span className="line-clamp-1">{i.qty}× {i.name}</span>
-                        <span className="font-medium shrink-0 ml-3">{formatBRL(i.price * i.qty)}</span>
-                      </div>
-                    ))}
+                    {cart.items.map((i) => {
+                      const priced = pricing?.items.find((p) => p.product_id === i.productId);
+                      const unit = priced?.applied_unit_price ?? i.price;
+                      const isB2b = priced?.pricing_source === 'b2b';
+                      return (
+                        <div key={i.productId} className="flex justify-between items-center text-sm">
+                          <span className="line-clamp-1">
+                            {i.qty}× {i.name}
+                            {isB2b && <span className="ml-1.5 text-[10px] font-semibold text-success uppercase">B2B</span>}
+                          </span>
+                          <span className="font-medium shrink-0 ml-3">{formatBRL(unit * i.qty)}</span>
+                        </div>
+                      );
+                    })}
                   </div>
                 </section>
 
