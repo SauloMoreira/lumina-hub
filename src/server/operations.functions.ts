@@ -609,6 +609,24 @@ export const getAdminOperations = createServerFn({ method: 'GET' })
         ctaHref: '/admin/seo',
         group: 'Marketing',
       },
+      {
+        id: 'invoices-pending',
+        title: 'Notas fiscais pendentes',
+        description:
+          invoicesOverdue > 0
+            ? `${invoicesOverdue} pedido(s) pago(s) há +24h sem nota registrada.`
+            : 'Pedidos pagos aguardando registro de NF-e.',
+        qty: invoicesPending,
+        status:
+          invoicesPending === 0
+            ? 'ok'
+            : invoicesOverdue > 0 || invoicesError > 0
+              ? 'danger'
+              : 'warn',
+        ctaLabel: 'Ver notas fiscais',
+        ctaHref: '/admin/financeiro/notas-fiscais',
+        group: 'Financeiro',
+      },
     ];
 
     // ============================================================
