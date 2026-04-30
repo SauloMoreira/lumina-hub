@@ -15,6 +15,8 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { fetchHomepageSettings, type HomepageSettings } from '@/lib/homepageContent';
 import { supabase } from '@/integrations/supabase/client';
 import { IconPicker } from '@/components/admin/IconPicker';
+import { HomepageCardsManager } from '@/components/admin/homepage/HomepageCardsManager';
+import { HomepageFeaturedCategoriesManager } from '@/components/admin/homepage/HomepageFeaturedCategoriesManager';
 
 export const Route = createFileRoute('/admin/conteudo/homepage')({
   component: AdminHomepageContentPage,
