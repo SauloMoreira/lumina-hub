@@ -946,6 +946,16 @@ export type Database = {
           critical_margin_threshold_percent: number
           default_currency: string
           default_min_margin_percent: number
+          fiscal_company_data_completed: boolean
+          fiscal_default_cfop_internal: string | null
+          fiscal_default_cfop_interstate: string | null
+          fiscal_default_nf_series: string | null
+          fiscal_default_operation_nature: string | null
+          fiscal_environment: string
+          fiscal_main_cnae: string | null
+          fiscal_observations: string | null
+          fiscal_provider: string | null
+          fiscal_tax_regime: string | null
           id: string
           invoice_default_cfop: string | null
           invoice_default_nature: string | null
@@ -973,6 +983,16 @@ export type Database = {
           critical_margin_threshold_percent?: number
           default_currency?: string
           default_min_margin_percent?: number
+          fiscal_company_data_completed?: boolean
+          fiscal_default_cfop_internal?: string | null
+          fiscal_default_cfop_interstate?: string | null
+          fiscal_default_nf_series?: string | null
+          fiscal_default_operation_nature?: string | null
+          fiscal_environment?: string
+          fiscal_main_cnae?: string | null
+          fiscal_observations?: string | null
+          fiscal_provider?: string | null
+          fiscal_tax_regime?: string | null
           id?: string
           invoice_default_cfop?: string | null
           invoice_default_nature?: string | null
@@ -1000,6 +1020,16 @@ export type Database = {
           critical_margin_threshold_percent?: number
           default_currency?: string
           default_min_margin_percent?: number
+          fiscal_company_data_completed?: boolean
+          fiscal_default_cfop_internal?: string | null
+          fiscal_default_cfop_interstate?: string | null
+          fiscal_default_nf_series?: string | null
+          fiscal_default_operation_nature?: string | null
+          fiscal_environment?: string
+          fiscal_main_cnae?: string | null
+          fiscal_observations?: string | null
+          fiscal_provider?: string | null
+          fiscal_tax_regime?: string | null
           id?: string
           invoice_default_cfop?: string | null
           invoice_default_nature?: string | null
@@ -2325,11 +2355,23 @@ export type Database = {
           b2b_valid_until: string | null
           brand: string | null
           category_id: string | null
+          cest: string | null
+          cfop_default: string | null
+          commercial_unit: string | null
           cost_price: number | null
           created_at: string | null
           description: string | null
           featured: boolean | null
+          fiscal_description: string | null
+          fiscal_enabled: boolean
+          fiscal_notes: string | null
+          fiscal_score: number
+          fiscal_status: string
+          fiscal_updated_at: string | null
           free_shipping_eligible: boolean
+          gross_weight: number | null
+          gtin_ean: string | null
+          gtin_tax: string | null
           height_cm: number | null
           id: string
           images: string[] | null
@@ -2337,7 +2379,9 @@ export type Database = {
           min_margin_percent: number | null
           name: string
           ncm: string | null
+          net_weight: number | null
           price: number
+          product_origin: number | null
           sale_price: number | null
           seo_description: string | null
           seo_keywords: string | null
@@ -2348,6 +2392,8 @@ export type Database = {
           stock_min_alert: number | null
           stock_qty: number
           tags: string[] | null
+          tax_category: string | null
+          tributary_unit: string | null
           updated_at: string | null
           weight_kg: number | null
           width_cm: number | null
@@ -2363,11 +2409,23 @@ export type Database = {
           b2b_valid_until?: string | null
           brand?: string | null
           category_id?: string | null
+          cest?: string | null
+          cfop_default?: string | null
+          commercial_unit?: string | null
           cost_price?: number | null
           created_at?: string | null
           description?: string | null
           featured?: boolean | null
+          fiscal_description?: string | null
+          fiscal_enabled?: boolean
+          fiscal_notes?: string | null
+          fiscal_score?: number
+          fiscal_status?: string
+          fiscal_updated_at?: string | null
           free_shipping_eligible?: boolean
+          gross_weight?: number | null
+          gtin_ean?: string | null
+          gtin_tax?: string | null
           height_cm?: number | null
           id?: string
           images?: string[] | null
@@ -2375,7 +2433,9 @@ export type Database = {
           min_margin_percent?: number | null
           name: string
           ncm?: string | null
+          net_weight?: number | null
           price: number
+          product_origin?: number | null
           sale_price?: number | null
           seo_description?: string | null
           seo_keywords?: string | null
@@ -2386,6 +2446,8 @@ export type Database = {
           stock_min_alert?: number | null
           stock_qty?: number
           tags?: string[] | null
+          tax_category?: string | null
+          tributary_unit?: string | null
           updated_at?: string | null
           weight_kg?: number | null
           width_cm?: number | null
@@ -2401,11 +2463,23 @@ export type Database = {
           b2b_valid_until?: string | null
           brand?: string | null
           category_id?: string | null
+          cest?: string | null
+          cfop_default?: string | null
+          commercial_unit?: string | null
           cost_price?: number | null
           created_at?: string | null
           description?: string | null
           featured?: boolean | null
+          fiscal_description?: string | null
+          fiscal_enabled?: boolean
+          fiscal_notes?: string | null
+          fiscal_score?: number
+          fiscal_status?: string
+          fiscal_updated_at?: string | null
           free_shipping_eligible?: boolean
+          gross_weight?: number | null
+          gtin_ean?: string | null
+          gtin_tax?: string | null
           height_cm?: number | null
           id?: string
           images?: string[] | null
@@ -2413,7 +2487,9 @@ export type Database = {
           min_margin_percent?: number | null
           name?: string
           ncm?: string | null
+          net_weight?: number | null
           price?: number
+          product_origin?: number | null
           sale_price?: number | null
           seo_description?: string | null
           seo_keywords?: string | null
@@ -2424,6 +2500,8 @@ export type Database = {
           stock_min_alert?: number | null
           stock_qty?: number
           tags?: string[] | null
+          tax_category?: string | null
+          tributary_unit?: string | null
           updated_at?: string | null
           weight_kg?: number | null
           width_cm?: number | null

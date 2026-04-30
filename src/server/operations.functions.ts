@@ -427,8 +427,32 @@ export const getAdminOperations = createServerFn({ method: 'GET' })
     } catch {}
 
     // ============================================================
-    // Monta cards
+    // Fiscal (sub-onda 4a)
     // ============================================================
+    let fiscal = {
+      productsActive: 0,
+      productsFiscalComplete: 0,
+      productsFiscalIncomplete: 0,
+      productsNeedReview: 0,
+      productsNoNcm: 0,
+      productsNoUnit: 0,
+      productsNoOrigin: 0,
+      productsNoWeightOrDims: 0,
+      productsNoEan: 0,
+      paidOrdersWithFiscalIssues: 0,
+      companyFiscalIncomplete: false,
+      taxRegimeMissing: false,
+    };
+    try {
+      const { fetchFiscalQuickCounts } = await import('./fiscalInsights.server');
+      fiscal = await fetchFiscalQuickCounts();
+    } catch {}
+
+    const fiscalTotalIssues =
+      fiscal.productsFiscalIncomplete +
+      fiscal.productsNeedReview +
+      (fiscal.companyFiscalIncomplete ? 1 : 0);
+
     const cards: OperationsCard[] = [
       {
         id: 'paid-awaiting-shipping',
@@ -625,6 +649,24 @@ export const getAdminOperations = createServerFn({ method: 'GET' })
               : 'warn',
         ctaLabel: 'Ver notas fiscais',
         ctaHref: '/admin/financeiro/notas-fiscais',
+        group: 'Financeiro',
+      },
+      {
+        id: 'fiscal-pending',
+        title: 'Pendências fiscais',
+        description:
+          fiscal.companyFiscalIncomplete
+            ? 'Dados fiscais da empresa incompletos. Configure regime tributário, CFOPs e série padrão de NF-e.'
+            : `${fiscal.productsFiscalIncomplete} produto(s) com dados fiscais incompletos.`,
+        qty: fiscalTotalIssues,
+        status:
+          fiscalTotalIssues === 0
+            ? 'ok'
+            : fiscal.companyFiscalIncomplete || fiscal.paidOrdersWithFiscalIssues > 0
+              ? 'danger'
+              : 'warn',
+        ctaLabel: 'Ver pendências fiscais',
+        ctaHref: '/admin/financeiro/impostos',
         group: 'Financeiro',
       },
     ];
@@ -888,6 +930,59 @@ export const getAdminOperations = createServerFn({ method: 'GET' })
         severity: 'high',
         ctaLabel: 'Ver notas B2B',
         ctaHref: '/admin/financeiro/notas-fiscais?orderType=b2b&status=sem_nota',
+      });
+    }
+
+    // Fiscal
+    if (fiscal.companyFiscalIncomplete) {
+      alerts.push({
+        id: 'alert-fiscal-company-data',
+        title: 'Dados fiscais da empresa incompletos',
+        description:
+          'Configure regime tributário, série padrão de NF-e e CFOPs antes de integrar com emissor fiscal.',
+        severity: 'high',
+        ctaLabel: 'Configurar dados fiscais',
+        ctaHref: '/admin/financeiro/impostos',
+      });
+    }
+    if (fiscal.paidOrdersWithFiscalIssues > 0) {
+      alerts.push({
+        id: 'alert-fiscal-paid-orders',
+        title: 'Pedidos pagos com produto fiscal incompleto',
+        description: `${fiscal.paidOrdersWithFiscalIssues} pedido(s) pago(s) contém item sem dados fiscais mínimos. Revise antes de emitir nota.`,
+        severity: 'high',
+        ctaLabel: 'Ver pendências fiscais',
+        ctaHref: '/admin/financeiro/impostos',
+      });
+    }
+    if (fiscal.productsNoNcm > 0) {
+      alerts.push({
+        id: 'alert-fiscal-no-ncm',
+        title: 'Produtos ativos sem NCM',
+        description: `${fiscal.productsNoNcm} produto(s) ativo(s) sem código NCM. Necessário para emissão fiscal.`,
+        severity: fiscal.productsNoNcm > 10 ? 'high' : 'medium',
+        ctaLabel: 'Ver produtos',
+        ctaHref: '/admin/financeiro/impostos?filter=no_ncm',
+      });
+    }
+    if (fiscal.productsNoUnit > 0) {
+      alerts.push({
+        id: 'alert-fiscal-no-unit',
+        title: 'Produtos sem unidade comercial',
+        description: `${fiscal.productsNoUnit} produto(s) ativo(s) sem unidade (UN, CX, KG…).`,
+        severity: 'medium',
+        ctaLabel: 'Ver produtos',
+        ctaHref: '/admin/financeiro/impostos?filter=no_unit',
+      });
+    }
+    if (fiscal.productsNoOrigin > 0) {
+      alerts.push({
+        id: 'alert-fiscal-no-origin',
+        title: 'Produtos sem origem da mercadoria',
+        description: `${fiscal.productsNoOrigin} produto(s) sem origem definida (nacional, importado…).`,
+        severity: 'medium',
+        ctaLabel: 'Ver produtos',
+        ctaHref: '/admin/financeiro/impostos?filter=no_origin',
       });
     }
 
