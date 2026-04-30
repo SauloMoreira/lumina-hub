@@ -550,6 +550,10 @@ export const createOrder = createServerFn({ method: 'POST' })
         b2b_subtotal: subtotal,
         b2b_discount_total: b2bDiscountTotal,
         pricing_validated_at: pricing.validated_at,
+        // === Onda 9E.4b: desconto de combo ===
+        bundle_discount_total: bundleDiscountTotal,
+        bundle_discount_details: bundleApp.details as never,
+        has_bundle_discount: hasBundleDiscount,
         ...(pickupSnap ?? {}),
         ...(localZoneInfo
           ? {
