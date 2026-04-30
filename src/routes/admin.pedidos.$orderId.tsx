@@ -480,6 +480,7 @@ function OrderDetailPage() {
 
           <InvoiceBlock orderId={order.id} paymentStatus={order.payment_status ?? 'pending'} />
 
+          <Card title="Adicionar nota ao histórico">
             <Textarea rows={3} value={note} onChange={(e) => setNote(e.target.value)} placeholder="Ex.: cliente ligou pedindo troca…" />
             <Button onClick={handleAddNote} disabled={noteSaving || !note.trim()} className="w-full mt-2" variant="secondary">
               <MessageSquarePlus className="w-4 h-4 mr-1" /> {noteSaving ? 'Salvando…' : 'Registrar nota'}
