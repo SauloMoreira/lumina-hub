@@ -210,6 +210,8 @@ function CartPage() {
             </Button>
           </aside>
         </div>
+
+        <CartUpsell />
       </div>
     </StoreLayout>
   );
