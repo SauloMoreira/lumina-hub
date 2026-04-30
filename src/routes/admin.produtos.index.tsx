@@ -73,10 +73,25 @@ function ProdutosList() {
 
   const load = async () => {
     setLoading(true);
-    const { data } = await supabase
-      .from('products')
-      .select('*, product_images(url_thumb, url_card, original_url, is_primary, sort_order, alt_text)')
-      .order('created_at', { ascending: false });
+    const [{ data }, { data: attrs }] = await Promise.all([
+      supabase
+        .from('products')
+        .select('*, product_images(url_thumb, url_card, original_url, is_primary, sort_order, alt_text)')
+        .order('created_at', { ascending: false }),
+      supabase
+        .from('product_attributes')
+        .select('product_id, attribute_key, attribute_value')
+        .limit(20000),
+    ]);
+    const attrMap = new Map<string, Set<string>>();
+    (attrs ?? []).forEach((a: any) => {
+      const v = (a.attribute_value ?? '').toString().trim();
+      if (!v) return;
+      const k = (a.attribute_key ?? '').toString().toLowerCase();
+      if (!k) return;
+      if (!attrMap.has(a.product_id)) attrMap.set(a.product_id, new Set());
+      attrMap.get(a.product_id)!.add(k);
+    });
     const mapped = (data ?? []).map((p: any) => {
       const imgs = (p.product_images ?? []).slice().sort((a: any, b: any) => {
         if (a.is_primary !== b.is_primary) return a.is_primary ? -1 : 1;
@@ -85,7 +100,8 @@ function ProdutosList() {
       const fromTable = imgs.map((i: any) => i.url_thumb ?? i.url_card ?? i.original_url).filter(Boolean);
       const merged = fromTable.length ? fromTable : (p.images ?? []);
       const quality = computeProductQuality(p);
-      return { ...p, images: merged, quality };
+      const tech_attr_keys = attrMap.get(p.id) ?? new Set<string>();
+      return { ...p, images: merged, quality, tech_attr_keys };
     });
     setProducts(mapped as any);
     setLoading(false);
