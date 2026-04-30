@@ -1,7 +1,8 @@
 import { createFileRoute, Link } from '@tanstack/react-router';
 import { useMemo, useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
-import { ArrowLeft, AlertTriangle, Image as ImageIcon, DollarSign, Search, FileText, Package } from 'lucide-react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { ArrowLeft, AlertTriangle, Image as ImageIcon, DollarSign, Search, FileText, Package, RefreshCw } from 'lucide-react';
+import { toast } from 'sonner';
 import { AdminLayout } from '@/components/admin/AdminLayout';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -15,15 +16,31 @@ type Filter = 'all' | 'ruim' | 'atencao' | 'active_low' | 'featured_low' | 'no_i
 function ProductQualityPage() {
   const [filter, setFilter] = useState<Filter>('all');
   const [q, setQ] = useState('');
+  const qc = useQueryClient();
 
-  const { data, isLoading } = useQuery({
+  const { data, isLoading, isFetching, refetch, dataUpdatedAt } = useQuery({
     queryKey: ['admin-product-quality'],
     queryFn: () => listProductQuality(),
-    staleTime: 60_000,
+    staleTime: 0,
+    refetchOnMount: 'always',
+    refetchOnWindowFocus: true,
   });
 
   const rows = data?.rows ?? [];
   const counts = data?.counts;
+
+  const handleRefresh = async () => {
+    try {
+      // Invalida também alertas/contadores que dependem da qualidade
+      qc.invalidateQueries({ queryKey: ['admin-counters'] });
+      qc.invalidateQueries({ queryKey: ['day-panel'] });
+      qc.invalidateQueries({ queryKey: ['operations-counters'] });
+      await refetch();
+      toast.success('Scores de qualidade atualizados com sucesso.');
+    } catch {
+      toast.error('Não foi possível atualizar os scores agora. Tente novamente.');
+    }
+  };
 
   const filtered = useMemo(() => {
     let arr = rows;
