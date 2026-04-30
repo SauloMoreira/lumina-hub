@@ -212,6 +212,9 @@ function ProdutosList() {
       title="Produtos"
       action={
         <div className="flex items-center gap-2">
+          <Link to={'/admin/produtos/estoque' as any}>
+            <Button variant="outline" size="sm"><Boxes className="w-4 h-4 mr-1" /> Estoque</Button>
+          </Link>
           <Link to={'/admin/produtos/qualidade' as any}>
             <Button variant="outline" size="sm"><Sparkles className="w-4 h-4 mr-1" /> Qualidade</Button>
           </Link>
