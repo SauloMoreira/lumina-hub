@@ -287,7 +287,7 @@ export const createOrder = createServerFn({ method: 'POST' })
     // Usa a engine `validate_b2b_pricing` para definir, item a item,
     // se aplica preço empresa ou varejo (mín/múltiplo/validade/empresa aprovada).
     // ========================================================
-    const { computeB2bPricing } = await import('@/server/b2bPricing.functions');
+    const { computeB2bPricing } = await import('@/server/b2bPricing.server');
     const pricing = await computeB2bPricing({
       userId,
       items: data.items.map((i) => ({ productId: i.productId, qty: i.qty })),
