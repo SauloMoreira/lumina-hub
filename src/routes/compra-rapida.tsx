@@ -429,6 +429,12 @@ function CompraRapidaPage() {
               </ul>
             )}
           </div>
+
+          {/* Importação CSV */}
+          <CsvImportButton
+            onParsed={handleCsvParsed}
+            isProcessing={resolveMutation.isPending}
+          />
         </div>
 
         {/* Coluna 2: lista resolvida */}
