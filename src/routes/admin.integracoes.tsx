@@ -1,0 +1,326 @@
+import { createFileRoute } from '@tanstack/react-router';
+import { useEffect, useState } from 'react';
+import { toast } from 'sonner';
+import { Plus, Trash2, ExternalLink, Loader2, ShieldCheck } from 'lucide-react';
+import { AdminLayout } from '@/components/admin/AdminLayout';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Switch } from '@/components/ui/switch';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Badge } from '@/components/ui/badge';
+import {
+  listIntegrations,
+  upsertIntegration,
+  deleteIntegration,
+  type MarketingIntegration,
+  type IntegrationProvider,
+  type ConsentCategory,
+} from '@/server/marketingIntegrations.functions';
+
+export const Route = createFileRoute('/admin/integracoes')({
+  component: IntegrationsPage,
+  head: () => ({ meta: [{ title: 'Integrações | Admin' }] }),
+});
+
+const PROVIDER_INFO: Record<
+  IntegrationProvider,
+  { label: string; placeholder: string; example: string; defaultConsent: ConsentCategory; help: string }
+> = {
+  ga4: {
+    label: 'Google Analytics 4 (GA4)',
+    placeholder: 'G-XXXXXXXXXX',
+    example: 'G-ABCDEF1234',
+    defaultConsent: 'analytics',
+    help: 'Encontre em GA4 → Admin → Fluxos de dados → Web → "ID de medição".',
+  },
+  gtm: {
+    label: 'Google Tag Manager (GTM)',
+    placeholder: 'GTM-XXXXXXX',
+    example: 'GTM-ABCD123',
+    defaultConsent: 'analytics',
+    help: 'Encontre em tagmanager.google.com → seu container → ID no topo.',
+  },
+  meta_pixel: {
+    label: 'Meta Pixel (Facebook/Instagram)',
+    placeholder: '1234567890123456',
+    example: '123456789012345',
+    defaultConsent: 'marketing',
+    help: 'Gerenciador de Eventos do Meta → ID do Pixel (números).',
+  },
+  tiktok_pixel: {
+    label: 'TikTok Pixel',
+    placeholder: 'CXXXXXXXXXXXXXXXXX',
+    example: 'C12ABCDEFGHIJKLMNOP',
+    defaultConsent: 'marketing',
+    help: 'TikTok Ads → Assets → Events → Pixel ID.',
+  },
+  clarity: {
+    label: 'Microsoft Clarity',
+    placeholder: 'xxxxxxxxxx',
+    example: 'abcd123456',
+    defaultConsent: 'analytics',
+    help: 'clarity.microsoft.com → Settings → Project ID.',
+  },
+  google_ads: {
+    label: 'Google Ads',
+    placeholder: 'AW-XXXXXXXXX',
+    example: 'AW-123456789',
+    defaultConsent: 'marketing',
+    help: 'Google Ads → Tools → Conversions → Tag setup → Conversion ID.',
+  },
+};
+
+const PROVIDERS = Object.keys(PROVIDER_INFO) as IntegrationProvider[];
+
+function IntegrationsPage() {
+  const [items, setItems] = useState<MarketingIntegration[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [form, setForm] = useState<{
+    provider: IntegrationProvider;
+    account_id: string;
+    enabled: boolean;
+    consent_category: ConsentCategory;
+    notes: string;
+  }>({
+    provider: 'ga4',
+    account_id: '',
+    enabled: true,
+    consent_category: 'analytics',
+    notes: '',
+  });
+
+  async function load() {
+    setLoading(true);
+    try {
+      const list = await listIntegrations();
+      setItems(list);
+    } catch (e) {
+      toast.error('Falha ao carregar integrações');
+      console.error(e);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  useEffect(() => {
+    void load();
+  }, []);
+
+  function pickProvider(p: IntegrationProvider) {
+    setForm((f) => ({ ...f, provider: p, consent_category: PROVIDER_INFO[p].defaultConsent }));
+  }
+
+  async function handleAdd() {
+    if (!form.account_id.trim()) {
+      toast.error('Informe o ID da conta');
+      return;
+    }
+    setSaving(true);
+    try {
+      await upsertIntegration({
+        data: {
+          provider: form.provider,
+          account_id: form.account_id.trim(),
+          enabled: form.enabled,
+          consent_category: form.consent_category,
+          notes: form.notes.trim() || null,
+        },
+      });
+      toast.success('Integração salva');
+      setForm((f) => ({ ...f, account_id: '', notes: '' }));
+      await load();
+    } catch (e: any) {
+      toast.error(e?.message || 'Falha ao salvar');
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function toggleEnabled(item: MarketingIntegration) {
+    try {
+      await upsertIntegration({
+        data: {
+          id: item.id,
+          provider: item.provider,
+          account_id: item.account_id,
+          enabled: !item.enabled,
+          consent_category: item.consent_category,
+          notes: item.notes,
+        },
+      });
+      toast.success(item.enabled ? 'Integração desativada' : 'Integração ativada');
+      await load();
+    } catch (e: any) {
+      toast.error(e?.message || 'Falha ao alterar');
+    }
+  }
+
+  async function handleDelete(id: string) {
+    if (!confirm('Excluir esta integração?')) return;
+    try {
+      await deleteIntegration({ data: { id } });
+      toast.success('Integração excluída');
+      await load();
+    } catch (e: any) {
+      toast.error(e?.message || 'Falha ao excluir');
+    }
+  }
+
+  const info = PROVIDER_INFO[form.provider];
+
+  return (
+    <AdminLayout title="Pixels & Analytics">
+      <div className="space-y-6 p-4 md:p-6 max-w-5xl">
+        <p className="text-sm text-muted-foreground">
+          Configure GA4, GTM, Meta, TikTok, Clarity e Google Ads. Os scripts só carregam
+          após o consentimento LGPD do visitante.
+        </p>
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Plus className="w-4 h-4" /> Adicionar integração
+            </CardTitle>
+            <CardDescription>
+              Informe apenas o <strong>ID público</strong> da plataforma. Não cole scripts inteiros.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="grid md:grid-cols-2 gap-4">
+              <div>
+                <Label>Plataforma</Label>
+                <Select value={form.provider} onValueChange={(v) => pickProvider(v as IntegrationProvider)}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    {PROVIDERS.map((p) => (
+                      <SelectItem key={p} value={p}>{PROVIDER_INFO[p].label}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <p className="text-xs text-muted-foreground mt-1">{info.help}</p>
+              </div>
+
+              <div>
+                <Label>ID da conta</Label>
+                <Input
+                  placeholder={info.placeholder}
+                  value={form.account_id}
+                  onChange={(e) => setForm((f) => ({ ...f, account_id: e.target.value }))}
+                />
+                <p className="text-xs text-muted-foreground mt-1">Exemplo: <code>{info.example}</code></p>
+              </div>
+
+              <div>
+                <Label>Categoria de consentimento</Label>
+                <Select
+                  value={form.consent_category}
+                  onValueChange={(v) => setForm((f) => ({ ...f, consent_category: v as ConsentCategory }))}
+                >
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="analytics">Analytics</SelectItem>
+                    <SelectItem value="marketing">Marketing</SelectItem>
+                  </SelectContent>
+                </Select>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Define qual switch da LGPD libera o carregamento.
+                </p>
+              </div>
+
+              <div>
+                <Label>Notas (interno)</Label>
+                <Input
+                  value={form.notes}
+                  onChange={(e) => setForm((f) => ({ ...f, notes: e.target.value }))}
+                  placeholder="ex.: conta principal da loja"
+                  maxLength={500}
+                />
+              </div>
+            </div>
+
+            <div className="flex items-center justify-between border-t pt-4">
+              <div className="flex items-center gap-2">
+                <Switch
+                  checked={form.enabled}
+                  onCheckedChange={(c) => setForm((f) => ({ ...f, enabled: c }))}
+                />
+                <span className="text-sm">{form.enabled ? 'Ativada' : 'Desativada'}</span>
+              </div>
+              <Button onClick={handleAdd} disabled={saving}>
+                {saving ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Plus className="w-4 h-4 mr-2" />}
+                Salvar integração
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Integrações configuradas</CardTitle>
+            <CardDescription>
+              <ShieldCheck className="w-3.5 h-3.5 inline mr-1 text-primary" />
+              Todos os scripts respeitam o consentimento de cookies do visitante.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            {loading ? (
+              <div className="flex items-center justify-center py-8">
+                <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
+              </div>
+            ) : items.length === 0 ? (
+              <p className="text-sm text-muted-foreground text-center py-8">
+                Nenhuma integração cadastrada ainda.
+              </p>
+            ) : (
+              <div className="space-y-2">
+                {items.map((item) => (
+                  <div
+                    key={item.id}
+                    className="flex items-center justify-between gap-3 p-3 rounded-lg border bg-card"
+                  >
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className="font-medium text-sm">{PROVIDER_INFO[item.provider]?.label ?? item.provider}</span>
+                        <Badge variant={item.enabled ? 'default' : 'secondary'} className="text-[10px]">
+                          {item.enabled ? 'Ativa' : 'Inativa'}
+                        </Badge>
+                        <Badge variant="outline" className="text-[10px]">
+                          {item.consent_category === 'analytics' ? 'Analytics' : 'Marketing'}
+                        </Badge>
+                      </div>
+                      <code className="text-xs text-muted-foreground">{item.account_id}</code>
+                      {item.notes && <p className="text-xs text-muted-foreground mt-1">{item.notes}</p>}
+                    </div>
+                    <div className="flex items-center gap-2 shrink-0">
+                      <Switch checked={item.enabled} onCheckedChange={() => toggleEnabled(item)} />
+                      <Button variant="ghost" size="icon" onClick={() => handleDelete(item.id)}>
+                        <Trash2 className="w-4 h-4 text-destructive" />
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        <Card className="bg-muted/30">
+          <CardContent className="pt-6 text-sm text-muted-foreground space-y-2">
+            <p className="flex items-center gap-1.5">
+              <ExternalLink className="w-3.5 h-3.5" />
+              <strong>Como funciona:</strong> ao salvar uma integração ativa, o script é injetado
+              automaticamente no front da loja para visitantes que aceitaram a categoria correspondente.
+            </p>
+            <p>
+              Se o visitante recusar ou revogar consentimento, nenhum script de analytics ou marketing é
+              carregado.
+            </p>
+          </CardContent>
+        </Card>
+      </div>
+    </AdminLayout>
+  );
+}

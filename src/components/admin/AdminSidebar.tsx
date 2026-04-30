@@ -167,7 +167,7 @@ const groups: Group[] = [
       { to: '/admin/banners', label: 'Banners', icon: ImageIcon },
       { to: '/admin/cupons', label: 'Cupons', icon: Ticket },
       { label: 'SEO', soon: true },
-      { label: 'Pixels e Analytics', soon: true },
+      { to: '/admin/integracoes', label: 'Pixels e Analytics', icon: BarChart3 },
       { to: '/admin/automacoes', label: 'Automações', icon: Sparkles },
       { label: 'E-mail e WhatsApp marketing', soon: true },
       { to: '/admin/campanhas-performance', label: 'Performance de campanhas', icon: Megaphone },
