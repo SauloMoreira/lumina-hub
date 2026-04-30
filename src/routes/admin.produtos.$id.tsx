@@ -1,5 +1,6 @@
 import { createFileRoute, useNavigate, useParams, Link } from '@tanstack/react-router';
 import { useEffect, useMemo, useRef, useState, type FormEvent } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import { ArrowLeft, Loader2, ScanBarcode, AlertTriangle, CheckCircle2, Sparkles } from 'lucide-react';
 import { AdminLayout } from '@/components/admin/AdminLayout';
 import { Button } from '@/components/ui/button';
@@ -215,6 +216,12 @@ function ProductForm() {
       if (res.error) throw res.error;
 
       if (!isNew) await imageManagerRef.current?.refetchImages();
+      // Invalida caches que dependem dos dados do produto (qualidade, listagens, alertas)
+      qc.invalidateQueries({ queryKey: ['admin-product-quality'] });
+      qc.invalidateQueries({ queryKey: ['admin-products'] });
+      qc.invalidateQueries({ queryKey: ['admin-counters'] });
+      qc.invalidateQueries({ queryKey: ['day-panel'] });
+      qc.invalidateQueries({ queryKey: ['operations-counters'] });
       toast.success(isNew ? 'Produto criado' : 'Produto e imagens atualizados');
 
       const newId = isNew ? (res.data as { id?: string } | null)?.id : id;
