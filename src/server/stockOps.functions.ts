@@ -248,8 +248,9 @@ export const adjustProductStock = createServerFn({ method: 'POST' })
 
     try {
       const ctx = context as { adminUserId?: string; adminEmail?: string | null };
+      if (!ctx.adminUserId) throw new Error('no admin');
       await supabaseAdmin.from('admin_audit_log').insert({
-        admin_id: ctx.adminUserId ?? null,
+        admin_id: ctx.adminUserId,
         admin_email: ctx.adminEmail ?? null,
         action: 'stock.manual_adjust',
         resource_type: 'product',
