@@ -11,7 +11,7 @@ import { qualityClassColor, qualityClassLabel, type QualityClass } from '@/lib/p
 
 export const Route = createFileRoute('/admin/produtos/qualidade')({ component: ProductQualityPage });
 
-type Filter = 'all' | 'ruim' | 'atencao' | 'active_low' | 'featured_low' | 'no_image' | 'no_cost' | 'no_seo' | 'no_fiscal' | 'no_tech';
+type Filter = 'all' | 'ruim' | 'atencao' | 'active_low' | 'featured_low' | 'no_image' | 'no_cost' | 'no_seo' | 'no_fiscal' | 'no_tech' | 'no_tech_power' | 'no_tech_color_temp' | 'no_tech_voltage' | 'no_tech_ip_rating';
 
 function ProductQualityPage() {
   const [filter, setFilter] = useState<Filter>('all');
