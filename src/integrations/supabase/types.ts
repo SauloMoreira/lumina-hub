@@ -1119,6 +1119,107 @@ export type Database = {
         }
         Relationships: []
       }
+      homepage_cards: {
+        Row: {
+          card_type: Database["public"]["Enums"]["homepage_card_type"]
+          created_at: string
+          description: string | null
+          end_date: string | null
+          icon: string | null
+          id: string
+          image_url: string | null
+          is_active: boolean
+          link_label: string | null
+          link_url: string | null
+          sort_order: number
+          start_date: string | null
+          title: string
+          updated_at: string
+          visual_variant: string | null
+        }
+        Insert: {
+          card_type: Database["public"]["Enums"]["homepage_card_type"]
+          created_at?: string
+          description?: string | null
+          end_date?: string | null
+          icon?: string | null
+          id?: string
+          image_url?: string | null
+          is_active?: boolean
+          link_label?: string | null
+          link_url?: string | null
+          sort_order?: number
+          start_date?: string | null
+          title: string
+          updated_at?: string
+          visual_variant?: string | null
+        }
+        Update: {
+          card_type?: Database["public"]["Enums"]["homepage_card_type"]
+          created_at?: string
+          description?: string | null
+          end_date?: string | null
+          icon?: string | null
+          id?: string
+          image_url?: string | null
+          is_active?: boolean
+          link_label?: string | null
+          link_url?: string | null
+          sort_order?: number
+          start_date?: string | null
+          title?: string
+          updated_at?: string
+          visual_variant?: string | null
+        }
+        Relationships: []
+      }
+      homepage_featured_categories: {
+        Row: {
+          category_id: string
+          created_at: string
+          custom_description: string | null
+          custom_image_url: string | null
+          custom_title: string | null
+          icon: string | null
+          id: string
+          is_active: boolean
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          category_id: string
+          created_at?: string
+          custom_description?: string | null
+          custom_image_url?: string | null
+          custom_title?: string | null
+          icon?: string | null
+          id?: string
+          is_active?: boolean
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          category_id?: string
+          created_at?: string
+          custom_description?: string | null
+          custom_image_url?: string | null
+          custom_title?: string | null
+          icon?: string | null
+          id?: string
+          is_active?: boolean
+          sort_order?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "homepage_featured_categories_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: true
+            referencedRelation: "categories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       homepage_settings: {
         Row: {
           created_at: string
@@ -3129,6 +3230,7 @@ export type Database = {
       bundle_discount_type: "none" | "fixed_amount" | "percentage"
       company_status: "pending" | "approved" | "blocked" | "rejected"
       company_user_role: "owner" | "member"
+      homepage_card_type: "benefit" | "promo"
       product_relation_type:
         | "related"
         | "frequently_bought_together"
@@ -3276,6 +3378,7 @@ export const Constants = {
       bundle_discount_type: ["none", "fixed_amount", "percentage"],
       company_status: ["pending", "approved", "blocked", "rejected"],
       company_user_role: ["owner", "member"],
+      homepage_card_type: ["benefit", "promo"],
       product_relation_type: [
         "related",
         "frequently_bought_together",

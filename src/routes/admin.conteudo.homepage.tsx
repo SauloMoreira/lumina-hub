@@ -15,6 +15,8 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { fetchHomepageSettings, type HomepageSettings } from '@/lib/homepageContent';
 import { supabase } from '@/integrations/supabase/client';
 import { IconPicker } from '@/components/admin/IconPicker';
+import { HomepageCardsManager } from '@/components/admin/homepage/HomepageCardsManager';
+import { HomepageFeaturedCategoriesManager } from '@/components/admin/homepage/HomepageFeaturedCategoriesManager';
 
 export const Route = createFileRoute('/admin/conteudo/homepage')({
   component: AdminHomepageContentPage,
@@ -99,12 +101,42 @@ function AdminHomepageContentPage() {
         </p>
 
         <Tabs defaultValue="hero">
-          <TabsList>
+          <TabsList className="flex-wrap h-auto">
             <TabsTrigger value="hero">Hero</TabsTrigger>
             <TabsTrigger value="promo">Barra promocional</TabsTrigger>
             <TabsTrigger value="cta">CTA principal</TabsTrigger>
+            <TabsTrigger value="benefits">Benefícios</TabsTrigger>
+            <TabsTrigger value="promo-cards">Cards promocionais</TabsTrigger>
+            <TabsTrigger value="categories">Categorias destaque</TabsTrigger>
             <TabsTrigger value="seo">SEO</TabsTrigger>
           </TabsList>
+
+          <TabsContent value="benefits" className="mt-4">
+            <Card><CardContent className="p-6">
+              <HomepageCardsManager
+                cardType="benefit"
+                title="Cards de benefícios"
+                description="Aparecem na seção de diferenciais (IA 24h, Entrega rápida, NF garantida...)."
+              />
+            </CardContent></Card>
+          </TabsContent>
+
+          <TabsContent value="promo-cards" className="mt-4">
+            <Card><CardContent className="p-6">
+              <HomepageCardsManager
+                cardType="promo"
+                title="Cards promocionais"
+                description="Aparecem logo abaixo do carrossel hero (Ofertas, Frete grátis, Atendimento IA...)."
+              />
+            </CardContent></Card>
+          </TabsContent>
+
+          <TabsContent value="categories" className="mt-4">
+            <Card><CardContent className="p-6">
+              <HomepageFeaturedCategoriesManager />
+            </CardContent></Card>
+          </TabsContent>
+
 
           {/* HERO */}
           <TabsContent value="hero" className="mt-4">
