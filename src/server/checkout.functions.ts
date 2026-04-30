@@ -352,6 +352,7 @@ export const createOrder = createServerFn({ method: 'POST' })
         b2bDiscountTotal: Number(it.b2b_discount_total ?? 0),
         b2bMinQuantity: it.b2b_min_quantity ?? null,
         b2bRuleApplied: it.reason ?? 'retail',
+        unitCost: meta?.cost_price != null ? Number(meta.cost_price) : null,
       });
     }
 
