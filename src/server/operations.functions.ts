@@ -1,7 +1,5 @@
 import { createServerFn } from '@tanstack/react-start';
 import { requireAdmin } from '@/integrations/supabase/admin-middleware';
-import { supabaseAdmin } from '@/integrations/supabase/client.server';
-import { fetchSeoQuickCounts } from './seoInsights.server';
 
 /**
  * Agrega todos os contadores e alertas usados pelo
@@ -63,7 +61,7 @@ function hoursAgoISO(h: number): string {
 }
 
 async function safeCount(
-  build: () => ReturnType<typeof supabaseAdmin.from>,
+  build: () => any,
   filter: (q: any) => any,
 ): Promise<number> {
   try {
@@ -79,6 +77,7 @@ async function safeCount(
 export const getAdminOperations = createServerFn({ method: 'GET' })
   .middleware([requireAdmin])
   .handler(async (): Promise<OperationsData> => {
+    const { supabaseAdmin } = await import('@/integrations/supabase/client.server');
     const todayISO = startOfTodayISO();
     const stale24h = hoursAgoISO(24);
 
