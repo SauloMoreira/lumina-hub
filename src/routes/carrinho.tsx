@@ -188,6 +188,12 @@ function CartPage() {
                   <span className="font-medium">{formatBRL(subtotalApplied)}</span>
                 </div>
               )}
+              {bundlePreviewSavings > 0 && (
+                <div className="flex justify-between text-success">
+                  <span>Desconto de combo (estimado)</span>
+                  <span>−{formatBRL(bundlePreviewSavings)}</span>
+                </div>
+              )}
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Frete (estimado)</span>
                 <span className="font-medium">{shipping === 0 ? <span className="text-success">Grátis</span> : formatBRL(shipping)}</span>
