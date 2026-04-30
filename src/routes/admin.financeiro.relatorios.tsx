@@ -83,6 +83,22 @@ import {
   type InvoiceListResult,
   type InvoiceRow,
 } from '@/server/paymentInvoiceReports.functions';
+import {
+  getCampaignCards,
+  getCampaignPerformance,
+  getOriginPerformance,
+  getAttributedOrders,
+  getAttributionQuality,
+  exportCampaignPerformanceCsv,
+  exportOriginPerformanceCsv,
+  exportAttributedOrdersCsv,
+  exportAttributionQualityCsv,
+  type CampaignCards,
+  type CampaignPerfRow,
+  type OriginPerfRow,
+  type AttributedOrderRow,
+  type AttributionQuality,
+} from '@/server/campaignReports.functions';
 
 export const Route = createFileRoute('/admin/financeiro/relatorios')({
   head: () =>
@@ -228,7 +244,7 @@ function ReportsPage() {
   const [deliveryMethod, setDeliveryMethod] = useState<string>('');
 
   // Aba ativa
-  const [tab, setTab] = useState<'sales' | 'margin' | 'products' | 'b2b' | 'coupons' | 'shipping' | 'mp' | 'invoices'>('sales');
+  const [tab, setTab] = useState<'sales' | 'margin' | 'products' | 'b2b' | 'coupons' | 'shipping' | 'mp' | 'invoices' | 'utm'>('sales');
 
   // Dados
   const [cards, setCards] = useState<FinanceReportCards | null>(null);
@@ -288,6 +304,21 @@ function ReportsPage() {
   const [invLoading, setInvLoading] = useState(false);
   const [invPage, setInvPage] = useState(1);
   const [invStatus, setInvStatus] = useState<'all' | 'nao_necessaria' | 'pendente_emissao' | 'emitida' | 'erro_emissao' | 'cancelada'>('all');
+
+  // Campanhas / UTM
+  const [utmCards, setUtmCards] = useState<CampaignCards | null>(null);
+  const [utmCampaigns, setUtmCampaigns] = useState<CampaignPerfRow[] | null>(null);
+  const [utmOrigins, setUtmOrigins] = useState<OriginPerfRow[] | null>(null);
+  const [utmOrders, setUtmOrders] = useState<{
+    rows: AttributedOrderRow[];
+    total: number;
+    page: number;
+    pageSize: number;
+  } | null>(null);
+  const [utmQuality, setUtmQuality] = useState<AttributionQuality | null>(null);
+  const [utmLoading, setUtmLoading] = useState(false);
+  const [utmPage, setUtmPage] = useState(1);
+  const [attribution, setAttribution] = useState<'all' | 'attributed' | 'unattributed'>('all');
 
   const filters = useMemo(
     () => ({
@@ -413,13 +444,6 @@ function ReportsPage() {
   useEffect(() => {
     if (tab !== 'mp') return;
     let alive = true;
-    setMpLoading(true);
-    Promise.all([
-      getMpReportCards({ data: filters }),
-      getMpPayments({
-        data: { ...filters, page: mpPage, pageSize: 50, feeSource: mpFeeSource },
-      }),
-    ])
     setMpLoading(true);
     Promise.all([
       getMpReportCards({ data: filters }),
