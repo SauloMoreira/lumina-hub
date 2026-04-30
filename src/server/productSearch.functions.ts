@@ -76,6 +76,16 @@ export const searchProducts = createServerFn({ method: 'POST' })
       categoryId = cat?.id ?? null;
     }
 
+    // Sanitiza attrFilters: só chaves permitidas
+    const sanitizedAttrFilters = (data.attrFilters ?? [])
+      .filter((f) => ALLOWED_FILTER_KEYS.has(f.key.toLowerCase()))
+      .map((f) => ({
+        key: f.key.toLowerCase(),
+        ...(f.values && f.values.length > 0 ? { values: f.values } : {}),
+        ...(f.min != null ? { min: f.min } : {}),
+        ...(f.max != null ? { max: f.max } : {}),
+      }));
+
     const { data: rows, error } = await (supabaseAdmin as any).rpc('search_products_public', {
       _terms: terms,
       _category_id: categoryId,
@@ -90,6 +100,7 @@ export const searchProducts = createServerFn({ method: 'POST' })
       _offset: offset,
       _b2b_only: data.b2bOnly ?? false,
       _min_qty_max: data.minQtyMax ?? null,
+      _attr_filters: sanitizedAttrFilters.length > 0 ? sanitizedAttrFilters : null,
     });
 
     if (error) {
