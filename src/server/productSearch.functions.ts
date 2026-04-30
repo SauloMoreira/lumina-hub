@@ -6,6 +6,25 @@ import { expandSearchTerms, normalizeSearch } from '@/lib/searchNormalize';
 // ----------------------------------------------------------------
 // searchProducts — usado pela /catalogo (público)
 // ----------------------------------------------------------------
+const ALLOWED_FILTER_KEYS = new Set([
+  'power',
+  'color_temperature',
+  'voltage',
+  'ip_rating',
+]);
+
+const attrFilterSchema = z
+  .object({
+    key: z.string().min(1).max(80),
+    values: z.array(z.string().min(1).max(60)).max(20).optional(),
+    min: z.number().min(0).max(1000000).optional(),
+    max: z.number().min(0).max(1000000).optional(),
+  })
+  .refine(
+    (f) => (f.values && f.values.length > 0) || f.min != null || f.max != null,
+    { message: 'attr filter precisa de values ou min/max' },
+  );
+
 const searchInput = z.object({
   q: z.string().max(200).optional(),
   categorySlug: z.string().max(120).optional(),
@@ -18,6 +37,7 @@ const searchInput = z.object({
   freeShipping: z.boolean().optional(),
   b2bOnly: z.boolean().optional(),
   minQtyMax: z.number().int().min(1).max(100000).optional(),
+  attrFilters: z.array(attrFilterSchema).max(10).optional(),
   sort: z
     .enum([
       'relevance',
