@@ -303,6 +303,28 @@ export const getAdminOperations = createServerFn({ method: 'GET' })
     } catch {}
 
     // ============================================================
+    // SEO Insights (counts leves)
+    // ============================================================
+    let seo: Awaited<ReturnType<typeof fetchSeoQuickCounts>> = {
+      productsNoSeoTitle: 0,
+      productsNoSeoDescription: 0,
+      productsNoImage: 0,
+      productsNoDescription: 0,
+      categoriesNoDescription: 0,
+      homepageMissingSeo: false,
+      b2bMissingSeo: false,
+    };
+    try { seo = await fetchSeoQuickCounts(); } catch {}
+
+    const seoTotalIssues =
+      seo.productsNoSeoTitle +
+      seo.productsNoSeoDescription +
+      seo.productsNoImage +
+      seo.categoriesNoDescription +
+      (seo.homepageMissingSeo ? 1 : 0) +
+      (seo.b2bMissingSeo ? 1 : 0);
+
+    // ============================================================
     // Monta cards
     // ============================================================
     const cards: OperationsCard[] = [
