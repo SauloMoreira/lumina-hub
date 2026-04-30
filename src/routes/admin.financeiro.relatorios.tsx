@@ -1759,11 +1759,13 @@ function CouponsSection({
   if (!data) return null;
   const c = data.cards;
   const cardDefs: CardDef[] = [
-    { label: 'Descontos totais', value: brl(c.totalDiscounts), tooltip: 'Soma de descontos B2B + cupons no período.' },
+    { label: 'Descontos totais', value: brl(c.totalDiscounts), tooltip: 'Soma de descontos B2B + cupons + combos no período.' },
     { label: 'Desconto B2B', value: brl(c.b2bDiscounts) },
     { label: 'Desconto de cupons', value: brl(c.couponDiscounts) },
+    { label: 'Desconto de combos', value: brl(c.bundleDiscounts), tooltip: 'Soma dos descontos aplicados via combos/kits no período.' },
     { label: 'Cupons utilizados', value: String(c.couponsUsed) },
     { label: 'Pedidos com cupom', value: String(c.ordersWithCoupon) },
+    { label: 'Pedidos com combo', value: String(c.ordersWithBundle) },
     { label: 'Ticket médio com cupom', value: brl(c.averageTicketWithCoupon) },
     { label: 'Margem média com cupom', value: pct(c.averageMarginWithCoupon) },
     { label: 'Cupons com margem crítica', value: String(c.couponsCritical), warn: c.couponsCritical > 0 },
