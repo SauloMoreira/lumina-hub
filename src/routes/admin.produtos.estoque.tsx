@@ -391,7 +391,7 @@ function Row({ row, onAdjusted }: { row: StockReportRow; onAdjusted: () => void 
           <Button size="sm" variant="outline" onClick={() => setOpen((v) => !v)}>
             Ajustar
           </Button>
-          <Link to={'/admin/produtos/$id' as any} params={{ id: row.product_id }}>
+          <Link to={'/admin/produtos/$id' as any} params={{ id: row.product_id } as any}>
             <Button size="sm" variant="ghost">
               Editar
             </Button>
