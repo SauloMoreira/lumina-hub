@@ -319,7 +319,9 @@ function IntegrationsPage() {
               </p>
             ) : (
               <div className="space-y-2">
-                {items.map((item) => (
+                {items.map((item) => {
+                  const formatOk = isValidId(item.provider, item.account_id);
+                  return (
                   <div
                     key={item.id}
                     className="flex items-center justify-between gap-3 p-3 rounded-lg border bg-card"
@@ -333,18 +335,38 @@ function IntegrationsPage() {
                         <Badge variant="outline" className="text-[10px]">
                           {item.consent_category === 'analytics' ? 'Analytics' : 'Marketing'}
                         </Badge>
+                        {!formatOk && (
+                          <Badge variant="destructive" className="text-[10px]">
+                            <AlertTriangle className="w-2.5 h-2.5 mr-1" /> ID inválido
+                          </Badge>
+                        )}
                       </div>
                       <code className="text-xs text-muted-foreground">{item.account_id}</code>
                       {item.notes && <p className="text-xs text-muted-foreground mt-1">{item.notes}</p>}
                     </div>
                     <div className="flex items-center gap-2 shrink-0">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleTest(item)}
+                        disabled={testingId === item.id}
+                        title="Testar configuração"
+                      >
+                        {testingId === item.id ? (
+                          <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                        ) : (
+                          <FlaskConical className="w-3.5 h-3.5" />
+                        )}
+                        <span className="hidden sm:inline ml-1">Testar</span>
+                      </Button>
                       <Switch checked={item.enabled} onCheckedChange={() => toggleEnabled(item)} />
                       <Button variant="ghost" size="icon" onClick={() => handleDelete(item.id)}>
                         <Trash2 className="w-4 h-4 text-destructive" />
                       </Button>
                     </div>
                   </div>
-                ))}
+                  );
+                })}
               </div>
             )}
           </CardContent>
