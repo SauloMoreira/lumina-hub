@@ -19,6 +19,7 @@ import {
   addOrderNote,
   resendOrderEmail,
 } from '@/server/orderAdmin.functions';
+import { InvoiceBlock } from '@/components/admin/InvoiceBlock';
 
 export const Route = createFileRoute('/admin/pedidos/$orderId')({
   component: OrderDetailPage,
@@ -476,6 +477,8 @@ function OrderDetailPage() {
               ))}
             </div>
           </Card>
+
+          <InvoiceBlock orderId={order.id} paymentStatus={order.payment_status ?? 'pending'} />
 
           <Card title="Adicionar nota ao histórico">
             <Textarea rows={3} value={note} onChange={(e) => setNote(e.target.value)} placeholder="Ex.: cliente ligou pedindo troca…" />
