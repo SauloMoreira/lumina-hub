@@ -349,13 +349,14 @@ function CatalogPage() {
                 return ids.map((id) => {
                   const opt = def.options.find((o) => o.id === id);
                   if (!opt) return null;
+                  const friendly = decorateOptionLabel(def.key, opt as any);
                   return (
                     <button
                       key={`${def.key}-${id}`}
                       onClick={() => toggleTechId(def.key, id)}
                       className="inline-flex items-center gap-1.5 text-xs bg-primary-tint text-primary px-2.5 py-1 rounded-full hover:bg-primary/10"
                     >
-                      {def.label}: {opt.label} <X className="w-3 h-3" />
+                      {def.label}: {friendly} <X className="w-3 h-3" />
                     </button>
                   );
                 });
