@@ -1,8 +1,6 @@
 import { createServerFn } from '@tanstack/react-start';
 import { z } from 'zod';
 import { requireAdmin } from '@/integrations/supabase/admin-middleware';
-import { supabaseAdmin } from '@/integrations/supabase/client.server';
-import { computeMpFees, loadFeeConfig, estimateFee } from './mercadoPagoFees.server';
 
 export type MpOverview = {
   rangeFrom: string;
@@ -58,6 +56,7 @@ export const getMpOverview = createServerFn({ method: 'POST' })
   .middleware([requireAdmin])
   .inputValidator((input: unknown) => RangeInput.parse(input ?? {}))
   .handler(async ({ data }): Promise<MpOverview> => {
+    const { supabaseAdmin } = await import('@/integrations/supabase/client.server');
     const r = { from: data.from ?? defaultRange().from, to: data.to ?? defaultRange().to };
     const { data: rows } = await supabaseAdmin
       .from('orders')
@@ -125,6 +124,7 @@ export const listMpPayments = createServerFn({ method: 'POST' })
   .middleware([requireAdmin])
   .inputValidator((input: unknown) => ListInput.parse(input ?? {}))
   .handler(async ({ data }): Promise<{ rows: MpPaymentRow[]; total: number }> => {
+    const { supabaseAdmin } = await import('@/integrations/supabase/client.server');
     let q = supabaseAdmin
       .from('orders')
       .select(
@@ -182,6 +182,8 @@ export const recalcEstimatedFee = createServerFn({ method: 'POST' })
   .middleware([requireAdmin])
   .inputValidator((input: unknown) => RecalcInput.parse(input))
   .handler(async ({ data }) => {
+    const { supabaseAdmin } = await import('@/integrations/supabase/client.server');
+    const { loadFeeConfig, estimateFee } = await import('./mercadoPagoFees.server');
     const { data: o } = await supabaseAdmin
       .from('orders')
       .select('id, total, mp_gross_amount, mp_payment_method, mp_payment_type, payment_method, payment_fee_source, mp_fee_amount')
@@ -220,6 +222,7 @@ export const computeFeesPreview = createServerFn({ method: 'POST' })
     }).parse(input),
   )
   .handler(async ({ data }) => {
+    const { loadFeeConfig, estimateFee } = await import('./mercadoPagoFees.server');
     const cfg = await loadFeeConfig();
     const fee = estimateFee(data.gross, data.method ?? null, cfg);
     return { fee, net: round2(data.gross - fee) };
