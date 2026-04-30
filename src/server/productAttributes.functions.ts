@@ -189,7 +189,14 @@ export const adminUpdateProductAttribute = createServerFn({ method: 'POST' })
     if (getErr) throw getErr;
     if (!existing) throw new Error('not_found');
 
-    const patch: Record<string, unknown> = {};
+    const patch: {
+      attribute_label?: string;
+      attribute_value?: string;
+      attribute_unit?: string | null;
+      sort_order?: number;
+      is_visible?: boolean;
+      is_filterable?: boolean;
+    } = {};
     if (data.attributeLabel !== undefined) {
       const label = sanitizeAttributeText(data.attributeLabel, 120);
       if (!label) throw new Error('invalid_label');
