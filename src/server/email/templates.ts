@@ -266,6 +266,7 @@ export function buildOrderEmailTemplate(p: OrderEmailParams): {
       p.items.map((i) => `- ${i.name} x${i.qty} — ${BRL.format(i.totalPrice)}`).join('\n') +
       `\nSubtotal: ${BRL.format(p.subtotal)}` +
       (p.discountTotal > 0 ? `\nDesconto: -${BRL.format(p.discountTotal)}` : '') +
+      (bundleDiscount > 0 ? `\nDesconto de combo: -${BRL.format(bundleDiscount)}` : '') +
       `\n${shippingLabel}: ${shippingValue}` +
       `\nTotal: ${BRL.format(p.total)}`
     : '';
