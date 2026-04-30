@@ -30,11 +30,19 @@ export type QualityIssueCode =
   | 'no_weight'
   | 'no_dimensions'
   | 'no_cost'
-  | 'no_category';
+  | 'no_category'
+  // Atributos técnicos (Onda B). Não bloqueantes, peso leve.
+  | 'no_tech_attrs'
+  | 'no_tech_power'
+  | 'no_tech_voltage'
+  | 'no_tech_color_temp'
+  | 'no_tech_ip_rating'
+  | 'tech_attr_hidden'
+  | 'tech_attr_duplicate';
 
 export interface QualityIssue {
   code: QualityIssueCode;
-  group: 'media' | 'content' | 'seo' | 'fiscal';
+  group: 'media' | 'content' | 'seo' | 'fiscal' | 'tech';
   label: string;
   hint: string;
   weight: number;
@@ -50,8 +58,17 @@ export interface QualityResult {
     content: { score: number; max: 25 };
     seo: { score: number; max: 20 };
     fiscal: { score: number; max: 35 };
+    tech: { score: number; max: 10 };
   };
   canBeFeatured: boolean;
+}
+
+/** Atributo técnico (subset de product_attributes) usado no cálculo de qualidade. */
+export interface QualityAttributeInput {
+  attribute_key?: string | null;
+  attribute_value?: string | null;
+  attribute_unit?: string | null;
+  is_visible?: boolean | null;
 }
 
 export interface QualityProductInput {
@@ -71,6 +88,11 @@ export interface QualityProductInput {
   // Imagens podem vir tanto do array legado `images` quanto da relação `product_images`.
   images?: string[] | null;
   product_images?: Array<{ alt_text?: string | null; original_url?: string | null }> | null;
+  // Atributos técnicos estruturados (Onda B). Opcional para compatibilidade.
+  product_attributes?: QualityAttributeInput[] | null;
+  // Texto usado para inferir contexto (iluminação / uso externo).
+  name?: string | null;
+  tags?: string[] | null;
 }
 
 const SLUG_RE = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
