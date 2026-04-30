@@ -191,7 +191,37 @@ function deliveryMethodLabel(key: string): string {
 // Aplicação dos filtros (consulta orders)
 // ============================================================
 
-async function fetchOrders(filters: ReportFilters, range: { from: Date; to: Date }) {
+type OrderRow = {
+  id: string;
+  order_number: number | string;
+  status: string;
+  payment_status: string | null;
+  payment_method: string | null;
+  delivery_method: string | null;
+  order_type: 'b2c' | 'b2b' | string;
+  subtotal: number | string | null;
+  discount: number | string | null;
+  shipping_cost: number | string | null;
+  total: number | string | null;
+  b2b_discount_total: number | string | null;
+  coupon_code: string | null;
+  mp_fee_amount: number | string | null;
+  estimated_fee_amount: number | string | null;
+  mp_net_amount: number | string | null;
+  estimated_net_amount: number | string | null;
+  payment_fee_source: string | null;
+  company_name: string | null;
+  company_cnpj?: string | null;
+  address_snapshot: unknown;
+  created_at: string;
+  paid_at: string | null;
+  invoice_status: string | null;
+};
+
+async function fetchOrders(
+  filters: ReportFilters,
+  range: { from: Date; to: Date },
+): Promise<OrderRow[]> {
   const supabaseAdmin = await getSupabaseAdmin();
   let q = supabaseAdmin
     .from('orders')
@@ -199,7 +229,7 @@ async function fetchOrders(filters: ReportFilters, range: { from: Date; to: Date
       'id, order_number, status, payment_status, payment_method, delivery_method, order_type, ' +
         'subtotal, discount, shipping_cost, total, b2b_discount_total, coupon_code, ' +
         'mp_fee_amount, estimated_fee_amount, mp_net_amount, estimated_net_amount, payment_fee_source, ' +
-        'company_name, address_snapshot, created_at, paid_at, invoice_status',
+        'company_name, company_cnpj, address_snapshot, created_at, paid_at, invoice_status',
     )
     .gte('created_at', range.from.toISOString())
     .lte('created_at', range.to.toISOString())
@@ -213,7 +243,7 @@ async function fetchOrders(filters: ReportFilters, range: { from: Date; to: Date
 
   const { data, error } = await q;
   if (error) throw new Response(`orders query failed: ${error.message}`, { status: 500 });
-  return data ?? [];
+  return (data ?? []) as unknown as OrderRow[];
 }
 
 function netOf(o: {
