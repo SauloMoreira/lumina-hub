@@ -24,6 +24,8 @@ import { resolveQuickBuyCodes, type QuickBuyResolvedLine } from '@/server/quickB
 import { autocompleteSearch } from '@/server/productSearch.functions';
 import { getPublicCompanySettings } from '@/server/institutional.functions';
 import { ProductImagePlaceholder } from '@/components/store/ProductImagePlaceholder';
+import { CsvImportButton } from '@/components/quickbuy/CsvImportButton';
+import type { CsvParsedRow } from '@/lib/quickBuyCsv';
 
 export const Route = createFileRoute('/compra-rapida')({
   head: () =>
@@ -219,6 +221,11 @@ function CompraRapidaPage() {
   const addQuickPick = (s: any) => {
     // chama RPC para garantir match completo (pode ter B2B etc)
     resolveMutation.mutate([{ code: s.slug || s.name, qty: 1, raw: s.name }]);
+  };
+
+  const handleCsvParsed = (rows: CsvParsedRow[]) => {
+    if (rows.length === 0) return;
+    resolveMutation.mutate(rows.map((r) => ({ code: r.code, qty: r.qty, raw: r.raw })));
   };
 
   const handleAddAllToCart = () => {
@@ -422,6 +429,12 @@ function CompraRapidaPage() {
               </ul>
             )}
           </div>
+
+          {/* Importação CSV */}
+          <CsvImportButton
+            onParsed={handleCsvParsed}
+            isProcessing={resolveMutation.isPending}
+          />
         </div>
 
         {/* Coluna 2: lista resolvida */}
