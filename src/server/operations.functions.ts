@@ -811,6 +811,8 @@ export const getAdminOperations = createServerFn({ method: 'GET' })
         ctaHref: '/admin/configuracoes-b2b',
       });
     }
+
+    return {
       cards,
       alerts,
       daily: {
