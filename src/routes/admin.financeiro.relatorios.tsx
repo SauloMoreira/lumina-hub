@@ -780,9 +780,7 @@ function ReportsPage() {
               <TabsTrigger value="shipping">Frete</TabsTrigger>
               <TabsTrigger value="mp">Mercado Pago</TabsTrigger>
               <TabsTrigger value="invoices">Notas fiscais</TabsTrigger>
-              <TabsTrigger value="utm" disabled>
-                Campanhas / UTM · em breve
-              </TabsTrigger>
+              <TabsTrigger value="utm">Campanhas / UTM</TabsTrigger>
             </TabsList>
 
             {/* ABA: VENDAS */}
