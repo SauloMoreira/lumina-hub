@@ -1,6 +1,6 @@
 import { createFileRoute, useNavigate, useParams, Link } from '@tanstack/react-router';
-import { useEffect, useRef, useState, type FormEvent } from 'react';
-import { ArrowLeft, Loader2, ScanBarcode } from 'lucide-react';
+import { useEffect, useMemo, useRef, useState, type FormEvent } from 'react';
+import { ArrowLeft, Loader2, ScanBarcode, AlertTriangle, CheckCircle2, Sparkles } from 'lucide-react';
 import { AdminLayout } from '@/components/admin/AdminLayout';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -14,6 +14,7 @@ import { ProductImageManager, type ProductImageManagerHandle } from '@/component
 import { boostProductSeoAuto } from '@/server/seo.functions';
 import { BarcodeLookupDialog, type BarcodeApplyChoice } from '@/components/admin/BarcodeLookupDialog';
 import type { BarcodeLookupResult } from '@/server/barcodeLookup.functions';
+import { computeProductQuality, qualityClassColor, qualityClassLabel, QUALITY_FEATURED_MIN, QUALITY_FEATURED_BLOCK_MESSAGE } from '@/lib/productQuality';
 
 export const Route = createFileRoute('/admin/produtos/$id')({ component: ProductForm });
 
