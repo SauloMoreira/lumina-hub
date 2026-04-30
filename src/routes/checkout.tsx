@@ -291,8 +291,8 @@ function CheckoutPage() {
     if (submitting) return;
     setSubmitting(true);
     try {
-      // Re-valida pricing com o backend antes de criar o pedido para detectar divergências.
-      const totalShownBefore = total;
+      // Re-valida pricing com o backend antes de criar o pedido para garantir
+      // que o usuário não veja preço antigo enquanto o servidor recalcula.
       refetchPricing();
 
       const r = await createOrder({
