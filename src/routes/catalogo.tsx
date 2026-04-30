@@ -113,6 +113,36 @@ function CatalogPage() {
 
   const sortValue = search.sort ?? (search.q ? 'relevance' : 'featured');
 
+  // Filtros técnicos selecionados (parsed da URL)
+  const selectedTech: SelectedTechFilters = useMemo(() => ({
+    power: parseFilterCsv(search.pot),
+    color_temperature: parseFilterCsv(search.cor),
+    voltage: parseFilterCsv(search.volt),
+    ip_rating: parseFilterCsv(search.ip),
+  }), [search.pot, search.cor, search.volt, search.ip]);
+
+  const techCount =
+    (selectedTech.power?.length ?? 0) +
+    (selectedTech.color_temperature?.length ?? 0) +
+    (selectedTech.voltage?.length ?? 0) +
+    (selectedTech.ip_rating?.length ?? 0);
+
+  const attrFilters = useMemo(() => toAttrFilterPayload(selectedTech), [selectedTech]);
+
+  // Facets disponíveis para o contexto atual (categoria)
+  const { data: facetsData } = useQuery({
+    queryKey: ['catalog-facets', search.cat ?? ''],
+    staleTime: 1000 * 60 * 5,
+    queryFn: () => getCatalogAttributeFacets({ data: { categorySlug: search.cat || undefined } }),
+  });
+  const facetsByKey = useMemo(() => {
+    const m = new Map<string, Set<string>>();
+    (facetsData?.facets ?? []).forEach((g) => {
+      m.set(g.key, new Set(g.values.map((v) => v.value.toLowerCase())));
+    });
+    return m;
+  }, [facetsData]);
+
   const { data, isLoading, isFetching } = useQuery({
     queryKey: [
       'products', 'catalog-search',
@@ -120,6 +150,8 @@ function CatalogPage() {
       search.precoMin ?? null, search.precoMax ?? null,
       !!search.estoque, !!search.oferta, search.shipping ?? '',
       sortValue, page,
+      // Filtros técnicos entram na chave para invalidar cache
+      JSON.stringify(attrFilters),
     ],
     placeholderData: keepPreviousData,
     staleTime: 30_000,
@@ -138,6 +170,7 @@ function CatalogPage() {
           page,
           pageSize: PAGE_SIZE,
           source: 'public_store',
+          attrFilters: attrFilters.length > 0 ? attrFilters : undefined,
         },
       });
       return res;
