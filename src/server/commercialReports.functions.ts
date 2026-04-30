@@ -692,7 +692,9 @@ export const getCouponsReport = createServerFn({ method: 'POST' })
 
       let couponDiscountTotal = 0;
       let b2bDiscountTotal = 0;
+      let bundleDiscountTotal = 0;
       let ordersWithCoupon = 0;
+      let ordersWithBundle = 0;
       let revenueWithCoupon = 0;
       let marginWithCouponSum = 0;
       let marginWithCouponCount = 0;
@@ -700,6 +702,10 @@ export const getCouponsReport = createServerFn({ method: 'POST' })
       for (const o of orders) {
         const m = orderMetrics.get(o.id)!;
         b2bDiscountTotal += m.b2b_discount;
+        if (m.bundle_discount > 0) {
+          bundleDiscountTotal += m.bundle_discount;
+          ordersWithBundle += 1;
+        }
         if (o.coupon_code) {
           ordersWithCoupon += 1;
           couponDiscountTotal += m.coupon_discount;
