@@ -31,6 +31,8 @@ type CustomerOrder = {
   paymentMethod: string | null;
   subtotal: number;
   discount: number;
+  bundleDiscountTotal: number;
+  bundles: Array<{ bundle_id: string; bundle_name: string; discount_amount: number }>;
   shippingCost: number;
   total: number;
   couponCode: string | null;
@@ -59,7 +61,7 @@ type CustomerOrder = {
     state: string | null;
     zipCode: string | null;
   } | null;
-  items: Array<{ id: string; name: string; image: string | null; qty: number; unitPrice: number; totalPrice: number }>;
+  items: Array<{ id: string; name: string; image: string | null; qty: number; unitPrice: number; totalPrice: number; bundleName: string | null; bundleDiscountAmount: number }>;
 };
 
 function statusMessage(status: string, paymentStatus: string | null) {
