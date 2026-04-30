@@ -66,6 +66,7 @@ import { Route as AdminProdutosIdRouteImport } from './routes/admin.produtos.$id
 import { Route as AdminPedidosOrderIdRouteImport } from './routes/admin.pedidos.$orderId'
 import { Route as AdminInstitutionalPagesIdRouteImport } from './routes/admin.institutional-pages.$id'
 import { Route as AdminFinanceiroResumoRouteImport } from './routes/admin.financeiro.resumo'
+import { Route as AdminFinanceiroRelatoriosRouteImport } from './routes/admin.financeiro.relatorios'
 import { Route as AdminFinanceiroNotasFiscaisRouteImport } from './routes/admin.financeiro.notas-fiscais'
 import { Route as AdminFinanceiroMercadopagoRouteImport } from './routes/admin.financeiro.mercadopago'
 import { Route as AdminFinanceiroMargemRouteImport } from './routes/admin.financeiro.margem'
@@ -363,6 +364,12 @@ const AdminFinanceiroResumoRoute = AdminFinanceiroResumoRouteImport.update({
   path: '/admin/financeiro/resumo',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AdminFinanceiroRelatoriosRoute =
+  AdminFinanceiroRelatoriosRouteImport.update({
+    id: '/admin/financeiro/relatorios',
+    path: '/admin/financeiro/relatorios',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const AdminFinanceiroNotasFiscaisRoute =
   AdminFinanceiroNotasFiscaisRouteImport.update({
     id: '/admin/financeiro/notas-fiscais',
@@ -456,6 +463,7 @@ export interface FileRoutesByFullPath {
   '/admin/financeiro/margem': typeof AdminFinanceiroMargemRoute
   '/admin/financeiro/mercadopago': typeof AdminFinanceiroMercadopagoRoute
   '/admin/financeiro/notas-fiscais': typeof AdminFinanceiroNotasFiscaisRoute
+  '/admin/financeiro/relatorios': typeof AdminFinanceiroRelatoriosRoute
   '/admin/financeiro/resumo': typeof AdminFinanceiroResumoRoute
   '/admin/institutional-pages/$id': typeof AdminInstitutionalPagesIdRoute
   '/admin/pedidos/$orderId': typeof AdminPedidosOrderIdRoute
@@ -522,6 +530,7 @@ export interface FileRoutesByTo {
   '/admin/financeiro/margem': typeof AdminFinanceiroMargemRoute
   '/admin/financeiro/mercadopago': typeof AdminFinanceiroMercadopagoRoute
   '/admin/financeiro/notas-fiscais': typeof AdminFinanceiroNotasFiscaisRoute
+  '/admin/financeiro/relatorios': typeof AdminFinanceiroRelatoriosRoute
   '/admin/financeiro/resumo': typeof AdminFinanceiroResumoRoute
   '/admin/institutional-pages/$id': typeof AdminInstitutionalPagesIdRoute
   '/admin/pedidos/$orderId': typeof AdminPedidosOrderIdRoute
@@ -589,6 +598,7 @@ export interface FileRoutesById {
   '/admin/financeiro/margem': typeof AdminFinanceiroMargemRoute
   '/admin/financeiro/mercadopago': typeof AdminFinanceiroMercadopagoRoute
   '/admin/financeiro/notas-fiscais': typeof AdminFinanceiroNotasFiscaisRoute
+  '/admin/financeiro/relatorios': typeof AdminFinanceiroRelatoriosRoute
   '/admin/financeiro/resumo': typeof AdminFinanceiroResumoRoute
   '/admin/institutional-pages/$id': typeof AdminInstitutionalPagesIdRoute
   '/admin/pedidos/$orderId': typeof AdminPedidosOrderIdRoute
@@ -657,6 +667,7 @@ export interface FileRouteTypes {
     | '/admin/financeiro/margem'
     | '/admin/financeiro/mercadopago'
     | '/admin/financeiro/notas-fiscais'
+    | '/admin/financeiro/relatorios'
     | '/admin/financeiro/resumo'
     | '/admin/institutional-pages/$id'
     | '/admin/pedidos/$orderId'
@@ -723,6 +734,7 @@ export interface FileRouteTypes {
     | '/admin/financeiro/margem'
     | '/admin/financeiro/mercadopago'
     | '/admin/financeiro/notas-fiscais'
+    | '/admin/financeiro/relatorios'
     | '/admin/financeiro/resumo'
     | '/admin/institutional-pages/$id'
     | '/admin/pedidos/$orderId'
@@ -789,6 +801,7 @@ export interface FileRouteTypes {
     | '/admin/financeiro/margem'
     | '/admin/financeiro/mercadopago'
     | '/admin/financeiro/notas-fiscais'
+    | '/admin/financeiro/relatorios'
     | '/admin/financeiro/resumo'
     | '/admin/institutional-pages/$id'
     | '/admin/pedidos/$orderId'
@@ -851,6 +864,7 @@ export interface RootRouteChildren {
   AdminFinanceiroMargemRoute: typeof AdminFinanceiroMargemRoute
   AdminFinanceiroMercadopagoRoute: typeof AdminFinanceiroMercadopagoRoute
   AdminFinanceiroNotasFiscaisRoute: typeof AdminFinanceiroNotasFiscaisRoute
+  AdminFinanceiroRelatoriosRoute: typeof AdminFinanceiroRelatoriosRoute
   AdminFinanceiroResumoRoute: typeof AdminFinanceiroResumoRoute
   AdminInstitutionalPagesIdRoute: typeof AdminInstitutionalPagesIdRoute
   AdminProdutosIdRoute: typeof AdminProdutosIdRoute
@@ -1265,6 +1279,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminFinanceiroResumoRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/admin/financeiro/relatorios': {
+      id: '/admin/financeiro/relatorios'
+      path: '/admin/financeiro/relatorios'
+      fullPath: '/admin/financeiro/relatorios'
+      preLoaderRoute: typeof AdminFinanceiroRelatoriosRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/admin/financeiro/notas-fiscais': {
       id: '/admin/financeiro/notas-fiscais'
       path: '/admin/financeiro/notas-fiscais'
@@ -1405,6 +1426,7 @@ const rootRouteChildren: RootRouteChildren = {
   AdminFinanceiroMargemRoute: AdminFinanceiroMargemRoute,
   AdminFinanceiroMercadopagoRoute: AdminFinanceiroMercadopagoRoute,
   AdminFinanceiroNotasFiscaisRoute: AdminFinanceiroNotasFiscaisRoute,
+  AdminFinanceiroRelatoriosRoute: AdminFinanceiroRelatoriosRoute,
   AdminFinanceiroResumoRoute: AdminFinanceiroResumoRoute,
   AdminInstitutionalPagesIdRoute: AdminInstitutionalPagesIdRoute,
   AdminProdutosIdRoute: AdminProdutosIdRoute,

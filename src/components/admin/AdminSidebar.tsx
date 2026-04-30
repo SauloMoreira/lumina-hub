@@ -216,7 +216,7 @@ const groups: Group[] = [
       { to: '/admin/financeiro/configuracoes', label: 'Configurações financeiras', icon: Receipt },
       { to: '/admin/financeiro/notas-fiscais', label: 'Notas fiscais', icon: Receipt, counterId: 'invoices-pending' },
       { to: '/admin/financeiro/impostos', label: 'Impostos', icon: Receipt, counterId: 'fiscal-pending' },
-      { label: 'Relatórios financeiros', soon: true },
+      { to: '/admin/financeiro/relatorios', label: 'Relatórios financeiros', icon: Receipt },
     ],
   },
   {
