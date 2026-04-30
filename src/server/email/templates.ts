@@ -178,11 +178,13 @@ export function buildOrderEmailTemplate(p: OrderEmailParams): {
     ? 'Grátis'
     : (p.shippingTotal > 0 ? BRL.format(p.shippingTotal) : 'Grátis');
 
+  const bundleDiscount = Number(p.bundleDiscountTotal ?? 0);
   const totalsBlock = c.showItems
     ? `
     <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin-top:16px;font-size:14px;color:#444;">
       <tr><td>Subtotal</td><td style="text-align:right;">${BRL.format(p.subtotal)}</td></tr>
       ${p.discountTotal > 0 ? `<tr><td>Desconto</td><td style="text-align:right;color:#0a7a3e;">- ${BRL.format(p.discountTotal)}</td></tr>` : ''}
+      ${bundleDiscount > 0 ? `<tr><td>Desconto de combo</td><td style="text-align:right;color:#0a7a3e;">- ${BRL.format(bundleDiscount)}</td></tr>` : ''}
       <tr><td>${shippingLabel}</td><td style="text-align:right;">${shippingValue}</td></tr>
       <tr><td style="padding-top:8px;font-weight:bold;color:#111;border-top:1px solid #eee;">Total</td>
           <td style="padding-top:8px;text-align:right;font-weight:bold;color:#111;border-top:1px solid #eee;">${BRL.format(p.total)}</td></tr>
