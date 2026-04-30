@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from '@tanstack/react-router';
 import { useEffect, useMemo, useState } from 'react';
-import { Plus, Pencil, Trash2, Search, Sparkles, X } from 'lucide-react';
+import { Plus, Pencil, Trash2, Search, Sparkles, X, Boxes } from 'lucide-react';
 import { AdminLayout } from '@/components/admin/AdminLayout';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -19,6 +19,8 @@ interface Product {
   sale_price: number | null;
   stock_qty: number;
   stock_min_alert: number | null;
+  stock_alert_enabled?: boolean;
+  allow_out_of_stock_sales?: boolean;
   active: boolean;
   brand: string | null;
   sku: string | null;
@@ -42,6 +44,9 @@ type QuickFilter =
   | 'b2b_incomplete'
   | 'low_stock'
   | 'zero_stock'
+  | 'no_min_stock'
+  | 'allow_oos'
+  | 'block_oos'
   | 'bad_quality'
   | 'no_tech_attrs'
   | 'no_power'
@@ -57,6 +62,9 @@ const FILTERS: Array<{ id: QuickFilter; label: string }> = [
   { id: 'b2b_incomplete', label: 'B2B incompleto' },
   { id: 'low_stock', label: 'Estoque baixo' },
   { id: 'zero_stock', label: 'Estoque zerado' },
+  { id: 'no_min_stock', label: 'Sem estoque mínimo' },
+  { id: 'allow_oos', label: 'Permite venda sem estoque' },
+  { id: 'block_oos', label: 'Não permite venda sem estoque' },
   { id: 'bad_quality', label: 'Qualidade ruim' },
   { id: 'no_tech_attrs', label: 'Sem atributos técnicos' },
   { id: 'no_power', label: 'Sem potência' },
@@ -143,6 +151,12 @@ function ProdutosList() {
         }
         case 'zero_stock':
           return p.stock_qty <= 0;
+        case 'no_min_stock':
+          return p.stock_min_alert == null;
+        case 'allow_oos':
+          return p.allow_out_of_stock_sales === true;
+        case 'block_oos':
+          return p.allow_out_of_stock_sales !== true;
         case 'bad_quality':
           return p.quality?.classification === 'ruim';
         case 'no_tech_attrs':
@@ -166,7 +180,9 @@ function ProdutosList() {
     const c: Record<QuickFilter, number> = {
       all: products.length,
       no_image: 0, no_cost: 0, no_ncm: 0,
-      b2b_incomplete: 0, low_stock: 0, zero_stock: 0, bad_quality: 0,
+      b2b_incomplete: 0, low_stock: 0, zero_stock: 0,
+      no_min_stock: 0, allow_oos: 0, block_oos: 0,
+      bad_quality: 0,
       no_tech_attrs: 0, no_power: 0, no_color_temp: 0, no_voltage: 0, no_ip_rating: 0,
     };
     for (const p of products) {
@@ -177,6 +193,9 @@ function ProdutosList() {
       const min = p.stock_min_alert ?? 5;
       if (p.stock_qty > 0 && p.stock_qty <= min) c.low_stock += 1;
       if (p.stock_qty <= 0) c.zero_stock += 1;
+      if (p.stock_min_alert == null) c.no_min_stock += 1;
+      if (p.allow_out_of_stock_sales) c.allow_oos += 1;
+      else c.block_oos += 1;
       if (p.quality?.classification === 'ruim') c.bad_quality += 1;
       const keys = p.tech_attr_keys;
       if (!keys || keys.size === 0) c.no_tech_attrs += 1;
