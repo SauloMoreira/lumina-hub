@@ -389,6 +389,7 @@ export type Database = {
       }
       b2b_settings: {
         Row: {
+          allow_coupon_in_b2b: boolean
           benefits: Json
           created_at: string
           hero_description: string | null
@@ -412,6 +413,7 @@ export type Database = {
           whatsapp_cta_text: string | null
         }
         Insert: {
+          allow_coupon_in_b2b?: boolean
           benefits?: Json
           created_at?: string
           hero_description?: string | null
@@ -435,6 +437,7 @@ export type Database = {
           whatsapp_cta_text?: string | null
         }
         Update: {
+          allow_coupon_in_b2b?: boolean
           benefits?: Json
           created_at?: string
           hero_description?: string | null
@@ -1658,35 +1661,59 @@ export type Database = {
       }
       order_items: {
         Row: {
+          applied_unit_price: number | null
+          b2b_discount_total: number
+          b2b_discount_unit: number
+          b2b_min_quantity: number | null
+          b2b_rule_applied: string | null
+          b2b_unit_price: number | null
           id: string
           order_id: string
+          pricing_source: string
           product_id: string | null
           product_image: string | null
           product_name: string
           product_sku: string | null
           qty: number
+          retail_unit_price: number | null
           total_price: number
           unit_price: number
         }
         Insert: {
+          applied_unit_price?: number | null
+          b2b_discount_total?: number
+          b2b_discount_unit?: number
+          b2b_min_quantity?: number | null
+          b2b_rule_applied?: string | null
+          b2b_unit_price?: number | null
           id?: string
           order_id: string
+          pricing_source?: string
           product_id?: string | null
           product_image?: string | null
           product_name: string
           product_sku?: string | null
           qty: number
+          retail_unit_price?: number | null
           total_price: number
           unit_price: number
         }
         Update: {
+          applied_unit_price?: number | null
+          b2b_discount_total?: number
+          b2b_discount_unit?: number
+          b2b_min_quantity?: number | null
+          b2b_rule_applied?: string | null
+          b2b_unit_price?: number | null
           id?: string
           order_id?: string
+          pricing_source?: string
           product_id?: string | null
           product_image?: string | null
           product_name?: string
           product_sku?: string | null
           qty?: number
+          retail_unit_price?: number | null
           total_price?: number
           unit_price?: number
         }
@@ -1745,8 +1772,14 @@ export type Database = {
           address_id: string | null
           address_snapshot: Json | null
           admin_notes: string | null
+          b2b_discount_total: number
+          b2b_subtotal: number | null
           cancelled_reason: string | null
           checkout_url: string | null
+          company_cnpj: string | null
+          company_contact_name: string | null
+          company_id: string | null
+          company_name: string | null
           coupon_code: string | null
           created_at: string | null
           delivery_method: string
@@ -1764,6 +1797,7 @@ export type Database = {
           mp_preference_id: string | null
           notes: string | null
           order_number: number
+          order_type: string
           origin_context: string | null
           origin_page: string | null
           origin_path: string | null
@@ -1779,8 +1813,10 @@ export type Database = {
           pickup_store_address: string | null
           pickup_store_name: string | null
           pickup_store_phone: string | null
+          pricing_validated_at: string | null
           public_access_token: string | null
           referrer_url: string | null
+          retail_subtotal: number | null
           shipping_carrier: string | null
           shipping_cost: number
           shipping_service: string | null
@@ -1801,8 +1837,14 @@ export type Database = {
           address_id?: string | null
           address_snapshot?: Json | null
           admin_notes?: string | null
+          b2b_discount_total?: number
+          b2b_subtotal?: number | null
           cancelled_reason?: string | null
           checkout_url?: string | null
+          company_cnpj?: string | null
+          company_contact_name?: string | null
+          company_id?: string | null
+          company_name?: string | null
           coupon_code?: string | null
           created_at?: string | null
           delivery_method?: string
@@ -1820,6 +1862,7 @@ export type Database = {
           mp_preference_id?: string | null
           notes?: string | null
           order_number?: never
+          order_type?: string
           origin_context?: string | null
           origin_page?: string | null
           origin_path?: string | null
@@ -1835,8 +1878,10 @@ export type Database = {
           pickup_store_address?: string | null
           pickup_store_name?: string | null
           pickup_store_phone?: string | null
+          pricing_validated_at?: string | null
           public_access_token?: string | null
           referrer_url?: string | null
+          retail_subtotal?: number | null
           shipping_carrier?: string | null
           shipping_cost?: number
           shipping_service?: string | null
@@ -1857,8 +1902,14 @@ export type Database = {
           address_id?: string | null
           address_snapshot?: Json | null
           admin_notes?: string | null
+          b2b_discount_total?: number
+          b2b_subtotal?: number | null
           cancelled_reason?: string | null
           checkout_url?: string | null
+          company_cnpj?: string | null
+          company_contact_name?: string | null
+          company_id?: string | null
+          company_name?: string | null
           coupon_code?: string | null
           created_at?: string | null
           delivery_method?: string
@@ -1876,6 +1927,7 @@ export type Database = {
           mp_preference_id?: string | null
           notes?: string | null
           order_number?: never
+          order_type?: string
           origin_context?: string | null
           origin_page?: string | null
           origin_path?: string | null
@@ -1891,8 +1943,10 @@ export type Database = {
           pickup_store_address?: string | null
           pickup_store_name?: string | null
           pickup_store_phone?: string | null
+          pricing_validated_at?: string | null
           public_access_token?: string | null
           referrer_url?: string | null
+          retail_subtotal?: number | null
           shipping_carrier?: string | null
           shipping_cost?: number
           shipping_service?: string | null
@@ -2414,6 +2468,10 @@ export type Database = {
       user_belongs_to_company: {
         Args: { _company_id: string; _user_id: string }
         Returns: boolean
+      }
+      validate_b2b_pricing: {
+        Args: { _items: Json; _user_id: string }
+        Returns: Json
       }
     }
     Enums: {
