@@ -223,6 +223,11 @@ function CompraRapidaPage() {
     resolveMutation.mutate([{ code: s.slug || s.name, qty: 1, raw: s.name }]);
   };
 
+  const handleCsvParsed = (rows: CsvParsedRow[]) => {
+    if (rows.length === 0) return;
+    resolveMutation.mutate(rows.map((r) => ({ code: r.code, qty: r.qty, raw: r.raw })));
+  };
+
   const handleAddAllToCart = () => {
     const valid = resolved.filter(
       (ln) => ln.match_status === 'found' && ln.product_id && ln.applied_preview_price != null,
