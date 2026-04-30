@@ -389,6 +389,20 @@ export const createOrder = createServerFn({ method: 'POST' })
       if (row?.valid) discount = Number(row.discount);
     }
 
+    // ========================================================
+    // Onda 9E.4b — DESCONTO DE COMBO
+    // Calculado server-side. Cupom vence: se há cupom aplicado e
+    // allow_bundle_discount_with_coupon=false, o helper retorna 0
+    // e marca todos os combos como blocked_by_coupon.
+    // ========================================================
+    const { computeBundleApplication } = await import('@/server/cartBundleApply.server');
+    const bundleApp = await computeBundleApplication({
+      userId,
+      items: data.items.map((i) => ({ productId: i.productId, qty: i.qty })),
+      hasCoupon: discount > 0,
+    });
+    const bundleDiscountTotal = bundleApp.bundle_discount_total;
+    const hasBundleDiscount = bundleDiscountTotal > 0;
     const isPickup = data.deliveryMethod === 'pickup';
     const isLocal = data.deliveryMethod === 'local_delivery';
 
@@ -457,7 +471,7 @@ export const createOrder = createServerFn({ method: 'POST' })
       : isLocal
       ? `Frete Local Maricá/RJ — ${localZoneInfo!.displayName}`
       : data.shipping?.service ?? null;
-    const total = Math.max(0, subtotal - discount + shippingCost);
+    const total = Math.max(0, subtotal - discount - bundleDiscountTotal + shippingCost);
 
     // Snapshot dos dados de retirada (loja) — em pickup
     let pickupSnap: {
@@ -536,6 +550,10 @@ export const createOrder = createServerFn({ method: 'POST' })
         b2b_subtotal: subtotal,
         b2b_discount_total: b2bDiscountTotal,
         pricing_validated_at: pricing.validated_at,
+        // === Onda 9E.4b: desconto de combo ===
+        bundle_discount_total: bundleDiscountTotal,
+        bundle_discount_details: bundleApp.details as never,
+        has_bundle_discount: hasBundleDiscount,
         ...(pickupSnap ?? {}),
         ...(localZoneInfo
           ? {
@@ -572,6 +590,7 @@ export const createOrder = createServerFn({ method: 'POST' })
           hasCost && totalPrice > 0
             ? Number(((grossMarginAmount! / totalPrice) * 100).toFixed(2))
             : null;
+        const bundleAlloc = bundleApp.perItem.get(i.productId);
         return {
           order_id: order.id,
           product_id: i.productId,
@@ -595,6 +614,14 @@ export const createOrder = createServerFn({ method: 'POST' })
           gross_margin_amount: grossMarginAmount,
           gross_margin_percent: grossMarginPercent,
           cost_source: hasCost ? 'product' : 'none',
+          // === Onda 9E.4b: desconto de combo (rateado) ===
+          // applied_unit_price NÃO é alterado — desconto fica em campo separado.
+          bundle_id: bundleAlloc?.bundle_id ?? null,
+          bundle_name: bundleAlloc?.bundle_name ?? null,
+          bundle_applied: bundleAlloc != null && (bundleAlloc.bundle_discount_amount ?? 0) > 0,
+          bundle_discount_amount: bundleAlloc?.bundle_discount_amount ?? 0,
+          bundle_discount_eligible: bundleAlloc?.bundle_discount_eligible ?? false,
+          bundle_block_reason: bundleAlloc?.block_reason ?? null,
         };
       })
     );

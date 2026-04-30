@@ -73,7 +73,7 @@ export const createMercadoPagoPreference = createServerFn({ method: 'POST' })
     // 1) Carregar pedido + itens (RLS garante posse)
     const { data: order, error: orderErr } = await supabase
       .from('orders')
-      .select('id, user_id, order_number, status, payment_status, subtotal, discount, shipping_cost, total, address_snapshot, mp_preference_id, checkout_url, order_items(id, product_id, product_name, qty, unit_price, total_price)')
+      .select('id, user_id, order_number, status, payment_status, subtotal, discount, bundle_discount_total, shipping_cost, total, address_snapshot, mp_preference_id, checkout_url, order_items(id, product_id, product_name, qty, unit_price, total_price)')
       .eq('id', data.orderId)
       .single();
 
@@ -111,7 +111,7 @@ export const createMercadoPagoPreference = createServerFn({ method: 'POST' })
     }
     const expectedTotal = Math.max(
       0,
-      Number(order.subtotal) - Number(order.discount ?? 0) + Number(order.shipping_cost ?? 0)
+      Number(order.subtotal) - Number(order.discount ?? 0) - Number(order.bundle_discount_total ?? 0) + Number(order.shipping_cost ?? 0)
     );
     if (Math.abs(expectedTotal - Number(order.total)) > 0.05) {
       console.error('[MP] total divergente', { expectedTotal, total: order.total });
@@ -155,6 +155,15 @@ export const createMercadoPagoPreference = createServerFn({ method: 'POST' })
         quantity: 1,
         currency_id: 'BRL',
         unit_price: -Number(Number(order.discount).toFixed(2)),
+      });
+    }
+    if (Number(order.bundle_discount_total ?? 0) > 0) {
+      mpItems.push({
+        id: 'bundle_discount',
+        title: 'Desconto de combo',
+        quantity: 1,
+        currency_id: 'BRL',
+        unit_price: -Number(Number(order.bundle_discount_total).toFixed(2)),
       });
     }
 
