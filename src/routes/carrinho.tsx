@@ -6,6 +6,7 @@ import { useCart, validateB2bLine } from '@/stores/cartStore';
 import { formatBRL, FREE_SHIPPING_THRESHOLD, calcFreeShippingProgress } from '@/lib/domain';
 import { useCartPricing, maskCnpj } from '@/hooks/useCartPricing';
 import { describeB2bReason } from '@/lib/b2bPricingShared';
+import { CartUpsell } from '@/components/store/CartUpsell';
 
 import { buildSeo } from '@/lib/seo';
 
@@ -209,6 +210,8 @@ function CartPage() {
             </Button>
           </aside>
         </div>
+
+        <CartUpsell />
       </div>
     </StoreLayout>
   );

@@ -12,6 +12,7 @@ import { buildSeo, SITE_URL, clamp } from '@/lib/seo';
 import { trackViewProduct, trackAddToCart } from '@/lib/tracking';
 import { ProductGallery } from '@/components/store/ProductGallery';
 import { pickUrl, type ProductImageRow } from '@/lib/productImages';
+import { RelatedProductsBlock } from '@/components/store/RelatedProductsBlock';
 
 type FaqItem = { question: string; answer: string };
 type ProductWithSeo = Product & {
@@ -361,6 +362,10 @@ function ProductPage() {
             </section>
           );
         })()}
+
+        <div className="mt-12">
+          <RelatedProductsBlock productId={product.id} excludeProductIds={[product.id]} />
+        </div>
       </div>
     </StoreLayout>
   );
