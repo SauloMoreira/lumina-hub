@@ -1,5 +1,6 @@
 import { createFileRoute, Link } from '@tanstack/react-router';
 import { Trash2, Plus, Minus, ShoppingBag, ArrowRight, AlertCircle, Building2, BadgePercent } from 'lucide-react';
+import { useQuery } from '@tanstack/react-query';
 import { StoreLayout } from '@/components/layout/StoreLayout';
 import { Button } from '@/components/ui/button';
 import { useCart, validateB2bLine } from '@/stores/cartStore';
@@ -8,6 +9,7 @@ import { useCartPricing, maskCnpj } from '@/hooks/useCartPricing';
 import { describeB2bReason } from '@/lib/b2bPricingShared';
 import { CartUpsell } from '@/components/store/CartUpsell';
 import { CartBundlePreview } from '@/components/store/CartBundlePreview';
+import { getCartBundlePreview } from '@/server/cartBundlePreview.functions';
 
 import { buildSeo } from '@/lib/seo';
 
