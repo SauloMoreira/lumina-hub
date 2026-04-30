@@ -116,7 +116,7 @@ const groups: Group[] = [
         counterIds: ['no-image', 'no-price', 'no-weight', 'low-stock', 'out-of-stock'],
       },
       { to: '/admin/categorias', label: 'Categorias', icon: Tags },
-      { label: 'Estoque', soon: true },
+      { to: '/admin/produtos/estoque', label: 'Estoque', icon: Boxes, counterIds: ['low-stock', 'out-of-stock', 'inactive-products'] },
       { label: 'Preços e promoções', soon: true },
       { label: 'Condições B2B', soon: true },
       { label: 'Importar produtos', soon: true },
