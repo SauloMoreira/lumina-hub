@@ -73,12 +73,12 @@ function NotFoundComponent() {
 // Violações continuam sendo reportadas para /api/public/csp-report.
 const CSP_POLICY = [
   "default-src 'self'",
-  "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://sdk.mercadopago.com https://www.googletagmanager.com https://www.google-analytics.com",
+  "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://sdk.mercadopago.com https://www.googletagmanager.com https://www.google-analytics.com https://connect.facebook.net https://analytics.tiktok.com https://www.clarity.ms https://*.clarity.ms",
   "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
   "font-src 'self' data: https://fonts.gstatic.com",
   "img-src 'self' data: blob: https:",
-  "connect-src 'self' https://*.supabase.co https://*.supabase.in https://api.mercadopago.com https://ai.gateway.lovable.dev https://www.google-analytics.com https://*.google-analytics.com",
-  "frame-src 'self' https://www.mercadopago.com https://www.mercadopago.com.br",
+  "connect-src 'self' https://*.supabase.co https://*.supabase.in https://api.mercadopago.com https://ai.gateway.lovable.dev https://www.google-analytics.com https://*.google-analytics.com https://analytics.google.com https://*.analytics.google.com https://stats.g.doubleclick.net https://www.facebook.com https://*.facebook.com https://analytics.tiktok.com https://*.tiktok.com https://www.clarity.ms https://*.clarity.ms",
+  "frame-src 'self' https://www.mercadopago.com https://www.mercadopago.com.br https://td.doubleclick.net https://www.facebook.com",
   "object-src 'none'",
   "base-uri 'self'",
   "form-action 'self' https://www.mercadopago.com https://www.mercadopago.com.br",
