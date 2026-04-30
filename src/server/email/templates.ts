@@ -24,6 +24,7 @@ export interface OrderEmailParams {
   subtotal: number;
   shippingTotal: number;
   discountTotal: number;
+  bundleDiscountTotal?: number;
   total: number;
   orderUrl: string;
   supportEmail?: string | null;
