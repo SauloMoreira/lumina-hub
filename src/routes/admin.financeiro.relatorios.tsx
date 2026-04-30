@@ -729,13 +729,6 @@ function ReportsPage() {
               />
             </TabsContent>
 
-            <TabsContent value="legacy-products" className="hidden">
-              {/* placeholder para evitar conflito de chave */}
-            </TabsContent>
-                onExport={() => handleExport(exportProductsReportCsv, 'produtos')}
-                exporting={exporting}
-              />
-            </TabsContent>
           </Tabs>
         </div>
       </TooltipProvider>
