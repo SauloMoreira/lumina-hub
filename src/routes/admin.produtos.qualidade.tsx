@@ -1,7 +1,8 @@
 import { createFileRoute, Link } from '@tanstack/react-router';
 import { useMemo, useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
-import { ArrowLeft, AlertTriangle, Image as ImageIcon, DollarSign, Search, FileText, Package } from 'lucide-react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { ArrowLeft, AlertTriangle, Image as ImageIcon, DollarSign, Search, FileText, Package, RefreshCw } from 'lucide-react';
+import { toast } from 'sonner';
 import { AdminLayout } from '@/components/admin/AdminLayout';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -15,15 +16,31 @@ type Filter = 'all' | 'ruim' | 'atencao' | 'active_low' | 'featured_low' | 'no_i
 function ProductQualityPage() {
   const [filter, setFilter] = useState<Filter>('all');
   const [q, setQ] = useState('');
+  const qc = useQueryClient();
 
-  const { data, isLoading } = useQuery({
+  const { data, isLoading, isFetching, refetch, dataUpdatedAt } = useQuery({
     queryKey: ['admin-product-quality'],
     queryFn: () => listProductQuality(),
-    staleTime: 60_000,
+    staleTime: 0,
+    refetchOnMount: 'always',
+    refetchOnWindowFocus: true,
   });
 
   const rows = data?.rows ?? [];
   const counts = data?.counts;
+
+  const handleRefresh = async () => {
+    try {
+      // Invalida também alertas/contadores que dependem da qualidade
+      qc.invalidateQueries({ queryKey: ['admin-counters'] });
+      qc.invalidateQueries({ queryKey: ['day-panel'] });
+      qc.invalidateQueries({ queryKey: ['operations-counters'] });
+      await refetch();
+      toast.success('Scores de qualidade atualizados com sucesso.');
+    } catch {
+      toast.error('Não foi possível atualizar os scores agora. Tente novamente.');
+    }
+  };
 
   const filtered = useMemo(() => {
     let arr = rows;
@@ -45,13 +62,35 @@ function ProductQualityPage() {
   return (
     <AdminLayout
       title="Qualidade do cadastro"
-      action={<Link to={'/admin/produtos' as any}><Button variant="ghost" size="sm"><ArrowLeft className="w-4 h-4 mr-1" /> Produtos</Button></Link>}
+      action={
+        <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleRefresh}
+            disabled={isFetching}
+          >
+            <RefreshCw className={`w-4 h-4 mr-1 ${isFetching ? 'animate-spin' : ''}`} />
+            {isFetching ? 'Atualizando…' : 'Atualizar scores'}
+          </Button>
+          <Link to={'/admin/produtos' as any}>
+            <Button variant="ghost" size="sm"><ArrowLeft className="w-4 h-4 mr-1" /> Produtos</Button>
+          </Link>
+        </div>
+      }
     >
       <div className="space-y-6">
-        <p className="text-sm text-muted-foreground max-w-2xl">
-          Score de 0 a 100 baseado em mídia, conteúdo, SEO, fiscal/logística e custo. Os avisos são <strong>não-bloqueantes</strong> — o produto continua sendo vendido normalmente.
-          Apenas o destaque (vitrines premium, featured) exige score mínimo de <strong>70</strong>.
-        </p>
+        <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-2">
+          <p className="text-sm text-muted-foreground max-w-2xl">
+            Score de 0 a 100 baseado em mídia, conteúdo, SEO, fiscal/logística e custo. Os avisos são <strong>não-bloqueantes</strong> — o produto continua sendo vendido normalmente.
+            Apenas o destaque (vitrines premium, featured) exige score mínimo de <strong>70</strong>.
+          </p>
+          {dataUpdatedAt > 0 && (
+            <span className="text-[11px] text-muted-foreground whitespace-nowrap">
+              Atualizado às {new Date(dataUpdatedAt).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
+            </span>
+          )}
+        </div>
 
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
           <SummaryCard label="Total" value={counts?.total ?? 0} onClick={() => setFilter('all')} active={filter==='all'} />
