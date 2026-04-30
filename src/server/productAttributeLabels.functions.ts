@@ -167,7 +167,13 @@ export const adminUpdateAttributeLabel = createServerFn({ method: 'POST' })
     await requireAdmin();
     const { supabaseAdmin } = await import('@/integrations/supabase/client.server');
 
-    const patch: Record<string, unknown> = {};
+    const patch: {
+      display_label?: string;
+      helper_text?: string | null;
+      raw_value?: string;
+      sort_order?: number;
+      is_active?: boolean;
+    } = {};
     if (data.displayLabel !== undefined) {
       const v = sanitizeAttributeText(data.displayLabel, 160);
       if (!v) throw new Error('invalid_label');
