@@ -75,25 +75,24 @@ function BundlesAdminPage() {
   });
 
   return (
-    <AdminLayout>
-      <div className="flex items-center justify-between gap-3 mb-6">
-        <div className="flex items-center gap-3">
-          <Link to="/admin">
-            <Button variant="ghost" size="sm">
-              <ArrowLeft className="w-4 h-4 mr-1" /> Admin
-            </Button>
-          </Link>
-          <div>
-            <h1 className="font-display text-2xl font-bold">Kits e Combos</h1>
-            <p className="text-sm text-muted-foreground">
-              Agrupe produtos para compra conjunta. Descontos de combo serão aplicados em
-              uma próxima etapa.
-            </p>
-          </div>
-        </div>
+    <AdminLayout
+      title="Kits e Combos"
+      action={
         <Button onClick={() => setCreateOpen(true)} className="gap-2">
           <Plus className="w-4 h-4" /> Novo combo
         </Button>
+      }
+    >
+      <div className="mb-4 flex items-center gap-3">
+        <Link to="/admin">
+          <Button variant="ghost" size="sm">
+            <ArrowLeft className="w-4 h-4 mr-1" /> Admin
+          </Button>
+        </Link>
+        <p className="text-sm text-muted-foreground">
+          Agrupe produtos para compra conjunta. Descontos de combo serão aplicados em uma
+          próxima etapa.
+        </p>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-[360px_1fr] gap-4">
