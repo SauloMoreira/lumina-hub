@@ -150,7 +150,7 @@ async function loadBundlesWithItems(filter: {
     .from('product_bundles')
     .select(
       `id, slug, name, description, image_url, is_active, is_featured,
-       start_date, end_date, updated_at,
+       start_date, end_date, discount_type, discount_value, updated_at,
        items:product_bundle_items (
          id, product_id, quantity, sort_order, is_required,
          product:products (
