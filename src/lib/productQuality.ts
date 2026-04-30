@@ -30,11 +30,19 @@ export type QualityIssueCode =
   | 'no_weight'
   | 'no_dimensions'
   | 'no_cost'
-  | 'no_category';
+  | 'no_category'
+  // Atributos técnicos (Onda B). Não bloqueantes, peso leve.
+  | 'no_tech_attrs'
+  | 'no_tech_power'
+  | 'no_tech_voltage'
+  | 'no_tech_color_temp'
+  | 'no_tech_ip_rating'
+  | 'tech_attr_hidden'
+  | 'tech_attr_duplicate';
 
 export interface QualityIssue {
   code: QualityIssueCode;
-  group: 'media' | 'content' | 'seo' | 'fiscal';
+  group: 'media' | 'content' | 'seo' | 'fiscal' | 'tech';
   label: string;
   hint: string;
   weight: number;
@@ -50,8 +58,17 @@ export interface QualityResult {
     content: { score: number; max: 25 };
     seo: { score: number; max: 20 };
     fiscal: { score: number; max: 35 };
+    tech: { score: number; max: 10 };
   };
   canBeFeatured: boolean;
+}
+
+/** Atributo técnico (subset de product_attributes) usado no cálculo de qualidade. */
+export interface QualityAttributeInput {
+  attribute_key?: string | null;
+  attribute_value?: string | null;
+  attribute_unit?: string | null;
+  is_visible?: boolean | null;
 }
 
 export interface QualityProductInput {
@@ -71,6 +88,11 @@ export interface QualityProductInput {
   // Imagens podem vir tanto do array legado `images` quanto da relação `product_images`.
   images?: string[] | null;
   product_images?: Array<{ alt_text?: string | null; original_url?: string | null }> | null;
+  // Atributos técnicos estruturados (Onda B). Opcional para compatibilidade.
+  product_attributes?: QualityAttributeInput[] | null;
+  // Texto usado para inferir contexto (iluminação / uso externo).
+  name?: string | null;
+  tags?: string[] | null;
 }
 
 const SLUG_RE = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
@@ -156,7 +178,68 @@ export function computeProductQuality(p: QualityProductInput): QualityResult {
   if (p.category_id && p.category_id.length > 0) { fiscal += 5; passed.push('no_category'); }
   else issues.push({ code: 'no_category', group: 'fiscal', weight: 5, label: 'Sem categoria', hint: 'Vincule o produto a uma categoria.' });
 
-  const score = Math.max(0, Math.min(100, media + content + seo + fiscal));
+  // ----- ATRIBUTOS TÉCNICOS (10, bônus aditivo) -----
+  // Modelo intencionalmente leve: a ausência de atributos NÃO derruba o score
+  // (apenas não soma os 10 pts extras). Assim produtos antigos sem cadastro
+  // técnico não são penalizados retroativamente.
+  const techAttrs = (p.product_attributes ?? []).filter((a) => a && (a.attribute_value ?? '').toString().trim().length > 0);
+  const visibleAttrs = techAttrs.filter((a) => a.is_visible !== false);
+  const keysSeen = new Map<string, number>();
+  for (const a of techAttrs) {
+    const k = (a.attribute_key ?? '').toString().toLowerCase().trim();
+    if (k) keysSeen.set(k, (keysSeen.get(k) ?? 0) + 1);
+  }
+  const hasKey = (k: string) => visibleAttrs.some((a) => (a.attribute_key ?? '').toString().toLowerCase().trim() === k);
+  const ctx = `${(p.name ?? '').toString()} ${(p.tags ?? []).join(' ')}`.toLowerCase();
+  // Heurística simples para inferir contexto (sem mexer em RPC ou DB).
+  const looksLightingProduct = /led|lampada|lâmpada|refletor|holofote|painel|plafon|spot|luminaria|lumin[áa]ria|fita\s*led|bulbo/.test(ctx);
+  const looksOutdoor = /externo|outdoor|jardim|piscina|fachada|poste|garagem|área externa|area externa/.test(ctx);
+
+  let tech = 0;
+  if (visibleAttrs.length >= 1) {
+    tech += 3;
+    passed.push('no_tech_attrs');
+  } else {
+    issues.push({
+      code: 'no_tech_attrs',
+      group: 'tech',
+      weight: 3,
+      label: 'Sem atributos técnicos',
+      hint: 'Adicione atributos técnicos para melhorar a ficha do produto e facilitar a busca.',
+    });
+  }
+
+  if (looksLightingProduct) {
+    if (hasKey('power')) { tech += 2; passed.push('no_tech_power'); }
+    else issues.push({ code: 'no_tech_power', group: 'tech', weight: 2, label: 'Sem potência (W)', hint: 'Produtos de iluminação devem informar a potência em watts.' });
+
+    if (hasKey('voltage')) { tech += 2; passed.push('no_tech_voltage'); }
+    else issues.push({ code: 'no_tech_voltage', group: 'tech', weight: 2, label: 'Sem voltagem', hint: 'Informe 127V, 220V ou Bivolt.' });
+
+    if (hasKey('color_temperature')) { tech += 2; passed.push('no_tech_color_temp'); }
+    else issues.push({ code: 'no_tech_color_temp', group: 'tech', weight: 2, label: 'Sem temperatura de cor', hint: 'Use 3000K (quente), 4000K (neutra) ou 6500K (fria).' });
+  }
+
+  if (looksOutdoor) {
+    if (hasKey('ip_rating')) { tech += 1; passed.push('no_tech_ip_rating'); }
+    else issues.push({ code: 'no_tech_ip_rating', group: 'tech', weight: 1, label: 'Sem proteção IP', hint: 'Produtos de uso externo devem informar a proteção IP (ex.: IP65, IP66).' });
+  }
+
+  // Avisos qualitativos (não somam pontos)
+  if (techAttrs.length > 0 && visibleAttrs.length === 0) {
+    issues.push({ code: 'tech_attr_hidden', group: 'tech', weight: 0, label: 'Atributos técnicos invisíveis', hint: 'Todos os atributos cadastrados estão ocultos. Marque ao menos um como visível para aparecer na ficha.' });
+  }
+  for (const [, count] of keysSeen) {
+    if (count > 1) {
+      issues.push({ code: 'tech_attr_duplicate', group: 'tech', weight: 0, label: 'Atributos duplicados', hint: 'Existem atributos com a mesma chave. Consolide os duplicados.' });
+      break;
+    }
+  }
+
+  tech = Math.min(10, tech);
+
+  const baseScore = media + content + seo + fiscal;
+  const score = Math.max(0, Math.min(100, baseScore + tech));
   return {
     score,
     classification: classify(score),
@@ -167,6 +250,7 @@ export function computeProductQuality(p: QualityProductInput): QualityResult {
       content: { score: content, max: 25 },
       seo: { score: seo, max: 20 },
       fiscal: { score: fiscal, max: 35 },
+      tech: { score: tech, max: 10 },
     },
     canBeFeatured: score >= QUALITY_FEATURED_MIN,
   };
