@@ -228,7 +228,7 @@ function ReportsPage() {
   const [deliveryMethod, setDeliveryMethod] = useState<string>('');
 
   // Aba ativa
-  const [tab, setTab] = useState<'sales' | 'margin' | 'products' | 'b2b' | 'coupons' | 'shipping'>('sales');
+  const [tab, setTab] = useState<'sales' | 'margin' | 'products' | 'b2b' | 'coupons' | 'shipping' | 'mp' | 'invoices'>('sales');
 
   // Dados
   const [cards, setCards] = useState<FinanceReportCards | null>(null);
@@ -274,6 +274,20 @@ function ReportsPage() {
   } | null>(null);
   const [shippingLoading, setShippingLoading] = useState(false);
   const [shippingPage, setShippingPage] = useState(1);
+
+  // Mercado Pago
+  const [mpCards, setMpCards] = useState<MpReportCards | null>(null);
+  const [mpList, setMpList] = useState<MpListResult | null>(null);
+  const [mpLoading, setMpLoading] = useState(false);
+  const [mpPage, setMpPage] = useState(1);
+  const [mpFeeSource, setMpFeeSource] = useState<'all' | 'mercado_pago_real' | 'estimated' | 'unknown'>('all');
+
+  // Notas Fiscais
+  const [invCards, setInvCards] = useState<InvoiceReportCards | null>(null);
+  const [invList, setInvList] = useState<InvoiceListResult | null>(null);
+  const [invLoading, setInvLoading] = useState(false);
+  const [invPage, setInvPage] = useState(1);
+  const [invStatus, setInvStatus] = useState<'all' | 'nao_necessaria' | 'pendente_emissao' | 'emitida' | 'erro_emissao' | 'cancelada'>('all');
 
   const filters = useMemo(
     () => ({
@@ -393,11 +407,19 @@ function ReportsPage() {
     return () => {
       alive = false;
     };
+  }, [tab, filters, shippingPage]);
 
   // Carrega Mercado Pago (lazy)
   useEffect(() => {
     if (tab !== 'mp') return;
     let alive = true;
+    setMpLoading(true);
+    Promise.all([
+      getMpReportCards({ data: filters }),
+      getMpPayments({
+        data: { ...filters, page: mpPage, pageSize: 50, feeSource: mpFeeSource },
+      }),
+    ])
     setMpLoading(true);
     Promise.all([
       getMpReportCards({ data: filters }),
@@ -701,12 +723,8 @@ function ReportsPage() {
               <TabsTrigger value="b2b">B2B / Atacado</TabsTrigger>
               <TabsTrigger value="coupons">Cupons</TabsTrigger>
               <TabsTrigger value="shipping">Frete</TabsTrigger>
-              <TabsTrigger value="mp" disabled>
-                Mercado Pago · em breve
-              </TabsTrigger>
-              <TabsTrigger value="invoices" disabled>
-                Notas fiscais · em breve
-              </TabsTrigger>
+              <TabsTrigger value="mp">Mercado Pago</TabsTrigger>
+              <TabsTrigger value="invoices">Notas fiscais</TabsTrigger>
               <TabsTrigger value="utm" disabled>
                 Campanhas / UTM · em breve
               </TabsTrigger>
@@ -791,6 +809,36 @@ function ReportsPage() {
                 setPage={setShippingPage}
                 onExportOrders={() => handleExport(exportShippingByOrderCsv, 'frete pedidos')}
                 onExportDistricts={() => handleExport(exportShippingByDistrictCsv, 'frete bairros')}
+              />
+            </TabsContent>
+
+            {/* ABA: MERCADO PAGO */}
+            <TabsContent value="mp" className="space-y-4 mt-4">
+              <MpSection
+                cards={mpCards}
+                list={mpList}
+                loading={mpLoading}
+                page={mpPage}
+                setPage={setMpPage}
+                feeSource={mpFeeSource}
+                setFeeSource={setMpFeeSource}
+                onExport={() => handleExport(exportMpPaymentsCsv, 'Mercado Pago')}
+                exporting={exporting}
+              />
+            </TabsContent>
+
+            {/* ABA: NOTAS FISCAIS */}
+            <TabsContent value="invoices" className="space-y-4 mt-4">
+              <InvoicesSection
+                cards={invCards}
+                list={invList}
+                loading={invLoading}
+                page={invPage}
+                setPage={setInvPage}
+                statusFilter={invStatus}
+                setStatusFilter={setInvStatus}
+                onExport={() => handleExport(exportInvoicesCsv, 'notas fiscais')}
+                exporting={exporting}
               />
             </TabsContent>
 
@@ -1890,6 +1938,402 @@ function ShippingSection({
             <div className="flex gap-2">
               <Button size="sm" variant="outline" disabled={data.orders.page <= 1 || loading} onClick={() => setPage((p) => Math.max(1, p - 1))}>Anterior</Button>
               <Button size="sm" variant="outline" disabled={data.orders.page * data.orders.pageSize >= data.orders.total || loading} onClick={() => setPage((p) => p + 1)}>Próxima</Button>
+            </div>
+          </div>
+        )}
+      </div>
+    </section>
+  );
+}
+
+// ============================================================
+// SECTION: MERCADO PAGO
+// ============================================================
+
+const MP_FEE_SOURCE_OPTIONS: Array<{ id: 'all' | 'mercado_pago_real' | 'estimated' | 'unknown'; label: string }> = [
+  { id: 'all', label: 'Todas as origens' },
+  { id: 'mercado_pago_real', label: 'Taxa real' },
+  { id: 'estimated', label: 'Taxa estimada' },
+  { id: 'unknown', label: 'Taxa desconhecida' },
+];
+
+function FeeSourceBadge({ src }: { src: 'mercado_pago_real' | 'estimated' | 'unknown' }) {
+  const map = {
+    mercado_pago_real: { label: 'Real', cls: 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-400' },
+    estimated: { label: 'Estimada', cls: 'bg-amber-500/15 text-amber-700 dark:text-amber-400' },
+    unknown: { label: 'Desconhecida', cls: 'bg-muted text-muted-foreground' },
+  } as const;
+  const m = map[src];
+  return <span className={`text-[10px] px-1.5 py-0.5 rounded font-medium ${m.cls}`}>{m.label}</span>;
+}
+
+function MpSection({
+  cards,
+  list,
+  loading,
+  page,
+  setPage,
+  feeSource,
+  setFeeSource,
+  onExport,
+  exporting,
+}: {
+  cards: MpReportCards | null;
+  list: MpListResult | null;
+  loading: boolean;
+  page: number;
+  setPage: (fn: (p: number) => number) => void;
+  feeSource: 'all' | 'mercado_pago_real' | 'estimated' | 'unknown';
+  setFeeSource: (v: 'all' | 'mercado_pago_real' | 'estimated' | 'unknown') => void;
+  onExport: () => void;
+  exporting: boolean;
+}) {
+  const cardDefs: CardDef[] = cards
+    ? [
+        { label: 'Valor bruto pago', value: brl(cards.grossPaid) },
+        { label: 'Taxas reais MP', value: brl(cards.realFees), tooltip: 'Soma das taxas confirmadas pelo Mercado Pago.' },
+        {
+          label: 'Taxas estimadas MP',
+          value: brl(cards.estimatedFees),
+          warn: cards.estimatedFees > 0,
+          tooltip: 'Estimativa usada quando o MP não retorna a taxa real.',
+        },
+        { label: 'Valor líquido', value: brl(cards.netRevenue) },
+        { label: 'Pagamentos pagos', value: String(cards.countPaid) },
+        { label: 'Pendentes', value: String(cards.countPending), warn: cards.pendingOlderThan24h > 0, hint: cards.pendingOlderThan24h > 0 ? `${cards.pendingOlderThan24h} há +24h` : undefined },
+        { label: 'Recusados', value: String(cards.countRejected) },
+        { label: 'Cancelados', value: String(cards.countCancelled) },
+        { label: 'Com taxa real', value: `${cards.countFeeReal} (${pct(cards.pctFeeReal)})` },
+        { label: 'Com taxa estimada', value: `${cards.countFeeEstimated} (${pct(cards.pctFeeEstimated)})`, warn: cards.countFeeEstimated > 0 },
+        { label: 'Com taxa desconhecida', value: `${cards.countFeeUnknown} (${pct(cards.pctFeeUnknown)})`, warn: cards.countFeeUnknown > 0 },
+        { label: 'Webhooks com erro', value: String(cards.webhookErrors), warn: cards.webhookErrors > 0 },
+        { label: 'Último webhook', value: cards.lastWebhookAt ? fmtDateTime(cards.lastWebhookAt) : '—' },
+        { label: 'Sem ID Mercado Pago', value: String(cards.paymentsWithoutMpId), warn: cards.paymentsWithoutMpId > 0 },
+        { label: 'Sem método identificado', value: String(cards.paymentsWithoutMethod), warn: cards.paymentsWithoutMethod > 0 },
+      ]
+    : [];
+
+  return (
+    <section className="space-y-4">
+      <div className="bg-muted/30 border border-border rounded-lg p-3 text-xs text-muted-foreground flex items-start gap-2">
+        <Info className="w-4 h-4 mt-0.5 shrink-0" />
+        <p>
+          A <strong>taxa real</strong> é retornada pelo Mercado Pago. A <strong>taxa estimada</strong> é usada quando o MP não retorna os detalhes da transação. Pagamentos com taxa <strong>desconhecida</strong> não puderam ser estimados — verifique o webhook.
+        </p>
+      </div>
+
+      {loading && !cards ? (
+        <div className="flex items-center justify-center py-12 text-muted-foreground">
+          <Loader2 className="w-5 h-5 animate-spin mr-2" /> Carregando…
+        </div>
+      ) : (
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
+          {cardDefs.map((c) => (
+            <MetricCard key={c.label} card={c} />
+          ))}
+        </div>
+      )}
+
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <div className="flex items-center gap-2">
+          <span className="text-xs text-muted-foreground">Origem da taxa:</span>
+          <Select value={feeSource} onValueChange={(v) => setFeeSource(v as typeof feeSource)}>
+            <SelectTrigger className="h-9 w-[180px]"><SelectValue /></SelectTrigger>
+            <SelectContent>
+              {MP_FEE_SOURCE_OPTIONS.map((o) => (
+                <SelectItem key={o.id} value={o.id}>{o.label}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+        <Button size="sm" variant="outline" onClick={onExport} disabled={exporting || !list}>
+          {exporting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
+          Exportar CSV
+        </Button>
+      </div>
+
+      <div className="bg-card border border-border rounded-xl overflow-hidden">
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead className="bg-muted/30 text-xs text-muted-foreground">
+              <tr>
+                <th className="text-left px-3 py-2">Data</th>
+                <th className="text-left px-3 py-2">Pedido</th>
+                <th className="text-left px-3 py-2">Cliente</th>
+                <th className="text-left px-3 py-2">Tipo</th>
+                <th className="text-left px-3 py-2">Método</th>
+                <th className="text-left px-3 py-2">Status</th>
+                <th className="text-right px-3 py-2">Bruto</th>
+                <th className="text-right px-3 py-2">Taxa</th>
+                <th className="text-left px-3 py-2">Origem</th>
+                <th className="text-right px-3 py-2">Líquido</th>
+                <th className="text-left px-3 py-2">Webhook</th>
+              </tr>
+            </thead>
+            <tbody>
+              {list && list.rows.length > 0 ? (
+                list.rows.map((r) => (
+                  <tr key={r.id} className="border-t border-border hover:bg-muted/20">
+                    <td className="px-3 py-2 text-xs whitespace-nowrap">{fmtDateTime(r.created_at)}</td>
+                    <td className="px-3 py-2">
+                      <Link to="/admin/pedidos/$orderId" params={{ orderId: r.id }} className="text-primary hover:underline font-medium">
+                        #{r.order_number}
+                      </Link>
+                    </td>
+                    <td className="px-3 py-2 text-xs">{r.customer_name || '—'}</td>
+                    <td className="px-3 py-2 text-xs uppercase">{r.order_type}</td>
+                    <td className="px-3 py-2 text-xs">{r.payment_method_label}</td>
+                    <td className="px-3 py-2 text-xs">{r.payment_status}</td>
+                    <td className="px-3 py-2 text-right text-xs">{brl(r.gross_amount)}</td>
+                    <td className="px-3 py-2 text-right text-xs">{r.fee_amount > 0 ? brl(r.fee_amount) : '—'}</td>
+                    <td className="px-3 py-2"><FeeSourceBadge src={r.fee_source} /></td>
+                    <td className="px-3 py-2 text-right text-xs font-medium">
+                      {r.net_complete ? brl(r.net_amount) : <span className="text-muted-foreground">incompleto</span>}
+                    </td>
+                    <td className="px-3 py-2 text-xs">
+                      {r.mp_webhook_error ? (
+                        <span className="text-destructive" title={r.mp_webhook_error}>Erro</span>
+                      ) : r.mp_last_webhook_at ? (
+                        <span className="text-muted-foreground">{fmtDateTime(r.mp_last_webhook_at)}</span>
+                      ) : (
+                        <span className="text-muted-foreground">—</span>
+                      )}
+                    </td>
+                  </tr>
+                ))
+              ) : (
+                <tr><td colSpan={11} className="px-3 py-8 text-center text-muted-foreground text-sm">Nenhum pagamento no período.</td></tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+        {list && list.total > list.pageSize && (
+          <div className="flex items-center justify-between px-3 py-2 border-t border-border text-xs">
+            <span className="text-muted-foreground">
+              {(list.page - 1) * list.pageSize + 1}–{Math.min(list.page * list.pageSize, list.total)} de {list.total}
+            </span>
+            <div className="flex gap-2">
+              <Button size="sm" variant="outline" disabled={list.page <= 1 || loading} onClick={() => setPage((p) => Math.max(1, p - 1))}>Anterior</Button>
+              <Button size="sm" variant="outline" disabled={list.page * list.pageSize >= list.total || loading} onClick={() => setPage((p) => p + 1)}>Próxima</Button>
+            </div>
+          </div>
+        )}
+      </div>
+    </section>
+  );
+}
+
+// ============================================================
+// SECTION: NOTAS FISCAIS
+// ============================================================
+
+const INVOICE_STATUS_OPTIONS: Array<{ id: 'all' | 'nao_necessaria' | 'pendente_emissao' | 'emitida' | 'erro_emissao' | 'cancelada'; label: string }> = [
+  { id: 'all', label: 'Todos os status' },
+  { id: 'pendente_emissao', label: 'Pendente' },
+  { id: 'emitida', label: 'Emitida' },
+  { id: 'erro_emissao', label: 'Com erro' },
+  { id: 'cancelada', label: 'Cancelada' },
+  { id: 'nao_necessaria', label: 'Não necessária' },
+];
+
+function InvoiceStatusBadge({ status }: { status: string }) {
+  const map: Record<string, { label: string; cls: string }> = {
+    nao_necessaria: { label: 'Não necessária', cls: 'bg-muted text-muted-foreground' },
+    pendente_emissao: { label: 'Pendente', cls: 'bg-amber-500/15 text-amber-700 dark:text-amber-400' },
+    emitida: { label: 'Emitida', cls: 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-400' },
+    erro_emissao: { label: 'Erro', cls: 'bg-destructive/15 text-destructive' },
+    cancelada: { label: 'Cancelada', cls: 'bg-muted text-muted-foreground' },
+  };
+  const m = map[status] ?? { label: status, cls: 'bg-muted text-muted-foreground' };
+  return <span className={`text-[11px] px-1.5 py-0.5 rounded font-medium ${m.cls}`}>{m.label}</span>;
+}
+
+function truncateKey(key: string | null) {
+  if (!key) return '—';
+  if (key.length <= 14) return key;
+  return `${key.slice(0, 6)}…${key.slice(-6)}`;
+}
+
+function InvoicesSection({
+  cards,
+  list,
+  loading,
+  page,
+  setPage,
+  statusFilter,
+  setStatusFilter,
+  onExport,
+  exporting,
+}: {
+  cards: InvoiceReportCards | null;
+  list: InvoiceListResult | null;
+  loading: boolean;
+  page: number;
+  setPage: (fn: (p: number) => number) => void;
+  statusFilter: 'all' | 'nao_necessaria' | 'pendente_emissao' | 'emitida' | 'erro_emissao' | 'cancelada';
+  setStatusFilter: (v: 'all' | 'nao_necessaria' | 'pendente_emissao' | 'emitida' | 'erro_emissao' | 'cancelada') => void;
+  onExport: () => void;
+  exporting: boolean;
+}) {
+  const cardDefs: CardDef[] = cards
+    ? [
+        { label: 'Pendentes', value: String(cards.pending), warn: cards.pending > 0 },
+        { label: 'Emitidas', value: String(cards.issued) },
+        { label: 'Com erro', value: String(cards.errored), warn: cards.errored > 0 },
+        { label: 'Canceladas', value: String(cards.cancelled) },
+        { label: 'Não necessárias', value: String(cards.notRequired) },
+        { label: 'Pagos sem nota', value: String(cards.paidWithoutInvoice), warn: cards.paidWithoutInvoice > 0 },
+        { label: 'Pagos +24h sem nota', value: String(cards.paidOver24hWithoutInvoice), warn: cards.paidOver24hWithoutInvoice > 0 },
+        { label: 'B2B sem nota', value: String(cards.b2bPaidWithoutInvoice), warn: cards.b2bPaidWithoutInvoice > 0 },
+        { label: 'Valor emitido', value: brl(cards.totalIssuedAmount) },
+        { label: 'Valor pendente', value: brl(cards.totalPendingAmount) },
+      ]
+    : [];
+
+  return (
+    <section className="space-y-4">
+      <div className="bg-muted/30 border border-border rounded-lg p-3 text-xs text-muted-foreground flex items-start gap-2">
+        <Info className="w-4 h-4 mt-0.5 shrink-0" />
+        <p>
+          Notas fiscais são <strong>registradas manualmente</strong> aqui após emissão fora da plataforma. Esta tela <strong>não emite NF-e automaticamente</strong>.
+        </p>
+      </div>
+
+      {loading && !cards ? (
+        <div className="flex items-center justify-center py-12 text-muted-foreground">
+          <Loader2 className="w-5 h-5 animate-spin mr-2" /> Carregando…
+        </div>
+      ) : (
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
+          {cardDefs.map((c) => (
+            <MetricCard key={c.label} card={c} />
+          ))}
+        </div>
+      )}
+
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <div className="flex items-center gap-2">
+          <span className="text-xs text-muted-foreground">Status fiscal:</span>
+          <Select value={statusFilter} onValueChange={(v) => setStatusFilter(v as typeof statusFilter)}>
+            <SelectTrigger className="h-9 w-[200px]"><SelectValue /></SelectTrigger>
+            <SelectContent>
+              {INVOICE_STATUS_OPTIONS.map((o) => (
+                <SelectItem key={o.id} value={o.id}>{o.label}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+        <Button size="sm" variant="outline" onClick={onExport} disabled={exporting || !list}>
+          {exporting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
+          Exportar CSV
+        </Button>
+      </div>
+
+      <div className="bg-card border border-border rounded-xl overflow-hidden">
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead className="bg-muted/30 text-xs text-muted-foreground">
+              <tr>
+                <th className="text-left px-3 py-2">Data</th>
+                <th className="text-left px-3 py-2">Pedido</th>
+                <th className="text-left px-3 py-2">Cliente</th>
+                <th className="text-left px-3 py-2">Tipo</th>
+                <th className="text-left px-3 py-2">Empresa</th>
+                <th className="text-right px-3 py-2">Valor</th>
+                <th className="text-left px-3 py-2">Status</th>
+                <th className="text-left px-3 py-2">Nº / Série</th>
+                <th className="text-left px-3 py-2">Chave</th>
+                <th className="text-left px-3 py-2">Emissão</th>
+                <th className="text-left px-3 py-2">Tempo desde pagto</th>
+                <th className="text-left px-3 py-2">Links</th>
+              </tr>
+            </thead>
+            <tbody>
+              {list && list.rows.length > 0 ? (
+                list.rows.map((r) => (
+                  <tr key={r.id} className="border-t border-border hover:bg-muted/20">
+                    <td className="px-3 py-2 text-xs whitespace-nowrap">{fmtDateTime(r.created_at)}</td>
+                    <td className="px-3 py-2">
+                      <Link to="/admin/pedidos/$orderId" params={{ orderId: r.id }} className="text-primary hover:underline font-medium">
+                        #{r.order_number}
+                      </Link>
+                      {r.has_incomplete_fiscal_items && (
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <AlertCircle className="w-3 h-3 text-amber-600 dark:text-amber-400 inline ml-1" />
+                          </TooltipTrigger>
+                          <TooltipContent className="max-w-xs">
+                            Este pedido contém produto com dados fiscais incompletos. Revise antes de emitir a nota fiscal no sistema externo.
+                          </TooltipContent>
+                        </Tooltip>
+                      )}
+                    </td>
+                    <td className="px-3 py-2 text-xs">{r.customer_name || '—'}</td>
+                    <td className="px-3 py-2 text-xs uppercase">{r.order_type}</td>
+                    <td className="px-3 py-2 text-xs">
+                      {r.company_name ? (
+                        <div>
+                          <div>{r.company_name}</div>
+                          <div className="text-[10px] text-muted-foreground">{r.company_cnpj_masked}</div>
+                        </div>
+                      ) : '—'}
+                    </td>
+                    <td className="px-3 py-2 text-right text-xs">{brl(r.total)}</td>
+                    <td className="px-3 py-2"><InvoiceStatusBadge status={r.invoice_status} /></td>
+                    <td className="px-3 py-2 text-xs">
+                      {r.invoice_number ? `${r.invoice_number}${r.invoice_series ? ` / ${r.invoice_series}` : ''}` : '—'}
+                    </td>
+                    <td className="px-3 py-2 text-xs font-mono">
+                      {r.invoice_access_key ? (
+                        <button
+                          type="button"
+                          className="text-primary hover:underline"
+                          title="Copiar chave de acesso"
+                          onClick={() => {
+                            navigator.clipboard.writeText(r.invoice_access_key!);
+                            toast.success('Chave copiada.');
+                          }}
+                        >
+                          {truncateKey(r.invoice_access_key)}
+                        </button>
+                      ) : '—'}
+                    </td>
+                    <td className="px-3 py-2 text-xs whitespace-nowrap">
+                      {r.invoice_issued_at ? fmtDateTime(r.invoice_issued_at) : '—'}
+                    </td>
+                    <td className="px-3 py-2 text-xs">
+                      {r.hours_since_paid != null ? `${Math.round(r.hours_since_paid)}h` : '—'}
+                    </td>
+                    <td className="px-3 py-2 text-xs">
+                      <div className="flex gap-2">
+                        {r.invoice_danfe_url && (
+                          <a href={r.invoice_danfe_url} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline inline-flex items-center gap-0.5">
+                            DANFE <ExternalLink className="w-3 h-3" />
+                          </a>
+                        )}
+                        {r.invoice_xml_url && (
+                          <a href={r.invoice_xml_url} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline inline-flex items-center gap-0.5">
+                            XML <ExternalLink className="w-3 h-3" />
+                          </a>
+                        )}
+                      </div>
+                    </td>
+                  </tr>
+                ))
+              ) : (
+                <tr><td colSpan={12} className="px-3 py-8 text-center text-muted-foreground text-sm">Nenhuma nota fiscal no período.</td></tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+        {list && list.total > list.pageSize && (
+          <div className="flex items-center justify-between px-3 py-2 border-t border-border text-xs">
+            <span className="text-muted-foreground">
+              {(list.page - 1) * list.pageSize + 1}–{Math.min(list.page * list.pageSize, list.total)} de {list.total}
+            </span>
+            <div className="flex gap-2">
+              <Button size="sm" variant="outline" disabled={list.page <= 1 || loading} onClick={() => setPage((p) => Math.max(1, p - 1))}>Anterior</Button>
+              <Button size="sm" variant="outline" disabled={list.page * list.pageSize >= list.total || loading} onClick={() => setPage((p) => p + 1)}>Próxima</Button>
             </div>
           </div>
         )}
