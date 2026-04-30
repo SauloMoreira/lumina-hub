@@ -74,6 +74,7 @@ export const adminGlobalSearch = createServerFn({ method: 'POST' })
       campaignsRes,
       bundlesRes,
       invoicesRes,
+      attrMatchRes,
     ] = await Promise.all([
       supabaseAdmin
         .from('products')
@@ -161,6 +162,20 @@ export const adminGlobalSearch = createServerFn({ method: 'POST' })
           ].join(','),
         )
         .limit(PER_GROUP),
+
+      // Atributos técnicos: localiza produtos por valor/label/unidade técnica
+      // (ex.: "IP66", "Bivolt", "6500K", "18W"). Limita a 8 e depois resolve produtos.
+      supabaseAdmin
+        .from('product_attributes')
+        .select('product_id')
+        .or(
+          [
+            `attribute_value.ilike.${like}`,
+            `attribute_label.ilike.${like}`,
+            `attribute_unit.ilike.${like}`,
+          ].join(','),
+        )
+        .limit(20),
     ]);
 
     for (const p of productsRes.data ?? []) {
