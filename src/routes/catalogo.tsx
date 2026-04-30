@@ -1,7 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { useQuery } from '@tanstack/react-query';
-import { useState, useMemo } from 'react';
-import { Search, SlidersHorizontal, ChevronLeft, ChevronRight, X, Truck } from 'lucide-react';
+import { useQuery, keepPreviousData } from '@tanstack/react-query';
+import { useEffect, useState } from 'react';
+import { Search, SlidersHorizontal, ChevronLeft, ChevronRight, X, Truck, MessageCircle, Tag } from 'lucide-react';
 import { z } from 'zod';
 import { StoreLayout } from '@/components/layout/StoreLayout';
 import { ProductCard } from '@/components/store/ProductCard';
@@ -12,17 +12,22 @@ import { supabase } from '@/integrations/supabase/client';
 import type { Product, Category } from '@/lib/domain';
 import { FREE_SHIPPING_THRESHOLD, formatBRL } from '@/lib/domain';
 import { trackSearch } from '@/lib/tracking';
-import { imageUrlsFromProductImages } from '@/lib/productImages';
+import { searchProducts } from '@/server/productSearch.functions';
+import { getPublicCompanySettings } from '@/server/institutional.functions';
 
 const PAGE_SIZE = 24;
 
 const searchSchema = z.object({
   cat: z.string().optional(),
   q: z.string().optional(),
-  sort: z.enum(['featured', 'price_asc', 'price_desc', 'newest', 'best_sellers']).optional(),
+  sort: z.enum(['relevance', 'featured', 'price_asc', 'price_desc', 'newest', 'best_sellers']).optional(),
   page: z.coerce.number().int().min(1).optional(),
   oferta: z.coerce.boolean().optional(),
   shipping: z.enum(['free']).optional(),
+  marca: z.string().optional(),
+  precoMin: z.coerce.number().min(0).optional(),
+  precoMax: z.coerce.number().min(0).optional(),
+  estoque: z.coerce.boolean().optional(),
 });
 
 import { buildSeo } from '@/lib/seo';
@@ -37,15 +42,26 @@ export const Route = createFileRoute('/catalogo')({
   component: CatalogPage,
 });
 
+function onlyDigits(s: string | null | undefined) {
+  return (s ?? '').replace(/\D+/g, '');
+}
+
 function CatalogPage() {
   const search = Route.useSearch();
   const navigate = Route.useNavigate();
   const [q, setQ] = useState(search.q ?? '');
+  const [priceMin, setPriceMin] = useState(search.precoMin?.toString() ?? '');
+  const [priceMax, setPriceMax] = useState(search.precoMax?.toString() ?? '');
   const page = search.page ?? 1;
+
+  // Sincroniza inputs locais quando os search params mudam por outras vias
+  useEffect(() => { setQ(search.q ?? ''); }, [search.q]);
+  useEffect(() => { setPriceMin(search.precoMin?.toString() ?? ''); }, [search.precoMin]);
+  useEffect(() => { setPriceMax(search.precoMax?.toString() ?? ''); }, [search.precoMax]);
 
   const { data: categories } = useQuery({
     queryKey: ['categories'],
-    staleTime: 1000 * 60 * 60, // 1h
+    staleTime: 1000 * 60 * 60,
     queryFn: async () => {
       const { data } = await supabase
         .from('categories')
@@ -56,74 +72,89 @@ function CatalogPage() {
     },
   });
 
-  const { data, isLoading } = useQuery({
-    queryKey: ['products', 'catalog', search.cat, search.sort, page, search.oferta, search.shipping],
-    staleTime: 0,
-    refetchOnMount: 'always',
-    refetchOnWindowFocus: true,
-    enabled: !search.cat || !!categories,
+  const { data: brandsData } = useQuery({
+    queryKey: ['catalog-brands'],
+    staleTime: 1000 * 60 * 30,
     queryFn: async () => {
-      const from = (page - 1) * PAGE_SIZE;
-      const to = from + PAGE_SIZE - 1;
-      let query = supabase
+      const { data } = await supabase
         .from('products')
-        .select('id, name, slug, price, sale_price, images, brand, tags, stock_qty, featured, free_shipping_eligible, category_id, product_images(url_thumb, url_card, original_url, is_primary, sort_order)', { count: 'exact' })
-        .eq('active', true);
-      if (search.cat) {
-        const cat = categories?.find((c) => c.slug === search.cat);
-        if (cat) query = query.eq('category_id', cat.id);
-      }
-      if (search.oferta) {
-        query = query.not('sale_price', 'is', null);
-      }
-      if (search.shipping === 'free') {
-        query = query.eq('free_shipping_eligible', true);
-      }
-      if (search.sort === 'best_sellers') {
-        // Sem histórico de vendas: tratamos "destaques" como produtos marcados featured.
-        query = query.eq('featured', true);
-      }
-      if (search.sort === 'price_asc') query = query.order('price', { ascending: true });
-      else if (search.sort === 'price_desc') query = query.order('price', { ascending: false });
-      else if (search.sort === 'newest') query = query.order('created_at', { ascending: false });
-      else if (search.sort === 'best_sellers') query = query.order('updated_at', { ascending: false });
-      else query = query.order('featured', { ascending: false }).order('created_at', { ascending: false });
-
-      if (search.oferta) {
-        const { data, error } = await query;
-        if (error) throw error;
-        const offerProducts = (data ?? [])
-          .map((p: any) => ({ ...p, images: imageUrlsFromProductImages(p.product_images, p.images) }))
-          .filter((p: Product) => p.sale_price != null && Number(p.sale_price) < Number(p.price)) as Product[];
-        return { products: offerProducts.slice(from, to + 1), total: offerProducts.length };
-      }
-
-      const { data, error, count } = await query.range(from, to);
-      if (error) throw error;
-      const products = (data ?? []).map((p: any) => ({ ...p, images: imageUrlsFromProductImages(p.product_images, p.images) })) as Product[];
-      return { products, total: count ?? 0 };
+        .select('brand')
+        .eq('active', true)
+        .not('brand', 'is', null)
+        .limit(1000);
+      const set = new Set<string>();
+      (data ?? []).forEach((r: any) => {
+        const b = (r.brand ?? '').trim();
+        if (b) set.add(b);
+      });
+      return Array.from(set).sort((a, b) => a.localeCompare(b, 'pt-BR'));
     },
   });
 
-  const products = data?.products ?? [];
+  const { data: companyData } = useQuery({
+    queryKey: ['public-company-settings'],
+    staleTime: 1000 * 60 * 30,
+    queryFn: () => getPublicCompanySettings(),
+  });
+  const supportWhats = onlyDigits(companyData?.company?.support_whatsapp);
+
+  const sortValue = search.sort ?? (search.q ? 'relevance' : 'featured');
+
+  const { data, isLoading, isFetching } = useQuery({
+    queryKey: [
+      'products', 'catalog-search',
+      search.q ?? '', search.cat ?? '', search.marca ?? '',
+      search.precoMin ?? null, search.precoMax ?? null,
+      !!search.estoque, !!search.oferta, search.shipping ?? '',
+      sortValue, page,
+    ],
+    placeholderData: keepPreviousData,
+    staleTime: 30_000,
+    queryFn: async () => {
+      const res = await searchProducts({
+        data: {
+          q: search.q || undefined,
+          categorySlug: search.cat || undefined,
+          brand: search.marca || undefined,
+          priceMin: search.precoMin,
+          priceMax: search.precoMax,
+          inStock: search.estoque || undefined,
+          onSale: search.oferta || undefined,
+          freeShipping: search.shipping === 'free' || undefined,
+          sort: sortValue,
+          page,
+          pageSize: PAGE_SIZE,
+          source: 'public_store',
+        },
+      });
+      return res;
+    },
+  });
+
+  const products = (data?.products ?? []) as Product[];
   const total = data?.total ?? 0;
   const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
 
-  const filtered = useMemo(() => {
-    const term = (search.q ?? '').toLowerCase().trim();
-    if (!term) return products;
-    return products.filter(
-      (p) => p.name.toLowerCase().includes(term) || p.brand?.toLowerCase().includes(term) || p.tags.some((t) => t.toLowerCase().includes(term))
-    );
-  }, [products, search.q]);
-
   const goPage = (p: number) => navigate({ search: (s: any) => ({ ...s, page: p }) as any });
 
-  const pageTitle = search.oferta
+  const submitSearch = () => {
+    if (q) trackSearch(q);
+    navigate({ search: (s: any) => ({ ...s, q: q || undefined, page: 1 }) as any });
+  };
+
+  const applyPrice = () => {
+    const min = priceMin ? Number(priceMin) : undefined;
+    const max = priceMax ? Number(priceMax) : undefined;
+    navigate({ search: (s: any) => ({ ...s, precoMin: min, precoMax: max, page: 1 }) as any });
+  };
+
+  const pageTitle = search.q
+    ? `Resultados para "${search.q}"`
+    : search.oferta
     ? 'Ofertas da semana'
     : search.shipping === 'free'
     ? 'Produtos elegíveis a frete grátis'
-    : search.sort === 'best_sellers'
+    : sortValue === 'best_sellers'
     ? 'Destaques da loja'
     : search.cat
     ? categories?.find((c) => c.slug === search.cat)?.name ?? 'Produtos'
@@ -131,11 +162,14 @@ function CatalogPage() {
 
   const pageSubtitle = search.oferta
     ? 'Produtos com desconto ativo'
-    : search.sort === 'best_sellers'
+    : sortValue === 'best_sellers'
     ? 'Os produtos mais procurados pelos nossos clientes.'
     : null;
 
-  const hasActiveFilters = !!(search.cat || search.oferta || search.shipping || search.sort || search.q);
+  const hasActiveFilters = !!(
+    search.cat || search.oferta || search.shipping || search.sort || search.q ||
+    search.marca || search.precoMin != null || search.precoMax != null || search.estoque
+  );
 
   const clearFilters = () => navigate({ search: {} as any });
 
@@ -175,6 +209,34 @@ function CatalogPage() {
 
           {hasActiveFilters && (
             <div className="flex flex-wrap items-center gap-2 mb-4">
+              {search.q && (
+                <button onClick={() => { setQ(''); navigate({ search: (s: any) => ({ ...s, q: undefined, page: 1 }) as any }); }} className="inline-flex items-center gap-1.5 text-xs bg-surface px-2.5 py-1 rounded-full hover:bg-muted">
+                  "{search.q}" <X className="w-3 h-3" />
+                </button>
+              )}
+              {search.cat && (
+                <button onClick={() => navigate({ search: (s: any) => ({ ...s, cat: undefined, page: 1 }) as any })} className="inline-flex items-center gap-1.5 text-xs bg-primary-tint text-primary px-2.5 py-1 rounded-full hover:bg-primary/10">
+                  {categories?.find((c) => c.slug === search.cat)?.name ?? search.cat} <X className="w-3 h-3" />
+                </button>
+              )}
+              {search.marca && (
+                <button onClick={() => navigate({ search: (s: any) => ({ ...s, marca: undefined, page: 1 }) as any })} className="inline-flex items-center gap-1.5 text-xs bg-surface px-2.5 py-1 rounded-full hover:bg-muted">
+                  Marca: {search.marca} <X className="w-3 h-3" />
+                </button>
+              )}
+              {(search.precoMin != null || search.precoMax != null) && (
+                <button
+                  onClick={() => { setPriceMin(''); setPriceMax(''); navigate({ search: (s: any) => ({ ...s, precoMin: undefined, precoMax: undefined, page: 1 }) as any }); }}
+                  className="inline-flex items-center gap-1.5 text-xs bg-surface px-2.5 py-1 rounded-full hover:bg-muted"
+                >
+                  Preço {search.precoMin ?? 0}–{search.precoMax ?? '∞'} <X className="w-3 h-3" />
+                </button>
+              )}
+              {search.estoque && (
+                <button onClick={() => navigate({ search: (s: any) => ({ ...s, estoque: undefined, page: 1 }) as any })} className="inline-flex items-center gap-1.5 text-xs bg-surface px-2.5 py-1 rounded-full hover:bg-muted">
+                  Em estoque <X className="w-3 h-3" />
+                </button>
+              )}
               {search.oferta && (
                 <button onClick={() => navigate({ search: (s: any) => ({ ...s, oferta: undefined, page: 1 }) as any })} className="inline-flex items-center gap-1.5 text-xs bg-accent/10 text-accent-foreground px-2.5 py-1 rounded-full hover:bg-accent/20">
                   Oferta <X className="w-3 h-3" />
@@ -185,19 +247,9 @@ function CatalogPage() {
                   Frete grátis <X className="w-3 h-3" />
                 </button>
               )}
-              {search.sort === 'best_sellers' && (
+              {sortValue === 'best_sellers' && (
                 <button onClick={() => navigate({ search: (s: any) => ({ ...s, sort: undefined, page: 1 }) as any })} className="inline-flex items-center gap-1.5 text-xs bg-accent/10 text-accent-foreground px-2.5 py-1 rounded-full hover:bg-accent/20">
                   Destaques <X className="w-3 h-3" />
-                </button>
-              )}
-              {search.cat && (
-                <button onClick={() => navigate({ search: (s: any) => ({ ...s, cat: undefined, page: 1 }) as any })} className="inline-flex items-center gap-1.5 text-xs bg-primary-tint text-primary px-2.5 py-1 rounded-full hover:bg-primary/10">
-                  {categories?.find((c) => c.slug === search.cat)?.name ?? search.cat} <X className="w-3 h-3" />
-                </button>
-              )}
-              {search.q && (
-                <button onClick={() => { setQ(''); navigate({ search: (s: any) => ({ ...s, q: undefined, page: 1 }) as any }); }} className="inline-flex items-center gap-1.5 text-xs bg-surface px-2.5 py-1 rounded-full hover:bg-muted">
-                  "{search.q}" <X className="w-3 h-3" />
                 </button>
               )}
               <button onClick={clearFilters} className="text-xs text-muted-foreground underline hover:text-foreground ml-1">
@@ -206,13 +258,10 @@ function CatalogPage() {
             </div>
           )}
 
-          <form
-            onSubmit={(e) => { e.preventDefault(); if (q) trackSearch(q); navigate({ search: (s: any) => ({ ...s, q: q || undefined, page: 1 }) as any }); }}
-            className="max-w-md"
-          >
+          <form onSubmit={(e) => { e.preventDefault(); submitSearch(); }} className="max-w-md">
             <div className="relative">
               <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-text-faint" />
-              <Input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Buscar..." className="pl-11 h-11 rounded-pill bg-surface" />
+              <Input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Buscar por nome, SKU, marca..." className="pl-11 h-11 rounded-pill bg-surface" />
             </div>
           </form>
         </div>
@@ -221,48 +270,121 @@ function CatalogPage() {
       <div className="container mx-auto px-4 py-8">
         <div className="flex flex-col lg:flex-row gap-8">
           <aside className="lg:w-64 shrink-0">
-            <div className="bg-card border border-border rounded-xl p-5 sticky top-20">
-              <div className="flex items-center gap-2 mb-4">
-                <SlidersHorizontal className="w-4 h-4 text-primary" />
-                <h3 className="font-display font-semibold text-sm">Categorias</h3>
-              </div>
-              <ul className="space-y-1">
-                <li>
-                  <button
-                    onClick={() => navigate({ search: (s: any) => ({ ...s, cat: undefined, page: 1 }) as any })}
-                    className={`w-full text-left text-sm px-3 py-2 rounded-md transition-colors ${!search.cat ? 'bg-primary-tint text-primary font-medium' : 'hover:bg-surface text-muted-foreground'}`}
-                  >
-                    Todas
-                  </button>
-                </li>
-                {categories?.map((c) => (
-                  <li key={c.id}>
+            <div className="bg-card border border-border rounded-xl p-5 lg:sticky lg:top-20 space-y-6">
+              <div>
+                <div className="flex items-center gap-2 mb-3">
+                  <SlidersHorizontal className="w-4 h-4 text-primary" />
+                  <h3 className="font-display font-semibold text-sm">Categorias</h3>
+                </div>
+                <ul className="space-y-1">
+                  <li>
                     <button
-                      onClick={() => navigate({ search: (s: any) => ({ ...s, cat: c.slug, page: 1 }) as any })}
-                      className={`w-full text-left text-sm px-3 py-2 rounded-md transition-colors ${search.cat === c.slug ? 'bg-primary-tint text-primary font-medium' : 'hover:bg-surface text-muted-foreground'}`}
+                      onClick={() => navigate({ search: (s: any) => ({ ...s, cat: undefined, page: 1 }) as any })}
+                      className={`w-full text-left text-sm px-3 py-2 rounded-md transition-colors ${!search.cat ? 'bg-primary-tint text-primary font-medium' : 'hover:bg-surface text-muted-foreground'}`}
                     >
-                      {c.name}
+                      Todas
                     </button>
                   </li>
-                ))}
-              </ul>
+                  {categories?.map((c) => (
+                    <li key={c.id}>
+                      <button
+                        onClick={() => navigate({ search: (s: any) => ({ ...s, cat: c.slug, page: 1 }) as any })}
+                        className={`w-full text-left text-sm px-3 py-2 rounded-md transition-colors ${search.cat === c.slug ? 'bg-primary-tint text-primary font-medium' : 'hover:bg-surface text-muted-foreground'}`}
+                      >
+                        {c.name}
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+
+              <div>
+                <h3 className="font-display font-semibold text-sm mb-3 flex items-center gap-2"><Tag className="w-4 h-4 text-primary" /> Faixa de preço</h3>
+                <div className="flex items-center gap-2">
+                  <Input
+                    type="number" inputMode="numeric" min={0}
+                    placeholder="Min" value={priceMin}
+                    onChange={(e) => setPriceMin(e.target.value)}
+                    onBlur={applyPrice}
+                    onKeyDown={(e) => { if (e.key === 'Enter') applyPrice(); }}
+                    className="h-9 text-sm"
+                  />
+                  <span className="text-xs text-muted-foreground">a</span>
+                  <Input
+                    type="number" inputMode="numeric" min={0}
+                    placeholder="Max" value={priceMax}
+                    onChange={(e) => setPriceMax(e.target.value)}
+                    onBlur={applyPrice}
+                    onKeyDown={(e) => { if (e.key === 'Enter') applyPrice(); }}
+                    className="h-9 text-sm"
+                  />
+                </div>
+              </div>
+
+              {brandsData && brandsData.length > 0 && (
+                <div>
+                  <h3 className="font-display font-semibold text-sm mb-3">Marca</h3>
+                  <select
+                    value={search.marca ?? ''}
+                    onChange={(e) => navigate({ search: (s: any) => ({ ...s, marca: e.target.value || undefined, page: 1 }) as any })}
+                    className="w-full text-sm border border-border rounded-md px-3 py-2 bg-card focus:outline-none focus:ring-2 focus:ring-primary/20"
+                  >
+                    <option value="">Todas as marcas</option>
+                    {brandsData.map((b) => <option key={b} value={b}>{b}</option>)}
+                  </select>
+                </div>
+              )}
+
+              <div>
+                <h3 className="font-display font-semibold text-sm mb-3">Disponibilidade</h3>
+                <label className="flex items-center gap-2 text-sm cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={!!search.estoque}
+                    onChange={(e) => navigate({ search: (s: any) => ({ ...s, estoque: e.target.checked || undefined, page: 1 }) as any })}
+                    className="rounded border-border"
+                  />
+                  Apenas em estoque
+                </label>
+                <label className="flex items-center gap-2 text-sm cursor-pointer mt-2">
+                  <input
+                    type="checkbox"
+                    checked={!!search.oferta}
+                    onChange={(e) => navigate({ search: (s: any) => ({ ...s, oferta: e.target.checked || undefined, page: 1 }) as any })}
+                    className="rounded border-border"
+                  />
+                  Em promoção
+                </label>
+                <label className="flex items-center gap-2 text-sm cursor-pointer mt-2">
+                  <input
+                    type="checkbox"
+                    checked={search.shipping === 'free'}
+                    onChange={(e) => navigate({ search: (s: any) => ({ ...s, shipping: e.target.checked ? 'free' : undefined, page: 1 }) as any })}
+                    className="rounded border-border"
+                  />
+                  Frete grátis
+                </label>
+              </div>
             </div>
           </aside>
 
           <div className="flex-1">
-            <div className="flex items-center justify-between mb-5">
+            <div className="flex items-center justify-between mb-5 gap-3 flex-wrap">
               <p className="text-sm text-muted-foreground">
-                {isLoading ? 'Carregando...' : `${total} produtos · página ${page} de ${totalPages}`}
+                {isLoading ? 'Carregando...' : `${total} produto${total === 1 ? '' : 's'} · página ${page} de ${totalPages}`}
+                {isFetching && !isLoading && <span className="ml-2 text-xs text-muted-foreground/60">atualizando…</span>}
               </p>
               <select
-                value={search.sort ?? 'featured'}
+                value={sortValue}
                 onChange={(e) => navigate({ search: (s: any) => ({ ...s, sort: e.target.value as any, page: 1 }) as any })}
                 className="text-sm border border-border rounded-md px-3 py-1.5 bg-card focus:outline-none focus:ring-2 focus:ring-primary/20"
               >
-                <option value="featured">Mais relevantes</option>
+                {search.q && <option value="relevance">Mais relevantes</option>}
+                <option value="featured">Em destaque</option>
                 <option value="price_asc">Menor preço</option>
                 <option value="price_desc">Maior preço</option>
                 <option value="newest">Novidades</option>
+                <option value="best_sellers">Mais vendidos</option>
               </select>
             </div>
 
@@ -270,42 +392,26 @@ function CatalogPage() {
               <div className="grid grid-cols-2 md:grid-cols-3 gap-2.5 sm:gap-4">
                 {Array.from({ length: 8 }).map((_, i) => <ProductCardSkeleton key={i} />)}
               </div>
-            ) : filtered.length === 0 ? (
-              <div className="text-center py-16 text-muted-foreground space-y-3">
-                <p>
-                  {search.oferta
-                    ? 'Nenhuma oferta disponível no momento. Volte em breve!'
-                    : search.shipping === 'free'
-                    ? 'Nenhum produto elegível a frete grátis no momento.'
-                    : search.sort === 'best_sellers'
-                    ? 'Nenhum produto em destaque no momento.'
-                    : 'Nenhum produto encontrado.'}
-                </p>
-                {(search.oferta || search.shipping === 'free' || search.sort === 'best_sellers') && (
-                  <Button variant="outline" size="sm" onClick={clearFilters}>Ver todo o catálogo</Button>
-                )}
-              </div>
+            ) : products.length === 0 ? (
+              <EmptyResults
+                query={search.q}
+                hasFilters={hasActiveFilters}
+                onClear={clearFilters}
+                supportWhats={supportWhats}
+              />
             ) : (
               <>
                 <div className="grid grid-cols-2 md:grid-cols-3 gap-2.5 sm:gap-4">
-                  {filtered.map((p, i) => <ProductCard key={p.id} product={p} index={i} />)}
+                  {products.map((p, i) => <ProductCard key={p.id} product={p} index={i} />)}
                 </div>
 
                 {totalPages > 1 && (
                   <div className="flex items-center justify-center gap-2 mt-8">
-                    <Button
-                      variant="outline" size="sm"
-                      disabled={page <= 1}
-                      onClick={() => goPage(page - 1)}
-                    >
+                    <Button variant="outline" size="sm" disabled={page <= 1} onClick={() => goPage(page - 1)}>
                       <ChevronLeft className="w-4 h-4" /> Anterior
                     </Button>
                     <span className="text-sm text-muted-foreground px-3">{page} / {totalPages}</span>
-                    <Button
-                      variant="outline" size="sm"
-                      disabled={page >= totalPages}
-                      onClick={() => goPage(page + 1)}
-                    >
+                    <Button variant="outline" size="sm" disabled={page >= totalPages} onClick={() => goPage(page + 1)}>
                       Próxima <ChevronRight className="w-4 h-4" />
                     </Button>
                   </div>
@@ -316,5 +422,50 @@ function CatalogPage() {
         </div>
       </div>
     </StoreLayout>
+  );
+}
+
+function EmptyResults({
+  query, hasFilters, onClear, supportWhats,
+}: { query: string | undefined; hasFilters: boolean; onClear: () => void; supportWhats: string }) {
+  const message = query
+    ? `Não encontramos produtos para "${query}".`
+    : 'Nenhum produto corresponde aos filtros selecionados.';
+
+  const whatsappText = encodeURIComponent(
+    query
+      ? `Olá! Estou procurando por "${query}" no site e não encontrei. Vocês têm disponível?`
+      : 'Olá! Não encontrei o produto que procuro no site. Podem me ajudar?'
+  );
+
+  return (
+    <div className="text-center py-16 px-4 max-w-xl mx-auto">
+      <div className="inline-flex h-14 w-14 items-center justify-center rounded-full bg-primary-tint text-primary mb-4">
+        <Search className="w-6 h-6" />
+      </div>
+      <p className="text-base font-medium text-foreground mb-2">{message}</p>
+      <p className="text-sm text-muted-foreground mb-6">
+        Tente outro termo, ajuste os filtros ou fale com nosso atendimento — temos muito mais produtos do que aparece no site.
+      </p>
+      <div className="flex flex-wrap items-center justify-center gap-2">
+        {hasFilters && (
+          <Button variant="outline" size="sm" onClick={onClear}>Limpar filtros</Button>
+        )}
+        <a href="/catalogo" className="inline-flex">
+          <Button variant="outline" size="sm">Ver todas as categorias</Button>
+        </a>
+        {supportWhats && (
+          <a
+            href={`https://wa.me/${supportWhats}?text=${whatsappText}`}
+            target="_blank" rel="noopener noreferrer"
+            className="inline-flex"
+          >
+            <Button size="sm" className="gap-1.5">
+              <MessageCircle className="w-4 h-4" /> Falar no WhatsApp
+            </Button>
+          </a>
+        )}
+      </div>
+    </div>
   );
 }
