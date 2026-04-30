@@ -35,6 +35,7 @@ function ProductForm() {
   const { id } = useParams({ strict: false }) as { id: string };
   const isNew = id === 'novo';
   const nav = useNavigate();
+  const qc = useQueryClient();
   const [loading, setLoading] = useState(!isNew);
   const [saving, setSaving] = useState(false);
   const [cats, setCats] = useState<Cat[]>([]);
