@@ -1,7 +1,7 @@
 import { createFileRoute, Link, useNavigate } from '@tanstack/react-router';
 import { useEffect, useMemo, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { ArrowLeft, ArrowRight, Check, Loader2, MapPin, Truck, CreditCard, ShoppingBag, Store } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Check, Loader2, MapPin, Truck, CreditCard, ShoppingBag, Store, Building2, BadgePercent } from 'lucide-react';
 import { toast } from 'sonner';
 import { StoreLayout } from '@/components/layout/StoreLayout';
 import { Button } from '@/components/ui/button';
@@ -13,6 +13,7 @@ import { formatBRL } from '@/lib/domain';
 import { lookupCep, calculateShipping, applyCoupon, createOrder, lookupLocalDeliveryZone } from '@/server/checkout.functions';
 import { createMercadoPagoPreference } from '@/server/payment.functions';
 import { getPublicCompanySettings } from '@/server/institutional.functions';
+import { useCartPricing, maskCnpj } from '@/hooks/useCartPricing';
 import { buildSeo } from '@/lib/seo';
 import { trackPurchase, trackBeginCheckout } from '@/lib/tracking';
 import { redirectToExternalCheckout } from '@/lib/externalCheckout';
@@ -96,7 +97,11 @@ function CheckoutPage() {
     ? (localZone?.price ?? 0)
     : (selectedShipping?.price ?? 0);
 
-  const subtotal = cart.subtotal();
+  const { pricing, refetch: refetchPricing } = useCartPricing();
+  const subtotalRetail = pricing?.retail_subtotal ?? cart.subtotal();
+  const subtotal = pricing?.applied_subtotal ?? cart.subtotal();
+  const b2bSavings = pricing?.b2b_discount_total ?? 0;
+  const isB2bOrder = Boolean(pricing?.has_b2b_items);
   const total = useMemo(
     () => Math.max(0, subtotal - discount + shippingCost),
     [subtotal, discount, shippingCost]
