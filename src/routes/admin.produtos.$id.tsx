@@ -151,6 +151,10 @@ function ProductForm() {
 
   const submit = async (e: FormEvent) => {
     e.preventDefault();
+    if (form.featured && !quality.canBeFeatured) {
+      toast.error(QUALITY_FEATURED_BLOCK_MESSAGE);
+      return;
+    }
     setSaving(true);
 
     try {
