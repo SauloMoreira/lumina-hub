@@ -36,6 +36,8 @@ export type BundleItemPublic = {
   status: 'ok' | 'inactive' | 'no_price' | 'no_stock';
 };
 
+export type BundleDiscountType = 'none' | 'fixed_amount' | 'percentage';
+
 export type BundlePublic = {
   id: string;
   slug: string | null;
@@ -46,12 +48,17 @@ export type BundlePublic = {
   is_featured: boolean;
   start_date: string | null;
   end_date: string | null;
+  discount_type: BundleDiscountType;
+  discount_value: number;
   items: BundleItemPublic[];
   subtotal: number;
   items_count: number;
   total_units: number;
   availability: BundleAvailability;
 };
+
+// Limite seguro de desconto percentual para combos (admin pode rever depois)
+export const BUNDLE_PERCENT_LIMIT = 50;
 
 export type BundleAdminRow = {
   id: string;
