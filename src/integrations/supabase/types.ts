@@ -2573,6 +2573,36 @@ export type Database = {
         }
         Relationships: []
       }
+      search_logs: {
+        Row: {
+          created_at: string
+          id: string
+          normalized_term: string
+          results_count: number
+          search_term: string
+          source: string
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          normalized_term: string
+          results_count?: number
+          search_term: string
+          source?: string
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          normalized_term?: string
+          results_count?: number
+          search_term?: string
+          source?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       security_events: {
         Row: {
           created_at: string
@@ -2679,6 +2709,20 @@ export type Database = {
           valid: boolean
         }[]
       }
+      autocomplete_products_public: {
+        Args: { _limit?: number; _terms: string[] }
+        Returns: {
+          brand: string
+          id: string
+          image: string
+          kind: string
+          name: string
+          price: number
+          relevance: number
+          sale_price: number
+          slug: string
+        }[]
+      }
       check_rate_limit: {
         Args: {
           _action: string
@@ -2755,6 +2799,38 @@ export type Database = {
       }
       normalize_zone_name: { Args: { _text: string }; Returns: string }
       recalculate_lead_score: { Args: { _lead_id: string }; Returns: undefined }
+      search_normalize: { Args: { _text: string }; Returns: string }
+      search_products_public: {
+        Args: {
+          _brand?: string
+          _category_id?: string
+          _free_shipping?: boolean
+          _in_stock?: boolean
+          _limit?: number
+          _offset?: number
+          _on_sale?: boolean
+          _price_max?: number
+          _price_min?: number
+          _sort?: string
+          _terms?: string[]
+        }
+        Returns: {
+          brand: string
+          category_id: string
+          featured: boolean
+          free_shipping_eligible: boolean
+          id: string
+          images: string[]
+          name: string
+          price: number
+          relevance: number
+          sale_price: number
+          slug: string
+          stock_qty: number
+          tags: string[]
+          total_count: number
+        }[]
+      }
       sync_product_images_array: {
         Args: { _product_id: string }
         Returns: undefined

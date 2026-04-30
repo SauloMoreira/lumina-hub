@@ -1,12 +1,13 @@
 import { createFileRoute, Link } from '@tanstack/react-router';
-import { useEffect, useState } from 'react';
-import { Plus, Pencil, Trash2, Search, Sparkles } from 'lucide-react';
+import { useEffect, useMemo, useState } from 'react';
+import { Plus, Pencil, Trash2, Search, Sparkles, X } from 'lucide-react';
 import { AdminLayout } from '@/components/admin/AdminLayout';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { computeProductQuality, qualityClassColor, qualityClassLabel } from '@/lib/productQuality';
+import { normalizeSearch } from '@/lib/searchNormalize';
 
 export const Route = createFileRoute('/admin/produtos/')({ component: ProdutosList });
 
@@ -17,9 +18,13 @@ interface Product {
   price: number;
   sale_price: number | null;
   stock_qty: number;
+  stock_min_alert: number | null;
   active: boolean;
   brand: string | null;
   sku: string | null;
+  ncm: string | null;
+  gtin_ean: string | null;
+  cost_price: number | null;
   images: string[] | null;
   b2b_enabled: boolean;
   b2b_price: number | null;
@@ -27,9 +32,31 @@ interface Product {
   quality?: ReturnType<typeof computeProductQuality>;
 }
 
+type QuickFilter =
+  | 'all'
+  | 'no_image'
+  | 'no_cost'
+  | 'no_ncm'
+  | 'b2b_incomplete'
+  | 'low_stock'
+  | 'zero_stock'
+  | 'bad_quality';
+
+const FILTERS: Array<{ id: QuickFilter; label: string }> = [
+  { id: 'all', label: 'Todos' },
+  { id: 'no_image', label: 'Sem imagem' },
+  { id: 'no_cost', label: 'Sem custo' },
+  { id: 'no_ncm', label: 'Sem NCM' },
+  { id: 'b2b_incomplete', label: 'B2B incompleto' },
+  { id: 'low_stock', label: 'Estoque baixo' },
+  { id: 'zero_stock', label: 'Estoque zerado' },
+  { id: 'bad_quality', label: 'Qualidade ruim' },
+];
+
 function ProdutosList() {
   const [products, setProducts] = useState<Product[]>([]);
   const [q, setQ] = useState('');
+  const [filter, setFilter] = useState<QuickFilter>('all');
   const [loading, setLoading] = useState(true);
 
   const load = async () => {
@@ -62,7 +89,59 @@ function ProdutosList() {
     load();
   };
 
-  const filtered = products.filter((p) => p.name.toLowerCase().includes(q.toLowerCase()) || (p.sku ?? '').toLowerCase().includes(q.toLowerCase()));
+  const filtered = useMemo(() => {
+    const term = normalizeSearch(q);
+    return products.filter((p) => {
+      // Busca em vários campos
+      if (term) {
+        const haystack = normalizeSearch([
+          p.name, p.sku, p.gtin_ean, p.ncm, p.brand,
+        ].filter(Boolean).join(' '));
+        if (!haystack.includes(term)) return false;
+      }
+      // Filtros rápidos
+      switch (filter) {
+        case 'no_image':
+          return !p.images || p.images.length === 0;
+        case 'no_cost':
+          return p.cost_price == null || Number(p.cost_price) <= 0;
+        case 'no_ncm':
+          return !p.ncm || p.ncm.trim().length === 0;
+        case 'b2b_incomplete':
+          return p.b2b_enabled && (p.b2b_price == null || Number(p.b2b_price) <= 0 || (p.b2b_min_qty ?? 0) <= 0);
+        case 'low_stock': {
+          const min = p.stock_min_alert ?? 5;
+          return p.stock_qty > 0 && p.stock_qty <= min;
+        }
+        case 'zero_stock':
+          return p.stock_qty <= 0;
+        case 'bad_quality':
+          return p.quality?.classification === 'ruim';
+        case 'all':
+        default:
+          return true;
+      }
+    });
+  }, [products, q, filter]);
+
+  const counts = useMemo(() => {
+    const c: Record<QuickFilter, number> = {
+      all: products.length,
+      no_image: 0, no_cost: 0, no_ncm: 0,
+      b2b_incomplete: 0, low_stock: 0, zero_stock: 0, bad_quality: 0,
+    };
+    for (const p of products) {
+      if (!p.images || p.images.length === 0) c.no_image += 1;
+      if (p.cost_price == null || Number(p.cost_price) <= 0) c.no_cost += 1;
+      if (!p.ncm || p.ncm.trim().length === 0) c.no_ncm += 1;
+      if (p.b2b_enabled && (p.b2b_price == null || Number(p.b2b_price) <= 0 || (p.b2b_min_qty ?? 0) <= 0)) c.b2b_incomplete += 1;
+      const min = p.stock_min_alert ?? 5;
+      if (p.stock_qty > 0 && p.stock_qty <= min) c.low_stock += 1;
+      if (p.stock_qty <= 0) c.zero_stock += 1;
+      if (p.quality?.classification === 'ruim') c.bad_quality += 1;
+    }
+    return c;
+  }, [products]);
 
   return (
     <AdminLayout
@@ -79,10 +158,47 @@ function ProdutosList() {
       }
     >
       <div className="bg-card border border-border rounded-xl">
-        <div className="p-4 border-b border-border">
-          <div className="relative max-w-sm">
+        <div className="p-4 border-b border-border space-y-3">
+          <div className="relative max-w-md">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-            <Input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Buscar por nome ou SKU…" className="pl-9" />
+            <Input
+              value={q}
+              onChange={(e) => setQ(e.target.value)}
+              placeholder="Buscar por nome, SKU, EAN, NCM ou marca…"
+              className="pl-9 pr-9"
+            />
+            {q && (
+              <button
+                onClick={() => setQ('')}
+                aria-label="Limpar busca"
+                className="absolute right-2 top-1/2 -translate-y-1/2 p-1 text-muted-foreground hover:text-foreground"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            )}
+          </div>
+
+          <div className="flex flex-wrap gap-2">
+            {FILTERS.map((f) => {
+              const active = filter === f.id;
+              const count = counts[f.id];
+              return (
+                <button
+                  key={f.id}
+                  onClick={() => setFilter(f.id)}
+                  className={`inline-flex items-center gap-1.5 text-xs px-2.5 py-1 rounded-full border transition-colors ${
+                    active
+                      ? 'bg-primary text-primary-foreground border-primary'
+                      : 'bg-card text-muted-foreground border-border hover:bg-surface'
+                  }`}
+                >
+                  {f.label}
+                  <span className={`tabular-nums ${active ? 'opacity-90' : 'text-muted-foreground/70'}`}>
+                    {count}
+                  </span>
+                </button>
+              );
+            })}
           </div>
         </div>
 
