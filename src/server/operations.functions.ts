@@ -717,8 +717,8 @@ export const getAdminOperations = createServerFn({ method: 'GET' })
             : financeAlerts.ordersPaidWithMissingCost > 0
               ? 'danger'
               : 'warn',
-        ctaLabel: 'Ver produtos',
-        ctaHref: '/admin/produtos',
+        ctaLabel: 'Ver produtos sem custo',
+        ctaHref: '/admin/financeiro/relatorios?tab=produtos',
         group: 'Financeiro',
       },
       {
