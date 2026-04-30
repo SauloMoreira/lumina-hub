@@ -24,6 +24,8 @@ import { resolveQuickBuyCodes, type QuickBuyResolvedLine } from '@/server/quickB
 import { autocompleteSearch } from '@/server/productSearch.functions';
 import { getPublicCompanySettings } from '@/server/institutional.functions';
 import { ProductImagePlaceholder } from '@/components/store/ProductImagePlaceholder';
+import { CsvImportButton } from '@/components/quickbuy/CsvImportButton';
+import type { CsvParsedRow } from '@/lib/quickBuyCsv';
 
 export const Route = createFileRoute('/compra-rapida')({
   head: () =>
