@@ -347,7 +347,7 @@ export const getAdminOperations = createServerFn({ method: 'GET' })
     // ============================================================
     // SEO Insights (counts leves)
     // ============================================================
-    let seo: Awaited<ReturnType<typeof fetchSeoQuickCounts>> = {
+    let seo = {
       productsNoSeoTitle: 0,
       productsNoSeoDescription: 0,
       productsNoImage: 0,
@@ -356,7 +356,10 @@ export const getAdminOperations = createServerFn({ method: 'GET' })
       homepageMissingSeo: false,
       b2bMissingSeo: false,
     };
-    try { seo = await fetchSeoQuickCounts(); } catch {}
+    try {
+      const { fetchSeoQuickCounts } = await import('./seoInsights.server');
+      seo = await fetchSeoQuickCounts();
+    } catch {}
 
     const seoTotalIssues =
       seo.productsNoSeoTitle +
