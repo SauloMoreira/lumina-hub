@@ -1826,6 +1826,12 @@ export type Database = {
           b2b_min_quantity: number | null
           b2b_rule_applied: string | null
           b2b_unit_price: number | null
+          bundle_applied: boolean
+          bundle_block_reason: string | null
+          bundle_discount_amount: number
+          bundle_discount_eligible: boolean
+          bundle_id: string | null
+          bundle_name: string | null
           cost_source: string
           gross_margin_amount: number | null
           gross_margin_percent: number | null
@@ -1850,6 +1856,12 @@ export type Database = {
           b2b_min_quantity?: number | null
           b2b_rule_applied?: string | null
           b2b_unit_price?: number | null
+          bundle_applied?: boolean
+          bundle_block_reason?: string | null
+          bundle_discount_amount?: number
+          bundle_discount_eligible?: boolean
+          bundle_id?: string | null
+          bundle_name?: string | null
           cost_source?: string
           gross_margin_amount?: number | null
           gross_margin_percent?: number | null
@@ -1874,6 +1886,12 @@ export type Database = {
           b2b_min_quantity?: number | null
           b2b_rule_applied?: string | null
           b2b_unit_price?: number | null
+          bundle_applied?: boolean
+          bundle_block_reason?: string | null
+          bundle_discount_amount?: number
+          bundle_discount_eligible?: boolean
+          bundle_id?: string | null
+          bundle_name?: string | null
           cost_source?: string
           gross_margin_amount?: number | null
           gross_margin_percent?: number | null
@@ -1948,6 +1966,8 @@ export type Database = {
           admin_notes: string | null
           b2b_discount_total: number
           b2b_subtotal: number | null
+          bundle_discount_details: Json | null
+          bundle_discount_total: number
           cancelled_reason: string | null
           checkout_url: string | null
           company_cnpj: string | null
@@ -1962,6 +1982,7 @@ export type Database = {
           estimated_fee_amount: number | null
           estimated_net_amount: number | null
           external_reference: string | null
+          has_bundle_discount: boolean
           id: string
           invoice_access_key: string | null
           invoice_danfe_url: string | null
@@ -2037,6 +2058,8 @@ export type Database = {
           admin_notes?: string | null
           b2b_discount_total?: number
           b2b_subtotal?: number | null
+          bundle_discount_details?: Json | null
+          bundle_discount_total?: number
           cancelled_reason?: string | null
           checkout_url?: string | null
           company_cnpj?: string | null
@@ -2051,6 +2074,7 @@ export type Database = {
           estimated_fee_amount?: number | null
           estimated_net_amount?: number | null
           external_reference?: string | null
+          has_bundle_discount?: boolean
           id?: string
           invoice_access_key?: string | null
           invoice_danfe_url?: string | null
@@ -2126,6 +2150,8 @@ export type Database = {
           admin_notes?: string | null
           b2b_discount_total?: number
           b2b_subtotal?: number | null
+          bundle_discount_details?: Json | null
+          bundle_discount_total?: number
           cancelled_reason?: string | null
           checkout_url?: string | null
           company_cnpj?: string | null
@@ -2140,6 +2166,7 @@ export type Database = {
           estimated_fee_amount?: number | null
           estimated_net_amount?: number | null
           external_reference?: string | null
+          has_bundle_discount?: boolean
           id?: string
           invoice_access_key?: string | null
           invoice_danfe_url?: string | null
