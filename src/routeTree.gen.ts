@@ -65,6 +65,7 @@ import { Route as ApiPublicHealthRouteImport } from './routes/api/public/health'
 import { Route as ApiPublicCspReportRouteImport } from './routes/api/public/csp-report'
 import { Route as AdminSettingsFreteLocalRouteImport } from './routes/admin.settings.frete-local'
 import { Route as AdminSettingsCompanyRouteImport } from './routes/admin.settings.company'
+import { Route as AdminProdutosRevisaoComercialRouteImport } from './routes/admin.produtos.revisao-comercial'
 import { Route as AdminProdutosQualidadeRouteImport } from './routes/admin.produtos.qualidade'
 import { Route as AdminProdutosEstoqueRouteImport } from './routes/admin.produtos.estoque'
 import { Route as AdminProdutosCombosRouteImport } from './routes/admin.produtos.combos'
@@ -365,6 +366,12 @@ const AdminSettingsCompanyRoute = AdminSettingsCompanyRouteImport.update({
   path: '/admin/settings/company',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AdminProdutosRevisaoComercialRoute =
+  AdminProdutosRevisaoComercialRouteImport.update({
+    id: '/admin/produtos/revisao-comercial',
+    path: '/admin/produtos/revisao-comercial',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const AdminProdutosQualidadeRoute = AdminProdutosQualidadeRouteImport.update({
   id: '/admin/produtos/qualidade',
   path: '/admin/produtos/qualidade',
@@ -518,6 +525,7 @@ export interface FileRoutesByFullPath {
   '/admin/produtos/combos': typeof AdminProdutosCombosRoute
   '/admin/produtos/estoque': typeof AdminProdutosEstoqueRoute
   '/admin/produtos/qualidade': typeof AdminProdutosQualidadeRoute
+  '/admin/produtos/revisao-comercial': typeof AdminProdutosRevisaoComercialRoute
   '/admin/settings/company': typeof AdminSettingsCompanyRoute
   '/admin/settings/frete-local': typeof AdminSettingsFreteLocalRoute
   '/api/public/csp-report': typeof ApiPublicCspReportRoute
@@ -592,6 +600,7 @@ export interface FileRoutesByTo {
   '/admin/produtos/combos': typeof AdminProdutosCombosRoute
   '/admin/produtos/estoque': typeof AdminProdutosEstoqueRoute
   '/admin/produtos/qualidade': typeof AdminProdutosQualidadeRoute
+  '/admin/produtos/revisao-comercial': typeof AdminProdutosRevisaoComercialRoute
   '/admin/settings/company': typeof AdminSettingsCompanyRoute
   '/admin/settings/frete-local': typeof AdminSettingsFreteLocalRoute
   '/api/public/csp-report': typeof ApiPublicCspReportRoute
@@ -667,6 +676,7 @@ export interface FileRoutesById {
   '/admin/produtos/combos': typeof AdminProdutosCombosRoute
   '/admin/produtos/estoque': typeof AdminProdutosEstoqueRoute
   '/admin/produtos/qualidade': typeof AdminProdutosQualidadeRoute
+  '/admin/produtos/revisao-comercial': typeof AdminProdutosRevisaoComercialRoute
   '/admin/settings/company': typeof AdminSettingsCompanyRoute
   '/admin/settings/frete-local': typeof AdminSettingsFreteLocalRoute
   '/api/public/csp-report': typeof ApiPublicCspReportRoute
@@ -743,6 +753,7 @@ export interface FileRouteTypes {
     | '/admin/produtos/combos'
     | '/admin/produtos/estoque'
     | '/admin/produtos/qualidade'
+    | '/admin/produtos/revisao-comercial'
     | '/admin/settings/company'
     | '/admin/settings/frete-local'
     | '/api/public/csp-report'
@@ -817,6 +828,7 @@ export interface FileRouteTypes {
     | '/admin/produtos/combos'
     | '/admin/produtos/estoque'
     | '/admin/produtos/qualidade'
+    | '/admin/produtos/revisao-comercial'
     | '/admin/settings/company'
     | '/admin/settings/frete-local'
     | '/api/public/csp-report'
@@ -891,6 +903,7 @@ export interface FileRouteTypes {
     | '/admin/produtos/combos'
     | '/admin/produtos/estoque'
     | '/admin/produtos/qualidade'
+    | '/admin/produtos/revisao-comercial'
     | '/admin/settings/company'
     | '/admin/settings/frete-local'
     | '/api/public/csp-report'
@@ -960,6 +973,7 @@ export interface RootRouteChildren {
   AdminProdutosCombosRoute: typeof AdminProdutosCombosRoute
   AdminProdutosEstoqueRoute: typeof AdminProdutosEstoqueRoute
   AdminProdutosQualidadeRoute: typeof AdminProdutosQualidadeRoute
+  AdminProdutosRevisaoComercialRoute: typeof AdminProdutosRevisaoComercialRoute
   AdminSettingsCompanyRoute: typeof AdminSettingsCompanyRoute
   AdminSettingsFreteLocalRoute: typeof AdminSettingsFreteLocalRoute
   ApiPublicCspReportRoute: typeof ApiPublicCspReportRoute
@@ -1364,6 +1378,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminSettingsCompanyRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/admin/produtos/revisao-comercial': {
+      id: '/admin/produtos/revisao-comercial'
+      path: '/admin/produtos/revisao-comercial'
+      fullPath: '/admin/produtos/revisao-comercial'
+      preLoaderRoute: typeof AdminProdutosRevisaoComercialRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/admin/produtos/qualidade': {
       id: '/admin/produtos/qualidade'
       path: '/admin/produtos/qualidade'
@@ -1578,6 +1599,7 @@ const rootRouteChildren: RootRouteChildren = {
   AdminProdutosCombosRoute: AdminProdutosCombosRoute,
   AdminProdutosEstoqueRoute: AdminProdutosEstoqueRoute,
   AdminProdutosQualidadeRoute: AdminProdutosQualidadeRoute,
+  AdminProdutosRevisaoComercialRoute: AdminProdutosRevisaoComercialRoute,
   AdminSettingsCompanyRoute: AdminSettingsCompanyRoute,
   AdminSettingsFreteLocalRoute: AdminSettingsFreteLocalRoute,
   ApiPublicCspReportRoute: ApiPublicCspReportRoute,
