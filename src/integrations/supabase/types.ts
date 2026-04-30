@@ -2275,6 +2275,105 @@ export type Database = {
         }
         Relationships: []
       }
+      product_bundle_items: {
+        Row: {
+          bundle_id: string
+          created_at: string
+          id: string
+          is_required: boolean
+          product_id: string
+          quantity: number
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          bundle_id: string
+          created_at?: string
+          id?: string
+          is_required?: boolean
+          product_id: string
+          quantity?: number
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          bundle_id?: string
+          created_at?: string
+          id?: string
+          is_required?: boolean
+          product_id?: string
+          quantity?: number
+          sort_order?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "product_bundle_items_bundle_id_fkey"
+            columns: ["bundle_id"]
+            isOneToOne: false
+            referencedRelation: "product_bundles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "product_bundle_items_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      product_bundles: {
+        Row: {
+          created_at: string
+          description: string | null
+          discount_type: Database["public"]["Enums"]["bundle_discount_type"]
+          discount_value: number
+          end_date: string | null
+          id: string
+          image_url: string | null
+          is_active: boolean
+          is_featured: boolean
+          name: string
+          notes: string | null
+          slug: string | null
+          start_date: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          discount_type?: Database["public"]["Enums"]["bundle_discount_type"]
+          discount_value?: number
+          end_date?: string | null
+          id?: string
+          image_url?: string | null
+          is_active?: boolean
+          is_featured?: boolean
+          name: string
+          notes?: string | null
+          slug?: string | null
+          start_date?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          discount_type?: Database["public"]["Enums"]["bundle_discount_type"]
+          discount_value?: number
+          end_date?: string | null
+          id?: string
+          image_url?: string | null
+          is_active?: boolean
+          is_featured?: boolean
+          name?: string
+          notes?: string | null
+          slug?: string | null
+          start_date?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       product_images: {
         Row: {
           alt_text: string | null
@@ -2337,6 +2436,54 @@ export type Database = {
           {
             foreignKeyName: "product_images_product_id_fkey"
             columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      product_relations: {
+        Row: {
+          created_at: string
+          id: string
+          is_active: boolean
+          product_id: string
+          related_product_id: string
+          relation_type: Database["public"]["Enums"]["product_relation_type"]
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          product_id: string
+          related_product_id: string
+          relation_type?: Database["public"]["Enums"]["product_relation_type"]
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          product_id?: string
+          related_product_id?: string
+          relation_type?: Database["public"]["Enums"]["product_relation_type"]
+          sort_order?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "product_relations_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "product_relations_related_product_id_fkey"
+            columns: ["related_product_id"]
             isOneToOne: false
             referencedRelation: "products"
             referencedColumns: ["id"]
@@ -2752,6 +2899,43 @@ export type Database = {
           skipped_count: number
         }[]
       }
+      get_cart_complementary_products: {
+        Args: { _limit?: number; _product_ids: string[]; _user_id?: string }
+        Returns: {
+          applied_price: number
+          brand: string
+          free_shipping_eligible: boolean
+          image: string
+          match_count: number
+          name: string
+          pricing_source: string
+          product_id: string
+          retail_price: number
+          sale_price: number
+          slug: string
+          stock_qty: number
+        }[]
+      }
+      get_product_relations_public: {
+        Args: { _limit?: number; _product_id: string; _user_id?: string }
+        Returns: {
+          applied_price: number
+          b2b_min_quantity: number
+          brand: string
+          free_shipping_eligible: boolean
+          image: string
+          name: string
+          pricing_source: string
+          product_id: string
+          relation_id: string
+          relation_type: Database["public"]["Enums"]["product_relation_type"]
+          retail_price: number
+          sale_price: number
+          slug: string
+          sort_order: number
+          stock_qty: number
+        }[]
+      }
       get_user_approved_company_id: {
         Args: { _user_id: string }
         Returns: string
@@ -2894,8 +3078,17 @@ export type Database = {
         | "convertida_em_pedido"
         | "perdida"
         | "cancelada"
+      bundle_discount_type: "none" | "fixed_amount" | "percentage"
       company_status: "pending" | "approved" | "blocked" | "rejected"
       company_user_role: "owner" | "member"
+      product_relation_type:
+        | "related"
+        | "frequently_bought_together"
+        | "accessory"
+        | "replacement"
+        | "upsell"
+        | "cross_sell"
+        | "b2b_recommendation"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -3032,8 +3225,18 @@ export const Constants = {
         "perdida",
         "cancelada",
       ],
+      bundle_discount_type: ["none", "fixed_amount", "percentage"],
       company_status: ["pending", "approved", "blocked", "rejected"],
       company_user_role: ["owner", "member"],
+      product_relation_type: [
+        "related",
+        "frequently_bought_together",
+        "accessory",
+        "replacement",
+        "upsell",
+        "cross_sell",
+        "b2b_recommendation",
+      ],
     },
   },
 } as const
