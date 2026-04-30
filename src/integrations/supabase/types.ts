@@ -2559,6 +2559,42 @@ export type Database = {
         }
         Relationships: []
       }
+      product_attribute_labels: {
+        Row: {
+          attribute_key: string
+          created_at: string
+          display_label: string
+          helper_text: string | null
+          id: string
+          is_active: boolean
+          raw_value: string
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          attribute_key: string
+          created_at?: string
+          display_label: string
+          helper_text?: string | null
+          id?: string
+          is_active?: boolean
+          raw_value: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          attribute_key?: string
+          created_at?: string
+          display_label?: string
+          helper_text?: string | null
+          id?: string
+          is_active?: boolean
+          raw_value?: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       product_attributes: {
         Row: {
           attribute_key: string
