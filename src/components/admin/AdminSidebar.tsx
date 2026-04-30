@@ -29,6 +29,7 @@ import {
   Globe,
   AlertCircle,
   MessageSquareText,
+  PackagePlus,
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import logo from '@/assets/logo-navbar.png';
@@ -120,6 +121,7 @@ const groups: Group[] = [
       { label: 'Condições B2B', soon: true },
       { label: 'Importar produtos', soon: true },
       { to: '/admin/produtos/qualidade', label: 'Qualidade do cadastro', icon: Package, counterIds: ['products-quality-low'] },
+      { to: '/admin/produtos/combos', label: 'Kits e Combos', icon: PackagePlus },
     ],
   },
   {
