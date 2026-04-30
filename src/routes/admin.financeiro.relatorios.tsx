@@ -83,6 +83,22 @@ import {
   type InvoiceListResult,
   type InvoiceRow,
 } from '@/server/paymentInvoiceReports.functions';
+import {
+  getCampaignCards,
+  getCampaignPerformance,
+  getOriginPerformance,
+  getAttributedOrders,
+  getAttributionQuality,
+  exportCampaignPerformanceCsv,
+  exportOriginPerformanceCsv,
+  exportAttributedOrdersCsv,
+  exportAttributionQualityCsv,
+  type CampaignCards,
+  type CampaignPerfRow,
+  type OriginPerfRow,
+  type AttributedOrderRow,
+  type AttributionQuality,
+} from '@/server/campaignReports.functions';
 
 export const Route = createFileRoute('/admin/financeiro/relatorios')({
   head: () =>
@@ -228,7 +244,7 @@ function ReportsPage() {
   const [deliveryMethod, setDeliveryMethod] = useState<string>('');
 
   // Aba ativa
-  const [tab, setTab] = useState<'sales' | 'margin' | 'products' | 'b2b' | 'coupons' | 'shipping' | 'mp' | 'invoices'>('sales');
+  const [tab, setTab] = useState<'sales' | 'margin' | 'products' | 'b2b' | 'coupons' | 'shipping' | 'mp' | 'invoices' | 'utm'>('sales');
 
   // Dados
   const [cards, setCards] = useState<FinanceReportCards | null>(null);
@@ -288,6 +304,21 @@ function ReportsPage() {
   const [invLoading, setInvLoading] = useState(false);
   const [invPage, setInvPage] = useState(1);
   const [invStatus, setInvStatus] = useState<'all' | 'nao_necessaria' | 'pendente_emissao' | 'emitida' | 'erro_emissao' | 'cancelada'>('all');
+
+  // Campanhas / UTM
+  const [utmCards, setUtmCards] = useState<CampaignCards | null>(null);
+  const [utmCampaigns, setUtmCampaigns] = useState<CampaignPerfRow[] | null>(null);
+  const [utmOrigins, setUtmOrigins] = useState<OriginPerfRow[] | null>(null);
+  const [utmOrders, setUtmOrders] = useState<{
+    rows: AttributedOrderRow[];
+    total: number;
+    page: number;
+    pageSize: number;
+  } | null>(null);
+  const [utmQuality, setUtmQuality] = useState<AttributionQuality | null>(null);
+  const [utmLoading, setUtmLoading] = useState(false);
+  const [utmPage, setUtmPage] = useState(1);
+  const [attribution, setAttribution] = useState<'all' | 'attributed' | 'unattributed'>('all');
 
   const filters = useMemo(
     () => ({
@@ -420,13 +451,6 @@ function ReportsPage() {
         data: { ...filters, page: mpPage, pageSize: 50, feeSource: mpFeeSource },
       }),
     ])
-    setMpLoading(true);
-    Promise.all([
-      getMpReportCards({ data: filters }),
-      getMpPayments({
-        data: { ...filters, page: mpPage, pageSize: 50, feeSource: mpFeeSource },
-      }),
-    ])
       .then(([c, l]) => {
         if (!alive) return;
         setMpCards(c);
@@ -466,6 +490,36 @@ function ReportsPage() {
     };
   }, [tab, filters, invPage, invStatus]);
 
+  // Carrega Campanhas / UTM (lazy)
+  useEffect(() => {
+    if (tab !== 'utm') return;
+    let alive = true;
+    setUtmLoading(true);
+    const utmFilters = { ...filters, attribution };
+    Promise.all([
+      getCampaignCards({ data: utmFilters }),
+      getCampaignPerformance({ data: utmFilters }),
+      getOriginPerformance({ data: utmFilters }),
+      getAttributedOrders({ data: { ...utmFilters, page: utmPage, pageSize: 50 } }),
+      getAttributionQuality({ data: utmFilters }),
+    ])
+      .then(([c, camps, origins, orders, q]) => {
+        if (!alive) return;
+        setUtmCards(c);
+        setUtmCampaigns(camps);
+        setUtmOrigins(origins);
+        setUtmOrders(orders);
+        setUtmQuality(q);
+      })
+      .catch((e) =>
+        toast.error(e instanceof Error ? e.message : 'Erro ao carregar campanhas / UTM.'),
+      )
+      .finally(() => alive && setUtmLoading(false));
+    return () => {
+      alive = false;
+    };
+  }, [tab, filters, utmPage, attribution]);
+
   // Reset página quando filtros mudam
   useEffect(() => {
     setPage(1);
@@ -473,6 +527,7 @@ function ReportsPage() {
     setShippingPage(1);
     setMpPage(1);
     setInvPage(1);
+    setUtmPage(1);
   }, [preset, orderType, paymentStatus, paymentMethod, deliveryMethod]);
 
   const cardDefs: CardDef[] = cards
@@ -725,9 +780,7 @@ function ReportsPage() {
               <TabsTrigger value="shipping">Frete</TabsTrigger>
               <TabsTrigger value="mp">Mercado Pago</TabsTrigger>
               <TabsTrigger value="invoices">Notas fiscais</TabsTrigger>
-              <TabsTrigger value="utm" disabled>
-                Campanhas / UTM · em breve
-              </TabsTrigger>
+              <TabsTrigger value="utm">Campanhas / UTM</TabsTrigger>
             </TabsList>
 
             {/* ABA: VENDAS */}
@@ -838,6 +891,27 @@ function ReportsPage() {
                 statusFilter={invStatus}
                 setStatusFilter={setInvStatus}
                 onExport={() => handleExport(exportInvoicesCsv, 'notas fiscais')}
+                exporting={exporting}
+              />
+            </TabsContent>
+
+            {/* ABA: CAMPANHAS / UTM */}
+            <TabsContent value="utm" className="space-y-4 mt-4">
+              <UtmSection
+                cards={utmCards}
+                campaigns={utmCampaigns}
+                origins={utmOrigins}
+                orders={utmOrders}
+                quality={utmQuality}
+                loading={utmLoading}
+                page={utmPage}
+                setPage={setUtmPage}
+                attribution={attribution}
+                setAttribution={setAttribution}
+                onExportCampaigns={() => handleExport(exportCampaignPerformanceCsv, 'campanhas')}
+                onExportOrigins={() => handleExport(exportOriginPerformanceCsv, 'origens')}
+                onExportOrders={() => handleExport(exportAttributedOrdersCsv, 'pedidos atribuídos')}
+                onExportQuality={() => handleExport(exportAttributionQualityCsv, 'qualidade da atribuição')}
                 exporting={exporting}
               />
             </TabsContent>
@@ -2339,5 +2413,411 @@ function InvoicesSection({
         )}
       </div>
     </section>
+  );
+}
+
+// ============================================================
+// SECTION: CAMPANHAS / UTM
+// ============================================================
+
+function AttributionBadge({ src }: { src: 'utm_campaign' | 'coupon_campaign' | 'origin_context' | 'none' }) {
+  const map = {
+    utm_campaign: { label: 'UTM', variant: 'default' as const },
+    coupon_campaign: { label: 'Cupom', variant: 'secondary' as const },
+    origin_context: { label: 'Origem', variant: 'outline' as const },
+    none: { label: 'Sem atribuição', variant: 'outline' as const },
+  };
+  const m = map[src];
+  return <Badge variant={m.variant} className="text-[10px]">{m.label}</Badge>;
+}
+
+function UtmSection({
+  cards,
+  campaigns,
+  origins,
+  orders,
+  quality,
+  loading,
+  page,
+  setPage,
+  attribution,
+  setAttribution,
+  onExportCampaigns,
+  onExportOrigins,
+  onExportOrders,
+  onExportQuality,
+  exporting,
+}: {
+  cards: CampaignCards | null;
+  campaigns: CampaignPerfRow[] | null;
+  origins: OriginPerfRow[] | null;
+  orders: { rows: AttributedOrderRow[]; total: number; page: number; pageSize: number } | null;
+  quality: AttributionQuality | null;
+  loading: boolean;
+  page: number;
+  setPage: (n: number) => void;
+  attribution: 'all' | 'attributed' | 'unattributed';
+  setAttribution: (v: 'all' | 'attributed' | 'unattributed') => void;
+  onExportCampaigns: () => void;
+  onExportOrigins: () => void;
+  onExportOrders: () => void;
+  onExportQuality: () => void;
+  exporting: boolean;
+}) {
+  const totalPages = orders ? Math.max(1, Math.ceil(orders.total / orders.pageSize)) : 1;
+
+  return (
+    <div className="space-y-6">
+      {/* Filtros locais */}
+      <div className="bg-card border border-border rounded-xl p-3 flex flex-wrap items-center gap-2">
+        <span className="text-xs text-muted-foreground">Atribuição:</span>
+        {(['all', 'attributed', 'unattributed'] as const).map((v) => (
+          <Button
+            key={v}
+            size="sm"
+            variant={attribution === v ? 'default' : 'outline'}
+            onClick={() => setAttribution(v)}
+          >
+            {v === 'all' ? 'Todos' : v === 'attributed' ? 'Atribuídos' : 'Sem atribuição'}
+          </Button>
+        ))}
+        <div className="ml-auto flex gap-2">
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={onExportCampaigns}
+            disabled={exporting || !campaigns}
+          >
+            {exporting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
+            Campanhas
+          </Button>
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={onExportOrigins}
+            disabled={exporting || !origins}
+          >
+            {exporting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
+            Origens
+          </Button>
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={onExportOrders}
+            disabled={exporting || !orders}
+          >
+            {exporting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
+            Pedidos
+          </Button>
+        </div>
+      </div>
+
+      {loading && !cards ? (
+        <div className="flex items-center justify-center py-12 text-muted-foreground">
+          <Loader2 className="w-5 h-5 animate-spin mr-2" /> Carregando…
+        </div>
+      ) : cards ? (
+        <>
+          {/* CARDS */}
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+            <MetricCard
+              card={{
+                label: 'Receita atribuída',
+                value: brl(cards.attributedRevenue),
+                tooltip: 'Pedidos atribuídos são pedidos que possuem UTM ou vínculo com campanha/cupom.',
+              }}
+            />
+            <MetricCard card={{ label: 'Pedidos atribuídos', value: String(cards.attributedOrders) }} />
+            <MetricCard
+              card={{
+                label: '% de atribuição',
+                value: pct(cards.attributionRate),
+                tooltip: 'Quanto maior, melhor a análise de campanhas.',
+                warn: cards.attributionRate < 30,
+                hint: cards.attributionRate < 30 ? 'Use links com UTM para melhorar' : undefined,
+              }}
+            />
+            <MetricCard
+              card={{
+                label: 'Pedidos sem atribuição',
+                value: String(cards.unattributedOrders),
+                warn: cards.unattributedOrders > 0,
+                tooltip: 'Vendas sem origem/campanha identificada.',
+              }}
+            />
+            <MetricCard card={{ label: 'Ticket médio', value: brl(cards.avgTicketAttributed) }} />
+            <MetricCard
+              card={{
+                label: 'Margem estimada',
+                value: pct(cards.estimatedMargin),
+                tooltip: 'Margem por campanha usa o custo salvo no pedido no momento da venda.',
+              }}
+            />
+            <MetricCard card={{ label: 'Leads atribuídos', value: String(cards.attributedLeads) }} />
+            <MetricCard
+              card={{
+                label: 'Carrinhos abandonados',
+                value: String(cards.attributedAbandoned),
+                hint: cards.recoveredCarts > 0 ? `${cards.recoveredCarts} recuperados` : undefined,
+              }}
+            />
+            <MetricCard
+              card={{
+                label: 'Top campanha (receita)',
+                value: cards.topRevenueCampaign?.label ?? '—',
+                hint: cards.topRevenueCampaign ? brl(cards.topRevenueCampaign.revenue) : undefined,
+              }}
+            />
+            <MetricCard
+              card={{
+                label: 'Top campanha (margem)',
+                value: cards.topMarginCampaign?.label ?? '—',
+                hint: cards.topMarginCampaign ? pct(cards.topMarginCampaign.margin) : undefined,
+              }}
+            />
+            <MetricCard
+              card={{
+                label: 'Top origem (pedidos)',
+                value: cards.topOriginByOrders?.label ?? '—',
+                hint: cards.topOriginByOrders ? `${cards.topOriginByOrders.orders} pedidos` : undefined,
+              }}
+            />
+          </div>
+
+          {/* QUALIDADE */}
+          {quality && (
+            <div className="bg-card border border-border rounded-xl p-4 space-y-3">
+              <div className="flex items-center justify-between">
+                <h3 className="font-semibold text-sm">Qualidade da atribuição</h3>
+                <Button size="sm" variant="ghost" onClick={onExportQuality} disabled={exporting}>
+                  <Download className="w-4 h-4" /> CSV
+                </Button>
+              </div>
+              <div className="grid grid-cols-2 md:grid-cols-5 gap-3 text-sm">
+                <div><div className="text-xs text-muted-foreground">Total de pedidos</div><div className="font-semibold">{quality.totalOrders}</div></div>
+                <div><div className="text-xs text-muted-foreground">Com UTM</div><div className="font-semibold">{quality.withUtm}</div></div>
+                <div><div className="text-xs text-muted-foreground">Por campanha (UTM)</div><div className="font-semibold">{quality.withCampaign}</div></div>
+                <div><div className="text-xs text-muted-foreground">Por cupom</div><div className="font-semibold">{quality.withCouponCampaign}</div></div>
+                <div><div className="text-xs text-muted-foreground">Sem atribuição</div><div className="font-semibold">{quality.unattributed}</div></div>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                {quality.attributionRate.toFixed(0)}% dos pedidos deste período possuem origem identificada.
+                Quanto maior esse percentual, melhor será a análise de campanhas. Use links com UTM e vincule cupons a campanhas.
+              </p>
+            </div>
+          )}
+
+          {/* PERFORMANCE POR CAMPANHA */}
+          <div className="bg-card border border-border rounded-xl overflow-hidden">
+            <div className="px-4 py-3 border-b border-border flex items-center justify-between">
+              <h3 className="font-semibold text-sm">Performance por campanha</h3>
+              <span className="text-xs text-muted-foreground">{campaigns?.length ?? 0} campanhas</span>
+            </div>
+            {!campaigns || campaigns.length === 0 ? (
+              <div className="p-6 text-sm text-muted-foreground text-center">
+                Nenhuma campanha com dados no período.
+              </div>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead className="bg-muted/40 text-xs">
+                    <tr>
+                      <th className="text-left px-3 py-2">Campanha</th>
+                      <th className="text-left px-3 py-2">Atrib.</th>
+                      <th className="text-right px-3 py-2">Pedidos</th>
+                      <th className="text-right px-3 py-2">Receita</th>
+                      <th className="text-right px-3 py-2">Ticket</th>
+                      <th className="text-right px-3 py-2">Desconto</th>
+                      <th className="text-right px-3 py-2">Custo</th>
+                      <th className="text-right px-3 py-2">Taxa MP</th>
+                      <th className="text-right px-3 py-2">Lucro est.</th>
+                      <th className="text-right px-3 py-2">Margem %</th>
+                      <th className="text-right px-3 py-2">Leads</th>
+                      <th className="text-right px-3 py-2">Abandon.</th>
+                      <th className="text-right px-3 py-2">Recup.</th>
+                      <th className="text-right px-3 py-2">Cupons</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {campaigns.map((r) => (
+                      <tr key={r.campaignKey} className="border-t border-border hover:bg-muted/20">
+                        <td className="px-3 py-2 font-medium">
+                          <div>{r.campaignLabel}</div>
+                          {(r.channel || r.status) && (
+                            <div className="text-[10px] text-muted-foreground">
+                              {r.channel ?? ''} {r.status ? `· ${r.status}` : ''}
+                            </div>
+                          )}
+                        </td>
+                        <td className="px-3 py-2"><AttributionBadge src={r.source} /></td>
+                        <td className="px-3 py-2 text-right">{r.orders}</td>
+                        <td className="px-3 py-2 text-right">{brl(r.revenue)}</td>
+                        <td className="px-3 py-2 text-right">{brl(r.avgTicket)}</td>
+                        <td className="px-3 py-2 text-right">{brl(r.discountTotal)}</td>
+                        <td className="px-3 py-2 text-right">{brl(r.itemsCost)}</td>
+                        <td className="px-3 py-2 text-right">{brl(r.mpFees)}</td>
+                        <td className="px-3 py-2 text-right">{brl(r.estimatedProfit)}</td>
+                        <td className={`px-3 py-2 text-right ${r.marginPercent != null && r.marginPercent < 10 ? 'text-destructive font-semibold' : ''}`}>
+                          {r.marginPercent == null ? '—' : pct(r.marginPercent)}
+                        </td>
+                        <td className="px-3 py-2 text-right">{r.leads}</td>
+                        <td className="px-3 py-2 text-right">{r.abandoned}</td>
+                        <td className="px-3 py-2 text-right">{r.recovered}</td>
+                        <td className="px-3 py-2 text-right">{r.couponsUsed}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+
+          {/* PERFORMANCE POR ORIGEM */}
+          <div className="bg-card border border-border rounded-xl overflow-hidden">
+            <div className="px-4 py-3 border-b border-border flex items-center justify-between">
+              <h3 className="font-semibold text-sm">Performance por origem</h3>
+              <span className="text-xs text-muted-foreground">{origins?.length ?? 0} origens</span>
+            </div>
+            {!origins || origins.length === 0 ? (
+              <div className="p-6 text-sm text-muted-foreground text-center">
+                Nenhuma origem identificada no período.
+              </div>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead className="bg-muted/40 text-xs">
+                    <tr>
+                      <th className="text-left px-3 py-2">Origem</th>
+                      <th className="text-left px-3 py-2">Meio</th>
+                      <th className="text-left px-3 py-2">Contexto</th>
+                      <th className="text-right px-3 py-2">Pedidos</th>
+                      <th className="text-right px-3 py-2">Receita</th>
+                      <th className="text-right px-3 py-2">Ticket</th>
+                      <th className="text-right px-3 py-2">Leads</th>
+                      <th className="text-right px-3 py-2">Abandon.</th>
+                      <th className="text-right px-3 py-2">Recup.</th>
+                      <th className="text-right px-3 py-2">Lucro est.</th>
+                      <th className="text-right px-3 py-2">Margem %</th>
+                      <th className="text-right px-3 py-2">B2B</th>
+                      <th className="text-right px-3 py-2">B2C</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {origins.map((r, i) => (
+                      <tr key={`${r.source}|${r.medium}|${r.context}|${i}`} className="border-t border-border hover:bg-muted/20">
+                        <td className="px-3 py-2 font-medium">{r.source}</td>
+                        <td className="px-3 py-2">{r.medium}</td>
+                        <td className="px-3 py-2 text-xs text-muted-foreground">{r.context}</td>
+                        <td className="px-3 py-2 text-right">{r.orders}</td>
+                        <td className="px-3 py-2 text-right">{brl(r.revenue)}</td>
+                        <td className="px-3 py-2 text-right">{brl(r.avgTicket)}</td>
+                        <td className="px-3 py-2 text-right">{r.leads}</td>
+                        <td className="px-3 py-2 text-right">{r.abandoned}</td>
+                        <td className="px-3 py-2 text-right">{r.recovered}</td>
+                        <td className="px-3 py-2 text-right">{brl(r.estimatedProfit)}</td>
+                        <td className="px-3 py-2 text-right">{r.marginPercent == null ? '—' : pct(r.marginPercent)}</td>
+                        <td className="px-3 py-2 text-right">{r.ordersB2B}</td>
+                        <td className="px-3 py-2 text-right">{r.ordersB2C}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+
+          {/* PEDIDOS ATRIBUÍDOS */}
+          <div className="bg-card border border-border rounded-xl overflow-hidden">
+            <div className="px-4 py-3 border-b border-border flex items-center justify-between">
+              <h3 className="font-semibold text-sm">Pedidos por campanha / origem</h3>
+              <span className="text-xs text-muted-foreground">
+                {orders?.total ?? 0} pedidos
+              </span>
+            </div>
+            {!orders || orders.rows.length === 0 ? (
+              <div className="p-6 text-sm text-muted-foreground text-center">
+                Nenhum pedido no período.
+              </div>
+            ) : (
+              <>
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm">
+                    <thead className="bg-muted/40 text-xs">
+                      <tr>
+                        <th className="text-left px-3 py-2">Data</th>
+                        <th className="text-left px-3 py-2">Pedido</th>
+                        <th className="text-left px-3 py-2">Cliente</th>
+                        <th className="text-left px-3 py-2">Tipo</th>
+                        <th className="text-left px-3 py-2">Campanha</th>
+                        <th className="text-left px-3 py-2">UTM source / medium</th>
+                        <th className="text-right px-3 py-2">Receita</th>
+                        <th className="text-right px-3 py-2">Desconto</th>
+                        <th className="text-right px-3 py-2">Taxa MP</th>
+                        <th className="text-right px-3 py-2">Lucro est.</th>
+                        <th className="text-right px-3 py-2">Margem %</th>
+                        <th className="text-left px-3 py-2">Cálculo</th>
+                        <th className="px-3 py-2"></th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {orders.rows.map((r) => (
+                        <tr key={r.id} className="border-t border-border hover:bg-muted/20">
+                          <td className="px-3 py-2 text-xs text-muted-foreground">{fmtDateTime(r.created_at)}</td>
+                          <td className="px-3 py-2 font-medium">#{r.order_number}</td>
+                          <td className="px-3 py-2">{r.customer}</td>
+                          <td className="px-3 py-2">
+                            <Badge variant={r.order_type === 'b2b' ? 'default' : 'secondary'} className="text-[10px]">
+                              {r.order_type.toUpperCase()}
+                            </Badge>
+                          </td>
+                          <td className="px-3 py-2">{r.campaignLabel}</td>
+                          <td className="px-3 py-2 text-xs">
+                            {r.utm_source ?? '—'} / {r.utm_medium ?? '—'}
+                          </td>
+                          <td className="px-3 py-2 text-right">{brl(r.revenue)}</td>
+                          <td className="px-3 py-2 text-right">{brl(r.discount)}</td>
+                          <td className="px-3 py-2 text-right">{brl(r.mpFee)}</td>
+                          <td className="px-3 py-2 text-right">{brl(r.estimatedProfit)}</td>
+                          <td className={`px-3 py-2 text-right ${r.marginPercent != null && r.marginPercent < 10 ? 'text-destructive font-semibold' : ''}`}>
+                            {r.marginPercent == null ? '—' : pct(r.marginPercent)}
+                          </td>
+                          <td className="px-3 py-2">
+                            {r.calcStatus === 'sem_custo' ? (
+                              <Badge variant="outline" className="text-[10px] text-amber-600 border-amber-500/40">sem custo</Badge>
+                            ) : (
+                              <Badge variant="outline" className="text-[10px]">ok</Badge>
+                            )}
+                          </td>
+                          <td className="px-3 py-2">
+                            <Link to="/admin/pedidos/$orderId" params={{ orderId: r.id }} className="text-primary hover:underline inline-flex items-center gap-1 text-xs">
+                              Abrir <ExternalLink className="w-3 h-3" />
+                            </Link>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+
+                {/* Paginação */}
+                {totalPages > 1 && (
+                  <div className="px-4 py-3 border-t border-border flex items-center justify-between text-sm">
+                    <span className="text-muted-foreground">Página {orders.page} de {totalPages}</span>
+                    <div className="flex gap-2">
+                      <Button size="sm" variant="outline" disabled={orders.page <= 1} onClick={() => setPage(orders.page - 1)}>Anterior</Button>
+                      <Button size="sm" variant="outline" disabled={orders.page >= totalPages} onClick={() => setPage(orders.page + 1)}>Próxima</Button>
+                    </div>
+                  </div>
+                )}
+              </>
+            )}
+          </div>
+        </>
+      ) : (
+        <div className="text-sm text-muted-foreground text-center py-8">
+          Sem dados de campanhas / UTM neste período.
+        </div>
+      )}
+    </div>
   );
 }
