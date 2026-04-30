@@ -472,10 +472,19 @@ export const getAdminOperations = createServerFn({ method: 'GET' })
         ctaHref: '/admin/carrinhos-abandonados',
         group: 'Pedidos',
       },
+      {
+        id: 'seo-pendencias',
+        title: 'SEO com pendências',
+        description: 'Produtos, categorias ou páginas com SEO incompleto. Corrigir ajuda a aparecer no Google.',
+        qty: seoTotalIssues,
+        status: seoTotalIssues === 0
+          ? 'ok'
+          : (seo.homepageMissingSeo || seo.productsNoSeoTitle > 10 ? 'danger' : 'warn'),
+        ctaLabel: 'Ver SEO Insights',
+        ctaHref: '/admin/seo',
+        group: 'Marketing',
+      },
     ];
-
-    // ============================================================
-    // Monta alertas importantes
     // ============================================================
     const alerts: OperationsAlert[] = [];
 
