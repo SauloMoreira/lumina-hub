@@ -1,5 +1,6 @@
 import { createFileRoute, Link } from '@tanstack/react-router';
 import { Trash2, Plus, Minus, ShoppingBag, ArrowRight, AlertCircle, Building2, BadgePercent } from 'lucide-react';
+import { useQuery } from '@tanstack/react-query';
 import { StoreLayout } from '@/components/layout/StoreLayout';
 import { Button } from '@/components/ui/button';
 import { useCart, validateB2bLine } from '@/stores/cartStore';
@@ -8,6 +9,7 @@ import { useCartPricing, maskCnpj } from '@/hooks/useCartPricing';
 import { describeB2bReason } from '@/lib/b2bPricingShared';
 import { CartUpsell } from '@/components/store/CartUpsell';
 import { CartBundlePreview } from '@/components/store/CartBundlePreview';
+import { getCartBundlePreview } from '@/server/cartBundlePreview.functions';
 
 import { buildSeo } from '@/lib/seo';
 
@@ -26,6 +28,18 @@ function CartPage() {
   const subtotalRetail = pricing?.retail_subtotal ?? cart.subtotal();
   const subtotalApplied = pricing?.applied_subtotal ?? cart.subtotal();
   const b2bSavings = pricing?.b2b_discount_total ?? 0;
+
+  // Prévia de desconto de combo (estimativa, total real é validado no checkout)
+  const previewItems = cart.items.map((i) => ({ product_id: i.productId, qty: i.qty }));
+  const { data: bundlePreviewRows } = useQuery({
+    queryKey: ['cart-bundle-preview-summary', previewItems.map((i) => `${i.product_id}:${i.qty}`).join('|')],
+    queryFn: () => getCartBundlePreview({ data: { items: previewItems, hasCoupon: false } }),
+    enabled: previewItems.length > 0,
+    staleTime: 15_000,
+  });
+  const bundlePreviewSavings = (bundlePreviewRows ?? [])
+    .filter((r) => r.status === 'eligible_preview')
+    .reduce((acc, r) => acc + r.estimated_discount, 0);
 
   const freeShip = calcFreeShippingProgress(
     cart.items.map((i) => ({ price: i.price, qty: i.qty, freeShippingEligible: i.freeShippingEligible }))
@@ -172,6 +186,12 @@ function CartPage() {
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Subtotal empresa</span>
                   <span className="font-medium">{formatBRL(subtotalApplied)}</span>
+                </div>
+              )}
+              {bundlePreviewSavings > 0 && (
+                <div className="flex justify-between text-success">
+                  <span>Desconto de combo (estimado)</span>
+                  <span>−{formatBRL(bundlePreviewSavings)}</span>
                 </div>
               )}
               <div className="flex justify-between">

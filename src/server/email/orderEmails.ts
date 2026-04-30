@@ -37,7 +37,7 @@ export async function sendOrderEmail(opts: SendOrderEmailOptions): Promise<{
     const { data: order, error: orderErr } = await supabaseAdmin
       .from('orders')
       .select(
-        'id, order_number, user_id, status, payment_status, subtotal, discount, shipping_cost, total, tracking_code, address_snapshot, public_access_token, delivery_method, pickup_store_name, pickup_store_address, pickup_store_phone, pickup_instructions, local_delivery_district, local_delivery_eta, shipping_carrier, shipping_service, order_items(product_name, qty, unit_price, total_price)'
+        'id, order_number, user_id, status, payment_status, subtotal, discount, shipping_cost, total, tracking_code, address_snapshot, public_access_token, delivery_method, pickup_store_name, pickup_store_address, pickup_store_phone, pickup_instructions, local_delivery_district, local_delivery_eta, shipping_carrier, shipping_service, bundle_discount_total, order_items(product_name, qty, unit_price, total_price)'
       )
       .eq('id', opts.orderId)
       .single();
@@ -108,6 +108,7 @@ export async function sendOrderEmail(opts: SendOrderEmailOptions): Promise<{
       subtotal: Number(order.subtotal ?? 0),
       shippingTotal: Number(order.shipping_cost ?? 0),
       discountTotal: Number(order.discount ?? 0),
+      bundleDiscountTotal: Number((order as any).bundle_discount_total ?? 0),
       total: Number(order.total ?? 0),
       orderUrl,
       retryUrl,

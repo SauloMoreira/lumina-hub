@@ -11,6 +11,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { useCart } from '@/stores/cartStore';
 import { formatBRL } from '@/lib/domain';
 import { lookupCep, calculateShipping, applyCoupon, createOrder, lookupLocalDeliveryZone } from '@/server/checkout.functions';
+import { getCartBundlePreview } from '@/server/cartBundlePreview.functions';
 import { createMercadoPagoPreference } from '@/server/payment.functions';
 import { getPublicCompanySettings } from '@/server/institutional.functions';
 import { useCartPricing, maskCnpj } from '@/hooks/useCartPricing';
@@ -102,9 +103,22 @@ function CheckoutPage() {
   const subtotal = pricing?.applied_subtotal ?? cart.subtotal();
   const b2bSavings = pricing?.b2b_discount_total ?? 0;
   const isB2bOrder = Boolean(pricing?.has_b2b_items);
+
+  // Prévia de desconto de combo no checkout (estimativa; backend recalcula em createOrder)
+  const previewItems = cart.items.map((i) => ({ product_id: i.productId, qty: i.qty }));
+  const { data: bundlePreviewRows } = useQuery({
+    queryKey: ['checkout-bundle-preview', couponCode ?? '', previewItems.map((i) => `${i.product_id}:${i.qty}`).join('|')],
+    queryFn: () => getCartBundlePreview({ data: { items: previewItems, hasCoupon: Boolean(couponCode) } }),
+    enabled: previewItems.length > 0,
+    staleTime: 15_000,
+  });
+  const bundleDiscountPreview = (bundlePreviewRows ?? [])
+    .filter((r) => r.status === 'eligible_preview')
+    .reduce((acc, r) => acc + r.estimated_discount, 0);
+
   const total = useMemo(
-    () => Math.max(0, subtotal - discount + shippingCost),
-    [subtotal, discount, shippingCost]
+    () => Math.max(0, subtotal - discount - bundleDiscountPreview + shippingCost),
+    [subtotal, discount, bundleDiscountPreview, shippingCost]
   );
 
   useEffect(() => {
@@ -734,6 +748,9 @@ function CheckoutPage() {
               )}
               {discount > 0 && (
                 <div className="flex justify-between text-success"><span>Desconto ({couponCode})</span><span>−{formatBRL(discount)}</span></div>
+              )}
+              {bundleDiscountPreview > 0 && (
+                <div className="flex justify-between text-success"><span>Desconto de combo</span><span>−{formatBRL(bundleDiscountPreview)}</span></div>
               )}
               <div className="flex justify-between">
                 <span className="text-muted-foreground">{isPickup ? 'Retirada na loja' : isLocal ? 'Frete Local Maricá' : 'Frete'}</span>

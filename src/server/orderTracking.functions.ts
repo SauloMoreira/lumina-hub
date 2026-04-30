@@ -60,7 +60,7 @@ export const getOrderForCustomer = createServerFn({ method: 'POST' })
     const { data: order, error } = await supabaseAdmin
       .from('orders')
       .select(
-        'id, order_number, user_id, status, payment_status, payment_method, subtotal, discount, shipping_cost, total, coupon_code, shipping_carrier, shipping_service, tracking_code, estimated_delivery, address_snapshot, created_at, paid_at, public_access_token, delivery_method, pickup_status, pickup_store_name, pickup_store_address, pickup_store_phone, pickup_instructions, local_delivery_district, local_delivery_eta, order_items(id, product_name, product_image, qty, unit_price, total_price)'
+        'id, order_number, user_id, status, payment_status, payment_method, subtotal, discount, shipping_cost, total, coupon_code, shipping_carrier, shipping_service, tracking_code, estimated_delivery, address_snapshot, created_at, paid_at, public_access_token, delivery_method, pickup_status, pickup_store_name, pickup_store_address, pickup_store_phone, pickup_instructions, local_delivery_district, local_delivery_eta, bundle_discount_total, bundle_discount_details, has_bundle_discount, order_items(id, product_name, product_image, qty, unit_price, total_price, bundle_id, bundle_name, bundle_applied, bundle_discount_amount)'
       )
       .eq('id', data.id)
       .single();
@@ -83,6 +83,26 @@ export const getOrderForCustomer = createServerFn({ method: 'POST' })
 
     // Sanitizar e retornar APENAS o que o cliente pode ver
     const addr = (order.address_snapshot as Address) ?? null;
+    const orderAny = order as any;
+    type AppliedBundleSummary = {
+      bundle_id: string;
+      bundle_name: string;
+      discount_amount: number;
+    };
+    const rawDetails = (orderAny.bundle_discount_details ?? null) as
+      | {
+          applied?: Array<{ bundle_id?: string; bundle_name?: string; discount_amount?: number }>;
+        }
+      | null;
+    const appliedBundles: AppliedBundleSummary[] =
+      rawDetails?.applied
+        ?.filter((b) => Number(b?.discount_amount ?? 0) > 0)
+        .map((b) => ({
+          bundle_id: String(b.bundle_id ?? ''),
+          bundle_name: String(b.bundle_name ?? 'Combo'),
+          discount_amount: Number(b.discount_amount ?? 0),
+        })) ?? [];
+
     return {
       ok: true as const,
       order: {
@@ -93,6 +113,8 @@ export const getOrderForCustomer = createServerFn({ method: 'POST' })
         paymentMethod: order.payment_method,
         subtotal: Number(order.subtotal ?? 0),
         discount: Number(order.discount ?? 0),
+        bundleDiscountTotal: Number(orderAny.bundle_discount_total ?? 0),
+        bundles: appliedBundles,
         shippingCost: Number(order.shipping_cost ?? 0),
         total: Number(order.total ?? 0),
         couponCode: order.coupon_code,
@@ -102,20 +124,20 @@ export const getOrderForCustomer = createServerFn({ method: 'POST' })
         estimatedDelivery: order.estimated_delivery,
         createdAt: order.created_at,
         paidAt: order.paid_at,
-        deliveryMethod: (order as any).delivery_method ?? 'delivery',
-        pickup: ((order as any).delivery_method === 'pickup')
+        deliveryMethod: orderAny.delivery_method ?? 'delivery',
+        pickup: (orderAny.delivery_method === 'pickup')
           ? {
-              status: (order as any).pickup_status ?? null,
-              storeName: (order as any).pickup_store_name ?? null,
-              storeAddress: (order as any).pickup_store_address ?? null,
-              storePhone: (order as any).pickup_store_phone ?? null,
-              instructions: (order as any).pickup_instructions ?? null,
+              status: orderAny.pickup_status ?? null,
+              storeName: orderAny.pickup_store_name ?? null,
+              storeAddress: orderAny.pickup_store_address ?? null,
+              storePhone: orderAny.pickup_store_phone ?? null,
+              instructions: orderAny.pickup_instructions ?? null,
             }
           : null,
-        localDelivery: ((order as any).delivery_method === 'local_delivery')
+        localDelivery: (orderAny.delivery_method === 'local_delivery')
           ? {
-              district: (order as any).local_delivery_district ?? null,
-              eta: (order as any).local_delivery_eta ?? null,
+              district: orderAny.local_delivery_district ?? null,
+              eta: orderAny.local_delivery_eta ?? null,
             }
           : null,
         address: addr
@@ -130,14 +152,19 @@ export const getOrderForCustomer = createServerFn({ method: 'POST' })
               zipCode: addr.zipCode ?? null,
             }
           : null,
-        items: (order.order_items ?? []).map((i) => ({
-          id: i.id,
-          name: i.product_name,
-          image: i.product_image,
-          qty: Number(i.qty),
-          unitPrice: Number(i.unit_price),
-          totalPrice: Number(i.total_price),
-        })),
+        items: (order.order_items ?? []).map((i) => {
+          const ii = i as any;
+          return {
+            id: i.id,
+            name: i.product_name,
+            image: i.product_image,
+            qty: Number(i.qty),
+            unitPrice: Number(i.unit_price),
+            totalPrice: Number(i.total_price),
+            bundleName: ii.bundle_applied ? (ii.bundle_name ?? null) : null,
+            bundleDiscountAmount: Number(ii.bundle_discount_amount ?? 0),
+          };
+        }),
       },
     };
   });

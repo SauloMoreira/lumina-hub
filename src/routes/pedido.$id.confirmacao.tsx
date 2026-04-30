@@ -31,6 +31,8 @@ type CustomerOrder = {
   paymentMethod: string | null;
   subtotal: number;
   discount: number;
+  bundleDiscountTotal: number;
+  bundles: Array<{ bundle_id: string; bundle_name: string; discount_amount: number }>;
   shippingCost: number;
   total: number;
   couponCode: string | null;
@@ -59,7 +61,7 @@ type CustomerOrder = {
     state: string | null;
     zipCode: string | null;
   } | null;
-  items: Array<{ id: string; name: string; image: string | null; qty: number; unitPrice: number; totalPrice: number }>;
+  items: Array<{ id: string; name: string; image: string | null; qty: number; unitPrice: number; totalPrice: number; bundleName: string | null; bundleDiscountAmount: number }>;
 };
 
 function statusMessage(status: string, paymentStatus: string | null) {
@@ -299,10 +301,31 @@ function OrderTrackingPage() {
           <div className="mt-4 pt-4 border-t border-border space-y-1.5 text-sm">
             <div className="flex justify-between"><span className="text-muted-foreground">Subtotal</span><span>{formatBRL(order.subtotal)}</span></div>
             {order.discount > 0 && <div className="flex justify-between text-success"><span>Desconto{order.couponCode ? ` (${order.couponCode})` : ''}</span><span>−{formatBRL(order.discount)}</span></div>}
+            {order.bundleDiscountTotal > 0 && <div className="flex justify-between text-success"><span>Desconto de combo</span><span>−{formatBRL(order.bundleDiscountTotal)}</span></div>}
             <div className="flex justify-between"><span className="text-muted-foreground">{isPickup ? 'Retirada na loja' : isLocal ? `Frete Local Maricá${order.localDelivery?.district ? ` (${order.localDelivery.district})` : ''}` : `Frete${order.shippingService ? ` (${order.shippingService})` : ''}`}</span><span>{order.shippingCost === 0 ? 'Grátis' : formatBRL(order.shippingCost)}</span></div>
             <div className="flex justify-between font-display font-bold text-lg pt-2 border-t border-border"><span>Total</span><span className="text-primary">{formatBRL(order.total)}</span></div>
           </div>
         </div>
+
+        {order.bundles.length > 0 && (
+          <div className="bg-card border border-border rounded-xl p-6 mb-6">
+            <div className="flex items-center gap-2 mb-3">
+              <Package className="w-4 h-4 text-primary" />
+              <h2 className="font-display font-semibold">Combos aplicados</h2>
+            </div>
+            <ul className="space-y-2 text-sm">
+              {order.bundles.map((b) => (
+                <li key={b.bundle_id} className="flex items-center justify-between gap-3 rounded-md border border-border/60 bg-surface/40 px-3 py-2">
+                  <span className="font-medium truncate">{b.bundle_name}</span>
+                  <span className="text-success font-medium shrink-0">−{formatBRL(b.discount_amount)}</span>
+                </li>
+              ))}
+            </ul>
+            <p className="mt-3 text-xs text-muted-foreground">
+              Os descontos de combo já estão incluídos no total acima.
+            </p>
+          </div>
+        )}
 
         {/* Entrega ou Retirada */}
         <div className="bg-card border border-border rounded-xl p-6 mb-6">

@@ -1759,11 +1759,13 @@ function CouponsSection({
   if (!data) return null;
   const c = data.cards;
   const cardDefs: CardDef[] = [
-    { label: 'Descontos totais', value: brl(c.totalDiscounts), tooltip: 'Soma de descontos B2B + cupons no período.' },
+    { label: 'Descontos totais', value: brl(c.totalDiscounts), tooltip: 'Soma de descontos B2B + cupons + combos no período.' },
     { label: 'Desconto B2B', value: brl(c.b2bDiscounts) },
     { label: 'Desconto de cupons', value: brl(c.couponDiscounts) },
+    { label: 'Desconto de combos', value: brl(c.bundleDiscounts), tooltip: 'Soma dos descontos aplicados via combos/kits no período.' },
     { label: 'Cupons utilizados', value: String(c.couponsUsed) },
     { label: 'Pedidos com cupom', value: String(c.ordersWithCoupon) },
+    { label: 'Pedidos com combo', value: String(c.ordersWithBundle) },
     { label: 'Ticket médio com cupom', value: brl(c.averageTicketWithCoupon) },
     { label: 'Margem média com cupom', value: pct(c.averageMarginWithCoupon) },
     { label: 'Cupons com margem crítica', value: String(c.couponsCritical), warn: c.couponsCritical > 0 },
@@ -1848,6 +1850,7 @@ function CouponsSection({
                 <th className="text-left px-3 py-2">Cupom</th>
                 <th className="text-right px-3 py-2">Desc. cupom</th>
                 <th className="text-right px-3 py-2">Desc. B2B</th>
+                <th className="text-right px-3 py-2">Desc. combo</th>
                 <th className="text-right px-3 py-2">Total desc.</th>
                 <th className="text-right px-3 py-2">Receita</th>
                 <th className="text-right px-3 py-2">Margem</th>
@@ -1856,7 +1859,7 @@ function CouponsSection({
             </thead>
             <tbody>
               {data.orders.length === 0 ? (
-                <tr><td colSpan={11} className="text-center py-8 text-muted-foreground">Sem pedidos com desconto no período.</td></tr>
+                <tr><td colSpan={12} className="text-center py-8 text-muted-foreground">Sem pedidos com desconto no período.</td></tr>
               ) : data.orders.slice(0, 300).map((r) => (
                 <tr key={r.id} className="border-t border-border hover:bg-muted/20">
                   <td className="px-3 py-2 text-xs whitespace-nowrap">{fmtDateTime(r.created_at)}</td>
@@ -1866,6 +1869,7 @@ function CouponsSection({
                   <td className="px-3 py-2 text-xs">{r.coupon_code ?? '—'}</td>
                   <td className="px-3 py-2 text-right text-muted-foreground">{r.coupon_discount > 0 ? brl(r.coupon_discount) : '—'}</td>
                   <td className="px-3 py-2 text-right text-muted-foreground">{r.b2b_discount > 0 ? brl(r.b2b_discount) : '—'}</td>
+                  <td className="px-3 py-2 text-right text-muted-foreground">{r.bundle_discount > 0 ? brl(r.bundle_discount) : '—'}</td>
                   <td className="px-3 py-2 text-right font-medium">{brl(r.total_discount)}</td>
                   <td className="px-3 py-2 text-right">{brl(r.final_revenue)}</td>
                   <td className="px-3 py-2 text-right">{r.margin_status === 'incomplete' ? '—' : pct(r.margin_percent)}</td>
