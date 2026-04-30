@@ -11,7 +11,7 @@ import { qualityClassColor, qualityClassLabel, type QualityClass } from '@/lib/p
 
 export const Route = createFileRoute('/admin/produtos/qualidade')({ component: ProductQualityPage });
 
-type Filter = 'all' | 'ruim' | 'atencao' | 'active_low' | 'featured_low' | 'no_image' | 'no_cost' | 'no_seo' | 'no_fiscal';
+type Filter = 'all' | 'ruim' | 'atencao' | 'active_low' | 'featured_low' | 'no_image' | 'no_cost' | 'no_seo' | 'no_fiscal' | 'no_tech';
 
 function ProductQualityPage() {
   const [filter, setFilter] = useState<Filter>('all');
@@ -51,6 +51,7 @@ function ProductQualityPage() {
       case 'no_cost':      arr = arr.filter((r) => r.quality.issues.some((i) => i.code === 'no_cost')); break;
       case 'no_seo':       arr = arr.filter((r) => r.quality.issues.some((i) => i.code === 'no_seo_title' || i.code === 'no_seo_description')); break;
       case 'no_fiscal':    arr = arr.filter((r) => r.quality.issues.some((i) => ['no_ncm','no_weight','no_dimensions'].includes(i.code))); break;
+      case 'no_tech':      arr = arr.filter((r) => r.quality.issues.some((i) => i.code === 'no_tech_attrs')); break;
     }
     const term = q.trim().toLowerCase();
     if (term) arr = arr.filter((r) => r.name.toLowerCase().includes(term) || (r.sku ?? '').toLowerCase().includes(term));
@@ -104,6 +105,7 @@ function ProductQualityPage() {
           <FilterPill icon={<DollarSign className="w-3.5 h-3.5" />} label="Sem custo" value="no_cost" filter={filter} setFilter={setFilter} />
           <FilterPill icon={<Search className="w-3.5 h-3.5" />} label="SEO incompleto" value="no_seo" filter={filter} setFilter={setFilter} />
           <FilterPill icon={<FileText className="w-3.5 h-3.5" />} label="Fiscal/logística" value="no_fiscal" filter={filter} setFilter={setFilter} />
+          <FilterPill icon={<Package className="w-3.5 h-3.5" />} label="Sem atributos técnicos" value="no_tech" filter={filter} setFilter={setFilter} />
         </div>
 
         <div className="bg-card border border-border rounded-xl">
