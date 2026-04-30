@@ -232,7 +232,7 @@ async function fetchOrdersRange(
   if (filters.status) q = q.eq('status', filters.status);
   const { data, error } = await q;
   if (error) throw new Response(`orders query failed: ${error.message}`, { status: 500 });
-  return (data ?? []) as RawOrder[];
+  return (data ?? []) as unknown as RawOrder[];
 }
 
 function customerOf(o: RawOrder): string {
@@ -605,14 +605,15 @@ async function detectIncompleteFiscalItems(orderIds: string[]): Promise<Set<stri
     if (productIds.length === 0) return new Set();
     const { data: products } = await supabaseAdmin
       .from('products')
-      .select('id, ncm, cfop, cest, fiscal_origin, unit_measure')
+      .select('id, ncm, cfop_default, commercial_unit, fiscal_status')
       .in('id', productIds);
     const incompleteProducts = new Set<string>();
-    for (const p of (products ?? []) as Array<Record<string, unknown>>) {
+    for (const p of ((products ?? []) as unknown as Array<Record<string, unknown>>)) {
       const missing =
         !p.ncm ||
-        !p.cfop ||
-        !p.unit_measure;
+        !p.cfop_default ||
+        !p.commercial_unit ||
+        p.fiscal_status === 'incomplete';
       if (missing) incompleteProducts.add(p.id as string);
     }
     const orderHasIncomplete = new Set<string>();
