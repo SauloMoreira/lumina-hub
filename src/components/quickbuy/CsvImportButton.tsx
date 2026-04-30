@@ -16,7 +16,7 @@ type Props = {
   isProcessing?: boolean;
 };
 
-function describeError(e: ReturnType<typeof parseQuickBuyCsv> extends { ok: false; error: infer E } ? E : never): string {
+function describeError(e: CsvParseError): string {
   switch (e.kind) {
     case 'empty_file':
       return 'O arquivo está vazio.';
@@ -30,6 +30,8 @@ function describeError(e: ReturnType<typeof parseQuickBuyCsv> extends { ok: fals
       return 'Coluna "codigo" (ou sku/ean/produto) não encontrada no cabeçalho.';
     case 'missing_qty_column':
       return 'Coluna "quantidade" (ou qtd/qty) não encontrada no cabeçalho.';
+    default:
+      return 'Erro ao processar o arquivo.';
   }
 }
 
