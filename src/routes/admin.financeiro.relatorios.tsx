@@ -229,7 +229,7 @@ function ReportsPage() {
 
   // Aba ativa
   const [tab, setTab] = useState<
-    'sales' | 'margin' | 'products' | 'b2b' | 'coupons' | 'shipping'
+    'sales' | 'margin' | 'products' | 'b2b' | 'coupons' | 'shipping' | 'mp' | 'invoices'
   >('sales');
 
   // Dados
