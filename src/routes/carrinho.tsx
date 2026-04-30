@@ -29,6 +29,18 @@ function CartPage() {
   const subtotalApplied = pricing?.applied_subtotal ?? cart.subtotal();
   const b2bSavings = pricing?.b2b_discount_total ?? 0;
 
+  // Prévia de desconto de combo (estimativa, total real é validado no checkout)
+  const previewItems = cart.items.map((i) => ({ product_id: i.productId, qty: i.qty }));
+  const { data: bundlePreviewRows } = useQuery({
+    queryKey: ['cart-bundle-preview-summary', previewItems.map((i) => `${i.product_id}:${i.qty}`).join('|')],
+    queryFn: () => getCartBundlePreview({ data: { items: previewItems, hasCoupon: false } }),
+    enabled: previewItems.length > 0,
+    staleTime: 15_000,
+  });
+  const bundlePreviewSavings = (bundlePreviewRows ?? [])
+    .filter((r) => r.status === 'eligible_preview')
+    .reduce((acc, r) => acc + r.estimated_discount, 0);
+
   const freeShip = calcFreeShippingProgress(
     cart.items.map((i) => ({ price: i.price, qty: i.qty, freeShippingEligible: i.freeShippingEligible }))
   );
