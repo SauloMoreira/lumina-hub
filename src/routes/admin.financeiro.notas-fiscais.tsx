@@ -143,6 +143,9 @@ function NotasFiscaisPage() {
         emitidas fora da plataforma e acompanhar pendências fiscais.
       </p>
 
+      <FiscalIssuesBanner />
+
+
       {/* Cards */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
         <SummaryCard icon={Clock} label="Pendentes" value={summary.data?.pendentes} accent="warn" />
