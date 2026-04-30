@@ -1860,6 +1860,8 @@ export type Database = {
           delivery_method: string
           discount: number
           estimated_delivery: string | null
+          estimated_fee_amount: number | null
+          estimated_net_amount: number | null
           external_reference: string | null
           id: string
           invoice_number: string | null
@@ -1867,9 +1869,18 @@ export type Database = {
           local_delivery_district: string | null
           local_delivery_eta: string | null
           local_delivery_zone_id: string | null
+          mp_fee_amount: number | null
+          mp_fee_details: Json | null
+          mp_gross_amount: number | null
+          mp_last_webhook_at: string | null
           mp_merchant_order_id: string | null
+          mp_net_amount: number | null
           mp_payment_id: string | null
+          mp_payment_method: string | null
+          mp_payment_type: string | null
           mp_preference_id: string | null
+          mp_webhook_error: string | null
+          mp_webhook_status: string | null
           notes: string | null
           order_number: number
           order_type: string
@@ -1878,6 +1889,8 @@ export type Database = {
           origin_path: string | null
           paid_at: string | null
           payment_error: string | null
+          payment_fee_calculated_at: string | null
+          payment_fee_source: string
           payment_id: string | null
           payment_link: string | null
           payment_method: string | null
@@ -1925,6 +1938,8 @@ export type Database = {
           delivery_method?: string
           discount?: number
           estimated_delivery?: string | null
+          estimated_fee_amount?: number | null
+          estimated_net_amount?: number | null
           external_reference?: string | null
           id?: string
           invoice_number?: string | null
@@ -1932,9 +1947,18 @@ export type Database = {
           local_delivery_district?: string | null
           local_delivery_eta?: string | null
           local_delivery_zone_id?: string | null
+          mp_fee_amount?: number | null
+          mp_fee_details?: Json | null
+          mp_gross_amount?: number | null
+          mp_last_webhook_at?: string | null
           mp_merchant_order_id?: string | null
+          mp_net_amount?: number | null
           mp_payment_id?: string | null
+          mp_payment_method?: string | null
+          mp_payment_type?: string | null
           mp_preference_id?: string | null
+          mp_webhook_error?: string | null
+          mp_webhook_status?: string | null
           notes?: string | null
           order_number?: never
           order_type?: string
@@ -1943,6 +1967,8 @@ export type Database = {
           origin_path?: string | null
           paid_at?: string | null
           payment_error?: string | null
+          payment_fee_calculated_at?: string | null
+          payment_fee_source?: string
           payment_id?: string | null
           payment_link?: string | null
           payment_method?: string | null
@@ -1990,6 +2016,8 @@ export type Database = {
           delivery_method?: string
           discount?: number
           estimated_delivery?: string | null
+          estimated_fee_amount?: number | null
+          estimated_net_amount?: number | null
           external_reference?: string | null
           id?: string
           invoice_number?: string | null
@@ -1997,9 +2025,18 @@ export type Database = {
           local_delivery_district?: string | null
           local_delivery_eta?: string | null
           local_delivery_zone_id?: string | null
+          mp_fee_amount?: number | null
+          mp_fee_details?: Json | null
+          mp_gross_amount?: number | null
+          mp_last_webhook_at?: string | null
           mp_merchant_order_id?: string | null
+          mp_net_amount?: number | null
           mp_payment_id?: string | null
+          mp_payment_method?: string | null
+          mp_payment_type?: string | null
           mp_preference_id?: string | null
+          mp_webhook_error?: string | null
+          mp_webhook_status?: string | null
           notes?: string | null
           order_number?: never
           order_type?: string
@@ -2008,6 +2045,8 @@ export type Database = {
           origin_path?: string | null
           paid_at?: string | null
           payment_error?: string | null
+          payment_fee_calculated_at?: string | null
+          payment_fee_source?: string
           payment_id?: string | null
           payment_link?: string | null
           payment_method?: string | null
