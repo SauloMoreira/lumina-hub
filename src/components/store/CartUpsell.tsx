@@ -88,7 +88,7 @@ export function CartUpsell() {
                       freeShippingEligible: p.free_shipping_eligible,
                     });
                     trackAddToCart(
-                      { id: p.product_id, name: p.name, price: p.applied_price, brand: p.brand ?? undefined } as any,
+                      { id: p.product_id, name: p.name, price: p.applied_price },
                       1,
                     );
                     toast.success('Adicionado ao carrinho');

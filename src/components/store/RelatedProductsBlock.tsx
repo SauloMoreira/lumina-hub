@@ -123,7 +123,7 @@ function RelatedCard({ item }: { item: RelatedProduct }) {
       freeShippingEligible: item.free_shipping_eligible,
     });
     trackAddToCart(
-      { id: item.product_id, name: item.name, price: item.applied_price, brand: item.brand ?? undefined } as any,
+      { id: item.product_id, name: item.name, price: item.applied_price },
       1,
     );
     toast.success('Adicionado ao carrinho');
