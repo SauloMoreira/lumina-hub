@@ -1,12 +1,11 @@
 import { Link } from '@tanstack/react-router';
-import { Search, ShoppingCart, User as UserIcon, Menu, Sparkles, Shield } from 'lucide-react';
-import { useState } from 'react';
+import { ShoppingCart, User as UserIcon, Menu, Sparkles, Shield } from 'lucide-react';
 import { useCart } from '@/stores/cartStore';
 import { useAuth } from '@/hooks/useAuth';
 import { useIsAdmin } from '@/hooks/useIsAdmin';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { STORE_NAME } from '@/lib/domain';
+import { SearchAutocomplete } from '@/components/store/SearchAutocomplete';
 import logoNavbar from '@/assets/logo-navbar.png';
 
 export function Header() {
@@ -14,31 +13,17 @@ export function Header() {
   const { user } = useAuth();
   const isAdmin = useIsAdmin();
   const count = cart.count();
-  const [q, setQ] = useState('');
 
   return (
     <header className="sticky top-0 z-50 bg-card border-b border-border" style={{ boxShadow: '0 1px 4px rgba(15,23,42,.06)' }}>
-      <div className="container mx-auto px-4 h-16 flex items-center gap-6">
+      <div className="container mx-auto px-4 h-16 flex items-center gap-4 sm:gap-6">
         {/* Logo */}
         <Link to="/" className="flex items-center shrink-0" aria-label={STORE_NAME}>
           <img src={logoNavbar} alt={STORE_NAME} loading="eager" decoding="async" className="h-11 w-auto object-contain" />
         </Link>
 
-        {/* Busca */}
-        <form
-          onSubmit={(e) => { e.preventDefault(); window.location.href = `/catalogo?q=${encodeURIComponent(q)}`; }}
-          className="flex-1 max-w-xl hidden md:flex"
-        >
-          <div className="relative w-full">
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-text-faint" />
-            <Input
-              value={q}
-              onChange={(e) => setQ(e.target.value)}
-              placeholder="Busque por lâmpadas, disjuntores, fios…"
-              className="pl-11 rounded-pill bg-surface border-border h-10"
-            />
-          </div>
-        </form>
+        {/* Busca desktop */}
+        <SearchAutocomplete className="flex-1 max-w-xl hidden md:block" />
 
         {/* Nav links desktop */}
         <nav className="hidden lg:flex items-center gap-5 text-sm font-medium text-muted-foreground">
@@ -83,6 +68,11 @@ export function Header() {
             <Menu className="w-5 h-5" />
           </Button>
         </div>
+      </div>
+
+      {/* Busca mobile (linha extra abaixo do header) */}
+      <div className="md:hidden border-t border-border px-4 py-2 bg-card">
+        <SearchAutocomplete placeholder="Buscar produtos…" />
       </div>
     </header>
   );
