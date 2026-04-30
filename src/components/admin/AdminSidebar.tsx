@@ -154,7 +154,8 @@ const groups: Group[] = [
         counterId: 'pending-companies',
       },
       { to: '/admin/configuracoes-b2b', label: 'Configurações B2B', icon: Briefcase },
-      { label: 'Vitrine atacado', soon: true },
+      { to: '/atacado', label: 'Vitrine atacado (loja)', icon: Store },
+      { to: '/compra-rapida', label: 'Compra rápida (loja)', icon: PackagePlus },
       { label: 'Negociações B2B', soon: true },
       { label: 'Pedidos B2B', soon: true },
       { label: 'Dashboard B2B', soon: true },
@@ -199,7 +200,6 @@ const groups: Group[] = [
     icon: Globe,
     items: [
       { to: '/admin/conteudo/homepage', label: 'Homepage', icon: LayoutDashboard },
-      { label: 'Vitrine B2B', soon: true },
       { to: '/admin/institutional-pages', label: 'Páginas institucionais', icon: FileText },
       { label: 'Política de privacidade', soon: true },
       { label: 'Termos de uso', soon: true },
