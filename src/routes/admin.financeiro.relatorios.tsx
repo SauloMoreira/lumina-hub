@@ -1346,3 +1346,489 @@ function RankCard({
     </div>
   );
 }
+
+// ============================================================
+// SECTION: B2B / ATACADO
+// ============================================================
+
+function B2bSection({
+  data,
+  loading,
+  exporting,
+  onExportCompanies,
+  onExportProducts,
+}: {
+  data: { cards: B2bCards; companies: B2bCompanyRow[]; products: B2bProductRow[] } | null;
+  loading: boolean;
+  exporting: boolean;
+  onExportCompanies: () => void;
+  onExportProducts: () => void;
+}) {
+  if (loading && !data) {
+    return (
+      <div className="flex items-center justify-center py-12 text-muted-foreground">
+        <Loader2 className="w-5 h-5 animate-spin mr-2" /> Carregando B2B…
+      </div>
+    );
+  }
+  if (!data) return null;
+  const c = data.cards;
+  const cardDefs: CardDef[] = [
+    { label: 'Pedidos B2B', value: String(c.ordersB2b) },
+    { label: 'Faturamento B2B', value: brl(c.revenueB2b) },
+    { label: 'Ticket médio B2B', value: brl(c.averageTicketB2b) },
+    {
+      label: 'Desconto B2B concedido',
+      value: brl(c.b2bDiscountTotal),
+      tooltip: 'Economia concedida para empresas em relação ao preço normal.',
+    },
+    {
+      label: 'Lucro estimado B2B',
+      value: brl(c.estimatedProfitB2b),
+      warn: c.hasIncomplete,
+      tooltip: 'Receita B2B − custo dos itens B2B − parcela da taxa MP atribuída ao B2B.',
+    },
+    {
+      label: 'Margem B2B estimada',
+      value: pct(c.estimatedMarginPercentB2b),
+      warn: c.hasIncomplete,
+    },
+    { label: 'Empresas compradoras', value: String(c.companiesBuying) },
+    { label: 'Produtos B2B vendidos', value: String(c.productsB2bSold) },
+    {
+      label: 'Pedidos mistos',
+      value: String(c.ordersMixed),
+      tooltip: 'Pedidos com itens com preço B2B e itens com preço normal na mesma compra.',
+    },
+    {
+      label: 'Itens B2B sem custo',
+      value: String(c.itemsB2bWithoutCost),
+      warn: c.itemsB2bWithoutCost > 0,
+    },
+  ];
+  return (
+    <section className="space-y-4">
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
+        {cardDefs.map((d) => <MetricCard key={d.label} card={d} />)}
+      </div>
+
+      {c.ordersB2b === 0 && (
+        <div className="bg-muted/40 border border-border rounded-xl p-6 text-sm text-muted-foreground text-center">
+          Nenhum pedido B2B no período com esses filtros.
+        </div>
+      )}
+
+      {/* Empresas */}
+      <div className="flex items-center justify-between">
+        <h2 className="font-display text-xl font-bold">Empresas B2B</h2>
+        <Button size="sm" variant="outline" onClick={onExportCompanies} disabled={exporting || data.companies.length === 0}>
+          {exporting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
+          Exportar CSV
+        </Button>
+      </div>
+      <div className="bg-card border border-border rounded-xl overflow-hidden">
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead className="bg-muted/40 text-xs text-muted-foreground">
+              <tr>
+                <th className="text-left px-3 py-2">Empresa</th>
+                <th className="text-left px-3 py-2">CNPJ</th>
+                <th className="text-left px-3 py-2">Status</th>
+                <th className="text-right px-3 py-2">Pedidos</th>
+                <th className="text-right px-3 py-2">Faturamento</th>
+                <th className="text-right px-3 py-2">Desconto B2B</th>
+                <th className="text-right px-3 py-2">Ticket médio</th>
+                <th className="text-right px-3 py-2">Lucro</th>
+                <th className="text-right px-3 py-2">Margem</th>
+                <th className="text-left px-3 py-2">Última</th>
+              </tr>
+            </thead>
+            <tbody>
+              {data.companies.length === 0 ? (
+                <tr><td colSpan={10} className="text-center py-8 text-muted-foreground">Sem dados.</td></tr>
+              ) : data.companies.slice(0, 200).map((r, i) => (
+                <tr key={`${r.company_id ?? 'x'}-${i}`} className="border-t border-border hover:bg-muted/20">
+                  <td className="px-3 py-2 truncate max-w-[200px]">
+                    {r.company_id ? (
+                      <Link to="/admin/empresas/$id" params={{ id: r.company_id }} className="text-primary hover:underline">{r.company_name}</Link>
+                    ) : r.company_name}
+                  </td>
+                  <td className="px-3 py-2 text-xs text-muted-foreground">{r.cnpj_masked}</td>
+                  <td className="px-3 py-2 text-xs">{r.status ?? '—'}</td>
+                  <td className="px-3 py-2 text-right">{r.orders}</td>
+                  <td className="px-3 py-2 text-right">{brl(r.revenue)}</td>
+                  <td className="px-3 py-2 text-right text-muted-foreground">{brl(r.b2b_discount)}</td>
+                  <td className="px-3 py-2 text-right">{brl(r.average_ticket)}</td>
+                  <td className="px-3 py-2 text-right font-medium">{r.margin_incomplete ? <span className="italic text-xs text-muted-foreground">incompleto</span> : brl(r.estimated_profit)}</td>
+                  <td className="px-3 py-2 text-right font-medium">{r.margin_incomplete ? '—' : pct(r.margin_percent)}</td>
+                  <td className="px-3 py-2 text-xs whitespace-nowrap">{r.last_order_at ? fmtDate(r.last_order_at) : '—'}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      {/* Produtos B2B */}
+      <div className="flex items-center justify-between">
+        <h2 className="font-display text-xl font-bold">Produtos B2B</h2>
+        <Button size="sm" variant="outline" onClick={onExportProducts} disabled={exporting || data.products.length === 0}>
+          {exporting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
+          Exportar CSV
+        </Button>
+      </div>
+      <div className="bg-card border border-border rounded-xl overflow-hidden">
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead className="bg-muted/40 text-xs text-muted-foreground">
+              <tr>
+                <th className="text-left px-3 py-2">Produto</th>
+                <th className="text-left px-3 py-2">SKU</th>
+                <th className="text-left px-3 py-2">Categoria</th>
+                <th className="text-right px-3 py-2">Qtd</th>
+                <th className="text-right px-3 py-2">Receita B2B</th>
+                <th className="text-right px-3 py-2">Preço médio</th>
+                <th className="text-right px-3 py-2">Desconto B2B</th>
+                <th className="text-right px-3 py-2">Lucro</th>
+                <th className="text-right px-3 py-2">Margem</th>
+                <th className="text-right px-3 py-2">Empresas</th>
+              </tr>
+            </thead>
+            <tbody>
+              {data.products.length === 0 ? (
+                <tr><td colSpan={10} className="text-center py-8 text-muted-foreground">Sem dados.</td></tr>
+              ) : data.products.slice(0, 200).map((r, i) => (
+                <tr key={`${r.product_id ?? 'x'}-${i}`} className="border-t border-border hover:bg-muted/20">
+                  <td className="px-3 py-2 truncate max-w-[200px]">
+                    {r.product_id ? (
+                      <Link to="/admin/produtos/$id" params={{ id: r.product_id }} className="text-primary hover:underline">{r.product_name}</Link>
+                    ) : r.product_name}
+                  </td>
+                  <td className="px-3 py-2 text-xs text-muted-foreground">{r.sku ?? '—'}</td>
+                  <td className="px-3 py-2 text-xs text-muted-foreground">{r.category ?? '—'}</td>
+                  <td className="px-3 py-2 text-right">{r.qty_sold}</td>
+                  <td className="px-3 py-2 text-right">{brl(r.revenue)}</td>
+                  <td className="px-3 py-2 text-right text-muted-foreground">{brl(r.avg_price)}</td>
+                  <td className="px-3 py-2 text-right text-muted-foreground">{brl(r.b2b_discount_total)}</td>
+                  <td className="px-3 py-2 text-right font-medium">{r.margin_incomplete ? <span className="italic text-xs text-muted-foreground">incompleto</span> : brl(r.estimated_profit)}</td>
+                  <td className="px-3 py-2 text-right font-medium">{r.margin_incomplete ? '—' : pct(r.margin_percent)}</td>
+                  <td className="px-3 py-2 text-right">{r.companies_count}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+// ============================================================
+// SECTION: CUPONS E DESCONTOS
+// ============================================================
+
+function CouponsSection({
+  data,
+  loading,
+  exporting,
+  onExportCoupons,
+  onExportDiscounts,
+}: {
+  data: { cards: CouponsCards; coupons: CouponPerfRow[]; orders: DiscountByOrderRow[] } | null;
+  loading: boolean;
+  exporting: boolean;
+  onExportCoupons: () => void;
+  onExportDiscounts: () => void;
+}) {
+  if (loading && !data) {
+    return (
+      <div className="flex items-center justify-center py-12 text-muted-foreground">
+        <Loader2 className="w-5 h-5 animate-spin mr-2" /> Carregando cupons…
+      </div>
+    );
+  }
+  if (!data) return null;
+  const c = data.cards;
+  const cardDefs: CardDef[] = [
+    { label: 'Descontos totais', value: brl(c.totalDiscounts), tooltip: 'Soma de descontos B2B + cupons no período.' },
+    { label: 'Desconto B2B', value: brl(c.b2bDiscounts) },
+    { label: 'Desconto de cupons', value: brl(c.couponDiscounts) },
+    { label: 'Cupons utilizados', value: String(c.couponsUsed) },
+    { label: 'Pedidos com cupom', value: String(c.ordersWithCoupon) },
+    { label: 'Ticket médio com cupom', value: brl(c.averageTicketWithCoupon) },
+    { label: 'Margem média com cupom', value: pct(c.averageMarginWithCoupon) },
+    { label: 'Cupons com margem crítica', value: String(c.couponsCritical), warn: c.couponsCritical > 0 },
+    { label: 'Cupons vencidos ativos', value: String(c.couponsExpiredButActive), warn: c.couponsExpiredButActive > 0, tooltip: 'Cupons marcados como ativos mas com data de validade já expirada.' },
+  ];
+  return (
+    <section className="space-y-4">
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
+        {cardDefs.map((d) => <MetricCard key={d.label} card={d} />)}
+      </div>
+
+      <p className="text-xs text-muted-foreground">
+        Cupons podem aumentar vendas, mas também podem reduzir a margem. Acompanhe os pedidos críticos.
+      </p>
+
+      {/* Performance de cupons */}
+      <div className="flex items-center justify-between">
+        <h2 className="font-display text-xl font-bold">Performance de cupons</h2>
+        <Button size="sm" variant="outline" onClick={onExportCoupons} disabled={exporting || data.coupons.length === 0}>
+          {exporting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
+          Exportar CSV
+        </Button>
+      </div>
+      <div className="bg-card border border-border rounded-xl overflow-hidden">
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead className="bg-muted/40 text-xs text-muted-foreground">
+              <tr>
+                <th className="text-left px-3 py-2">Cupom</th>
+                <th className="text-left px-3 py-2">Status</th>
+                <th className="text-right px-3 py-2">Usos</th>
+                <th className="text-right px-3 py-2">Faturamento</th>
+                <th className="text-right px-3 py-2">Desconto</th>
+                <th className="text-right px-3 py-2">Ticket médio</th>
+                <th className="text-right px-3 py-2">Margem média</th>
+                <th className="text-right px-3 py-2">Críticos</th>
+                <th className="text-left px-3 py-2">Validade</th>
+              </tr>
+            </thead>
+            <tbody>
+              {data.coupons.length === 0 ? (
+                <tr><td colSpan={9} className="text-center py-8 text-muted-foreground">Nenhum cupom usado no período.</td></tr>
+              ) : data.coupons.map((r) => (
+                <tr key={r.code} className="border-t border-border hover:bg-muted/20">
+                  <td className="px-3 py-2 font-medium">{r.code}</td>
+                  <td className="px-3 py-2 text-xs">
+                    {r.expired && r.active ? (
+                      <span className="text-amber-600 dark:text-amber-400">Vencido (ativo)</span>
+                    ) : r.active ? 'Ativo' : 'Inativo'}
+                  </td>
+                  <td className="px-3 py-2 text-right">{r.uses}</td>
+                  <td className="px-3 py-2 text-right">{brl(r.revenue)}</td>
+                  <td className="px-3 py-2 text-right text-muted-foreground">{brl(r.discount_total)}</td>
+                  <td className="px-3 py-2 text-right">{brl(r.average_ticket)}</td>
+                  <td className="px-3 py-2 text-right font-medium">{r.margin_incomplete ? '—' : pct(r.margin_percent)}</td>
+                  <td className={`px-3 py-2 text-right ${r.orders_critical > 0 ? 'text-destructive font-medium' : ''}`}>{r.orders_critical}</td>
+                  <td className="px-3 py-2 text-xs whitespace-nowrap">{r.expires_at ? fmtDate(r.expires_at) : '—'}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      {/* Descontos por pedido */}
+      <div className="flex items-center justify-between">
+        <h2 className="font-display text-xl font-bold">Descontos por pedido</h2>
+        <Button size="sm" variant="outline" onClick={onExportDiscounts} disabled={exporting || data.orders.length === 0}>
+          {exporting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
+          Exportar CSV
+        </Button>
+      </div>
+      <div className="bg-card border border-border rounded-xl overflow-hidden">
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead className="bg-muted/40 text-xs text-muted-foreground">
+              <tr>
+                <th className="text-left px-3 py-2">Data</th>
+                <th className="text-left px-3 py-2">Pedido</th>
+                <th className="text-left px-3 py-2">Cliente</th>
+                <th className="text-left px-3 py-2">Tipo</th>
+                <th className="text-left px-3 py-2">Cupom</th>
+                <th className="text-right px-3 py-2">Desc. cupom</th>
+                <th className="text-right px-3 py-2">Desc. B2B</th>
+                <th className="text-right px-3 py-2">Total desc.</th>
+                <th className="text-right px-3 py-2">Receita</th>
+                <th className="text-right px-3 py-2">Margem</th>
+                <th className="text-left px-3 py-2">Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              {data.orders.length === 0 ? (
+                <tr><td colSpan={11} className="text-center py-8 text-muted-foreground">Sem pedidos com desconto no período.</td></tr>
+              ) : data.orders.slice(0, 300).map((r) => (
+                <tr key={r.id} className="border-t border-border hover:bg-muted/20">
+                  <td className="px-3 py-2 text-xs whitespace-nowrap">{fmtDateTime(r.created_at)}</td>
+                  <td className="px-3 py-2"><Link to="/admin/pedidos/$orderId" params={{ orderId: r.id }} className="text-primary hover:underline font-medium">#{r.order_number}</Link></td>
+                  <td className="px-3 py-2 truncate max-w-[160px]">{r.customer_name}</td>
+                  <td className="px-3 py-2"><Badge variant={r.order_type === 'b2b' ? 'default' : 'secondary'}>{r.order_type.toUpperCase()}</Badge></td>
+                  <td className="px-3 py-2 text-xs">{r.coupon_code ?? '—'}</td>
+                  <td className="px-3 py-2 text-right text-muted-foreground">{r.coupon_discount > 0 ? brl(r.coupon_discount) : '—'}</td>
+                  <td className="px-3 py-2 text-right text-muted-foreground">{r.b2b_discount > 0 ? brl(r.b2b_discount) : '—'}</td>
+                  <td className="px-3 py-2 text-right font-medium">{brl(r.total_discount)}</td>
+                  <td className="px-3 py-2 text-right">{brl(r.final_revenue)}</td>
+                  <td className="px-3 py-2 text-right">{r.margin_status === 'incomplete' ? '—' : pct(r.margin_percent)}</td>
+                  <td className="px-3 py-2"><MarginStatusBadge status={r.margin_status} /></td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+        {data.orders.length > 300 && (
+          <p className="text-xs text-muted-foreground px-3 py-2 border-t border-border">
+            Exibindo 300 de {data.orders.length}. Use a exportação para a lista completa.
+          </p>
+        )}
+      </div>
+    </section>
+  );
+}
+
+// ============================================================
+// SECTION: FRETE / LOGÍSTICA
+// ============================================================
+
+function ShippingSection({
+  data,
+  loading,
+  exporting,
+  page,
+  setPage,
+  onExportOrders,
+  onExportDistricts,
+}: {
+  data: {
+    cards: ShippingCards;
+    orders: { rows: ShippingOrderRow[]; total: number; page: number; pageSize: number };
+    districts: ShippingDistrictRow[];
+  } | null;
+  loading: boolean;
+  exporting: boolean;
+  page: number;
+  setPage: (fn: (p: number) => number) => void;
+  onExportOrders: () => void;
+  onExportDistricts: () => void;
+}) {
+  if (loading && !data) {
+    return (
+      <div className="flex items-center justify-center py-12 text-muted-foreground">
+        <Loader2 className="w-5 h-5 animate-spin mr-2" /> Carregando frete…
+      </div>
+    );
+  }
+  if (!data) return null;
+  const c = data.cards;
+  const deliveryLabel: Record<string, string> = {
+    pickup: 'Retirada',
+    local_delivery: 'Frete local',
+    delivery: 'Convencional',
+  };
+  const cardDefs: CardDef[] = [
+    { label: 'Frete total cobrado', value: brl(c.shippingTotal) },
+    { label: 'Valor médio de frete', value: brl(c.averageShipping) },
+    { label: 'Pedidos com retirada', value: String(c.ordersPickup) },
+    { label: 'Pedidos com frete local', value: String(c.ordersLocalDelivery) },
+    { label: 'Pedidos com convencional', value: String(c.ordersConventional) },
+    { label: 'Receita de frete local', value: brl(c.localShippingRevenue) },
+    { label: 'Pedidos com frete grátis', value: String(c.ordersFreeShipping), tooltip: 'Pedidos com entrega cobrada R$ 0,00 (excluindo retirada).' },
+    { label: 'Pedidos com frete R$ 0', value: String(c.ordersZeroShipping) },
+    { label: 'Bairros atendidos', value: String(c.localDistrictsCount) },
+    { label: 'Retiradas pendentes', value: String(c.pickupPending), warn: c.pickupPending > 0, tooltip: 'Retiradas criadas há mais de 3 dias e ainda não concluídas.' },
+  ];
+  return (
+    <section className="space-y-4">
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
+        {cardDefs.map((d) => <MetricCard key={d.label} card={d} />)}
+      </div>
+
+      {/* Bairros */}
+      <div className="flex items-center justify-between">
+        <h2 className="font-display text-xl font-bold">Frete local por bairro</h2>
+        <Button size="sm" variant="outline" onClick={onExportDistricts} disabled={exporting || data.districts.length === 0}>
+          {exporting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
+          Exportar CSV
+        </Button>
+      </div>
+      <div className="bg-card border border-border rounded-xl overflow-hidden">
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead className="bg-muted/40 text-xs text-muted-foreground">
+              <tr>
+                <th className="text-left px-3 py-2">Bairro</th>
+                <th className="text-right px-3 py-2">Pedidos</th>
+                <th className="text-right px-3 py-2">Receita frete</th>
+                <th className="text-right px-3 py-2">Frete médio</th>
+                <th className="text-right px-3 py-2">Faturamento</th>
+                <th className="text-right px-3 py-2">Ticket médio</th>
+                <th className="text-left px-3 py-2">Última entrega</th>
+              </tr>
+            </thead>
+            <tbody>
+              {data.districts.length === 0 ? (
+                <tr><td colSpan={7} className="text-center py-8 text-muted-foreground">Sem entregas locais no período.</td></tr>
+              ) : data.districts.map((r) => (
+                <tr key={r.district} className="border-t border-border hover:bg-muted/20">
+                  <td className="px-3 py-2">{r.district}</td>
+                  <td className="px-3 py-2 text-right">{r.orders}</td>
+                  <td className="px-3 py-2 text-right">{brl(r.shipping_revenue)}</td>
+                  <td className="px-3 py-2 text-right text-muted-foreground">{brl(r.average_shipping)}</td>
+                  <td className="px-3 py-2 text-right">{brl(r.orders_revenue)}</td>
+                  <td className="px-3 py-2 text-right">{brl(r.average_ticket)}</td>
+                  <td className="px-3 py-2 text-xs whitespace-nowrap">{r.last_delivery_at ? fmtDate(r.last_delivery_at) : '—'}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      {/* Frete por pedido */}
+      <div className="flex items-center justify-between">
+        <h2 className="font-display text-xl font-bold">Frete por pedido</h2>
+        <Button size="sm" variant="outline" onClick={onExportOrders} disabled={exporting || data.orders.rows.length === 0}>
+          {exporting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
+          Exportar CSV
+        </Button>
+      </div>
+      <div className="bg-card border border-border rounded-xl overflow-hidden">
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead className="bg-muted/40 text-xs text-muted-foreground">
+              <tr>
+                <th className="text-left px-3 py-2">Data</th>
+                <th className="text-left px-3 py-2">Pedido</th>
+                <th className="text-left px-3 py-2">Cliente</th>
+                <th className="text-left px-3 py-2">Tipo</th>
+                <th className="text-left px-3 py-2">Entrega</th>
+                <th className="text-left px-3 py-2">Bairro</th>
+                <th className="text-right px-3 py-2">Frete</th>
+                <th className="text-right px-3 py-2">Total</th>
+                <th className="text-left px-3 py-2">Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              {data.orders.rows.length === 0 ? (
+                <tr><td colSpan={9} className="text-center py-8 text-muted-foreground">Sem pedidos no período.</td></tr>
+              ) : data.orders.rows.map((r) => (
+                <tr key={r.id} className="border-t border-border hover:bg-muted/20">
+                  <td className="px-3 py-2 text-xs whitespace-nowrap">{fmtDateTime(r.created_at)}</td>
+                  <td className="px-3 py-2"><Link to="/admin/pedidos/$orderId" params={{ orderId: r.id }} className="text-primary hover:underline font-medium">#{r.order_number}</Link></td>
+                  <td className="px-3 py-2 truncate max-w-[160px]">{r.customer_name}</td>
+                  <td className="px-3 py-2"><Badge variant={r.order_type === 'b2b' ? 'default' : 'secondary'}>{r.order_type.toUpperCase()}</Badge></td>
+                  <td className="px-3 py-2 text-xs">{deliveryLabel[r.delivery_method] ?? r.delivery_method}</td>
+                  <td className="px-3 py-2 text-xs text-muted-foreground">{r.district ?? '—'}</td>
+                  <td className="px-3 py-2 text-right">{brl(r.shipping_cost)}</td>
+                  <td className="px-3 py-2 text-right">{brl(r.total)}</td>
+                  <td className="px-3 py-2 text-xs">{r.status}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+        {data.orders.total > data.orders.pageSize && (
+          <div className="flex items-center justify-between px-3 py-2 border-t border-border text-xs">
+            <span className="text-muted-foreground">
+              {(data.orders.page - 1) * data.orders.pageSize + 1}–{Math.min(data.orders.page * data.orders.pageSize, data.orders.total)} de {data.orders.total}
+            </span>
+            <div className="flex gap-2">
+              <Button size="sm" variant="outline" disabled={data.orders.page <= 1 || loading} onClick={() => setPage((p) => Math.max(1, p - 1))}>Anterior</Button>
+              <Button size="sm" variant="outline" disabled={data.orders.page * data.orders.pageSize >= data.orders.total || loading} onClick={() => setPage((p) => p + 1)}>Próxima</Button>
+            </div>
+          </div>
+        )}
+      </div>
+    </section>
+  );
+}
