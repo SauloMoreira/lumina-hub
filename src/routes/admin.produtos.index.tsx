@@ -145,6 +145,16 @@ function ProdutosList() {
           return p.stock_qty <= 0;
         case 'bad_quality':
           return p.quality?.classification === 'ruim';
+        case 'no_tech_attrs':
+          return !p.tech_attr_keys || p.tech_attr_keys.size === 0;
+        case 'no_power':
+          return !p.tech_attr_keys?.has('power');
+        case 'no_color_temp':
+          return !p.tech_attr_keys?.has('color_temperature');
+        case 'no_voltage':
+          return !p.tech_attr_keys?.has('voltage');
+        case 'no_ip_rating':
+          return !p.tech_attr_keys?.has('ip_rating');
         case 'all':
         default:
           return true;
@@ -157,6 +167,7 @@ function ProdutosList() {
       all: products.length,
       no_image: 0, no_cost: 0, no_ncm: 0,
       b2b_incomplete: 0, low_stock: 0, zero_stock: 0, bad_quality: 0,
+      no_tech_attrs: 0, no_power: 0, no_color_temp: 0, no_voltage: 0, no_ip_rating: 0,
     };
     for (const p of products) {
       if (!p.images || p.images.length === 0) c.no_image += 1;
@@ -167,6 +178,12 @@ function ProdutosList() {
       if (p.stock_qty > 0 && p.stock_qty <= min) c.low_stock += 1;
       if (p.stock_qty <= 0) c.zero_stock += 1;
       if (p.quality?.classification === 'ruim') c.bad_quality += 1;
+      const keys = p.tech_attr_keys;
+      if (!keys || keys.size === 0) c.no_tech_attrs += 1;
+      if (!keys?.has('power')) c.no_power += 1;
+      if (!keys?.has('color_temperature')) c.no_color_temp += 1;
+      if (!keys?.has('voltage')) c.no_voltage += 1;
+      if (!keys?.has('ip_rating')) c.no_ip_rating += 1;
     }
     return c;
   }, [products]);
