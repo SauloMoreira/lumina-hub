@@ -749,6 +749,9 @@ function CheckoutPage() {
               {discount > 0 && (
                 <div className="flex justify-between text-success"><span>Desconto ({couponCode})</span><span>−{formatBRL(discount)}</span></div>
               )}
+              {bundleDiscountPreview > 0 && (
+                <div className="flex justify-between text-success"><span>Desconto de combo</span><span>−{formatBRL(bundleDiscountPreview)}</span></div>
+              )}
               <div className="flex justify-between">
                 <span className="text-muted-foreground">{isPickup ? 'Retirada na loja' : isLocal ? 'Frete Local Maricá' : 'Frete'}</span>
                 <span>
