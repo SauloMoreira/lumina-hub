@@ -7,6 +7,7 @@ import { formatBRL, FREE_SHIPPING_THRESHOLD, calcFreeShippingProgress } from '@/
 import { useCartPricing, maskCnpj } from '@/hooks/useCartPricing';
 import { describeB2bReason } from '@/lib/b2bPricingShared';
 import { CartUpsell } from '@/components/store/CartUpsell';
+import { CartBundlePreview } from '@/components/store/CartBundlePreview';
 
 import { buildSeo } from '@/lib/seo';
 
