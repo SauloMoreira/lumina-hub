@@ -172,7 +172,12 @@ export function parseQuickBuyCsv(
 
     const cols = splitCsvLine(raw, delim);
     const codeRaw = sanitizeCell(cols[resolvedCodeIdx] ?? '');
-    const qtyRaw = sanitizeCell(cols[resolvedQtyIdx] ?? '');
+    // Para qty, NÃO removemos prefixos como `-` (preservamos sinal para detectar negativos).
+    const qtyCellRaw = (cols[resolvedQtyIdx] ?? '')
+      .replace(/^\uFEFF/, '')
+      .replace(/[\u0000-\u001F\u007F]/g, '')
+      .trim()
+      .replace(/^"(.*)"$/s, '$1');
 
     if (!codeRaw) {
       // Linha sem código mas com algo — registra apenas se havia conteúdo
@@ -183,10 +188,10 @@ export function parseQuickBuyCsv(
     }
 
     // Quantidade: aceita "10", "10.0", "10,0" — converte vírgula em ponto
-    const qtyNorm = qtyRaw.replace(',', '.');
+    const qtyNorm = qtyCellRaw.replace(',', '.');
     const qtyNum = Number(qtyNorm);
     if (!Number.isFinite(qtyNum) || qtyNum <= 0 || !Number.isInteger(qtyNum)) {
-      issues.push({ line: humanLine, raw, reason: 'invalid_qty', value: qtyRaw });
+      issues.push({ line: humanLine, raw, reason: 'invalid_qty', value: qtyCellRaw });
       continue;
     }
 
