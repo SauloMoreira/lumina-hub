@@ -622,7 +622,48 @@ export const getAdminOperations = createServerFn({ method: 'GET' })
       });
     }
 
-    return {
+    // SEO alerts
+    if (seo.homepageMissingSeo) {
+      alerts.push({
+        id: 'alert-seo-home',
+        title: 'Homepage sem SEO configurado',
+        description: 'A homepage está sem título ou descrição SEO — perde tráfego do Google.',
+        severity: 'high',
+        ctaLabel: 'Configurar SEO',
+        ctaHref: '/admin/conteudo/homepage',
+      });
+    }
+    if (seo.b2bMissingSeo) {
+      alerts.push({
+        id: 'alert-seo-b2b',
+        title: 'Vitrine B2B sem SEO',
+        description: 'A página B2B está sem título e descrição SEO configurados.',
+        severity: 'medium',
+        ctaLabel: 'Ver SEO Insights',
+        ctaHref: '/admin/seo',
+      });
+    }
+    if (seo.productsNoSeoTitle > 0 || seo.productsNoSeoDescription > 0) {
+      alerts.push({
+        id: 'alert-seo-products',
+        title: 'Produtos com SEO incompleto',
+        description: `${seo.productsNoSeoTitle} sem título SEO, ${seo.productsNoSeoDescription} sem meta description.`,
+        severity: 'medium',
+        ctaLabel: 'Ver SEO Insights',
+        ctaHref: '/admin/seo',
+      });
+    }
+    if (seo.categoriesNoDescription > 0) {
+      alerts.push({
+        id: 'alert-seo-categories',
+        title: 'Categorias sem descrição',
+        description: `${seo.categoriesNoDescription} categoria(s) sem descrição prejudicam a navegação e o SEO.`,
+        severity: 'low',
+        ctaLabel: 'Ver SEO Insights',
+        ctaHref: '/admin/seo',
+      });
+    }
+
       cards,
       alerts,
       daily: {
