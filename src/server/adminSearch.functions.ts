@@ -178,7 +178,9 @@ export const adminGlobalSearch = createServerFn({ method: 'POST' })
         .limit(20),
     ]);
 
+    const productIds = new Set<string>();
     for (const p of productsRes.data ?? []) {
+      productIds.add(p.id);
       hits.push({
         group: 'product',
         id: p.id,
@@ -187,6 +189,34 @@ export const adminGlobalSearch = createServerFn({ method: 'POST' })
         badge: p.active ? 'Ativo' : 'Inativo',
         to: `/admin/produtos/${p.id}`,
       });
+    }
+
+    // Produtos encontrados por atributos técnicos (IP66, Bivolt, 6500K, 18W…)
+    const extraAttrIds = Array.from(
+      new Set(
+        ((attrMatchRes.data ?? []) as Array<{ product_id: string }>)
+          .map((r) => r.product_id)
+          .filter((id) => id && !productIds.has(id)),
+      ),
+    ).slice(0, PER_GROUP);
+    if (extraAttrIds.length > 0) {
+      const { data: extraProducts } = await supabaseAdmin
+        .from('products')
+        .select('id, name, sku, brand, active')
+        .in('id', extraAttrIds);
+      for (const p of extraProducts ?? []) {
+        productIds.add(p.id);
+        hits.push({
+          group: 'product',
+          id: p.id,
+          title: p.name,
+          subtitle: [p.sku && `SKU: ${p.sku}`, p.brand, 'atributo técnico']
+            .filter(Boolean)
+            .join(' · '),
+          badge: p.active ? 'Ativo' : 'Inativo',
+          to: `/admin/produtos/${p.id}`,
+        });
+      }
     }
 
     for (const o of ordersRes.data ?? []) {
