@@ -758,6 +758,24 @@ export const getAdminOperations = createServerFn({ method: 'GET' })
         ctaHref: '/admin/financeiro/relatorios?tab=mercado-pago',
         group: 'Financeiro',
       },
+      {
+        id: 'products-quality-low',
+        title: 'Produtos com cadastro incompleto',
+        description:
+          productQuality.activeBelow70 > 0
+            ? `${productQuality.activeBelow70} produto(s) ativo(s) com score abaixo de 70 — não podem ser destacados em vitrines.`
+            : 'Todos os produtos ativos têm cadastro adequado.',
+        qty: productQuality.activeBelow70,
+        status:
+          productQuality.activeBelow70 === 0
+            ? 'ok'
+            : productQuality.featuredBelow70 > 0
+              ? 'danger'
+              : 'warn',
+        ctaLabel: 'Ver qualidade do cadastro',
+        ctaHref: '/admin/produtos/qualidade',
+        group: 'Catálogo',
+      },
     ];
 
     // ============================================================
