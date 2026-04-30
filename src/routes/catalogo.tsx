@@ -525,7 +525,7 @@ function CatalogPage() {
                                 onChange={() => toggleTechId(def.key, opt.id)}
                                 className="rounded border-border"
                               />
-                              <span className="text-muted-foreground">{opt.label}</span>
+                              <span className="text-muted-foreground">{decorateOptionLabel(def.key, opt as any)}</span>
                             </label>
                           ))}
                         </div>
