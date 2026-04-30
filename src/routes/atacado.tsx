@@ -284,21 +284,23 @@ function AtacadoPage() {
         </div>
 
         {/* Filtros B2B */}
-        <Filters
+        <B2BProductFilters
+          state={filters}
+          onChange={setFilters}
+          onReset={() => setFilters(DEFAULT_B2B_FILTERS)}
           categories={availableCategories}
-          categoryFilter={categoryFilter}
-          onCategoryChange={setCategoryFilter}
-          sortKey={sortKey}
-          onSortChange={setSortKey}
-          totalCount={visibleProducts.length}
+          brands={brands ?? []}
+          showB2bOnly={isApproved}
+          totalCount={totalCount}
+          isFetching={isFetching}
         />
 
         {visibleProducts.length === 0 ? (
-          <div className="bg-card border border-border rounded-lg p-10 text-center mt-6">
-            <p className="text-muted-foreground">
-              Nenhum produto com condição empresa nesta seleção.
-            </p>
-          </div>
+          <B2BEmptyState
+            onReset={() => setFilters(DEFAULT_B2B_FILTERS)}
+            whatsappLink={whatsappLink}
+            isApproved={isApproved}
+          />
         ) : (
           <div
             className={`mt-6 grid gap-3 sm:gap-5 ${
@@ -307,18 +309,21 @@ function AtacadoPage() {
                 : 'grid-cols-2 sm:grid-cols-3 lg:grid-cols-4'
             }`}
           >
-            {visibleProducts.map((p, i) =>
-              isApproved ? (
+            {visibleProducts.map((p, i) => {
+              const hasB2b = isApproved && p.b2b_enabled === true && (p.b2b_price ?? 0) > 0;
+              return hasB2b ? (
                 <B2bProductCard key={p.id} product={p} index={i} />
               ) : (
                 <div key={p.id} className="relative">
-                  <span className="absolute z-10 top-2 left-2 inline-flex items-center gap-1 bg-primary text-primary-foreground text-[10px] font-bold uppercase px-2 py-1 rounded">
-                    Preço empresa
-                  </span>
+                  {p.b2b_enabled === true && (p.b2b_price ?? 0) > 0 && !isApproved && (
+                    <span className="absolute z-10 top-2 left-2 inline-flex items-center gap-1 bg-primary text-primary-foreground text-[10px] font-bold uppercase px-2 py-1 rounded">
+                      Preço empresa
+                    </span>
+                  )}
                   <ProductCard product={p} index={i} />
                 </div>
-              ),
-            )}
+              );
+            })}
           </div>
         )}
 
