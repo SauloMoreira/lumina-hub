@@ -29,6 +29,7 @@ import {
   Globe,
   AlertCircle,
   MessageSquareText,
+  PackagePlus,
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import logo from '@/assets/logo-navbar.png';
