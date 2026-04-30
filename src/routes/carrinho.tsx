@@ -45,7 +45,7 @@ function CartPage() {
     cart.items.map((i) => ({ price: i.price, qty: i.qty, freeShippingEligible: i.freeShippingEligible }))
   );
   const shipping = freeShip.qualifies ? 0 : 25;
-  const total = subtotalApplied + shipping;
+  const total = Math.max(0, subtotalApplied - bundlePreviewSavings + shipping);
 
   const hasB2b = cart.hasB2bItems();
   const isB2bContext = hasB2b || cart.lastSource === 'b2b';
