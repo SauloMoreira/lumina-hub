@@ -222,6 +222,34 @@ function IntegrationsPage() {
           após o consentimento LGPD do visitante.
         </p>
 
+        {(missingGa4 || missingMetaPixel || activeWithBadFormat.length > 0) && (
+          <Card className="border-amber-500/40 bg-amber-50/40 dark:bg-amber-950/20">
+            <CardContent className="pt-6 space-y-2 text-sm">
+              <p className="font-medium flex items-center gap-2 text-amber-900 dark:text-amber-200">
+                <AlertTriangle className="w-4 h-4" /> Pendências de medição
+              </p>
+              <ul className="space-y-1 text-muted-foreground list-disc pl-5">
+                {missingGa4 && <li>Google Analytics 4 ainda não foi configurado.</li>}
+                {missingMetaPixel && <li>Meta Pixel ainda não foi configurado — recomendado para campanhas no Facebook/Instagram.</li>}
+                {activeWithBadFormat.map((i) => (
+                  <li key={i.id} className="text-destructive">
+                    {PROVIDER_INFO[i.provider]?.label ?? i.provider}: integração ativa com ID em formato inválido.
+                  </li>
+                ))}
+              </ul>
+            </CardContent>
+          </Card>
+        )}
+
+        {items.length > 0 && !missingGa4 && !missingMetaPixel && activeWithBadFormat.length === 0 && (
+          <Card className="border-emerald-500/40 bg-emerald-50/40 dark:bg-emerald-950/20">
+            <CardContent className="pt-6 text-sm flex items-center gap-2 text-emerald-900 dark:text-emerald-200">
+              <CheckCircle2 className="w-4 h-4" />
+              Tudo certo! As principais ferramentas de medição estão configuradas.
+            </CardContent>
+          </Card>
+        )}
+
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
