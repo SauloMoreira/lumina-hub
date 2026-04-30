@@ -275,6 +275,20 @@ function ReportsPage() {
   const [shippingLoading, setShippingLoading] = useState(false);
   const [shippingPage, setShippingPage] = useState(1);
 
+  // Mercado Pago
+  const [mpCards, setMpCards] = useState<MpReportCards | null>(null);
+  const [mpList, setMpList] = useState<MpListResult | null>(null);
+  const [mpLoading, setMpLoading] = useState(false);
+  const [mpPage, setMpPage] = useState(1);
+  const [mpFeeSource, setMpFeeSource] = useState<'all' | 'mercado_pago_real' | 'estimated' | 'unknown'>('all');
+
+  // Notas Fiscais
+  const [invCards, setInvCards] = useState<InvoiceReportCards | null>(null);
+  const [invList, setInvList] = useState<InvoiceListResult | null>(null);
+  const [invLoading, setInvLoading] = useState(false);
+  const [invPage, setInvPage] = useState(1);
+  const [invStatus, setInvStatus] = useState<'all' | 'nao_necessaria' | 'pendente_emissao' | 'emitida' | 'erro_emissao' | 'cancelada'>('all');
+
   const filters = useMemo(
     () => ({
       preset,
