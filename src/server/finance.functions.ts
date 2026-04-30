@@ -456,6 +456,7 @@ export const updateProductCost = createServerFn({ method: 'POST' })
   .middleware([requireAdmin])
   .inputValidator((input: unknown) => ProductCostInput.parse(input))
   .handler(async ({ data }) => {
+    const supabaseAdmin = await getSupabaseAdmin();
     const { error } = await supabaseAdmin
       .from('products')
       .update({
@@ -493,6 +494,7 @@ export const getOrderFinance = createServerFn({ method: 'POST' })
   .middleware([requireAdmin])
   .inputValidator((input: unknown) => OrderFinanceInput.parse(input))
   .handler(async ({ data }): Promise<OrderFinanceSummary> => {
+    const supabaseAdmin = await getSupabaseAdmin();
     const settings = await loadSettings();
     const { data: order, error } = await supabaseAdmin
       .from('orders')
@@ -568,6 +570,7 @@ export type FinanceQuickCounts = {
 export const getFinanceQuickCounts = createServerFn({ method: 'GET' })
   .middleware([requireAdmin])
   .handler(async (): Promise<FinanceQuickCounts> => {
+    const supabaseAdmin = await getSupabaseAdmin();
     const settings = await loadSettings();
     const min = settings.default_min_margin_percent;
 
