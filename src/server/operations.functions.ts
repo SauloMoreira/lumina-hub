@@ -651,6 +651,24 @@ export const getAdminOperations = createServerFn({ method: 'GET' })
         ctaHref: '/admin/financeiro/notas-fiscais',
         group: 'Financeiro',
       },
+      {
+        id: 'fiscal-pending',
+        title: 'Pendências fiscais',
+        description:
+          fiscal.companyFiscalIncomplete
+            ? 'Dados fiscais da empresa incompletos. Configure regime tributário, CFOPs e série padrão de NF-e.'
+            : `${fiscal.productsFiscalIncomplete} produto(s) com dados fiscais incompletos.`,
+        qty: fiscalTotalIssues,
+        status:
+          fiscalTotalIssues === 0
+            ? 'ok'
+            : fiscal.companyFiscalIncomplete || fiscal.paidOrdersWithFiscalIssues > 0
+              ? 'danger'
+              : 'warn',
+        ctaLabel: 'Ver pendências fiscais',
+        ctaHref: '/admin/financeiro/impostos',
+        group: 'Financeiro',
+      },
     ];
 
     // ============================================================
