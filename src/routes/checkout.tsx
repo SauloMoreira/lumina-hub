@@ -291,6 +291,10 @@ function CheckoutPage() {
     if (submitting) return;
     setSubmitting(true);
     try {
+      // Re-valida pricing com o backend antes de criar o pedido para detectar divergências.
+      const totalShownBefore = total;
+      refetchPricing();
+
       const r = await createOrder({
         data: {
           items: cart.items.map((i) => ({
