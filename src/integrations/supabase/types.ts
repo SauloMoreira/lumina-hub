@@ -936,6 +936,66 @@ export type Database = {
         }
         Relationships: []
       }
+      finance_settings: {
+        Row: {
+          consider_b2b_discount_in_margin: boolean
+          consider_coupon_in_margin: boolean
+          consider_shipping_in_margin: boolean
+          created_at: string
+          critical_margin_alert_enabled: boolean
+          critical_margin_threshold_percent: number
+          default_currency: string
+          default_min_margin_percent: number
+          id: string
+          mp_fee_boleto_fixed: number
+          mp_fee_boleto_percent: number
+          mp_fee_credit_fixed: number
+          mp_fee_credit_percent: number
+          mp_fee_default_percent: number
+          mp_fee_pix_fixed: number
+          mp_fee_pix_percent: number
+          updated_at: string
+        }
+        Insert: {
+          consider_b2b_discount_in_margin?: boolean
+          consider_coupon_in_margin?: boolean
+          consider_shipping_in_margin?: boolean
+          created_at?: string
+          critical_margin_alert_enabled?: boolean
+          critical_margin_threshold_percent?: number
+          default_currency?: string
+          default_min_margin_percent?: number
+          id?: string
+          mp_fee_boleto_fixed?: number
+          mp_fee_boleto_percent?: number
+          mp_fee_credit_fixed?: number
+          mp_fee_credit_percent?: number
+          mp_fee_default_percent?: number
+          mp_fee_pix_fixed?: number
+          mp_fee_pix_percent?: number
+          updated_at?: string
+        }
+        Update: {
+          consider_b2b_discount_in_margin?: boolean
+          consider_coupon_in_margin?: boolean
+          consider_shipping_in_margin?: boolean
+          created_at?: string
+          critical_margin_alert_enabled?: boolean
+          critical_margin_threshold_percent?: number
+          default_currency?: string
+          default_min_margin_percent?: number
+          id?: string
+          mp_fee_boleto_fixed?: number
+          mp_fee_boleto_percent?: number
+          mp_fee_credit_fixed?: number
+          mp_fee_credit_percent?: number
+          mp_fee_default_percent?: number
+          mp_fee_pix_fixed?: number
+          mp_fee_pix_percent?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       home_banners: {
         Row: {
           active: boolean
@@ -1667,6 +1727,9 @@ export type Database = {
           b2b_min_quantity: number | null
           b2b_rule_applied: string | null
           b2b_unit_price: number | null
+          cost_source: string
+          gross_margin_amount: number | null
+          gross_margin_percent: number | null
           id: string
           order_id: string
           pricing_source: string
@@ -1676,7 +1739,9 @@ export type Database = {
           product_sku: string | null
           qty: number
           retail_unit_price: number | null
+          total_cost: number | null
           total_price: number
+          unit_cost: number | null
           unit_price: number
         }
         Insert: {
@@ -1686,6 +1751,9 @@ export type Database = {
           b2b_min_quantity?: number | null
           b2b_rule_applied?: string | null
           b2b_unit_price?: number | null
+          cost_source?: string
+          gross_margin_amount?: number | null
+          gross_margin_percent?: number | null
           id?: string
           order_id: string
           pricing_source?: string
@@ -1695,7 +1763,9 @@ export type Database = {
           product_sku?: string | null
           qty: number
           retail_unit_price?: number | null
+          total_cost?: number | null
           total_price: number
+          unit_cost?: number | null
           unit_price: number
         }
         Update: {
@@ -1705,6 +1775,9 @@ export type Database = {
           b2b_min_quantity?: number | null
           b2b_rule_applied?: string | null
           b2b_unit_price?: number | null
+          cost_source?: string
+          gross_margin_amount?: number | null
+          gross_margin_percent?: number | null
           id?: string
           order_id?: string
           pricing_source?: string
@@ -1714,7 +1787,9 @@ export type Database = {
           product_sku?: string | null
           qty?: number
           retail_unit_price?: number | null
+          total_cost?: number | null
           total_price?: number
+          unit_cost?: number | null
           unit_price?: number
         }
         Relationships: [
@@ -2121,6 +2196,7 @@ export type Database = {
           id: string
           images: string[] | null
           length_cm: number | null
+          min_margin_percent: number | null
           name: string
           ncm: string | null
           price: number
@@ -2158,6 +2234,7 @@ export type Database = {
           id?: string
           images?: string[] | null
           length_cm?: number | null
+          min_margin_percent?: number | null
           name: string
           ncm?: string | null
           price: number
@@ -2195,6 +2272,7 @@ export type Database = {
           id?: string
           images?: string[] | null
           length_cm?: number | null
+          min_margin_percent?: number | null
           name?: string
           ncm?: string | null
           price?: number
