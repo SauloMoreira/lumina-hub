@@ -454,76 +454,25 @@ export const getAdminOperations = createServerFn({ method: 'GET' })
       (fiscal.companyFiscalIncomplete ? 1 : 0);
 
     // ============================================================
-    // Financeiro — margem, custo, taxa MP, atribuição UTM
+    // Financeiro — margem, custo, NF, taxa MP (helper isolado)
     // ============================================================
-    let financeCounts = {
+    let financeAlerts = {
       productsWithoutCost: 0,
       productsBelowMinMargin: 0,
-      b2bProductsBelowMinMargin: 0,
       ordersPaidWithMissingCost: 0,
+      ordersPaidNegativeMargin: 0,
+      invoicesPending: 0,
+      invoicesPendingOver24h: 0,
+      invoicesPendingB2bOver24h: 0,
+      invoicesError: 0,
+      mpPaidNoFee30d: 0,
+      mpPaidEstimatedFee30d: 0,
+      mpWebhookErrors7d: 0,
     };
     try {
-      const { getFinanceQuickCounts } = await import('./finance.functions');
-      financeCounts = await getFinanceQuickCounts();
+      const { fetchFinanceAlertCounts } = await import('./financeAlerts.server');
+      financeAlerts = await fetchFinanceAlertCounts();
     } catch {}
-
-    // Pagamentos MP pagos sem taxa (real ou estimada) — últimos 30 dias
-    let mpPaidNoFee = 0;
-    let mpPaidEstimatedFee = 0;
-    try {
-      const since30 = new Date();
-      since30.setDate(since30.getDate() - 30);
-      const { data: mpRows } = await supabaseAdmin
-        .from('orders')
-        .select('mp_fee_amount, estimated_fee_amount, payment_fee_source')
-        .eq('payment_status', 'paid')
-        .gte('paid_at', since30.toISOString())
-        .limit(2000);
-      for (const r of (mpRows ?? []) as Array<{
-        mp_fee_amount: number | null;
-        estimated_fee_amount: number | null;
-        payment_fee_source: string | null;
-      }>) {
-        const realFee = r.mp_fee_amount != null && Number(r.mp_fee_amount) > 0;
-        const estFee = r.estimated_fee_amount != null && Number(r.estimated_fee_amount) > 0;
-        if (!realFee && !estFee) mpPaidNoFee += 1;
-        else if (!realFee && estFee) mpPaidEstimatedFee += 1;
-      }
-    } catch {}
-
-    // Atribuição UTM — pedidos pagos últimos 30 dias sem origem identificada
-    let attribOrdersTotal = 0;
-    let attribOrdersWithoutSource = 0;
-    try {
-      const since30 = new Date();
-      since30.setDate(since30.getDate() - 30);
-      const { data: attrRows } = await supabaseAdmin
-        .from('orders')
-        .select('utm_source, utm_campaign, utm_medium, origin_context, coupon_code')
-        .eq('payment_status', 'paid')
-        .gte('paid_at', since30.toISOString())
-        .limit(2000);
-      for (const r of (attrRows ?? []) as Array<{
-        utm_source: string | null;
-        utm_campaign: string | null;
-        utm_medium: string | null;
-        origin_context: string | null;
-        coupon_code: string | null;
-      }>) {
-        attribOrdersTotal += 1;
-        const has =
-          (r.utm_source && r.utm_source.trim()) ||
-          (r.utm_campaign && r.utm_campaign.trim()) ||
-          (r.utm_medium && r.utm_medium.trim()) ||
-          (r.origin_context && r.origin_context.trim()) ||
-          (r.coupon_code && r.coupon_code.trim());
-        if (!has) attribOrdersWithoutSource += 1;
-      }
-    } catch {}
-    const attribCoveragePct =
-      attribOrdersTotal > 0
-        ? Math.round(((attribOrdersTotal - attribOrdersWithoutSource) / attribOrdersTotal) * 100)
-        : 100;
 
     const cards: OperationsCard[] = [
       {
