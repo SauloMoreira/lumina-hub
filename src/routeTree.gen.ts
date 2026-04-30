@@ -42,6 +42,7 @@ import { Route as AdminPendenciasRouteImport } from './routes/admin.pendencias'
 import { Route as AdminPedidosRouteImport } from './routes/admin.pedidos'
 import { Route as AdminPainelDoDiaRouteImport } from './routes/admin.painel-do-dia'
 import { Route as AdminLeadsRouteImport } from './routes/admin.leads'
+import { Route as AdminIntegracoesRouteImport } from './routes/admin.integracoes'
 import { Route as AdminFunilRouteImport } from './routes/admin.funil'
 import { Route as AdminEmpresasRouteImport } from './routes/admin.empresas'
 import { Route as AdminCuponsRouteImport } from './routes/admin.cupons'
@@ -230,6 +231,11 @@ const AdminLeadsRoute = AdminLeadsRouteImport.update({
   path: '/admin/leads',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AdminIntegracoesRoute = AdminIntegracoesRouteImport.update({
+  id: '/admin/integracoes',
+  path: '/admin/integracoes',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AdminFunilRoute = AdminFunilRouteImport.update({
   id: '/admin/funil',
   path: '/admin/funil',
@@ -376,6 +382,7 @@ export interface FileRoutesByFullPath {
   '/admin/cupons': typeof AdminCuponsRoute
   '/admin/empresas': typeof AdminEmpresasRoute
   '/admin/funil': typeof AdminFunilRoute
+  '/admin/integracoes': typeof AdminIntegracoesRoute
   '/admin/leads': typeof AdminLeadsRoute
   '/admin/painel-do-dia': typeof AdminPainelDoDiaRoute
   '/admin/pedidos': typeof AdminPedidosRouteWithChildren
@@ -433,6 +440,7 @@ export interface FileRoutesByTo {
   '/admin/cupons': typeof AdminCuponsRoute
   '/admin/empresas': typeof AdminEmpresasRoute
   '/admin/funil': typeof AdminFunilRoute
+  '/admin/integracoes': typeof AdminIntegracoesRoute
   '/admin/leads': typeof AdminLeadsRoute
   '/admin/painel-do-dia': typeof AdminPainelDoDiaRoute
   '/admin/pedidos': typeof AdminPedidosRouteWithChildren
@@ -491,6 +499,7 @@ export interface FileRoutesById {
   '/admin/cupons': typeof AdminCuponsRoute
   '/admin/empresas': typeof AdminEmpresasRoute
   '/admin/funil': typeof AdminFunilRoute
+  '/admin/integracoes': typeof AdminIntegracoesRoute
   '/admin/leads': typeof AdminLeadsRoute
   '/admin/painel-do-dia': typeof AdminPainelDoDiaRoute
   '/admin/pedidos': typeof AdminPedidosRouteWithChildren
@@ -550,6 +559,7 @@ export interface FileRouteTypes {
     | '/admin/cupons'
     | '/admin/empresas'
     | '/admin/funil'
+    | '/admin/integracoes'
     | '/admin/leads'
     | '/admin/painel-do-dia'
     | '/admin/pedidos'
@@ -607,6 +617,7 @@ export interface FileRouteTypes {
     | '/admin/cupons'
     | '/admin/empresas'
     | '/admin/funil'
+    | '/admin/integracoes'
     | '/admin/leads'
     | '/admin/painel-do-dia'
     | '/admin/pedidos'
@@ -664,6 +675,7 @@ export interface FileRouteTypes {
     | '/admin/cupons'
     | '/admin/empresas'
     | '/admin/funil'
+    | '/admin/integracoes'
     | '/admin/leads'
     | '/admin/painel-do-dia'
     | '/admin/pedidos'
@@ -722,6 +734,7 @@ export interface RootRouteChildren {
   AdminCuponsRoute: typeof AdminCuponsRoute
   AdminEmpresasRoute: typeof AdminEmpresasRoute
   AdminFunilRoute: typeof AdminFunilRoute
+  AdminIntegracoesRoute: typeof AdminIntegracoesRoute
   AdminLeadsRoute: typeof AdminLeadsRoute
   AdminPainelDoDiaRoute: typeof AdminPainelDoDiaRoute
   AdminPedidosRoute: typeof AdminPedidosRouteWithChildren
@@ -977,6 +990,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminLeadsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/admin/integracoes': {
+      id: '/admin/integracoes'
+      path: '/admin/integracoes'
+      fullPath: '/admin/integracoes'
+      preLoaderRoute: typeof AdminIntegracoesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/admin/funil': {
       id: '/admin/funil'
       path: '/admin/funil'
@@ -1204,6 +1224,7 @@ const rootRouteChildren: RootRouteChildren = {
   AdminCuponsRoute: AdminCuponsRoute,
   AdminEmpresasRoute: AdminEmpresasRoute,
   AdminFunilRoute: AdminFunilRoute,
+  AdminIntegracoesRoute: AdminIntegracoesRoute,
   AdminLeadsRoute: AdminLeadsRoute,
   AdminPainelDoDiaRoute: AdminPainelDoDiaRoute,
   AdminPedidosRoute: AdminPedidosRouteWithChildren,
