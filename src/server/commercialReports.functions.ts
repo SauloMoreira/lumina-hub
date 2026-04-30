@@ -559,8 +559,10 @@ export type CouponsCards = {
   totalDiscounts: number;
   b2bDiscounts: number;
   couponDiscounts: number;
+  bundleDiscounts: number;
   couponsUsed: number;
   ordersWithCoupon: number;
+  ordersWithBundle: number;
   averageTicketWithCoupon: number;
   averageMarginWithCoupon: number;
   couponsCritical: number;
@@ -590,6 +592,7 @@ export type DiscountByOrderRow = {
   coupon_code: string | null;
   coupon_discount: number;
   b2b_discount: number;
+  bundle_discount: number;
   total_discount: number;
   final_revenue: number;
   margin_percent: number;
