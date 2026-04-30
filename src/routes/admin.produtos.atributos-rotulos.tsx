@@ -183,7 +183,7 @@ function AttributeLabelsAdmin() {
   }
 
   return (
-    <AdminLayout>
+    <AdminLayout title="Rótulos amigáveis">
       <div className="container py-6 space-y-6">
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div>
