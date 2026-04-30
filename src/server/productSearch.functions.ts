@@ -9,14 +9,28 @@ import { expandSearchTerms, normalizeSearch } from '@/lib/searchNormalize';
 const searchInput = z.object({
   q: z.string().max(200).optional(),
   categorySlug: z.string().max(120).optional(),
+  categoryId: z.string().uuid().optional(),
   brand: z.string().max(120).optional(),
   priceMin: z.number().min(0).max(999999).optional(),
   priceMax: z.number().min(0).max(999999).optional(),
   inStock: z.boolean().optional(),
   onSale: z.boolean().optional(),
   freeShipping: z.boolean().optional(),
+  b2bOnly: z.boolean().optional(),
+  minQtyMax: z.number().int().min(1).max(100000).optional(),
   sort: z
-    .enum(['relevance', 'featured', 'price_asc', 'price_desc', 'newest', 'best_sellers'])
+    .enum([
+      'relevance',
+      'featured',
+      'price_asc',
+      'price_desc',
+      'newest',
+      'best_sellers',
+      'b2b_discount_desc',
+      'b2b_min_qty_asc',
+      'stock_first',
+      'name_asc',
+    ])
     .optional(),
   page: z.number().int().min(1).max(500).optional(),
   pageSize: z.number().int().min(1).max(48).optional(),
@@ -32,8 +46,8 @@ export const searchProducts = createServerFn({ method: 'POST' })
 
     const terms = data.q ? expandSearchTerms(data.q) : null;
 
-    let categoryId: string | null = null;
-    if (data.categorySlug) {
+    let categoryId: string | null = data.categoryId ?? null;
+    if (!categoryId && data.categorySlug) {
       const { data: cat } = await supabaseAdmin
         .from('categories')
         .select('id')
@@ -54,6 +68,8 @@ export const searchProducts = createServerFn({ method: 'POST' })
       _sort: data.sort ?? 'relevance',
       _limit: pageSize,
       _offset: offset,
+      _b2b_only: data.b2bOnly ?? false,
+      _min_qty_max: data.minQtyMax ?? null,
     });
 
     if (error) {
@@ -75,6 +91,13 @@ export const searchProducts = createServerFn({ method: 'POST' })
       featured: !!r.featured,
       free_shipping_eligible: !!r.free_shipping_eligible,
       category_id: r.category_id,
+      // Campos B2B (podem vir como undefined em chamadas antigas — toleramos).
+      b2b_enabled: r.b2b_enabled === true,
+      b2b_price: r.b2b_price != null ? Number(r.b2b_price) : null,
+      b2b_min_qty: r.b2b_min_qty != null ? Number(r.b2b_min_qty) : null,
+      b2b_qty_multiple: r.b2b_qty_multiple != null ? Number(r.b2b_qty_multiple) : null,
+      b2b_show_in_vitrine: r.b2b_show_in_vitrine !== false,
+      b2b_valid_until: r.b2b_valid_until ?? null,
     }));
 
     // Log de buscas sem resultado (best-effort, não bloqueia)
