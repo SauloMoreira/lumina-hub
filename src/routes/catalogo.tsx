@@ -460,13 +460,14 @@ function CatalogPage() {
                     const facetValues = facetsByKey.get(def.key);
                     if (!facetValues || facetValues.size === 0) return null;
                     // Mostra apenas opções que têm pelo menos um produto cadastrado.
-                    const visibleOptions = def.options.filter((opt) => {
+                    const visibleOptions = def.options.filter((opt: any) => {
                       if (def.kind === 'value') {
-                        return opt.values.some((v) => facetValues.has(v.toLowerCase()));
+                        const values: string[] = opt.values ?? [];
+                        return values.some((v) => facetValues.has(v.toLowerCase()));
                       }
                       // Para potência (range), checa se há valor numérico dentro do intervalo.
-                      const min = opt.min ?? 0;
-                      const max = opt.max ?? 99999;
+                      const min: number = opt.min ?? 0;
+                      const max: number = opt.max ?? 99999;
                       for (const v of facetValues) {
                         const n = Number(v);
                         if (Number.isFinite(n) && n >= min && n <= max) return true;
