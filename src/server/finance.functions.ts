@@ -111,6 +111,7 @@ export const updateFinanceSettings = createServerFn({ method: 'POST' })
   .middleware([requireAdmin])
   .inputValidator((input: unknown) => SettingsInput.parse(input))
   .handler(async ({ data }) => {
+    const supabaseAdmin = await getSupabaseAdmin();
     const current = await loadSettings();
     const { error } = await supabaseAdmin
       .from('finance_settings')
@@ -202,6 +203,7 @@ export const getFinanceOverview = createServerFn({ method: 'POST' })
   .middleware([requireAdmin])
   .inputValidator((input: unknown) => RangeInput.parse(input))
   .handler(async ({ data }): Promise<FinanceOverview> => {
+    const supabaseAdmin = await getSupabaseAdmin();
     const settings = await loadSettings();
     const { from, to } = resolveRange(data.preset, data.from, data.to);
 
@@ -314,6 +316,7 @@ export const getFinanceMargin = createServerFn({ method: 'POST' })
   .middleware([requireAdmin])
   .inputValidator((input: unknown) => MarginListInput.parse(input))
   .handler(async ({ data }) => {
+    const supabaseAdmin = await getSupabaseAdmin();
     const settings = await loadSettings();
     const min = settings.default_min_margin_percent;
     const crit = settings.critical_margin_threshold_percent;
