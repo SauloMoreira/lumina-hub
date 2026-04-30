@@ -693,6 +693,49 @@ function ReportsPage() {
                 exporting={exporting}
               />
             </TabsContent>
+
+            {/* ABA: B2B */}
+            <TabsContent value="b2b" className="space-y-4 mt-4">
+              <B2bSection
+                data={b2b}
+                loading={b2bLoading}
+                exporting={exporting}
+                onExportCompanies={() => handleExport(exportB2bCompaniesCsv, 'B2B empresas')}
+                onExportProducts={() => handleExport(exportB2bProductsCsv, 'B2B produtos')}
+              />
+            </TabsContent>
+
+            {/* ABA: CUPONS */}
+            <TabsContent value="coupons" className="space-y-4 mt-4">
+              <CouponsSection
+                data={coupons}
+                loading={couponsLoading}
+                exporting={exporting}
+                onExportCoupons={() => handleExport(exportCouponsCsv, 'cupons')}
+                onExportDiscounts={() => handleExport(exportDiscountsByOrderCsv, 'descontos')}
+              />
+            </TabsContent>
+
+            {/* ABA: FRETE */}
+            <TabsContent value="shipping" className="space-y-4 mt-4">
+              <ShippingSection
+                data={shipping}
+                loading={shippingLoading}
+                exporting={exporting}
+                page={shippingPage}
+                setPage={setShippingPage}
+                onExportOrders={() => handleExport(exportShippingByOrderCsv, 'frete pedidos')}
+                onExportDistricts={() => handleExport(exportShippingByDistrictCsv, 'frete bairros')}
+              />
+            </TabsContent>
+
+            <TabsContent value="legacy-products" className="hidden">
+              {/* placeholder para evitar conflito de chave */}
+            </TabsContent>
+                onExport={() => handleExport(exportProductsReportCsv, 'produtos')}
+                exporting={exporting}
+              />
+            </TabsContent>
           </Tabs>
         </div>
       </TooltipProvider>
