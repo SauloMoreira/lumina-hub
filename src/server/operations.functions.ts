@@ -335,12 +335,12 @@ export const getAdminOperations = createServerFn({ method: 'GET' })
         .from('marketing_integrations')
         .select('provider, account_id, enabled');
       const ID_PATTERNS: Record<string, RegExp> = {
-        ga4: /^G-[A-Z0-9]{6,}$/i,
-        gtm: /^GTM-[A-Z0-9]{4,}$/i,
-        meta_pixel: /^[0-9]{6,20}$/,
-        tiktok_pixel: /^[A-Z0-9]{15,30}$/i,
-        clarity: /^[a-z0-9]{6,20}$/i,
-        google_ads: /^AW-[0-9]{6,}$/i,
+        ga4: new RegExp('^G-[A-Z0-9]{6,}$', 'i'),
+        gtm: new RegExp('^GTM-[A-Z0-9]{4,}$', 'i'),
+        meta_pixel: new RegExp('^[0-9]{6,20}$'),
+        tiktok_pixel: new RegExp('^[A-Z0-9]{15,30}$', 'i'),
+        clarity: new RegExp('^[a-z0-9]{6,20}$', 'i'),
+        google_ads: new RegExp('^AW-[0-9]{6,}$', 'i'),
       };
       (integs ?? []).forEach((i: any) => {
         if (i.provider === 'ga4') hasGa4 = true;
