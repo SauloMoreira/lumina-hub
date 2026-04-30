@@ -297,6 +297,9 @@ function OrderDetailPage() {
               {Number(order.discount) > 0 && (
                 <Row label={`Desconto${order.coupon_code ? ` (${order.coupon_code})` : ''}`} value={`-${fmt(order.discount)}`} valueClass="text-emerald-600" />
               )}
+              {Number((order as any).bundle_discount_total ?? 0) > 0 && (
+                <Row label="Desconto de combo" value={`-${fmt(Number((order as any).bundle_discount_total))}`} valueClass="text-emerald-600" />
+              )}
               <div className="flex justify-between pt-2 border-t border-border">
                 <span className="font-bold">Total</span>
                 <span className="font-bold text-lg">{fmt(order.total)}</span>
