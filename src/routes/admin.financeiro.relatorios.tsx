@@ -67,6 +67,22 @@ import {
   type ShippingOrderRow,
   type ShippingDistrictRow,
 } from '@/server/commercialReports.functions';
+import {
+  getMpReportCards,
+  getMpPayments,
+  exportMpPaymentsCsv,
+  getInvoiceReportCards,
+  getInvoicesReport,
+  exportInvoicesCsv,
+  FEE_SOURCE_LABELS,
+  INVOICE_STATUS_LABELS,
+  type MpReportCards,
+  type MpListResult,
+  type MpPaymentRow,
+  type InvoiceReportCards,
+  type InvoiceListResult,
+  type InvoiceRow,
+} from '@/server/paymentInvoiceReports.functions';
 
 export const Route = createFileRoute('/admin/financeiro/relatorios')({
   head: () =>
@@ -212,9 +228,7 @@ function ReportsPage() {
   const [deliveryMethod, setDeliveryMethod] = useState<string>('');
 
   // Aba ativa
-  const [tab, setTab] = useState<
-    'sales' | 'margin' | 'products' | 'b2b' | 'coupons' | 'shipping'
-  >('sales');
+  const [tab, setTab] = useState<'sales' | 'margin' | 'products' | 'b2b' | 'coupons' | 'shipping'>('sales');
 
   // Dados
   const [cards, setCards] = useState<FinanceReportCards | null>(null);
@@ -379,13 +393,64 @@ function ReportsPage() {
     return () => {
       alive = false;
     };
-  }, [tab, filters, shippingPage]);
+
+  // Carrega Mercado Pago (lazy)
+  useEffect(() => {
+    if (tab !== 'mp') return;
+    let alive = true;
+    setMpLoading(true);
+    Promise.all([
+      getMpReportCards({ data: filters }),
+      getMpPayments({
+        data: { ...filters, page: mpPage, pageSize: 50, feeSource: mpFeeSource },
+      }),
+    ])
+      .then(([c, l]) => {
+        if (!alive) return;
+        setMpCards(c);
+        setMpList(l);
+      })
+      .catch((e) =>
+        toast.error(e instanceof Error ? e.message : 'Erro ao carregar Mercado Pago.'),
+      )
+      .finally(() => alive && setMpLoading(false));
+    return () => {
+      alive = false;
+    };
+  }, [tab, filters, mpPage, mpFeeSource]);
+
+  // Carrega Notas Fiscais (lazy)
+  useEffect(() => {
+    if (tab !== 'invoices') return;
+    let alive = true;
+    setInvLoading(true);
+    Promise.all([
+      getInvoiceReportCards({ data: filters }),
+      getInvoicesReport({
+        data: { ...filters, page: invPage, pageSize: 50, invoiceStatus: invStatus },
+      }),
+    ])
+      .then(([c, l]) => {
+        if (!alive) return;
+        setInvCards(c);
+        setInvList(l);
+      })
+      .catch((e) =>
+        toast.error(e instanceof Error ? e.message : 'Erro ao carregar notas fiscais.'),
+      )
+      .finally(() => alive && setInvLoading(false));
+    return () => {
+      alive = false;
+    };
+  }, [tab, filters, invPage, invStatus]);
 
   // Reset página quando filtros mudam
   useEffect(() => {
     setPage(1);
     setMarginPage(1);
     setShippingPage(1);
+    setMpPage(1);
+    setInvPage(1);
   }, [preset, orderType, paymentStatus, paymentMethod, deliveryMethod]);
 
   const cardDefs: CardDef[] = cards
