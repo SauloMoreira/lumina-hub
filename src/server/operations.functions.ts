@@ -1005,6 +1005,88 @@ export const getAdminOperations = createServerFn({ method: 'GET' })
       });
     }
 
+    // Financeiro — margem / custo / MP (Onda 5E parte 3)
+    if (financeAlerts.ordersPaidNegativeMargin > 0) {
+      alerts.push({
+        id: 'alert-finance-negative-margin',
+        title: 'Pedidos pagos com margem negativa',
+        description: `${financeAlerts.ordersPaidNegativeMargin} pedido(s) pago(s) nos últimos 30 dias estão dando prejuízo. Revise preços e custos.`,
+        severity: 'high',
+        ctaLabel: 'Ver relatório de margem',
+        ctaHref: '/admin/financeiro/relatorios',
+      });
+    }
+    if (financeAlerts.ordersPaidWithMissingCost > 0) {
+      alerts.push({
+        id: 'alert-finance-missing-cost-orders',
+        title: 'Itens vendidos sem custo cadastrado',
+        description: `${financeAlerts.ordersPaidWithMissingCost} pedido(s) pago(s) recente(s) com item sem custo — margem real impossível de calcular.`,
+        severity: 'high',
+        ctaLabel: 'Ver relatório de margem',
+        ctaHref: '/admin/financeiro/relatorios',
+      });
+    }
+    if (financeAlerts.productsWithoutCost > 0) {
+      alerts.push({
+        id: 'alert-finance-products-no-cost',
+        title: 'Produtos ativos sem custo',
+        description: `${financeAlerts.productsWithoutCost} produto(s) ativo(s) sem cost_price. Sem isso a margem fica em branco.`,
+        severity: 'medium',
+        ctaLabel: 'Ver produtos',
+        ctaHref: '/admin/produtos',
+      });
+    }
+    if (financeAlerts.productsBelowMinMargin > 0) {
+      alerts.push({
+        id: 'alert-finance-below-min-margin',
+        title: 'Produtos abaixo da margem mínima',
+        description: `${financeAlerts.productsBelowMinMargin} produto(s) com preço atual abaixo da margem mínima configurada.`,
+        severity: 'medium',
+        ctaLabel: 'Ver relatório de margem',
+        ctaHref: '/admin/financeiro/relatorios',
+      });
+    }
+    if (financeAlerts.invoicesPendingB2bOver24h > 0) {
+      alerts.push({
+        id: 'alert-finance-nf-b2b-overdue',
+        title: 'NF B2B atrasada (>24h)',
+        description: `${financeAlerts.invoicesPendingB2bOver24h} pedido(s) B2B pago(s) há mais de 24h sem nota fiscal — clientes empresa exigem nota.`,
+        severity: 'high',
+        ctaLabel: 'Ver notas fiscais',
+        ctaHref: '/admin/financeiro/notas-fiscais',
+      });
+    }
+    if (financeAlerts.mpWebhookErrors7d > 0) {
+      alerts.push({
+        id: 'alert-finance-mp-webhook-error',
+        title: 'Webhook Mercado Pago com erro',
+        description: `${financeAlerts.mpWebhookErrors7d} webhook(s) com erro nos últimos 7 dias. Pagamentos podem não estar sendo confirmados.`,
+        severity: 'high',
+        ctaLabel: 'Ver Mercado Pago',
+        ctaHref: '/admin/financeiro/relatorios',
+      });
+    }
+    if (financeAlerts.mpPaidNoFee30d > 0) {
+      alerts.push({
+        id: 'alert-finance-mp-fee-unknown',
+        title: 'Taxa Mercado Pago desconhecida',
+        description: `${financeAlerts.mpPaidNoFee30d} pagamento(s) sem taxa real nem estimada — lucro líquido pode estar incorreto.`,
+        severity: 'medium',
+        ctaLabel: 'Ver Mercado Pago',
+        ctaHref: '/admin/financeiro/relatorios',
+      });
+    }
+    if (financeAlerts.mpPaidEstimatedFee30d > 0) {
+      alerts.push({
+        id: 'alert-finance-mp-fee-estimated',
+        title: 'Pagamentos usando taxa MP estimada',
+        description: `${financeAlerts.mpPaidEstimatedFee30d} pagamento(s) com taxa estimada — webhook do Mercado Pago ainda não confirmou a taxa real.`,
+        severity: 'low',
+        ctaLabel: 'Ver Mercado Pago',
+        ctaHref: '/admin/financeiro/relatorios',
+      });
+    }
+
     // Fiscal
     if (fiscal.companyFiscalIncomplete) {
       alerts.push({
