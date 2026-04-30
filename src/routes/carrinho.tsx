@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { useCart, validateB2bLine } from '@/stores/cartStore';
 import { formatBRL, FREE_SHIPPING_THRESHOLD, calcFreeShippingProgress } from '@/lib/domain';
 import { useCartPricing, maskCnpj } from '@/hooks/useCartPricing';
-import { describeB2bReason } from '@/server/b2bPricing.functions';
+import { describeB2bReason } from '@/lib/b2bPricingShared';
 
 import { buildSeo } from '@/lib/seo';
 
