@@ -12,7 +12,8 @@ import type { Product, Category } from '@/lib/domain';
 import { FREE_SHIPPING_THRESHOLD, formatBRL } from '@/lib/domain';
 import { imageUrlsFromProductImages } from '@/lib/productImages';
 import { fetchHomepageSettings, isPromoBarVisible } from '@/lib/homepageContent';
-import { fetchHomepageCards, fetchHomepageFeaturedCategories } from '@/lib/homepageBlocks';
+import { fetchHomepageCards, fetchHomepageFeaturedCategories, fetchHomepageShowcasesPublic } from '@/lib/homepageBlocks';
+import { HomepageShowcaseSection } from '@/components/store/HomepageShowcaseSection';
 import logoHero from '@/assets/logo-hero.webp';
 
 import { buildSeo } from '@/lib/seo';
@@ -129,6 +130,19 @@ function HomePage() {
     staleTime: 1000 * 60 * 5,
     queryFn: fetchHomepageFeaturedCategories,
   });
+
+  const { data: showcases } = useQuery({
+    queryKey: ['homepage-showcases'],
+    staleTime: 1000 * 60 * 5,
+    queryFn: fetchHomepageShowcasesPublic,
+  });
+
+  const validShowcases = (showcases ?? []).filter((s) => (s.items?.length ?? 0) > 0);
+  const offersShowcase = validShowcases.find((s) => s.showcase_type === 'offers');
+  const featuredShowcase = validShowcases.find((s) => s.showcase_type === 'featured');
+  const otherShowcases = validShowcases.filter(
+    (s) => s.showcase_type !== 'offers' && s.showcase_type !== 'featured',
+  );
   // Prefetch do catálogo (adiado até idle para não competir com LCP)
   useEffect(() => {
     const run = () => {
