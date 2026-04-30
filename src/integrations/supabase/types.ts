@@ -2799,6 +2799,39 @@ export type Database = {
       }
       normalize_zone_name: { Args: { _text: string }; Returns: string }
       recalculate_lead_score: { Args: { _lead_id: string }; Returns: undefined }
+      resolve_codes_bulk: {
+        Args: { _items: Json; _user_id: string }
+        Returns: {
+          applied_preview_price: number
+          available_stock: number
+          b2b_discount_amount: number
+          b2b_discount_percent: number
+          b2b_enabled: boolean
+          b2b_min_quantity: number
+          b2b_price: number
+          b2b_qty_multiple: number
+          brand: string
+          category_id: string
+          ean: string
+          has_stock: boolean
+          image_url: string
+          line_index: number
+          match_status: string
+          matched_via: string
+          multiple_options: Json
+          normalized_code: string
+          original_code: string
+          pricing_source_preview: string
+          product_id: string
+          product_name: string
+          product_slug: string
+          requested_quantity: number
+          retail_price: number
+          sale_price: number
+          sku: string
+          warnings: string[]
+        }[]
+      }
       search_normalize: { Args: { _text: string }; Returns: string }
       search_products_public: {
         Args: {
