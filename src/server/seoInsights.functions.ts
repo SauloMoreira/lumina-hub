@@ -206,11 +206,11 @@ function checkHomepage(h: {
   seo_title: string | null;
   seo_description: string | null;
   og_image_url: string | null;
-} | null): { score: number; issues: SeoIssue[] } {
+} | null): { score: number; severity: SeoSeverity; issues: SeoIssue[] } {
   const issues: SeoIssue[] = [];
   if (!h) {
     issues.push({ code: 'no_homepage', label: 'Configurações da homepage não criadas', severity: 'danger' });
-    return { score: 0, issues };
+    return { score: 0, severity: 'danger', issues };
   }
   if (!h.seo_title) issues.push({ code: 'no_seo_title', label: 'Homepage sem título SEO', severity: 'danger' });
   else if (h.seo_title.length > 65) issues.push({ code: 'long_seo_title', label: 'Título SEO da home longo', severity: 'warn' });
@@ -222,7 +222,7 @@ function checkHomepage(h: {
   if (!h.hero_title) issues.push({ code: 'no_hero', label: 'Hero sem título', severity: 'warn' });
   if (!h.hero_description) issues.push({ code: 'no_hero_desc', label: 'Hero sem descrição', severity: 'warn' });
 
-  return scoreSeverity(issues);
+  return { score: scored.score, severity: scored.severity, issues };
 }
 
 // =====================================================================
