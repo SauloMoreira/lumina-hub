@@ -407,11 +407,19 @@ function ReportsPage() {
     return () => {
       alive = false;
     };
+  }, [tab, filters, shippingPage]);
 
   // Carrega Mercado Pago (lazy)
   useEffect(() => {
     if (tab !== 'mp') return;
     let alive = true;
+    setMpLoading(true);
+    Promise.all([
+      getMpReportCards({ data: filters }),
+      getMpPayments({
+        data: { ...filters, page: mpPage, pageSize: 50, feeSource: mpFeeSource },
+      }),
+    ])
     setMpLoading(true);
     Promise.all([
       getMpReportCards({ data: filters }),
