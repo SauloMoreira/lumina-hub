@@ -690,6 +690,57 @@ export const getAdminOperations = createServerFn({ method: 'GET' })
         ctaHref: '/admin/financeiro/impostos',
         group: 'Financeiro',
       },
+      {
+        id: 'finance-margin-critical',
+        title: 'Pedidos com margem crítica',
+        description:
+          financeAlerts.ordersPaidNegativeMargin > 0
+            ? `${financeAlerts.ordersPaidNegativeMargin} pedido(s) pago(s) com margem negativa nos últimos 30 dias.`
+            : 'Nenhum pedido pago com margem negativa nos últimos 30 dias.',
+        qty: financeAlerts.ordersPaidNegativeMargin,
+        status: financeAlerts.ordersPaidNegativeMargin === 0 ? 'ok' : 'danger',
+        ctaLabel: 'Ver relatório de margem',
+        ctaHref: '/admin/financeiro/relatorios',
+        group: 'Financeiro',
+      },
+      {
+        id: 'finance-products-no-cost',
+        title: 'Produtos ativos sem custo cadastrado',
+        description:
+          financeAlerts.productsWithoutCost > 0
+            ? `${financeAlerts.productsWithoutCost} produto(s) ativo(s) sem cost_price — margem não pode ser calculada.`
+            : 'Todos os produtos ativos têm custo cadastrado.',
+        qty: financeAlerts.productsWithoutCost,
+        status:
+          financeAlerts.productsWithoutCost === 0
+            ? 'ok'
+            : financeAlerts.ordersPaidWithMissingCost > 0
+              ? 'danger'
+              : 'warn',
+        ctaLabel: 'Ver produtos',
+        ctaHref: '/admin/produtos',
+        group: 'Financeiro',
+      },
+      {
+        id: 'finance-mp-fee-unknown',
+        title: 'Pagamentos com taxa Mercado Pago desconhecida',
+        description:
+          financeAlerts.mpPaidNoFee30d > 0
+            ? `${financeAlerts.mpPaidNoFee30d} pagamento(s) sem taxa real nem estimada nos últimos 30 dias.`
+            : financeAlerts.mpPaidEstimatedFee30d > 0
+              ? `${financeAlerts.mpPaidEstimatedFee30d} pagamento(s) usando taxa estimada — webhook pendente.`
+              : 'Todas as taxas Mercado Pago dos últimos 30 dias estão registradas.',
+        qty: financeAlerts.mpPaidNoFee30d || financeAlerts.mpPaidEstimatedFee30d,
+        status:
+          financeAlerts.mpPaidNoFee30d > 0
+            ? 'warn'
+            : financeAlerts.mpPaidEstimatedFee30d > 0
+              ? 'warn'
+              : 'ok',
+        ctaLabel: 'Ver Mercado Pago',
+        ctaHref: '/admin/financeiro/relatorios',
+        group: 'Financeiro',
+      },
     ];
 
     // ============================================================
