@@ -812,6 +812,36 @@ function ReportsPage() {
               />
             </TabsContent>
 
+            {/* ABA: MERCADO PAGO */}
+            <TabsContent value="mp" className="space-y-4 mt-4">
+              <MpSection
+                cards={mpCards}
+                list={mpList}
+                loading={mpLoading}
+                page={mpPage}
+                setPage={setMpPage}
+                feeSource={mpFeeSource}
+                setFeeSource={setMpFeeSource}
+                onExport={() => handleExport(exportMpPaymentsCsv, 'Mercado Pago')}
+                exporting={exporting}
+              />
+            </TabsContent>
+
+            {/* ABA: NOTAS FISCAIS */}
+            <TabsContent value="invoices" className="space-y-4 mt-4">
+              <InvoicesSection
+                cards={invCards}
+                list={invList}
+                loading={invLoading}
+                page={invPage}
+                setPage={setInvPage}
+                statusFilter={invStatus}
+                setStatusFilter={setInvStatus}
+                onExport={() => handleExport(exportInvoicesCsv, 'notas fiscais')}
+                exporting={exporting}
+              />
+            </TabsContent>
+
           </Tabs>
         </div>
       </TooltipProvider>
