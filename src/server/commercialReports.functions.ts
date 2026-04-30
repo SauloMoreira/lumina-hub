@@ -127,7 +127,7 @@ async function fetchPaidOrders(
     .from('orders')
     .select(
       'id, order_number, status, payment_status, payment_method, delivery_method, order_type, ' +
-        'total, subtotal, shipping_cost, discount, b2b_discount_total, retail_subtotal, b2b_subtotal, ' +
+        'total, subtotal, shipping_cost, discount, b2b_discount_total, bundle_discount_total, retail_subtotal, b2b_subtotal, ' +
         'coupon_code, company_id, company_name, company_cnpj, local_delivery_zone_id, local_delivery_district, ' +
         'mp_fee_amount, estimated_fee_amount, payment_fee_source, address_snapshot, created_at, paid_at',
     )
