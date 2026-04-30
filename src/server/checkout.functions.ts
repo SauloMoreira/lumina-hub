@@ -471,7 +471,7 @@ export const createOrder = createServerFn({ method: 'POST' })
       : isLocal
       ? `Frete Local Maricá/RJ — ${localZoneInfo!.displayName}`
       : data.shipping?.service ?? null;
-    const total = Math.max(0, subtotal - discount + shippingCost);
+    const total = Math.max(0, subtotal - discount - bundleDiscountTotal + shippingCost);
 
     // Snapshot dos dados de retirada (loja) — em pickup
     let pickupSnap: {
