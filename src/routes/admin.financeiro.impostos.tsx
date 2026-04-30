@@ -1,6 +1,5 @@
 import { createFileRoute, Link } from '@tanstack/react-router';
 import { AdminLayout } from '@/components/admin/AdminLayout';
-import { Card } from '@/components/ui/card';
 import { FileText } from 'lucide-react';
 
 export const Route = createFileRoute('/admin/financeiro/impostos')({

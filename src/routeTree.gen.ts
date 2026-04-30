@@ -69,6 +69,7 @@ import { Route as AdminFinanceiroResumoRouteImport } from './routes/admin.financ
 import { Route as AdminFinanceiroNotasFiscaisRouteImport } from './routes/admin.financeiro.notas-fiscais'
 import { Route as AdminFinanceiroMercadopagoRouteImport } from './routes/admin.financeiro.mercadopago'
 import { Route as AdminFinanceiroMargemRouteImport } from './routes/admin.financeiro.margem'
+import { Route as AdminFinanceiroImpostosRouteImport } from './routes/admin.financeiro.impostos'
 import { Route as AdminFinanceiroConfiguracoesRouteImport } from './routes/admin.financeiro.configuracoes'
 import { Route as AdminConteudoHomepageRouteImport } from './routes/admin.conteudo.homepage'
 import { Route as ApiPublicMercadopagoWebhookRouteImport } from './routes/api/public/mercadopago.webhook'
@@ -379,6 +380,11 @@ const AdminFinanceiroMargemRoute = AdminFinanceiroMargemRouteImport.update({
   path: '/admin/financeiro/margem',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AdminFinanceiroImpostosRoute = AdminFinanceiroImpostosRouteImport.update({
+  id: '/admin/financeiro/impostos',
+  path: '/admin/financeiro/impostos',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AdminFinanceiroConfiguracoesRoute =
   AdminFinanceiroConfiguracoesRouteImport.update({
     id: '/admin/financeiro/configuracoes',
@@ -446,6 +452,7 @@ export interface FileRoutesByFullPath {
   '/admin/': typeof AdminIndexRoute
   '/admin/conteudo/homepage': typeof AdminConteudoHomepageRoute
   '/admin/financeiro/configuracoes': typeof AdminFinanceiroConfiguracoesRoute
+  '/admin/financeiro/impostos': typeof AdminFinanceiroImpostosRoute
   '/admin/financeiro/margem': typeof AdminFinanceiroMargemRoute
   '/admin/financeiro/mercadopago': typeof AdminFinanceiroMercadopagoRoute
   '/admin/financeiro/notas-fiscais': typeof AdminFinanceiroNotasFiscaisRoute
@@ -511,6 +518,7 @@ export interface FileRoutesByTo {
   '/admin': typeof AdminIndexRoute
   '/admin/conteudo/homepage': typeof AdminConteudoHomepageRoute
   '/admin/financeiro/configuracoes': typeof AdminFinanceiroConfiguracoesRoute
+  '/admin/financeiro/impostos': typeof AdminFinanceiroImpostosRoute
   '/admin/financeiro/margem': typeof AdminFinanceiroMargemRoute
   '/admin/financeiro/mercadopago': typeof AdminFinanceiroMercadopagoRoute
   '/admin/financeiro/notas-fiscais': typeof AdminFinanceiroNotasFiscaisRoute
@@ -577,6 +585,7 @@ export interface FileRoutesById {
   '/admin/': typeof AdminIndexRoute
   '/admin/conteudo/homepage': typeof AdminConteudoHomepageRoute
   '/admin/financeiro/configuracoes': typeof AdminFinanceiroConfiguracoesRoute
+  '/admin/financeiro/impostos': typeof AdminFinanceiroImpostosRoute
   '/admin/financeiro/margem': typeof AdminFinanceiroMargemRoute
   '/admin/financeiro/mercadopago': typeof AdminFinanceiroMercadopagoRoute
   '/admin/financeiro/notas-fiscais': typeof AdminFinanceiroNotasFiscaisRoute
@@ -644,6 +653,7 @@ export interface FileRouteTypes {
     | '/admin/'
     | '/admin/conteudo/homepage'
     | '/admin/financeiro/configuracoes'
+    | '/admin/financeiro/impostos'
     | '/admin/financeiro/margem'
     | '/admin/financeiro/mercadopago'
     | '/admin/financeiro/notas-fiscais'
@@ -709,6 +719,7 @@ export interface FileRouteTypes {
     | '/admin'
     | '/admin/conteudo/homepage'
     | '/admin/financeiro/configuracoes'
+    | '/admin/financeiro/impostos'
     | '/admin/financeiro/margem'
     | '/admin/financeiro/mercadopago'
     | '/admin/financeiro/notas-fiscais'
@@ -774,6 +785,7 @@ export interface FileRouteTypes {
     | '/admin/'
     | '/admin/conteudo/homepage'
     | '/admin/financeiro/configuracoes'
+    | '/admin/financeiro/impostos'
     | '/admin/financeiro/margem'
     | '/admin/financeiro/mercadopago'
     | '/admin/financeiro/notas-fiscais'
@@ -835,6 +847,7 @@ export interface RootRouteChildren {
   AdminIndexRoute: typeof AdminIndexRoute
   AdminConteudoHomepageRoute: typeof AdminConteudoHomepageRoute
   AdminFinanceiroConfiguracoesRoute: typeof AdminFinanceiroConfiguracoesRoute
+  AdminFinanceiroImpostosRoute: typeof AdminFinanceiroImpostosRoute
   AdminFinanceiroMargemRoute: typeof AdminFinanceiroMargemRoute
   AdminFinanceiroMercadopagoRoute: typeof AdminFinanceiroMercadopagoRoute
   AdminFinanceiroNotasFiscaisRoute: typeof AdminFinanceiroNotasFiscaisRoute
@@ -1273,6 +1286,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminFinanceiroMargemRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/admin/financeiro/impostos': {
+      id: '/admin/financeiro/impostos'
+      path: '/admin/financeiro/impostos'
+      fullPath: '/admin/financeiro/impostos'
+      preLoaderRoute: typeof AdminFinanceiroImpostosRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/admin/financeiro/configuracoes': {
       id: '/admin/financeiro/configuracoes'
       path: '/admin/financeiro/configuracoes'
@@ -1381,6 +1401,7 @@ const rootRouteChildren: RootRouteChildren = {
   AdminIndexRoute: AdminIndexRoute,
   AdminConteudoHomepageRoute: AdminConteudoHomepageRoute,
   AdminFinanceiroConfiguracoesRoute: AdminFinanceiroConfiguracoesRoute,
+  AdminFinanceiroImpostosRoute: AdminFinanceiroImpostosRoute,
   AdminFinanceiroMargemRoute: AdminFinanceiroMargemRoute,
   AdminFinanceiroMercadopagoRoute: AdminFinanceiroMercadopagoRoute,
   AdminFinanceiroNotasFiscaisRoute: AdminFinanceiroNotasFiscaisRoute,
