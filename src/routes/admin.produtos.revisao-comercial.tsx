@@ -566,11 +566,13 @@ function ReviewRow({ row }: { row: CommercialReviewRow }) {
               <Sparkles className="w-3 h-3 mr-1" /> Qualidade
             </Badge>
           </Link>
-          <a href={`/produto/${row.id}`} target="_blank" rel="noreferrer">
-            <Badge variant="outline" className="cursor-pointer">
-              <ExternalLink className="w-3 h-3 mr-1" /> Ver na loja
-            </Badge>
-          </a>
+          {row.slug && (
+            <a href={`/produto/${row.slug}`} target="_blank" rel="noreferrer">
+              <Badge variant="outline" className="cursor-pointer">
+                <ExternalLink className="w-3 h-3 mr-1" /> Ver na loja
+              </Badge>
+            </a>
+          )}
         </div>
       </td>
     </tr>
