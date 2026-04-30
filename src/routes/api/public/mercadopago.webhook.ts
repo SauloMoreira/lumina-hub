@@ -324,7 +324,7 @@ export const Route = createFileRoute('/api/public/mercadopago/webhook')({
 
         const { error: updErr } = await supabaseAdmin
           .from('orders')
-          .update(updates)
+          .update(updates as never)
           .eq('id', order.id);
         if (updErr) {
           console.error('[MP webhook] erro update pedido', updErr);
