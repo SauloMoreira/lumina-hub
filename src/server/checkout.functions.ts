@@ -259,6 +259,20 @@ const CreateOrderInput = z.object({
     .optional(),
   couponCode: z.string().optional().nullable(),
   notes: z.string().optional().nullable(),
+  tracking: z
+    .object({
+      utm_source: z.string().max(200).nullable().optional(),
+      utm_medium: z.string().max(200).nullable().optional(),
+      utm_campaign: z.string().max(200).nullable().optional(),
+      utm_term: z.string().max(200).nullable().optional(),
+      utm_content: z.string().max(200).nullable().optional(),
+      origin_page: z.string().max(500).nullable().optional(),
+      origin_path: z.string().max(500).nullable().optional(),
+      origin_context: z.string().max(200).nullable().optional(),
+      referrer_url: z.string().max(500).nullable().optional(),
+    })
+    .nullable()
+    .optional(),
 });
 
 export const createOrder = createServerFn({ method: 'POST' })
