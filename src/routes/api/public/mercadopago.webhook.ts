@@ -2,6 +2,7 @@ import { createFileRoute } from '@tanstack/react-router';
 import { createHmac, timingSafeEqual } from 'crypto';
 import { supabaseAdmin } from '@/integrations/supabase/client.server';
 import { logSecurityEvent } from '@/server/security/rateLimit';
+import { computeMpFees } from '@/server/mercadoPagoFees.server';
 
 // =============================================================================
 // Webhook Mercado Pago
@@ -17,7 +18,12 @@ type MPPayment = {
   date_approved?: string | null;
   order?: { id?: number | string; type?: string } | null;
   live_mode?: boolean;
+  transaction_amount?: number | null;
+  payment_method_id?: string | null;
+  payment_type_id?: string | null;
+  fee_details?: Array<{ amount?: number; type?: string }> | null;
 };
+
 
 const TERMINAL_PAID = new Set(['approved']);
 const STATUS_MAP: Record<string, string> = {
