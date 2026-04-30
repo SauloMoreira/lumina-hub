@@ -62,7 +62,7 @@ function ProductForm() {
   useEffect(() => {
     supabase.from('categories').select('id,name').order('name').then(({ data }) => setCats((data as any) ?? []));
     if (!isNew) {
-      supabase.from('products').select('*').eq('id', id).maybeSingle().then(({ data, error }) => {
+      supabase.from('products').select('*, product_images(alt_text, original_url)').eq('id', id).maybeSingle().then(({ data, error }) => {
         if (error || !data) { toast.error('Produto não encontrado'); nav({ to: '/admin/produtos' as any }); return; }
         setForm({
           name: data.name, slug: data.slug, sku: data.sku ?? '', brand: data.brand ?? '',
@@ -84,10 +84,33 @@ function ProductForm() {
           b2b_valid_until: (data as any).b2b_valid_until ? String((data as any).b2b_valid_until).slice(0, 10) : '',
           b2b_show_in_vitrine: (data as any).b2b_show_in_vitrine !== false,
         });
+        setExtra({
+          specs: ((data as any).specs ?? {}) as Record<string, unknown>,
+          ncm: (data as any).ncm ?? null,
+          product_images: ((data as any).product_images ?? []) as Array<{ alt_text: string | null; original_url: string | null }>,
+        });
         setLoading(false);
       });
     }
   }, [id, isNew, nav]);
+
+  const quality = useMemo(() => computeProductQuality({
+    description: form.description,
+    specs: extra.specs,
+    seo_title: form.seo_title,
+    seo_description: form.seo_description,
+    seo_keywords: form.seo_keywords,
+    slug: form.slug,
+    ncm: extra.ncm,
+    weight_kg: Number(form.weight_kg) || 0,
+    height_cm: Number(form.height_cm) || 0,
+    width_cm: Number(form.width_cm) || 0,
+    length_cm: Number(form.length_cm) || 0,
+    cost_price: form.cost_price ? Number(form.cost_price) : null,
+    category_id: form.category_id || null,
+    images: form.images,
+    product_images: extra.product_images,
+  }), [form, extra]);
 
   async function applyBarcodeData(choice: BarcodeApplyChoice, suggested: BarcodeLookupResult['suggested']) {
     setForm((f) => {
