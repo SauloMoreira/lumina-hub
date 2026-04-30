@@ -205,7 +205,7 @@ function BundleEditor({ bundleId, onDeleted }: { bundleId: string; onDeleted: ()
   });
 
   const updateMut = useMutation({
-    mutationFn: (vars: Parameters<typeof adminUpdateBundle>[0]['data']) =>
+    mutationFn: (vars: BundleMetaPatch & { id: string }) =>
       adminUpdateBundle({ data: vars }),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['admin-bundle', bundleId] });
@@ -264,7 +264,7 @@ function BundleMetaForm({
   onDelete,
 }: {
   bundle: BundlePublic;
-  onChange: (patch: Partial<Parameters<typeof adminUpdateBundle>[0]['data']>) => void;
+  onChange: (patch: BundleMetaPatch) => void;
   saving: boolean;
   onDelete: () => void;
 }) {
@@ -281,15 +281,14 @@ function BundleMetaForm({
           <div className="flex items-center gap-2 mt-1">
             <AvailabilityBadge availability={bundle.availability} />
             {bundle.slug && (
-              <Link
-                to="/combo/$slug"
-                params={{ slug: bundle.slug }}
+              <a
+                href={`/combo/${bundle.slug}`}
                 target="_blank"
                 rel="noreferrer"
                 className="text-xs text-muted-foreground hover:text-foreground inline-flex items-center gap-1"
               >
                 <ExternalLink className="w-3 h-3" /> /combo/{bundle.slug}
-              </Link>
+              </a>
             )}
           </div>
         </div>
@@ -471,7 +470,7 @@ function BundleItemsSection({ bundle }: { bundle: BundlePublic }) {
   });
 
   const updateItemMut = useMutation({
-    mutationFn: (vars: Parameters<typeof adminUpdateBundleItem>[0]['data']) =>
+    mutationFn: (vars: { id: string; quantity?: number; sortOrder?: number; isRequired?: boolean }) =>
       adminUpdateBundleItem({ data: vars }),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['admin-bundle', bundle.id] });
