@@ -28,7 +28,7 @@ export type ProductQualityRow = {
  */
 export const listProductQuality = createServerFn({ method: 'GET' })
   .middleware([requireAdmin])
-  .handler(async (): Promise<{ rows: ProductQualityRow[]; counts: { total: number; ruim: number; atencao: number; bom: number; excelente: number; activeBelow70: number; featuredBelow70: number; missingImage: number; missingCost: number; missingSeo: number; missingFiscal: number; } }> => {
+  .handler(async (): Promise<{ rows: ProductQualityRow[]; counts: { total: number; ruim: number; atencao: number; bom: number; excelente: number; activeBelow70: number; featuredBelow70: number; missingImage: number; missingCost: number; missingSeo: number; missingFiscal: number; missingTech: number; } }> => {
     const { supabaseAdmin } = await import('@/integrations/supabase/client.server');
     const { data, error } = await supabaseAdmin
       .from('products')
@@ -39,7 +39,7 @@ export const listProductQuality = createServerFn({ method: 'GET' })
 
     if (error) {
       console.error('listProductQuality error', error);
-      return { rows: [], counts: { total: 0, ruim: 0, atencao: 0, bom: 0, excelente: 0, activeBelow70: 0, featuredBelow70: 0, missingImage: 0, missingCost: 0, missingSeo: 0, missingFiscal: 0 } };
+      return { rows: [], counts: { total: 0, ruim: 0, atencao: 0, bom: 0, excelente: 0, activeBelow70: 0, featuredBelow70: 0, missingImage: 0, missingCost: 0, missingSeo: 0, missingFiscal: 0, missingTech: 0 } };
     }
 
     const rows: ProductQualityRow[] = (data ?? []).map((p: any) => ({
@@ -65,6 +65,7 @@ export const listProductQuality = createServerFn({ method: 'GET' })
       missingCost: rows.filter((r) => r.quality.issues.some((i) => i.code === 'no_cost')).length,
       missingSeo: rows.filter((r) => r.quality.issues.some((i) => i.code === 'no_seo_title' || i.code === 'no_seo_description')).length,
       missingFiscal: rows.filter((r) => r.quality.issues.some((i) => i.code === 'no_ncm' || i.code === 'no_weight' || i.code === 'no_dimensions')).length,
+      missingTech: rows.filter((r) => r.active && r.quality.issues.some((i) => i.code === 'no_tech_attrs')).length,
     };
 
     return { rows, counts };
