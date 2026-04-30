@@ -239,6 +239,8 @@ function ProductPage() {
                 <p className="text-sm text-muted-foreground leading-relaxed whitespace-pre-line">{product.description}</p>
               </section>
             )}
+
+            <ProductSpecsBlock productId={product.id} />
           </div>
 
           {/* COLUNA DIREITA: PAINEL DE COMPRA (sticky) */}
