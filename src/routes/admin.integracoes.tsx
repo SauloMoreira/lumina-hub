@@ -172,15 +172,12 @@ function IntegrationsPage() {
   const info = PROVIDER_INFO[form.provider];
 
   return (
-    <AdminLayout>
+    <AdminLayout title="Pixels & Analytics">
       <div className="space-y-6 p-4 md:p-6 max-w-5xl">
-        <div>
-          <h1 className="font-display text-2xl font-bold">Pixels & Analytics</h1>
-          <p className="text-sm text-muted-foreground">
-            Configure GA4, GTM, Meta, TikTok, Clarity e Google Ads. Os scripts só carregam
-            após o consentimento LGPD do visitante.
-          </p>
-        </div>
+        <p className="text-sm text-muted-foreground">
+          Configure GA4, GTM, Meta, TikTok, Clarity e Google Ads. Os scripts só carregam
+          após o consentimento LGPD do visitante.
+        </p>
 
         <Card>
           <CardHeader>
