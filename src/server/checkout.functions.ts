@@ -487,6 +487,15 @@ export const createOrder = createServerFn({ method: 'POST' })
               local_delivery_eta: localZoneInfo.eta,
             }
           : {}),
+        utm_source: data.tracking?.utm_source ?? null,
+        utm_medium: data.tracking?.utm_medium ?? null,
+        utm_campaign: data.tracking?.utm_campaign ?? null,
+        utm_term: data.tracking?.utm_term ?? null,
+        utm_content: data.tracking?.utm_content ?? null,
+        origin_page: data.tracking?.origin_page ?? null,
+        origin_path: data.tracking?.origin_path ?? null,
+        origin_context: data.tracking?.origin_context ?? null,
+        referrer_url: data.tracking?.referrer_url ?? null,
       } as never)
       .select('id, order_number')
       .single();
