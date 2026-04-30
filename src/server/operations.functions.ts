@@ -860,6 +860,37 @@ export const getAdminOperations = createServerFn({ method: 'GET' })
         ctaHref: '/admin/produtos/qualidade',
         group: 'Catálogo',
       },
+      {
+        id: 'commercial-margin-critical',
+        title: 'Produtos com margem de venda crítica',
+        description:
+          commercial.productsCriticalMargin > 0
+            ? `${commercial.productsCriticalMargin} produto(s) ativo(s) com margem abaixo da mínima cadastrada.`
+            : 'Nenhum produto ativo com margem de venda abaixo da mínima.',
+        qty: commercial.productsCriticalMargin,
+        status:
+          commercial.productsCriticalMargin === 0
+            ? 'ok'
+            : commercial.productsNegativeMargin > 0
+              ? 'danger'
+              : 'warn',
+        ctaLabel: 'Ver revisão comercial',
+        ctaHref: '/admin/produtos/revisao-comercial',
+        group: 'Catálogo',
+      },
+      {
+        id: 'commercial-b2b-critical',
+        title: 'Produtos com preço B2B crítico',
+        description:
+          commercial.b2bCriticalMargin > 0
+            ? `${commercial.b2bCriticalMargin} produto(s) com margem B2B abaixo da mínima — atacado pode estar dando prejuízo.`
+            : 'Nenhum produto com margem B2B crítica.',
+        qty: commercial.b2bCriticalMargin,
+        status: commercial.b2bCriticalMargin === 0 ? 'ok' : 'danger',
+        ctaLabel: 'Ver revisão comercial',
+        ctaHref: '/admin/produtos/revisao-comercial',
+        group: 'Catálogo',
+      },
     ];
 
     // ============================================================
