@@ -151,7 +151,7 @@ const groups: Group[] = [
         icon: Building2,
         counterId: 'pending-companies',
       },
-      { label: 'Aprovações pendentes', soon: true },
+      { to: '/admin/configuracoes-b2b', label: 'Configurações B2B', icon: Briefcase },
       { label: 'Vitrine atacado', soon: true },
       { label: 'Negociações B2B', soon: true },
       { label: 'Pedidos B2B', soon: true },
