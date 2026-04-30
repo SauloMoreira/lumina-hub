@@ -12,7 +12,7 @@ import type { Product, Category } from '@/lib/domain';
 import { FREE_SHIPPING_THRESHOLD, formatBRL } from '@/lib/domain';
 import { imageUrlsFromProductImages } from '@/lib/productImages';
 import { fetchHomepageSettings, isPromoBarVisible } from '@/lib/homepageContent';
-import { fetchHomepageCards, fetchHomepageFeaturedCategories, fetchHomepageShowcasesPublic } from '@/lib/homepageBlocks';
+import { fetchHomepageCards, fetchHomepageFeaturedCategories, fetchHomepageShowcasesPublic, fetchHomepageSections, DEFAULT_HOMEPAGE_SECTION_ORDER, type HomepageSection } from '@/lib/homepageBlocks';
 import { HomepageShowcaseSection } from '@/components/store/HomepageShowcaseSection';
 import logoHero from '@/assets/logo-hero.webp';
 
@@ -135,6 +135,12 @@ function HomePage() {
     queryKey: ['homepage-showcases'],
     staleTime: 1000 * 60 * 5,
     queryFn: fetchHomepageShowcasesPublic,
+  });
+
+  const { data: sectionsConfig } = useQuery({
+    queryKey: ['homepage_sections', 'public'],
+    staleTime: 1000 * 60 * 5,
+    queryFn: fetchHomepageSections,
   });
 
   const validShowcases = (showcases ?? []).filter((s) => (s.items?.length ?? 0) > 0);
