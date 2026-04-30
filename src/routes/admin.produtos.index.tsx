@@ -1,11 +1,12 @@
 import { createFileRoute, Link } from '@tanstack/react-router';
 import { useEffect, useState } from 'react';
-import { Plus, Pencil, Trash2, Search } from 'lucide-react';
+import { Plus, Pencil, Trash2, Search, Sparkles } from 'lucide-react';
 import { AdminLayout } from '@/components/admin/AdminLayout';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { computeProductQuality, qualityClassColor, qualityClassLabel } from '@/lib/productQuality';
 
 export const Route = createFileRoute('/admin/produtos/')({ component: ProdutosList });
 
@@ -23,6 +24,7 @@ interface Product {
   b2b_enabled: boolean;
   b2b_price: number | null;
   b2b_min_qty: number | null;
+  quality?: ReturnType<typeof computeProductQuality>;
 }
 
 function ProdutosList() {
@@ -34,7 +36,7 @@ function ProdutosList() {
     setLoading(true);
     const { data } = await supabase
       .from('products')
-      .select('*, product_images(url_thumb, url_card, original_url, is_primary, sort_order)')
+      .select('*, product_images(url_thumb, url_card, original_url, is_primary, sort_order, alt_text)')
       .order('created_at', { ascending: false });
     const mapped = (data ?? []).map((p: any) => {
       const imgs = (p.product_images ?? []).slice().sort((a: any, b: any) => {
@@ -43,9 +45,10 @@ function ProdutosList() {
       });
       const fromTable = imgs.map((i: any) => i.url_thumb ?? i.url_card ?? i.original_url).filter(Boolean);
       const merged = fromTable.length ? fromTable : (p.images ?? []);
-      return { ...p, images: merged };
+      const quality = computeProductQuality(p);
+      return { ...p, images: merged, quality };
     });
-    setProducts(mapped);
+    setProducts(mapped as any);
     setLoading(false);
   };
 
@@ -65,9 +68,14 @@ function ProdutosList() {
     <AdminLayout
       title="Produtos"
       action={
-        <Link to={'/admin/produtos/novo' as any}>
-          <Button size="sm"><Plus className="w-4 h-4 mr-1" /> Novo produto</Button>
-        </Link>
+        <div className="flex items-center gap-2">
+          <Link to={'/admin/produtos/qualidade' as any}>
+            <Button variant="outline" size="sm"><Sparkles className="w-4 h-4 mr-1" /> Qualidade</Button>
+          </Link>
+          <Link to={'/admin/produtos/novo' as any}>
+            <Button size="sm"><Plus className="w-4 h-4 mr-1" /> Novo produto</Button>
+          </Link>
+        </div>
       }
     >
       <div className="bg-card border border-border rounded-xl">
@@ -87,13 +95,14 @@ function ProdutosList() {
                 <th className="px-4 py-3 font-medium">Preço</th>
                 <th className="px-4 py-3 font-medium">Atacado</th>
                 <th className="px-4 py-3 font-medium">Estoque</th>
+                <th className="px-4 py-3 font-medium">Qualidade</th>
                 <th className="px-4 py-3 font-medium">Status</th>
                 <th className="px-4 py-3 font-medium w-24"></th>
               </tr>
             </thead>
             <tbody>
-              {loading && <tr><td colSpan={7} className="px-4 py-8 text-center text-muted-foreground">Carregando…</td></tr>}
-              {!loading && filtered.length === 0 && <tr><td colSpan={7} className="px-4 py-8 text-center text-muted-foreground">Nenhum produto encontrado.</td></tr>}
+              {loading && <tr><td colSpan={8} className="px-4 py-8 text-center text-muted-foreground">Carregando…</td></tr>}
+              {!loading && filtered.length === 0 && <tr><td colSpan={8} className="px-4 py-8 text-center text-muted-foreground">Nenhum produto encontrado.</td></tr>}
               {filtered.map((p) => (
                 <tr key={p.id} className="border-t border-border hover:bg-muted/20">
                   <td className="px-4 py-3">
@@ -134,6 +143,19 @@ function ProdutosList() {
                   </td>
                   <td className="px-4 py-3">
                     <span className={p.stock_qty < 10 ? 'text-destructive font-medium' : ''}>{p.stock_qty}</span>
+                  </td>
+                  <td className="px-4 py-3">
+                    {p.quality ? (() => {
+                      const c = qualityClassColor(p.quality.classification);
+                      return (
+                        <Link to={'/admin/produtos/$id' as any} params={{ id: p.id } as any} className="inline-flex items-center gap-1.5 group">
+                          <span className="font-semibold text-xs tabular-nums">{p.quality.score}</span>
+                          <span className={`inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium ${c.bg} ${c.text} group-hover:opacity-80`}>
+                            {qualityClassLabel(p.quality.classification)}
+                          </span>
+                        </Link>
+                      );
+                    })() : <span className="text-xs text-muted-foreground">—</span>}
                   </td>
                   <td className="px-4 py-3">
                     <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${p.active ? 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-400' : 'bg-muted text-muted-foreground'}`}>

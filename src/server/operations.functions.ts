@@ -474,6 +474,23 @@ export const getAdminOperations = createServerFn({ method: 'GET' })
       financeAlerts = await fetchFinanceAlertCounts();
     } catch {}
 
+    // Qualidade do cadastro de produtos (helper isolado)
+    let productQuality = { activeBelow70: 0, featuredBelow70: 0, ruim: 0 };
+    try {
+      const { computeProductQuality } = await import('@/lib/productQuality');
+      const { data } = await supabaseAdmin
+        .from('products')
+        .select('id, featured, description, specs, seo_title, seo_description, slug, ncm, weight_kg, height_cm, width_cm, length_cm, cost_price, category_id, images, product_images(alt_text, original_url)')
+        .eq('active', true)
+        .limit(1000);
+      for (const p of (data ?? []) as any[]) {
+        const q = computeProductQuality(p);
+        if (q.score < 70) productQuality.activeBelow70++;
+        if (p.featured && q.score < 70) productQuality.featuredBelow70++;
+        if (q.classification === 'ruim') productQuality.ruim++;
+      }
+    } catch {}
+
     const cards: OperationsCard[] = [
       {
         id: 'paid-awaiting-shipping',
@@ -740,6 +757,24 @@ export const getAdminOperations = createServerFn({ method: 'GET' })
         ctaLabel: 'Ver Mercado Pago',
         ctaHref: '/admin/financeiro/relatorios?tab=mercado-pago',
         group: 'Financeiro',
+      },
+      {
+        id: 'products-quality-low',
+        title: 'Produtos com cadastro incompleto',
+        description:
+          productQuality.activeBelow70 > 0
+            ? `${productQuality.activeBelow70} produto(s) ativo(s) com score abaixo de 70 — não podem ser destacados em vitrines.`
+            : 'Todos os produtos ativos têm cadastro adequado.',
+        qty: productQuality.activeBelow70,
+        status:
+          productQuality.activeBelow70 === 0
+            ? 'ok'
+            : productQuality.featuredBelow70 > 0
+              ? 'danger'
+              : 'warn',
+        ctaLabel: 'Ver qualidade do cadastro',
+        ctaHref: '/admin/produtos/qualidade',
+        group: 'Catálogo',
       },
     ];
 
@@ -1087,7 +1122,27 @@ export const getAdminOperations = createServerFn({ method: 'GET' })
       });
     }
 
-    // Fiscal
+    // Catálogo — qualidade de cadastro
+    if (productQuality.featuredBelow70 > 0) {
+      alerts.push({
+        id: 'alert-products-featured-low-quality',
+        title: 'Produtos destacados com cadastro incompleto',
+        description: `${productQuality.featuredBelow70} produto(s) marcado(s) como destaque têm score de qualidade abaixo de 70. Corrija ou remova o destaque.`,
+        severity: 'high',
+        ctaLabel: 'Ver qualidade do cadastro',
+        ctaHref: '/admin/produtos/qualidade',
+      });
+    }
+    if (productQuality.ruim > 0) {
+      alerts.push({
+        id: 'alert-products-quality-ruim',
+        title: 'Produtos com qualidade ruim',
+        description: `${productQuality.ruim} produto(s) com score abaixo de 40 — afeta SEO, conversão e cálculo de margem.`,
+        severity: 'medium',
+        ctaLabel: 'Ver qualidade do cadastro',
+        ctaHref: '/admin/produtos/qualidade',
+      });
+    }
     if (fiscal.companyFiscalIncomplete) {
       alerts.push({
         id: 'alert-fiscal-company-data',

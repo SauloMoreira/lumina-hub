@@ -119,7 +119,7 @@ const groups: Group[] = [
       { label: 'Preços e promoções', soon: true },
       { label: 'Condições B2B', soon: true },
       { label: 'Importar produtos', soon: true },
-      { label: 'Qualidade do cadastro', soon: true },
+      { to: '/admin/produtos/qualidade', label: 'Qualidade do cadastro', icon: Package, counterIds: ['products-quality-low'] },
     ],
   },
   {

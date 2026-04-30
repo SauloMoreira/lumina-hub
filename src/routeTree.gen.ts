@@ -62,6 +62,7 @@ import { Route as ApiPublicHealthRouteImport } from './routes/api/public/health'
 import { Route as ApiPublicCspReportRouteImport } from './routes/api/public/csp-report'
 import { Route as AdminSettingsFreteLocalRouteImport } from './routes/admin.settings.frete-local'
 import { Route as AdminSettingsCompanyRouteImport } from './routes/admin.settings.company'
+import { Route as AdminProdutosQualidadeRouteImport } from './routes/admin.produtos.qualidade'
 import { Route as AdminProdutosIdRouteImport } from './routes/admin.produtos.$id'
 import { Route as AdminPedidosOrderIdRouteImport } from './routes/admin.pedidos.$orderId'
 import { Route as AdminInstitutionalPagesIdRouteImport } from './routes/admin.institutional-pages.$id'
@@ -343,6 +344,11 @@ const AdminSettingsCompanyRoute = AdminSettingsCompanyRouteImport.update({
   path: '/admin/settings/company',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AdminProdutosQualidadeRoute = AdminProdutosQualidadeRouteImport.update({
+  id: '/admin/produtos/qualidade',
+  path: '/admin/produtos/qualidade',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AdminProdutosIdRoute = AdminProdutosIdRouteImport.update({
   id: '/admin/produtos/$id',
   path: '/admin/produtos/$id',
@@ -468,6 +474,7 @@ export interface FileRoutesByFullPath {
   '/admin/institutional-pages/$id': typeof AdminInstitutionalPagesIdRoute
   '/admin/pedidos/$orderId': typeof AdminPedidosOrderIdRoute
   '/admin/produtos/$id': typeof AdminProdutosIdRoute
+  '/admin/produtos/qualidade': typeof AdminProdutosQualidadeRoute
   '/admin/settings/company': typeof AdminSettingsCompanyRoute
   '/admin/settings/frete-local': typeof AdminSettingsFreteLocalRoute
   '/api/public/csp-report': typeof ApiPublicCspReportRoute
@@ -535,6 +542,7 @@ export interface FileRoutesByTo {
   '/admin/institutional-pages/$id': typeof AdminInstitutionalPagesIdRoute
   '/admin/pedidos/$orderId': typeof AdminPedidosOrderIdRoute
   '/admin/produtos/$id': typeof AdminProdutosIdRoute
+  '/admin/produtos/qualidade': typeof AdminProdutosQualidadeRoute
   '/admin/settings/company': typeof AdminSettingsCompanyRoute
   '/admin/settings/frete-local': typeof AdminSettingsFreteLocalRoute
   '/api/public/csp-report': typeof ApiPublicCspReportRoute
@@ -603,6 +611,7 @@ export interface FileRoutesById {
   '/admin/institutional-pages/$id': typeof AdminInstitutionalPagesIdRoute
   '/admin/pedidos/$orderId': typeof AdminPedidosOrderIdRoute
   '/admin/produtos/$id': typeof AdminProdutosIdRoute
+  '/admin/produtos/qualidade': typeof AdminProdutosQualidadeRoute
   '/admin/settings/company': typeof AdminSettingsCompanyRoute
   '/admin/settings/frete-local': typeof AdminSettingsFreteLocalRoute
   '/api/public/csp-report': typeof ApiPublicCspReportRoute
@@ -672,6 +681,7 @@ export interface FileRouteTypes {
     | '/admin/institutional-pages/$id'
     | '/admin/pedidos/$orderId'
     | '/admin/produtos/$id'
+    | '/admin/produtos/qualidade'
     | '/admin/settings/company'
     | '/admin/settings/frete-local'
     | '/api/public/csp-report'
@@ -739,6 +749,7 @@ export interface FileRouteTypes {
     | '/admin/institutional-pages/$id'
     | '/admin/pedidos/$orderId'
     | '/admin/produtos/$id'
+    | '/admin/produtos/qualidade'
     | '/admin/settings/company'
     | '/admin/settings/frete-local'
     | '/api/public/csp-report'
@@ -806,6 +817,7 @@ export interface FileRouteTypes {
     | '/admin/institutional-pages/$id'
     | '/admin/pedidos/$orderId'
     | '/admin/produtos/$id'
+    | '/admin/produtos/qualidade'
     | '/admin/settings/company'
     | '/admin/settings/frete-local'
     | '/api/public/csp-report'
@@ -868,6 +880,7 @@ export interface RootRouteChildren {
   AdminFinanceiroResumoRoute: typeof AdminFinanceiroResumoRoute
   AdminInstitutionalPagesIdRoute: typeof AdminInstitutionalPagesIdRoute
   AdminProdutosIdRoute: typeof AdminProdutosIdRoute
+  AdminProdutosQualidadeRoute: typeof AdminProdutosQualidadeRoute
   AdminSettingsCompanyRoute: typeof AdminSettingsCompanyRoute
   AdminSettingsFreteLocalRoute: typeof AdminSettingsFreteLocalRoute
   ApiPublicCspReportRoute: typeof ApiPublicCspReportRoute
@@ -1251,6 +1264,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminSettingsCompanyRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/admin/produtos/qualidade': {
+      id: '/admin/produtos/qualidade'
+      path: '/admin/produtos/qualidade'
+      fullPath: '/admin/produtos/qualidade'
+      preLoaderRoute: typeof AdminProdutosQualidadeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/admin/produtos/$id': {
       id: '/admin/produtos/$id'
       path: '/admin/produtos/$id'
@@ -1430,6 +1450,7 @@ const rootRouteChildren: RootRouteChildren = {
   AdminFinanceiroResumoRoute: AdminFinanceiroResumoRoute,
   AdminInstitutionalPagesIdRoute: AdminInstitutionalPagesIdRoute,
   AdminProdutosIdRoute: AdminProdutosIdRoute,
+  AdminProdutosQualidadeRoute: AdminProdutosQualidadeRoute,
   AdminSettingsCompanyRoute: AdminSettingsCompanyRoute,
   AdminSettingsFreteLocalRoute: AdminSettingsFreteLocalRoute,
   ApiPublicCspReportRoute: ApiPublicCspReportRoute,
