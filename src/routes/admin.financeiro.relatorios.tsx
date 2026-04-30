@@ -385,6 +385,7 @@ function ReportsPage() {
   useEffect(() => {
     setPage(1);
     setMarginPage(1);
+    setShippingPage(1);
   }, [preset, orderType, paymentStatus, paymentMethod, deliveryMethod]);
 
   const cardDefs: CardDef[] = cards
