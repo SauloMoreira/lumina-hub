@@ -1623,6 +1623,39 @@ export type Database = {
         }
         Relationships: []
       }
+      marketing_integrations: {
+        Row: {
+          account_id: string
+          consent_category: string
+          created_at: string
+          enabled: boolean
+          id: string
+          notes: string | null
+          provider: string
+          updated_at: string
+        }
+        Insert: {
+          account_id: string
+          consent_category?: string
+          created_at?: string
+          enabled?: boolean
+          id?: string
+          notes?: string | null
+          provider: string
+          updated_at?: string
+        }
+        Update: {
+          account_id?: string
+          consent_category?: string
+          created_at?: string
+          enabled?: boolean
+          id?: string
+          notes?: string | null
+          provider?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       order_items: {
         Row: {
           id: string
