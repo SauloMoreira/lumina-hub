@@ -145,6 +145,19 @@ function ProdutosList() {
                     <span className={p.stock_qty < 10 ? 'text-destructive font-medium' : ''}>{p.stock_qty}</span>
                   </td>
                   <td className="px-4 py-3">
+                    {p.quality ? (() => {
+                      const c = qualityClassColor(p.quality.classification);
+                      return (
+                        <Link to={'/admin/produtos/$id' as any} params={{ id: p.id } as any} className="inline-flex items-center gap-1.5 group">
+                          <span className="font-semibold text-xs tabular-nums">{p.quality.score}</span>
+                          <span className={`inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium ${c.bg} ${c.text} group-hover:opacity-80`}>
+                            {qualityClassLabel(p.quality.classification)}
+                          </span>
+                        </Link>
+                      );
+                    })() : <span className="text-xs text-muted-foreground">—</span>}
+                  </td>
+                  <td className="px-4 py-3">
                     <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${p.active ? 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-400' : 'bg-muted text-muted-foreground'}`}>
                       {p.active ? 'Ativo' : 'Inativo'}
                     </span>
