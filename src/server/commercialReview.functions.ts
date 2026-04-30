@@ -230,6 +230,7 @@ export const getCommercialReviewReport = createServerFn({ method: 'GET' })
         id: raw.id,
         name: raw.name ?? '(sem nome)',
         sku: raw.sku,
+        slug: raw.slug,
         active: raw.active,
         category_id: raw.category_id,
         category_name: categoryName,
