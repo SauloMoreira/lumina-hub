@@ -389,6 +389,8 @@ function ProductForm() {
         </div>
 
         <div className="space-y-4">
+          {!isNew && <QualityPanel quality={quality} />}
+
           <Section title="Imagens">
             {isNew ? (
               <p className="text-xs text-muted-foreground bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-900 rounded p-3">
@@ -407,7 +409,33 @@ function ProductForm() {
 
           <Section title="Visibilidade">
             <div className="flex items-center justify-between"><Label>Ativo</Label><Switch checked={form.active} onCheckedChange={(v) => setForm({ ...form, active: v })} /></div>
-            <div className="flex items-center justify-between"><Label>Destaque na home</Label><Switch checked={form.featured} onCheckedChange={(v) => setForm({ ...form, featured: v })} /></div>
+            <div className="space-y-1.5">
+              <div className="flex items-center justify-between gap-3">
+                <Label className={!quality.canBeFeatured && !form.featured ? 'text-muted-foreground' : ''}>Destaque na home</Label>
+                <Switch
+                  checked={form.featured}
+                  disabled={!quality.canBeFeatured && !form.featured}
+                  onCheckedChange={(v) => {
+                    if (v && !quality.canBeFeatured) {
+                      toast.error(QUALITY_FEATURED_BLOCK_MESSAGE);
+                      return;
+                    }
+                    setForm({ ...form, featured: v });
+                  }}
+                />
+              </div>
+              {!quality.canBeFeatured && (
+                <p className="text-[11px] text-muted-foreground flex items-start gap-1.5">
+                  <AlertTriangle className="w-3 h-3 mt-0.5 text-amber-600 shrink-0" />
+                  Produtos com score abaixo de {QUALITY_FEATURED_MIN} não podem ser destacados.
+                </p>
+              )}
+              {form.featured && !quality.canBeFeatured && (
+                <p className="text-[11px] text-red-600 dark:text-red-400">
+                  Este produto está destacado mas o score atual é {quality.score}. Corrija as pendências ou remova o destaque.
+                </p>
+              )}
+            </div>
             <div className="flex items-start justify-between gap-4">
               <div className="flex-1">
                 <Label>Elegível a frete grátis</Label>
