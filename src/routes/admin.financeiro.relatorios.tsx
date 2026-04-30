@@ -212,7 +212,9 @@ function ReportsPage() {
   const [deliveryMethod, setDeliveryMethod] = useState<string>('');
 
   // Aba ativa
-  const [tab, setTab] = useState<'sales' | 'margin' | 'products'>('sales');
+  const [tab, setTab] = useState<
+    'sales' | 'margin' | 'products' | 'b2b' | 'coupons' | 'shipping'
+  >('sales');
 
   // Dados
   const [cards, setCards] = useState<FinanceReportCards | null>(null);
