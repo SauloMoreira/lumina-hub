@@ -174,7 +174,8 @@ async function fetchItemsForOrders(orderIds: string[]) {
     )
     .in('order_id', orderIds);
   if (error) throw new Response(`order_items query failed: ${error.message}`, { status: 500 });
-  return (data ?? []).map((it) => ({
+  const rows = (data ?? []) as unknown as Array<Record<string, unknown>>;
+  return rows.map((it) => ({
     order_id: it.order_id as string,
     product_id: (it.product_id as string | null) ?? null,
     product_name: (it.product_name as string) ?? 'Produto',
