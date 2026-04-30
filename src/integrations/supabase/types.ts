@@ -389,6 +389,7 @@ export type Database = {
       }
       b2b_settings: {
         Row: {
+          allow_bundle_discount_with_coupon: boolean
           allow_coupon_in_b2b: boolean
           benefits: Json
           created_at: string
@@ -413,6 +414,7 @@ export type Database = {
           whatsapp_cta_text: string | null
         }
         Insert: {
+          allow_bundle_discount_with_coupon?: boolean
           allow_coupon_in_b2b?: boolean
           benefits?: Json
           created_at?: string
@@ -437,6 +439,7 @@ export type Database = {
           whatsapp_cta_text?: string | null
         }
         Update: {
+          allow_bundle_discount_with_coupon?: boolean
           allow_coupon_in_b2b?: boolean
           benefits?: Json
           created_at?: string
@@ -3067,6 +3070,24 @@ export type Database = {
       validate_b2b_pricing: {
         Args: { _items: Json; _user_id: string }
         Returns: Json
+      }
+      validate_cart_bundles: {
+        Args: { _has_coupon?: boolean; _items: Json; _user_id: string }
+        Returns: {
+          bundle_id: string
+          bundle_image: string
+          bundle_name: string
+          bundle_slug: string
+          considered_items: Json
+          discount_type: string
+          discount_value: number
+          eligible_subtotal: number
+          estimated_discount: number
+          missing_items: Json
+          reason: string
+          status: string
+          warnings: string[]
+        }[]
       }
     }
     Enums: {
