@@ -152,7 +152,7 @@ export async function computeBundleApplication(
 
   // Chamar a RPC que já calcula tudo (status, eligible_subtotal, estimated_discount, considered_items).
   const { data: rows, error } = await supabaseAdmin.rpc('validate_cart_bundles', {
-    _user_id: input.userId,
+    _user_id: (input.userId ?? null) as unknown as string,
     _items: input.items.map((i) => ({ product_id: i.productId, qty: i.qty })),
     // Importante: passamos hasCoupon real para o RPC já marcar blocked_by_coupon
     // quando a config não permite acúmulo.
