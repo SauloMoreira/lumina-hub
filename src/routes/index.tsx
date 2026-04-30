@@ -517,18 +517,28 @@ function HomePage() {
           </div>
         </div>
         <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-3">
-          {categories?.map((c) => {
-            const Icon = ICONS[c.icon ?? 'Package'] ?? Package;
+          {featuredCategoriesToRender.map((c) => {
+            const Icon = c.icon;
             return (
               <Link
-                key={c.id}
+                key={c.key}
                 to="/catalogo"
                 search={{ cat: c.slug } as any}
                 className="group flex flex-col items-center text-center p-5 bg-card border border-border rounded-xl hover:border-primary hover:shadow-elevated transition-all"
               >
-                <div className="w-12 h-12 rounded-full bg-primary-tint flex items-center justify-center mb-3 group-hover:bg-primary group-hover:text-primary-foreground transition-colors">
-                  <Icon className="w-5 h-5 text-primary group-hover:text-primary-foreground" />
-                </div>
+                {c.imageUrl ? (
+                  <img
+                    src={c.imageUrl}
+                    alt={c.name}
+                    loading="lazy"
+                    decoding="async"
+                    className="w-12 h-12 rounded-full object-cover mb-3"
+                  />
+                ) : (
+                  <div className="w-12 h-12 rounded-full bg-primary-tint flex items-center justify-center mb-3 group-hover:bg-primary group-hover:text-primary-foreground transition-colors">
+                    <Icon className="w-5 h-5 text-primary group-hover:text-primary-foreground" />
+                  </div>
+                )}
                 <div className="text-xs font-medium leading-tight">{c.name}</div>
               </Link>
             );
