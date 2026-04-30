@@ -450,21 +450,39 @@ function HomePage() {
       {/* DIFERENCIAIS */}
       <section className="container mx-auto px-4 py-10">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          {[
-            { icon: Sparkles, title: 'IA 24h', desc: 'Atendimento inteligente sempre disponível' },
-            { icon: Truck, title: 'Entrega Rápida', desc: 'Logística otimizada via Melhor Envio' },
-            { icon: Shield, title: 'NF Garantida', desc: 'Nota fiscal em todos os pedidos' },
-          ].map((d) => (
-            <div key={d.title} className="bg-card border border-border rounded-xl p-5 flex items-center gap-4 shadow-soft">
-              <div className="w-12 h-12 rounded-lg bg-primary-tint flex items-center justify-center shrink-0">
-                <d.icon className="w-5 h-5 text-primary" />
+          {benefitsToRender.map((d) => {
+            const inner = (
+              <>
+                <div className="w-12 h-12 rounded-lg bg-primary-tint flex items-center justify-center shrink-0">
+                  <d.icon className="w-5 h-5 text-primary" />
+                </div>
+                <div>
+                  <h3 className="font-display font-semibold text-base mb-0.5">{d.title}</h3>
+                  {d.desc && <p className="text-xs text-muted-foreground leading-relaxed">{d.desc}</p>}
+                </div>
+              </>
+            );
+            const cls = "bg-card border border-border rounded-xl p-5 flex items-center gap-4 shadow-soft";
+            if (d.href) {
+              return (
+                <a key={d.key} href={d.href} target={d.newTab ? '_blank' : undefined} rel={d.newTab ? 'noopener noreferrer' : undefined} className={`${cls} hover:border-primary transition-colors`}>
+                  {inner}
+                </a>
+              );
+            }
+            if (d.to) {
+              return (
+                <Link key={d.key} to={d.to as any} className={`${cls} hover:border-primary transition-colors`}>
+                  {inner}
+                </Link>
+              );
+            }
+            return (
+              <div key={d.key} className={cls}>
+                {inner}
               </div>
-              <div>
-                <h3 className="font-display font-semibold text-base mb-0.5">{d.title}</h3>
-                <p className="text-xs text-muted-foreground leading-relaxed">{d.desc}</p>
-              </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </section>
 
