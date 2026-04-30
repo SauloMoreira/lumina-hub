@@ -701,8 +701,8 @@ export const getAdminOperations = createServerFn({ method: 'GET' })
         description: 'Produtos ativos sem preço configurado não podem ser vendidos.',
         qty: productsNoPrice,
         status: productsNoPrice === 0 ? 'ok' : 'danger',
-        ctaLabel: 'Corrigir produtos',
-        ctaHref: '/admin/produtos',
+        ctaLabel: 'Ver revisão comercial',
+        ctaHref: '/admin/produtos/revisao-comercial',
         group: 'Produtos',
       },
       {
