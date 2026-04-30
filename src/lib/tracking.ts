@@ -4,30 +4,65 @@ declare global {
   interface Window {
     gtag?: (...args: any[]) => void;
     fbq?: (...args: any[]) => void;
+    ttq?: { track: (event: string, data?: any) => void; page?: () => void; [k: string]: any };
+    clarity?: (...args: any[]) => void;
     dataLayer?: any[];
     __LM_PERSONALIZATION?: boolean;
   }
 }
+
+const META_EVENT_MAP: Record<string, string> = {
+  view_product: 'ViewContent',
+  add_to_cart: 'AddToCart',
+  begin_checkout: 'InitiateCheckout',
+  purchase: 'Purchase',
+  search: 'Search',
+  lead_captured: 'Lead',
+};
+
+const TIKTOK_EVENT_MAP: Record<string, string> = {
+  view_product: 'ViewContent',
+  add_to_cart: 'AddToCart',
+  begin_checkout: 'InitiateCheckout',
+  purchase: 'CompletePayment',
+  search: 'Search',
+  lead_captured: 'SubmitForm',
+};
 
 export function trackEvent(event: string, data?: Record<string, any>) {
   if (typeof window === 'undefined') return;
   const { preferences, consented } = useCookieStore.getState();
   if (!consented) return;
 
-  if (preferences.analytics && window.gtag) {
-    window.gtag('event', event, data);
+  // dataLayer (GTM) — analytics
+  if (preferences.analytics && Array.isArray(window.dataLayer)) {
+    try { window.dataLayer.push({ event, ...data }); } catch { /* noop */ }
   }
 
-  if (preferences.marketing && window.fbq) {
-    const pixelEvents: Record<string, string> = {
-      view_product: 'ViewContent',
-      add_to_cart: 'AddToCart',
-      begin_checkout: 'InitiateCheckout',
-      purchase: 'Purchase',
-      search: 'Search',
-      lead_captured: 'Lead',
-    };
-    if (pixelEvents[event]) window.fbq('track', pixelEvents[event], data);
+  // GA4
+  if (preferences.analytics && typeof window.gtag === 'function') {
+    try { window.gtag('event', event, data); } catch { /* noop */ }
+  }
+
+  // Clarity (custom event)
+  if (preferences.analytics && typeof window.clarity === 'function') {
+    try { window.clarity('event', event); } catch { /* noop */ }
+  }
+
+  // Meta Pixel
+  if (preferences.marketing && typeof window.fbq === 'function') {
+    const mapped = META_EVENT_MAP[event];
+    if (mapped) {
+      try { window.fbq('track', mapped, data); } catch { /* noop */ }
+    }
+  }
+
+  // TikTok Pixel
+  if (preferences.marketing && window.ttq && typeof window.ttq.track === 'function') {
+    const mapped = TIKTOK_EVENT_MAP[event];
+    if (mapped) {
+      try { window.ttq.track(mapped, data); } catch { /* noop */ }
+    }
   }
 }
 
