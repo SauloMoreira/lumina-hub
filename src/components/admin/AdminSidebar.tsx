@@ -166,7 +166,7 @@ const groups: Group[] = [
       { to: '/admin/campanhas', label: 'Campanhas', icon: Megaphone },
       { to: '/admin/banners', label: 'Banners', icon: ImageIcon },
       { to: '/admin/cupons', label: 'Cupons', icon: Ticket },
-      { label: 'SEO', soon: true },
+      { to: '/admin/seo', label: 'SEO Insights', icon: Globe },
       { to: '/admin/integracoes', label: 'Pixels e Analytics', icon: BarChart3 },
       { to: '/admin/automacoes', label: 'Automações', icon: Sparkles },
       { label: 'E-mail e WhatsApp marketing', soon: true },

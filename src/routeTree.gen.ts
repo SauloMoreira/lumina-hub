@@ -37,6 +37,7 @@ import { Route as CheckoutSuccessRouteImport } from './routes/checkout.success'
 import { Route as CheckoutPendingRouteImport } from './routes/checkout.pending'
 import { Route as CheckoutFailureRouteImport } from './routes/checkout.failure'
 import { Route as AdminWhatsappTemplatesRouteImport } from './routes/admin.whatsapp-templates'
+import { Route as AdminSeoRouteImport } from './routes/admin.seo'
 import { Route as AdminSegurancaRouteImport } from './routes/admin.seguranca'
 import { Route as AdminPendenciasRouteImport } from './routes/admin.pendencias'
 import { Route as AdminPedidosRouteImport } from './routes/admin.pedidos'
@@ -204,6 +205,11 @@ const CheckoutFailureRoute = CheckoutFailureRouteImport.update({
 const AdminWhatsappTemplatesRoute = AdminWhatsappTemplatesRouteImport.update({
   id: '/admin/whatsapp-templates',
   path: '/admin/whatsapp-templates',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminSeoRoute = AdminSeoRouteImport.update({
+  id: '/admin/seo',
+  path: '/admin/seo',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AdminSegurancaRoute = AdminSegurancaRouteImport.update({
@@ -388,6 +394,7 @@ export interface FileRoutesByFullPath {
   '/admin/pedidos': typeof AdminPedidosRouteWithChildren
   '/admin/pendencias': typeof AdminPendenciasRoute
   '/admin/seguranca': typeof AdminSegurancaRoute
+  '/admin/seo': typeof AdminSeoRoute
   '/admin/whatsapp-templates': typeof AdminWhatsappTemplatesRoute
   '/checkout/failure': typeof CheckoutFailureRoute
   '/checkout/pending': typeof CheckoutPendingRoute
@@ -446,6 +453,7 @@ export interface FileRoutesByTo {
   '/admin/pedidos': typeof AdminPedidosRouteWithChildren
   '/admin/pendencias': typeof AdminPendenciasRoute
   '/admin/seguranca': typeof AdminSegurancaRoute
+  '/admin/seo': typeof AdminSeoRoute
   '/admin/whatsapp-templates': typeof AdminWhatsappTemplatesRoute
   '/checkout/failure': typeof CheckoutFailureRoute
   '/checkout/pending': typeof CheckoutPendingRoute
@@ -505,6 +513,7 @@ export interface FileRoutesById {
   '/admin/pedidos': typeof AdminPedidosRouteWithChildren
   '/admin/pendencias': typeof AdminPendenciasRoute
   '/admin/seguranca': typeof AdminSegurancaRoute
+  '/admin/seo': typeof AdminSeoRoute
   '/admin/whatsapp-templates': typeof AdminWhatsappTemplatesRoute
   '/checkout/failure': typeof CheckoutFailureRoute
   '/checkout/pending': typeof CheckoutPendingRoute
@@ -565,6 +574,7 @@ export interface FileRouteTypes {
     | '/admin/pedidos'
     | '/admin/pendencias'
     | '/admin/seguranca'
+    | '/admin/seo'
     | '/admin/whatsapp-templates'
     | '/checkout/failure'
     | '/checkout/pending'
@@ -623,6 +633,7 @@ export interface FileRouteTypes {
     | '/admin/pedidos'
     | '/admin/pendencias'
     | '/admin/seguranca'
+    | '/admin/seo'
     | '/admin/whatsapp-templates'
     | '/checkout/failure'
     | '/checkout/pending'
@@ -681,6 +692,7 @@ export interface FileRouteTypes {
     | '/admin/pedidos'
     | '/admin/pendencias'
     | '/admin/seguranca'
+    | '/admin/seo'
     | '/admin/whatsapp-templates'
     | '/checkout/failure'
     | '/checkout/pending'
@@ -740,6 +752,7 @@ export interface RootRouteChildren {
   AdminPedidosRoute: typeof AdminPedidosRouteWithChildren
   AdminPendenciasRoute: typeof AdminPendenciasRoute
   AdminSegurancaRoute: typeof AdminSegurancaRoute
+  AdminSeoRoute: typeof AdminSeoRoute
   AdminWhatsappTemplatesRoute: typeof AdminWhatsappTemplatesRoute
   InstitucionalSlugRoute: typeof InstitucionalSlugRoute
   ProdutoSlugRoute: typeof ProdutoSlugRoute
@@ -953,6 +966,13 @@ declare module '@tanstack/react-router' {
       path: '/admin/whatsapp-templates'
       fullPath: '/admin/whatsapp-templates'
       preLoaderRoute: typeof AdminWhatsappTemplatesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin/seo': {
+      id: '/admin/seo'
+      path: '/admin/seo'
+      fullPath: '/admin/seo'
+      preLoaderRoute: typeof AdminSeoRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/admin/seguranca': {
@@ -1230,6 +1250,7 @@ const rootRouteChildren: RootRouteChildren = {
   AdminPedidosRoute: AdminPedidosRouteWithChildren,
   AdminPendenciasRoute: AdminPendenciasRoute,
   AdminSegurancaRoute: AdminSegurancaRoute,
+  AdminSeoRoute: AdminSeoRoute,
   AdminWhatsappTemplatesRoute: AdminWhatsappTemplatesRoute,
   InstitucionalSlugRoute: InstitucionalSlugRoute,
   ProdutoSlugRoute: ProdutoSlugRoute,
