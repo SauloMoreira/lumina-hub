@@ -235,6 +235,12 @@ function CalcStatusBadge({ status }: { status: CalcStatus }) {
   return <span className={`text-[10px] px-1.5 py-0.5 rounded ${m.cls}`}>{m.label}</span>;
 }
 
+// Força o code-splitter a manter estas seções no chunk de ReportsPage
+// (sem isto, MpSection/InvoicesSection/UtmSection eram tree-shaken e causavam
+//  ReferenceError em runtime SSR — "UtmSection is not defined").
+const __keepSections = { MpSection, InvoicesSection, UtmSection };
+void __keepSections;
+
 function ReportsPage() {
   // Filtros
   const [preset, setPreset] = useState<ReportPreset>('this_month');
