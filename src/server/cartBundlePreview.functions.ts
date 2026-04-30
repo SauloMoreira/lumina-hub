@@ -87,7 +87,7 @@ export const getCartBundlePreview = createServerFn({ method: 'POST' })
     const userId = await getOptionalUserId();
     const { supabaseAdmin } = await import('@/integrations/supabase/client.server');
     const { data: rows, error } = await supabaseAdmin.rpc('validate_cart_bundles', {
-      _user_id: userId,
+      _user_id: (userId ?? null) as unknown as string,
       _items: data.items,
       _has_coupon: data.hasCoupon ?? false,
     });
