@@ -1,5 +1,6 @@
 import { createFileRoute, Link, useRouter } from '@tanstack/react-router';
 import { useEffect, useMemo, useState } from 'react';
+import { useQuery, keepPreviousData } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import {
   Building2,
@@ -20,6 +21,14 @@ import { ProductImagePlaceholder } from '@/components/store/ProductImagePlacehol
 import { formatBRL, STORE_WHATSAPP } from '@/lib/domain';
 import { useCart } from '@/stores/cartStore';
 import type { Product } from '@/lib/domain';
+import { searchProducts } from '@/server/productSearch.functions';
+import { getPublicCompanySettings } from '@/server/institutional.functions';
+import {
+  B2BProductFilters,
+  DEFAULT_B2B_FILTERS,
+  type B2bFiltersState,
+} from '@/components/b2b/B2BProductFilters';
+import { B2BEmptyState } from '@/components/b2b/B2BEmptyState';
 
 type B2bSettings = {
   hero_title: string | null;
@@ -41,8 +50,6 @@ type CompanyStatus = 'guest' | 'pf' | 'pending' | 'approved' | 'blocked' | 'reje
 
 type Category = { id: string; name: string; slug: string };
 
-type SortKey = 'relevance' | 'discount' | 'min_qty';
-
 export const Route = createFileRoute('/atacado')({
   head: () =>
     buildSeo({
@@ -54,20 +61,34 @@ export const Route = createFileRoute('/atacado')({
   component: AtacadoPage,
 });
 
+function onlyDigits(s: string | null | undefined) {
+  return (s ?? '').replace(/\D+/g, '');
+}
+
+function useDebounced<T>(value: T, delay = 280): T {
+  const [v, setV] = useState(value);
+  useEffect(() => {
+    const id = setTimeout(() => setV(value), delay);
+    return () => clearTimeout(id);
+  }, [value, delay]);
+  return v;
+}
+
 function AtacadoPage() {
   const [settings, setSettings] = useState<B2bSettings | null>(null);
-  const [products, setProducts] = useState<Product[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [companyStatus, setCompanyStatus] = useState<CompanyStatus>('guest');
   const [companyName, setCompanyName] = useState<string | null>(null);
 
-  const [categoryFilter, setCategoryFilter] = useState<string>('');
-  const [sortKey, setSortKey] = useState<SortKey>('relevance');
+  const [filters, setFilters] = useState<B2bFiltersState>(DEFAULT_B2B_FILTERS);
+  const debouncedQ = useDebounced(filters.q, 280);
+  const debouncedMin = useDebounced(filters.priceMin, 280);
+  const debouncedMax = useDebounced(filters.priceMax, 280);
 
   useEffect(() => {
     let mounted = true;
     (async () => {
-      const [{ data: s }, { data: prods }, { data: cats }, { data: sess }] = await Promise.all([
+      const [{ data: s }, { data: cats }, { data: sess }] = await Promise.all([
         supabase
           .from('b2b_settings')
           .select(
@@ -75,17 +96,6 @@ function AtacadoPage() {
           )
           .limit(1)
           .maybeSingle(),
-        supabase
-          .from('products')
-          .select(
-            'id, name, slug, description, price, sale_price, stock_qty, sku, ncm, brand, weight_kg, height_cm, width_cm, length_cm, category_id, images, tags, active, featured, free_shipping_eligible, specs, b2b_enabled, b2b_price, b2b_min_qty, b2b_qty_multiple, b2b_show_in_vitrine',
-          )
-          .eq('active', true)
-          .eq('b2b_enabled', true)
-          .eq('b2b_show_in_vitrine', true)
-          .gt('stock_qty', 0)
-          .order('featured', { ascending: false })
-          .limit(96),
         supabase
           .from('categories')
           .select('id, name, slug')
@@ -96,7 +106,6 @@ function AtacadoPage() {
 
       if (!mounted) return;
       setSettings(s as B2bSettings | null);
-      setProducts((prods ?? []) as unknown as Product[]);
       setCategories((cats ?? []) as Category[]);
 
       const userId = sess.session?.user?.id;
@@ -131,51 +140,94 @@ function AtacadoPage() {
 
   const isApproved = companyStatus === 'approved';
 
-  // Categorias presentes nos produtos B2B (evita opções vazias)
-  const usedCategoryIds = useMemo(
-    () => new Set(products.map((p) => p.category_id).filter(Boolean) as string[]),
-    [products],
-  );
-  const availableCategories = useMemo(
-    () => categories.filter((c) => usedCategoryIds.has(c.id)),
-    [categories, usedCategoryIds],
-  );
-
-  const visibleProducts = useMemo(() => {
-    const list = categoryFilter
-      ? products.filter((p) => p.category_id === categoryFilter)
-      : products.slice();
-
-    const discount = (p: Product) => {
-      if (!p.b2b_price || p.b2b_price <= 0) return 0;
-      const ref = p.sale_price ?? p.price;
-      if (!ref) return 0;
-      return Math.max(0, (ref - p.b2b_price) / ref);
-    };
-
-    if (sortKey === 'discount') {
-      list.sort((a, b) => discount(b) - discount(a));
-    } else if (sortKey === 'min_qty') {
-      list.sort((a, b) => (a.b2b_min_qty ?? 1) - (b.b2b_min_qty ?? 1));
-    } else {
-      // relevance: featured primeiro, depois com b2b_price, depois maior desconto
-      list.sort((a, b) => {
-        if (a.featured !== b.featured) return a.featured ? -1 : 1;
-        const aHas = a.b2b_price ? 1 : 0;
-        const bHas = b.b2b_price ? 1 : 0;
-        if (aHas !== bHas) return bHas - aHas;
-        return discount(b) - discount(a);
+  // Marcas (do catálogo público — somente nomes, sem dados sensíveis)
+  const { data: brands } = useQuery({
+    queryKey: ['atacado-brands'],
+    staleTime: 1000 * 60 * 30,
+    queryFn: async () => {
+      const { data } = await supabase
+        .from('products')
+        .select('brand')
+        .eq('active', true)
+        .not('brand', 'is', null)
+        .limit(1000);
+      const set = new Set<string>();
+      (data ?? []).forEach((r: any) => {
+        const b = (r.brand ?? '').trim();
+        if (b) set.add(b);
       });
+      return Array.from(set).sort((a, b) => a.localeCompare(b, 'pt-BR'));
+    },
+  });
+
+  // WhatsApp dinâmico (company_settings); fallback para STORE_WHATSAPP.
+  const { data: companyData } = useQuery({
+    queryKey: ['public-company-settings'],
+    staleTime: 1000 * 60 * 30,
+    queryFn: () => getPublicCompanySettings(),
+  });
+  const supportWhats = onlyDigits(companyData?.company?.support_whatsapp) || STORE_WHATSAPP;
+
+  // Filtros B2B-only só são aplicados quando empresa aprovada (regra comercial).
+  const effectiveB2bOnly = isApproved && filters.b2bOnly;
+  const effectiveSort: B2bFiltersState['sort'] = (() => {
+    if (!isApproved && (filters.sort === 'b2b_discount_desc' || filters.sort === 'b2b_min_qty_asc')) {
+      return 'relevance';
     }
-    return list;
-  }, [products, categoryFilter, sortKey]);
+    return filters.sort;
+  })();
+
+  const { data: searchData, isFetching } = useQuery({
+    queryKey: [
+      'atacado-search',
+      debouncedQ,
+      filters.categoryId,
+      filters.brand,
+      debouncedMin,
+      debouncedMax,
+      filters.inStock,
+      filters.onSale,
+      effectiveB2bOnly,
+      effectiveSort,
+    ],
+    placeholderData: keepPreviousData,
+    staleTime: 30_000,
+    queryFn: async () => {
+      const priceMin = debouncedMin ? Number(debouncedMin) : undefined;
+      const priceMax = debouncedMax ? Number(debouncedMax) : undefined;
+      const res = await searchProducts({
+        data: {
+          q: debouncedQ.trim() || undefined,
+          categoryId: filters.categoryId || undefined,
+          brand: filters.brand || undefined,
+          priceMin: Number.isFinite(priceMin) ? priceMin : undefined,
+          priceMax: Number.isFinite(priceMax) ? priceMax : undefined,
+          inStock: filters.inStock || undefined,
+          onSale: filters.onSale || undefined,
+          b2bOnly: effectiveB2bOnly || undefined,
+          sort: effectiveSort,
+          page: 1,
+          pageSize: 48,
+          source: 'b2b_store',
+        },
+      });
+      return res;
+    },
+  });
+
+  const products = (searchData?.products ?? []) as unknown as Product[];
+  const totalCount = searchData?.total ?? null;
+
+  const availableCategories = useMemo(() => categories, [categories]);
 
   const whatsappLink = useMemo(() => {
     const text = encodeURIComponent(
       `Olá! Quero solicitar uma negociação B2B${companyName ? ` para a empresa ${companyName}` : ''}.`,
     );
-    return `https://wa.me/${STORE_WHATSAPP}?text=${text}`;
-  }, [companyName]);
+    return `https://wa.me/${supportWhats}?text=${text}`;
+  }, [companyName, supportWhats]);
+
+  const visibleProducts = products;
 
   if (settings && !settings.vitrine_is_active) {
     return (
@@ -232,21 +284,23 @@ function AtacadoPage() {
         </div>
 
         {/* Filtros B2B */}
-        <Filters
+        <B2BProductFilters
+          state={filters}
+          onChange={setFilters}
+          onReset={() => setFilters(DEFAULT_B2B_FILTERS)}
           categories={availableCategories}
-          categoryFilter={categoryFilter}
-          onCategoryChange={setCategoryFilter}
-          sortKey={sortKey}
-          onSortChange={setSortKey}
-          totalCount={visibleProducts.length}
+          brands={brands ?? []}
+          showB2bOnly={isApproved}
+          totalCount={totalCount}
+          isFetching={isFetching}
         />
 
         {visibleProducts.length === 0 ? (
-          <div className="bg-card border border-border rounded-lg p-10 text-center mt-6">
-            <p className="text-muted-foreground">
-              Nenhum produto com condição empresa nesta seleção.
-            </p>
-          </div>
+          <B2BEmptyState
+            onReset={() => setFilters(DEFAULT_B2B_FILTERS)}
+            whatsappLink={whatsappLink}
+            isApproved={isApproved}
+          />
         ) : (
           <div
             className={`mt-6 grid gap-3 sm:gap-5 ${
@@ -255,18 +309,21 @@ function AtacadoPage() {
                 : 'grid-cols-2 sm:grid-cols-3 lg:grid-cols-4'
             }`}
           >
-            {visibleProducts.map((p, i) =>
-              isApproved ? (
+            {visibleProducts.map((p, i) => {
+              const hasB2b = isApproved && p.b2b_enabled === true && (p.b2b_price ?? 0) > 0;
+              return hasB2b ? (
                 <B2bProductCard key={p.id} product={p} index={i} />
               ) : (
                 <div key={p.id} className="relative">
-                  <span className="absolute z-10 top-2 left-2 inline-flex items-center gap-1 bg-primary text-primary-foreground text-[10px] font-bold uppercase px-2 py-1 rounded">
-                    Preço empresa
-                  </span>
+                  {p.b2b_enabled === true && (p.b2b_price ?? 0) > 0 && !isApproved && (
+                    <span className="absolute z-10 top-2 left-2 inline-flex items-center gap-1 bg-primary text-primary-foreground text-[10px] font-bold uppercase px-2 py-1 rounded">
+                      Preço empresa
+                    </span>
+                  )}
                   <ProductCard product={p} index={i} />
                 </div>
-              ),
-            )}
+              );
+            })}
           </div>
         )}
 
