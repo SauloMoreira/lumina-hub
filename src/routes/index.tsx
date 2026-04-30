@@ -112,6 +112,23 @@ function HomePage() {
     },
   });
 
+  const { data: benefitCards } = useQuery({
+    queryKey: ['homepage-cards', 'benefit'],
+    staleTime: 1000 * 60 * 5,
+    queryFn: () => fetchHomepageCards('benefit'),
+  });
+
+  const { data: promoCards } = useQuery({
+    queryKey: ['homepage-cards', 'promo'],
+    staleTime: 1000 * 60 * 5,
+    queryFn: () => fetchHomepageCards('promo'),
+  });
+
+  const { data: featuredCategories } = useQuery({
+    queryKey: ['homepage-featured-categories'],
+    staleTime: 1000 * 60 * 5,
+    queryFn: fetchHomepageFeaturedCategories,
+  });
   // Prefetch do catálogo (adiado até idle para não competir com LCP)
   useEffect(() => {
     const run = () => {
