@@ -35,7 +35,7 @@ function ProdutosList() {
     setLoading(true);
     const { data } = await supabase
       .from('products')
-      .select('*, product_images(url_thumb, url_card, original_url, is_primary, sort_order)')
+      .select('*, product_images(url_thumb, url_card, original_url, is_primary, sort_order, alt_text)')
       .order('created_at', { ascending: false });
     const mapped = (data ?? []).map((p: any) => {
       const imgs = (p.product_images ?? []).slice().sort((a: any, b: any) => {
@@ -44,9 +44,10 @@ function ProdutosList() {
       });
       const fromTable = imgs.map((i: any) => i.url_thumb ?? i.url_card ?? i.original_url).filter(Boolean);
       const merged = fromTable.length ? fromTable : (p.images ?? []);
-      return { ...p, images: merged };
+      const quality = computeProductQuality(p);
+      return { ...p, images: merged, quality };
     });
-    setProducts(mapped);
+    setProducts(mapped as any);
     setLoading(false);
   };
 
