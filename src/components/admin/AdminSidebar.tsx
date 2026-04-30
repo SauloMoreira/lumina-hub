@@ -77,6 +77,8 @@ const groups: Group[] = [
           'b2b-open-negotiations',
           'low-stock',
           'out-of-stock',
+          'inactive-products',
+          'high-movement-low-stock',
           'no-image',
           'no-price',
           'no-weight',
