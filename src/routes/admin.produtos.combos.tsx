@@ -63,6 +63,18 @@ const AVAILABILITY_TONE: Record<BundleAvailability, string> = {
   needs_review: 'bg-muted text-muted-foreground border-border',
 };
 
+type BundleMetaPatch = {
+  name?: string;
+  slug?: string;
+  description?: string | null;
+  imageUrl?: string | null;
+  isActive?: boolean;
+  isFeatured?: boolean;
+  startDate?: string | null;
+  endDate?: string | null;
+  notes?: string | null;
+};
+
 function BundlesAdminPage() {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [createOpen, setCreateOpen] = useState(false);
