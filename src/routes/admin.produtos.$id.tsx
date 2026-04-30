@@ -12,6 +12,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { ProductSEOSection } from '@/components/admin/ProductSEOSection';
 import { ProductImageManager, type ProductImageManagerHandle } from '@/components/admin/ProductImageManager';
+import { ProductRelationsSection } from '@/components/admin/ProductRelationsSection';
 import { boostProductSeoAuto } from '@/server/seo.functions';
 import { BarcodeLookupDialog, type BarcodeApplyChoice } from '@/components/admin/BarcodeLookupDialog';
 import type { BarcodeLookupResult } from '@/server/barcodeLookup.functions';
@@ -396,6 +397,8 @@ function ProductForm() {
             seoKeywords={form.seo_keywords}
             onChange={(field, value) => setForm((f) => ({ ...f, [field]: value }))}
           />
+
+          {!isNew && <ProductRelationsSection productId={id} />}
         </div>
 
         <div className="space-y-4">
