@@ -119,7 +119,17 @@ const groups: Group[] = [
       },
       { to: '/admin/categorias', label: 'Categorias', icon: Tags },
       { to: '/admin/produtos/estoque', label: 'Estoque', icon: Boxes, counterIds: ['low-stock', 'out-of-stock', 'inactive-products'] },
-      { label: 'Preços e promoções', soon: true },
+      {
+        to: '/admin/produtos/revisao-comercial',
+        label: 'Revisão comercial',
+        icon: DollarSign,
+        counterIds: [
+          'finance-products-no-cost',
+          'finance-margin-critical',
+          'commercial-b2b-critical',
+          'no-price',
+        ],
+      },
       { label: 'Condições B2B', soon: true },
       { label: 'Importar produtos', soon: true },
       { to: '/admin/produtos/qualidade', label: 'Qualidade do cadastro', icon: Package, counterIds: ['products-quality-low'] },
