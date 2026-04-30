@@ -468,6 +468,29 @@ export const getAdminOperations = createServerFn({ method: 'GET' })
         group: 'B2B',
       },
       {
+        id: 'b2b-paid-awaiting',
+        title: 'Pedidos B2B pagos aguardando separação',
+        description: 'Pedidos de empresa já pagos que precisam ser separados — priorize.',
+        qty: b2bPaidAwaitingShipping,
+        status: b2bPaidAwaitingShipping === 0 ? 'ok' : 'warn',
+        ctaLabel: 'Ver pedidos',
+        ctaHref: '/admin/pedidos',
+        group: 'B2B',
+      },
+      {
+        id: 'b2b-revenue-today',
+        title: 'Vendas B2B pagas hoje',
+        description:
+          b2bOrdersPaidToday > 0
+            ? `Ticket médio ${new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(b2bAvgTicketToday)} · ${new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(b2bDiscountGivenToday)} concedidos em desconto empresa.`
+            : 'Nenhum pedido B2B pago foi registrado hoje ainda.',
+        qty: b2bOrdersPaidToday,
+        status: 'ok',
+        ctaLabel: 'Ver pedidos B2B',
+        ctaHref: '/admin/pedidos',
+        group: 'B2B',
+      },
+      {
         id: 'low-stock',
         title: 'Produtos com estoque baixo',
         description: 'Produtos com estoque igual ou abaixo do mínimo definido.',
