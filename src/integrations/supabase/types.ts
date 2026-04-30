@@ -2559,6 +2559,56 @@ export type Database = {
         }
         Relationships: []
       }
+      product_attributes: {
+        Row: {
+          attribute_key: string
+          attribute_label: string
+          attribute_unit: string | null
+          attribute_value: string
+          created_at: string
+          id: string
+          is_filterable: boolean
+          is_visible: boolean
+          product_id: string
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          attribute_key: string
+          attribute_label: string
+          attribute_unit?: string | null
+          attribute_value: string
+          created_at?: string
+          id?: string
+          is_filterable?: boolean
+          is_visible?: boolean
+          product_id: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          attribute_key?: string
+          attribute_label?: string
+          attribute_unit?: string | null
+          attribute_value?: string
+          created_at?: string
+          id?: string
+          is_filterable?: boolean
+          is_visible?: boolean
+          product_id?: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "product_attributes_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       product_bundle_items: {
         Row: {
           bundle_id: string
