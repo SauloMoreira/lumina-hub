@@ -13,6 +13,7 @@ import { trackViewProduct, trackAddToCart } from '@/lib/tracking';
 import { ProductGallery } from '@/components/store/ProductGallery';
 import { pickUrl, type ProductImageRow } from '@/lib/productImages';
 import { RelatedProductsBlock } from '@/components/store/RelatedProductsBlock';
+import { ProductInBundlesBlock } from '@/components/store/ProductInBundlesBlock';
 
 type FaqItem = { question: string; answer: string };
 type ProductWithSeo = Product & {
