@@ -1,6 +1,5 @@
 import { createServerFn } from '@tanstack/react-start';
 import { z } from 'zod';
-import { computeB2bPricing } from './b2bPricing.server';
 
 // Re-exporta tipos e helpers compartilhados (seguros para o cliente).
 export {
@@ -41,5 +40,6 @@ export const getCartPricing = createServerFn({ method: 'POST' })
     } catch {
       userId = null;
     }
+    const { computeB2bPricing } = await import('./b2bPricing.server');
     return computeB2bPricing({ userId, items: data.items });
   });

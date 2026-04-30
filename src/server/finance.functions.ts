@@ -1,7 +1,10 @@
 import { createServerFn } from '@tanstack/react-start';
 import { z } from 'zod';
 import { requireAdmin } from '@/integrations/supabase/admin-middleware';
-import { supabaseAdmin } from '@/integrations/supabase/client.server';
+
+async function getSupabaseAdmin() {
+  return (await import('@/integrations/supabase/client.server')).supabaseAdmin;
+}
 
 // ============================================================
 // Tipos compartilhados (cliente pode importar destes apenas tipos)
@@ -72,6 +75,7 @@ export type FinanceMarginRow = {
 // ============================================================
 
 async function loadSettings(): Promise<FinanceSettings> {
+  const supabaseAdmin = await getSupabaseAdmin();
   const { data, error } = await supabaseAdmin
     .from('finance_settings')
     .select('*')
@@ -107,6 +111,7 @@ export const updateFinanceSettings = createServerFn({ method: 'POST' })
   .middleware([requireAdmin])
   .inputValidator((input: unknown) => SettingsInput.parse(input))
   .handler(async ({ data }) => {
+    const supabaseAdmin = await getSupabaseAdmin();
     const current = await loadSettings();
     const { error } = await supabaseAdmin
       .from('finance_settings')
@@ -198,6 +203,7 @@ export const getFinanceOverview = createServerFn({ method: 'POST' })
   .middleware([requireAdmin])
   .inputValidator((input: unknown) => RangeInput.parse(input))
   .handler(async ({ data }): Promise<FinanceOverview> => {
+    const supabaseAdmin = await getSupabaseAdmin();
     const settings = await loadSettings();
     const { from, to } = resolveRange(data.preset, data.from, data.to);
 
@@ -310,6 +316,7 @@ export const getFinanceMargin = createServerFn({ method: 'POST' })
   .middleware([requireAdmin])
   .inputValidator((input: unknown) => MarginListInput.parse(input))
   .handler(async ({ data }) => {
+    const supabaseAdmin = await getSupabaseAdmin();
     const settings = await loadSettings();
     const min = settings.default_min_margin_percent;
     const crit = settings.critical_margin_threshold_percent;
@@ -449,6 +456,7 @@ export const updateProductCost = createServerFn({ method: 'POST' })
   .middleware([requireAdmin])
   .inputValidator((input: unknown) => ProductCostInput.parse(input))
   .handler(async ({ data }) => {
+    const supabaseAdmin = await getSupabaseAdmin();
     const { error } = await supabaseAdmin
       .from('products')
       .update({
@@ -486,6 +494,7 @@ export const getOrderFinance = createServerFn({ method: 'POST' })
   .middleware([requireAdmin])
   .inputValidator((input: unknown) => OrderFinanceInput.parse(input))
   .handler(async ({ data }): Promise<OrderFinanceSummary> => {
+    const supabaseAdmin = await getSupabaseAdmin();
     const settings = await loadSettings();
     const { data: order, error } = await supabaseAdmin
       .from('orders')
@@ -561,6 +570,7 @@ export type FinanceQuickCounts = {
 export const getFinanceQuickCounts = createServerFn({ method: 'GET' })
   .middleware([requireAdmin])
   .handler(async (): Promise<FinanceQuickCounts> => {
+    const supabaseAdmin = await getSupabaseAdmin();
     const settings = await loadSettings();
     const min = settings.default_min_margin_percent;
 
