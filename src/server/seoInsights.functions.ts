@@ -222,6 +222,7 @@ function checkHomepage(h: {
   if (!h.hero_title) issues.push({ code: 'no_hero', label: 'Hero sem título', severity: 'warn' });
   if (!h.hero_description) issues.push({ code: 'no_hero_desc', label: 'Hero sem descrição', severity: 'warn' });
 
+  const scored = scoreSeverity(issues);
   return { score: scored.score, severity: scored.severity, issues };
 }
 
@@ -240,7 +241,7 @@ export const getSeoInsights = createServerFn({ method: 'GET' })
       .order('updated_at', { ascending: false })
       .limit(500);
 
-    const products = (prodData ?? []).map(checkProduct);
+    const products = (prodData ?? []).map((p: any) => checkProduct(p));
 
     // Categorias ativas
     const { data: catData } = await supabaseAdmin
