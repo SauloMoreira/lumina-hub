@@ -1,6 +1,7 @@
 import { createServerFn } from '@tanstack/react-start';
 import { requireAdmin } from '@/integrations/supabase/admin-middleware';
 import { supabaseAdmin } from '@/integrations/supabase/client.server';
+import { fetchSeoQuickCounts } from './seoInsights.functions';
 
 /**
  * Agrega todos os contadores e alertas usados pelo
