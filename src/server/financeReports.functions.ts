@@ -247,7 +247,7 @@ async function fetchOrders(
 }
 
 function netOf(o: {
-  total: number | string;
+  total: number | string | null;
   mp_net_amount: number | string | null;
   estimated_net_amount: number | string | null;
   mp_fee_amount: number | string | null;
