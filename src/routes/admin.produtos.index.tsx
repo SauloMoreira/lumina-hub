@@ -24,6 +24,7 @@ interface Product {
   b2b_enabled: boolean;
   b2b_price: number | null;
   b2b_min_qty: number | null;
+  quality?: ReturnType<typeof computeProductQuality>;
 }
 
 function ProdutosList() {
