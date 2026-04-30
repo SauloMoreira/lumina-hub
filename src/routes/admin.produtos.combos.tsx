@@ -73,7 +73,11 @@ type BundleMetaPatch = {
   startDate?: string | null;
   endDate?: string | null;
   notes?: string | null;
+  discountType?: 'none' | 'fixed_amount' | 'percentage';
+  discountValue?: number;
 };
+
+const BUNDLE_PERCENT_LIMIT = 50;
 
 function BundlesAdminPage() {
   const [selectedId, setSelectedId] = useState<string | null>(null);
