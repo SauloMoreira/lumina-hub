@@ -49,6 +49,8 @@ function ProductForm() {
     name: '', slug: '', sku: '', brand: '', description: '',
     price: '', sale_price: '', cost_price: '',
     stock_qty: '0', stock_min_alert: '10',
+    stock_alert_enabled: true,
+    allow_out_of_stock_sales: false,
     weight_kg: '0.3', length_cm: '10', width_cm: '10', height_cm: '10',
     category_id: '', active: true, featured: false, free_shipping_eligible: false,
     images: [] as string[],
@@ -73,6 +75,8 @@ function ProductForm() {
           description: data.description ?? '',
           price: String(data.price), sale_price: data.sale_price ? String(data.sale_price) : '', cost_price: data.cost_price ? String(data.cost_price) : '',
           stock_qty: String(data.stock_qty), stock_min_alert: String(data.stock_min_alert ?? 10),
+          stock_alert_enabled: (data as any).stock_alert_enabled !== false,
+          allow_out_of_stock_sales: !!(data as any).allow_out_of_stock_sales,
           weight_kg: String(data.weight_kg ?? 0.3), length_cm: String(data.length_cm ?? 10), width_cm: String(data.width_cm ?? 10), height_cm: String(data.height_cm ?? 10),
           category_id: data.category_id ?? '', active: !!data.active, featured: !!data.featured, free_shipping_eligible: !!(data as any).free_shipping_eligible,
           images: data.images ?? [],
@@ -190,7 +194,9 @@ function ProductForm() {
         sale_price: form.sale_price ? Number(form.sale_price) : null,
         cost_price: form.cost_price ? Number(form.cost_price) : null,
         stock_qty: Number(form.stock_qty),
-        stock_min_alert: Number(form.stock_min_alert),
+        stock_min_alert: form.stock_min_alert === '' ? null : Number(form.stock_min_alert),
+        stock_alert_enabled: form.stock_alert_enabled,
+        allow_out_of_stock_sales: form.allow_out_of_stock_sales,
         weight_kg: Number(form.weight_kg),
         length_cm: Number(form.length_cm),
         width_cm: Number(form.width_cm),
@@ -290,8 +296,30 @@ function ProductForm() {
               <Field label="Custo (interno)"><Input type="number" step="0.01" value={form.cost_price} onChange={(e) => setForm({ ...form, cost_price: e.target.value })} /></Field>
             </div>
             <div className="grid sm:grid-cols-2 gap-3">
-              <Field label="Quantidade em estoque"><Input type="number" value={form.stock_qty} onChange={(e) => setForm({ ...form, stock_qty: e.target.value })} /></Field>
-              <Field label="Alerta de estoque baixo"><Input type="number" value={form.stock_min_alert} onChange={(e) => setForm({ ...form, stock_min_alert: e.target.value })} /></Field>
+              <Field label="Quantidade em estoque">
+                <Input type="number" value={form.stock_qty} onChange={(e) => setForm({ ...form, stock_qty: e.target.value })} />
+                <p className="text-[11px] text-muted-foreground mt-1">Quantidade disponível para venda hoje.</p>
+              </Field>
+              <Field label="Estoque mínimo (alerta)">
+                <Input type="number" value={form.stock_min_alert} onChange={(e) => setForm({ ...form, stock_min_alert: e.target.value })} placeholder="Ex.: 3" />
+                <p className="text-[11px] text-muted-foreground mt-1">Ponto em que o sistema marca o produto como estoque baixo. Em branco usa o padrão da loja.</p>
+              </Field>
+            </div>
+            <div className="grid sm:grid-cols-2 gap-3">
+              <label className="flex items-start gap-2 text-sm border border-border rounded-md px-3 py-2 cursor-pointer hover:bg-muted/30">
+                <input type="checkbox" className="mt-0.5" checked={form.stock_alert_enabled} onChange={(e) => setForm({ ...form, stock_alert_enabled: e.target.checked })} />
+                <span>
+                  <span className="font-medium">Alertar sobre estoque baixo/zerado</span>
+                  <span className="block text-[11px] text-muted-foreground">Quando desativado, este produto não entra nos contadores do Painel do Dia.</span>
+                </span>
+              </label>
+              <label className="flex items-start gap-2 text-sm border border-border rounded-md px-3 py-2 cursor-pointer hover:bg-muted/30">
+                <input type="checkbox" className="mt-0.5" checked={form.allow_out_of_stock_sales} onChange={(e) => setForm({ ...form, allow_out_of_stock_sales: e.target.checked })} />
+                <span>
+                  <span className="font-medium">Permitir venda sem estoque</span>
+                  <span className="block text-[11px] text-muted-foreground">Marca a intenção de aceitar pedidos mesmo zerado. A regra atual de checkout não é alterada nesta fase.</span>
+                </span>
+              </label>
             </div>
           </Section>
 

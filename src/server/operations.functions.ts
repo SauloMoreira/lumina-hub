@@ -174,17 +174,20 @@ export const getAdminOperations = createServerFn({ method: 'GET' })
     // ============================================================
     // Produtos
     // ============================================================
-    // Estoque baixo: stock_qty <= stock_min_alert (e ativo)
+    // Estoque baixo / zerado / parados / alto giro com estoque baixo — via RPC agregada
     let lowStock = 0;
+    let productsOutOfStock = 0;
+    let inactiveProducts = 0;
+    let highMovementLowStock = 0;
+    let stockNoMin = 0;
     try {
-      const { data: lowRows } = await supabaseAdmin
-        .from('products')
-        .select('id, stock_qty, stock_min_alert, active')
-        .eq('active', true)
-        .limit(1000);
-      lowStock = (lowRows ?? []).filter(
-        (p) => Number(p.stock_qty ?? 0) <= Number(p.stock_min_alert ?? 0),
-      ).length;
+      const { data: counters } = await supabaseAdmin.rpc('get_stock_counters');
+      const j = (counters ?? {}) as Record<string, number>;
+      lowStock = Number(j.low_stock ?? 0);
+      productsOutOfStock = Number(j.out_of_stock ?? 0);
+      inactiveProducts = Number(j.inactive_products ?? 0);
+      highMovementLowStock = Number(j.high_movement_low_stock ?? 0);
+      stockNoMin = Number(j.no_min_stock ?? 0);
     } catch {}
 
     const productsNoImage = await safeCount(
@@ -201,10 +204,6 @@ export const getAdminOperations = createServerFn({ method: 'GET' })
     const productsNoWeight = await safeCount(
       () => supabaseAdmin.from('products'),
       (q) => q.eq('active', true).or('weight_kg.is.null,weight_kg.eq.0'),
-    );
-    const productsOutOfStock = await safeCount(
-      () => supabaseAdmin.from('products'),
-      (q) => q.eq('active', true).eq('stock_qty', 0),
     );
     const productsNoCategory = await safeCount(
       () => supabaseAdmin.from('products'),
@@ -588,8 +587,8 @@ export const getAdminOperations = createServerFn({ method: 'GET' })
         description: 'Produtos com estoque igual ou abaixo do mínimo definido.',
         qty: lowStock,
         status: lowStock === 0 ? 'ok' : 'warn',
-        ctaLabel: 'Ver produtos',
-        ctaHref: '/admin/produtos',
+        ctaLabel: 'Ver estoque',
+        ctaHref: '/admin/produtos/estoque',
         group: 'Produtos',
       },
       {
@@ -598,8 +597,38 @@ export const getAdminOperations = createServerFn({ method: 'GET' })
         description: 'Produtos publicados mas sem unidades disponíveis.',
         qty: productsOutOfStock,
         status: productsOutOfStock === 0 ? 'ok' : 'danger',
-        ctaLabel: 'Ver produtos',
-        ctaHref: '/admin/produtos',
+        ctaLabel: 'Ver produtos zerados',
+        ctaHref: '/admin/produtos/estoque',
+        group: 'Produtos',
+      },
+      {
+        id: 'inactive-products',
+        title: 'Produtos parados',
+        description: 'Produtos ativos com estoque mas sem venda no período configurado.',
+        qty: inactiveProducts,
+        status: inactiveProducts === 0 ? 'ok' : 'warn',
+        ctaLabel: 'Ver produtos parados',
+        ctaHref: '/admin/produtos/estoque',
+        group: 'Produtos',
+      },
+      {
+        id: 'high-movement-low-stock',
+        title: 'Alto giro com estoque baixo',
+        description: 'Produtos com boa saída no período cujo estoque já caiu para o nível mínimo.',
+        qty: highMovementLowStock,
+        status: highMovementLowStock === 0 ? 'ok' : 'danger',
+        ctaLabel: 'Ver estoque',
+        ctaHref: '/admin/produtos/estoque',
+        group: 'Produtos',
+      },
+      {
+        id: 'stock-no-min',
+        title: 'Produtos sem estoque mínimo',
+        description: 'Produtos ativos sem mínimo configurado — sem alerta de reposição.',
+        qty: stockNoMin,
+        status: stockNoMin === 0 ? 'ok' : 'warn',
+        ctaLabel: 'Configurar mínimos',
+        ctaHref: '/admin/produtos/estoque',
         group: 'Produtos',
       },
       {

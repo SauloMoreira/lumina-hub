@@ -2863,6 +2863,7 @@ export type Database = {
       products: {
         Row: {
           active: boolean | null
+          allow_out_of_stock_sales: boolean
           b2b_commercial_note: string | null
           b2b_enabled: boolean
           b2b_min_qty: number | null
@@ -2906,6 +2907,7 @@ export type Database = {
           sku: string | null
           slug: string
           specs: Json | null
+          stock_alert_enabled: boolean
           stock_min_alert: number | null
           stock_qty: number
           tags: string[] | null
@@ -2917,6 +2919,7 @@ export type Database = {
         }
         Insert: {
           active?: boolean | null
+          allow_out_of_stock_sales?: boolean
           b2b_commercial_note?: string | null
           b2b_enabled?: boolean
           b2b_min_qty?: number | null
@@ -2960,6 +2963,7 @@ export type Database = {
           sku?: string | null
           slug: string
           specs?: Json | null
+          stock_alert_enabled?: boolean
           stock_min_alert?: number | null
           stock_qty?: number
           tags?: string[] | null
@@ -2971,6 +2975,7 @@ export type Database = {
         }
         Update: {
           active?: boolean | null
+          allow_out_of_stock_sales?: boolean
           b2b_commercial_note?: string | null
           b2b_enabled?: boolean
           b2b_min_qty?: number | null
@@ -3014,6 +3019,7 @@ export type Database = {
           sku?: string | null
           slug?: string
           specs?: Json | null
+          stock_alert_enabled?: boolean
           stock_min_alert?: number | null
           stock_qty?: number
           tags?: string[] | null
@@ -3177,6 +3183,45 @@ export type Database = {
         }
         Relationships: []
       }
+      stock_settings: {
+        Row: {
+          alert_inactive_product_enabled: boolean
+          alert_low_stock_enabled: boolean
+          alert_out_of_stock_enabled: boolean
+          created_at: string
+          default_min_stock: number
+          high_movement_min_qty: number
+          id: string
+          inactive_days_threshold: number
+          sales_window_days: number
+          updated_at: string
+        }
+        Insert: {
+          alert_inactive_product_enabled?: boolean
+          alert_low_stock_enabled?: boolean
+          alert_out_of_stock_enabled?: boolean
+          created_at?: string
+          default_min_stock?: number
+          high_movement_min_qty?: number
+          id?: string
+          inactive_days_threshold?: number
+          sales_window_days?: number
+          updated_at?: string
+        }
+        Update: {
+          alert_inactive_product_enabled?: boolean
+          alert_low_stock_enabled?: boolean
+          alert_out_of_stock_enabled?: boolean
+          created_at?: string
+          default_min_stock?: number
+          high_movement_min_qty?: number
+          id?: string
+          inactive_days_threshold?: number
+          sales_window_days?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       whatsapp_templates: {
         Row: {
           active: boolean
@@ -3314,6 +3359,25 @@ export type Database = {
           sale_price: number
           slug: string
           sort_order: number
+          stock_qty: number
+        }[]
+      }
+      get_stock_counters: { Args: never; Returns: Json }
+      get_stock_report: {
+        Args: { _sales_window_days?: number }
+        Returns: {
+          active: boolean
+          allow_out_of_stock_sales: boolean
+          category_id: string
+          category_name: string
+          created_at: string
+          last_sold_at: string
+          name: string
+          product_id: string
+          qty_sold_window: number
+          sku: string
+          stock_alert_enabled: boolean
+          stock_min_alert: number
           stock_qty: number
         }[]
       }
