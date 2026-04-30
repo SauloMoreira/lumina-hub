@@ -1,7 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
-import { Plus, Trash2, ExternalLink, Loader2, ShieldCheck } from 'lucide-react';
+import { Plus, Trash2, ExternalLink, Loader2, ShieldCheck, FlaskConical, CheckCircle2, AlertTriangle } from 'lucide-react';
 import { AdminLayout } from '@/components/admin/AdminLayout';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -14,6 +14,7 @@ import {
   listIntegrations,
   upsertIntegration,
   deleteIntegration,
+  testIntegration,
   type MarketingIntegration,
   type IntegrationProvider,
   type ConsentCategory,
@@ -74,10 +75,24 @@ const PROVIDER_INFO: Record<
 
 const PROVIDERS = Object.keys(PROVIDER_INFO) as IntegrationProvider[];
 
+const ID_PATTERNS: Record<IntegrationProvider, RegExp> = {
+  ga4: /^G-[A-Z0-9]{6,}$/i,
+  gtm: /^GTM-[A-Z0-9]{4,}$/i,
+  meta_pixel: /^[0-9]{6,20}$/,
+  tiktok_pixel: /^[A-Z0-9]{15,30}$/i,
+  clarity: /^[a-z0-9]{6,20}$/i,
+  google_ads: /^AW-[0-9]{6,}$/i,
+};
+
+function isValidId(provider: IntegrationProvider, accountId: string): boolean {
+  return ID_PATTERNS[provider].test(accountId.trim());
+}
+
 function IntegrationsPage() {
   const [items, setItems] = useState<MarketingIntegration[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [testingId, setTestingId] = useState<string | null>(null);
   const [form, setForm] = useState<{
     provider: IntegrationProvider;
     account_id: string;
@@ -169,6 +184,34 @@ function IntegrationsPage() {
     }
   }
 
+  async function handleTest(item: MarketingIntegration) {
+    setTestingId(item.id);
+    try {
+      const r = await testIntegration({ data: { id: item.id } });
+      if (!r.formatOk) {
+        toast.error('ID com formato inválido. Verifique o valor informado.');
+      } else if (r.reachable === 'ok') {
+        toast.success('Configuração válida — endpoint do provedor respondeu OK.');
+      } else if (r.reachable === 'failed') {
+        toast.warning(`Formato OK, mas o provedor recusou (${r.detail || 'erro'}). Confirme o ID.`);
+      } else {
+        toast.success('Formato do ID válido. Este provedor não permite teste de alcance — verifique o pixel no painel oficial.');
+      }
+    } catch (e: any) {
+      toast.error(e?.message || 'Falha ao testar');
+    } finally {
+      setTestingId(null);
+    }
+  }
+
+  // Pendências para o card de status
+  const configuredProviders = new Set(items.map((i) => i.provider));
+  const activeWithBadFormat = items.filter(
+    (i) => i.enabled && !isValidId(i.provider, i.account_id),
+  );
+  const missingGa4 = !configuredProviders.has('ga4');
+  const missingMetaPixel = !configuredProviders.has('meta_pixel');
+
   const info = PROVIDER_INFO[form.provider];
 
   return (
@@ -178,6 +221,34 @@ function IntegrationsPage() {
           Configure GA4, GTM, Meta, TikTok, Clarity e Google Ads. Os scripts só carregam
           após o consentimento LGPD do visitante.
         </p>
+
+        {(missingGa4 || missingMetaPixel || activeWithBadFormat.length > 0) && (
+          <Card className="border-amber-500/40 bg-amber-50/40 dark:bg-amber-950/20">
+            <CardContent className="pt-6 space-y-2 text-sm">
+              <p className="font-medium flex items-center gap-2 text-amber-900 dark:text-amber-200">
+                <AlertTriangle className="w-4 h-4" /> Pendências de medição
+              </p>
+              <ul className="space-y-1 text-muted-foreground list-disc pl-5">
+                {missingGa4 && <li>Google Analytics 4 ainda não foi configurado.</li>}
+                {missingMetaPixel && <li>Meta Pixel ainda não foi configurado — recomendado para campanhas no Facebook/Instagram.</li>}
+                {activeWithBadFormat.map((i) => (
+                  <li key={i.id} className="text-destructive">
+                    {PROVIDER_INFO[i.provider]?.label ?? i.provider}: integração ativa com ID em formato inválido.
+                  </li>
+                ))}
+              </ul>
+            </CardContent>
+          </Card>
+        )}
+
+        {items.length > 0 && !missingGa4 && !missingMetaPixel && activeWithBadFormat.length === 0 && (
+          <Card className="border-emerald-500/40 bg-emerald-50/40 dark:bg-emerald-950/20">
+            <CardContent className="pt-6 text-sm flex items-center gap-2 text-emerald-900 dark:text-emerald-200">
+              <CheckCircle2 className="w-4 h-4" />
+              Tudo certo! As principais ferramentas de medição estão configuradas.
+            </CardContent>
+          </Card>
+        )}
 
         <Card>
           <CardHeader>
@@ -276,7 +347,9 @@ function IntegrationsPage() {
               </p>
             ) : (
               <div className="space-y-2">
-                {items.map((item) => (
+                {items.map((item) => {
+                  const formatOk = isValidId(item.provider, item.account_id);
+                  return (
                   <div
                     key={item.id}
                     className="flex items-center justify-between gap-3 p-3 rounded-lg border bg-card"
@@ -290,18 +363,38 @@ function IntegrationsPage() {
                         <Badge variant="outline" className="text-[10px]">
                           {item.consent_category === 'analytics' ? 'Analytics' : 'Marketing'}
                         </Badge>
+                        {!formatOk && (
+                          <Badge variant="destructive" className="text-[10px]">
+                            <AlertTriangle className="w-2.5 h-2.5 mr-1" /> ID inválido
+                          </Badge>
+                        )}
                       </div>
                       <code className="text-xs text-muted-foreground">{item.account_id}</code>
                       {item.notes && <p className="text-xs text-muted-foreground mt-1">{item.notes}</p>}
                     </div>
                     <div className="flex items-center gap-2 shrink-0">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleTest(item)}
+                        disabled={testingId === item.id}
+                        title="Testar configuração"
+                      >
+                        {testingId === item.id ? (
+                          <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                        ) : (
+                          <FlaskConical className="w-3.5 h-3.5" />
+                        )}
+                        <span className="hidden sm:inline ml-1">Testar</span>
+                      </Button>
                       <Switch checked={item.enabled} onCheckedChange={() => toggleEnabled(item)} />
                       <Button variant="ghost" size="icon" onClick={() => handleDelete(item.id)}>
                         <Trash2 className="w-4 h-4 text-destructive" />
                       </Button>
                     </div>
                   </div>
-                ))}
+                  );
+                })}
               </div>
             )}
           </CardContent>
