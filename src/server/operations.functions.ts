@@ -791,8 +791,26 @@ export const getAdminOperations = createServerFn({ method: 'GET' })
         ctaHref: '/admin/integracoes',
       });
     }
-
-    return {
+    if (b2bPaidAwaitingShipping > 0) {
+      alerts.push({
+        id: 'alert-b2b-paid-awaiting',
+        title: 'Pedidos B2B pagos aguardando separação',
+        description: `${b2bPaidAwaitingShipping} pedido(s) de empresa pago(s) precisam ser separados — clientes B2B costumam ser exigentes com prazo.`,
+        severity: 'medium',
+        ctaLabel: 'Ver pedidos',
+        ctaHref: '/admin/pedidos',
+      });
+    }
+    if (b2bAllowsCoupon) {
+      alerts.push({
+        id: 'alert-b2b-coupon-on',
+        title: 'Cupons permitidos em pedidos B2B',
+        description: 'A configuração atual permite acumular cupom sobre o preço empresa. Revise se realmente quer essa política.',
+        severity: 'low',
+        ctaLabel: 'Revisar configurações B2B',
+        ctaHref: '/admin/configuracoes-b2b',
+      });
+    }
       cards,
       alerts,
       daily: {
