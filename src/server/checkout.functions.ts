@@ -389,6 +389,20 @@ export const createOrder = createServerFn({ method: 'POST' })
       if (row?.valid) discount = Number(row.discount);
     }
 
+    // ========================================================
+    // Onda 9E.4b — DESCONTO DE COMBO
+    // Calculado server-side. Cupom vence: se há cupom aplicado e
+    // allow_bundle_discount_with_coupon=false, o helper retorna 0
+    // e marca todos os combos como blocked_by_coupon.
+    // ========================================================
+    const { computeBundleApplication } = await import('@/server/cartBundleApply.server');
+    const bundleApp = await computeBundleApplication({
+      userId,
+      items: data.items.map((i) => ({ productId: i.productId, qty: i.qty })),
+      hasCoupon: discount > 0,
+    });
+    const bundleDiscountTotal = bundleApp.bundle_discount_total;
+    const hasBundleDiscount = bundleDiscountTotal > 0;
     const isPickup = data.deliveryMethod === 'pickup';
     const isLocal = data.deliveryMethod === 'local_delivery';
 
