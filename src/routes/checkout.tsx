@@ -725,7 +725,13 @@ function CheckoutPage() {
             </div>
 
             <div className="space-y-2 text-sm border-t border-border pt-4">
-              <div className="flex justify-between"><span className="text-muted-foreground">Subtotal</span><span>{formatBRL(subtotal)}</span></div>
+              <div className="flex justify-between"><span className="text-muted-foreground">Subtotal</span><span>{formatBRL(subtotalRetail)}</span></div>
+              {b2bSavings > 0 && (
+                <div className="flex justify-between text-success">
+                  <span>Desconto empresa</span>
+                  <span>−{formatBRL(b2bSavings)}</span>
+                </div>
+              )}
               {discount > 0 && (
                 <div className="flex justify-between text-success"><span>Desconto ({couponCode})</span><span>−{formatBRL(discount)}</span></div>
               )}
@@ -741,6 +747,9 @@ function CheckoutPage() {
                 <span className="font-medium">Total</span>
                 <span className="font-display font-extrabold text-2xl text-primary">{formatBRL(total)}</span>
               </div>
+              {isB2bOrder && (
+                <p className="text-[10px] text-muted-foreground text-right">Total inclui preço empresa validado pelo backend.</p>
+              )}
               <p className="text-xs text-muted-foreground text-right">em até 12x de {formatBRL(total / 12)}</p>
             </div>
           </aside>
