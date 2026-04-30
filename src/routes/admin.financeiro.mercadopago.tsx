@@ -79,7 +79,7 @@ function MpFinancePage() {
   };
 
   return (
-    <AdminLayout>
+    <AdminLayout title="Mercado Pago — Financeiro">
       <div className="space-y-6">
         <div className="flex items-center justify-between gap-3">
           <div className="flex items-center gap-2">
