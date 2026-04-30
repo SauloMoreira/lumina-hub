@@ -485,6 +485,9 @@ export const getAdminOperations = createServerFn({ method: 'GET' })
         group: 'Marketing',
       },
     ];
+
+    // ============================================================
+    // Monta alertas importantes
     // ============================================================
     const alerts: OperationsAlert[] = [];
 
