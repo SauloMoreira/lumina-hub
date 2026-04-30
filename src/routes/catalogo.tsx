@@ -131,6 +131,30 @@ function CatalogPage() {
 
   const attrFilters = useMemo(() => toAttrFilterPayload(selectedTech), [selectedTech]);
 
+  // Rótulos amigáveis cadastrados pelo admin (cache 10min)
+  const { data: techLabels } = useQuery({
+    queryKey: ['public-attribute-labels', 'catalog-tech'],
+    staleTime: 1000 * 60 * 10,
+    queryFn: () =>
+      getPublicAttributeLabels({
+        data: { attributeKeys: ['color_temperature', 'voltage', 'ip_rating', 'power'] },
+      }),
+  });
+  const labelLookup = useMemo(() => buildLabelLookup(techLabels ?? []), [techLabels]);
+
+  /** Aplica rótulo amigável ao texto da opção do filtro técnico, quando existir. */
+  function decorateOptionLabel(
+    defKey: TechFilterKey,
+    opt: { id: string; label: string; values?: string[] },
+  ): string {
+    if (!opt.values || opt.values.length === 0) return opt.label;
+    for (const v of opt.values) {
+      const f = labelLookup.find(defKey, v);
+      if (f) return f.display_label;
+    }
+    return opt.label;
+  }
+
   // Facets disponíveis para o contexto atual (categoria)
   const { data: facetsData } = useQuery({
     queryKey: ['catalog-facets', search.cat ?? ''],
