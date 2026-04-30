@@ -110,6 +110,10 @@ function ProductQualityPage() {
           <FilterPill icon={<Search className="w-3.5 h-3.5" />} label="SEO incompleto" value="no_seo" filter={filter} setFilter={setFilter} />
           <FilterPill icon={<FileText className="w-3.5 h-3.5" />} label="Fiscal/logística" value="no_fiscal" filter={filter} setFilter={setFilter} />
           <FilterPill icon={<Package className="w-3.5 h-3.5" />} label="Sem atributos técnicos" value="no_tech" filter={filter} setFilter={setFilter} />
+          <FilterPill icon={<Package className="w-3.5 h-3.5" />} label="Sem potência" value="no_tech_power" filter={filter} setFilter={setFilter} />
+          <FilterPill icon={<Package className="w-3.5 h-3.5" />} label="Sem temperatura" value="no_tech_color_temp" filter={filter} setFilter={setFilter} />
+          <FilterPill icon={<Package className="w-3.5 h-3.5" />} label="Sem voltagem" value="no_tech_voltage" filter={filter} setFilter={setFilter} />
+          <FilterPill icon={<Package className="w-3.5 h-3.5" />} label="Sem IP" value="no_tech_ip_rating" filter={filter} setFilter={setFilter} />
         </div>
 
         <div className="bg-card border border-border rounded-xl">
