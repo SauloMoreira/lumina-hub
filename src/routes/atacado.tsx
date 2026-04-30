@@ -468,69 +468,6 @@ function CompactHero({
   );
 }
 
-/* ----------------------------- FILTERS ----------------------------- */
-
-function Filters({
-  categories,
-  categoryFilter,
-  onCategoryChange,
-  sortKey,
-  onSortChange,
-  totalCount,
-}: {
-  categories: Category[];
-  categoryFilter: string;
-  onCategoryChange: (v: string) => void;
-  sortKey: SortKey;
-  onSortChange: (v: SortKey) => void;
-  totalCount: number;
-}) {
-  return (
-    <div className="bg-card border border-border rounded-xl p-3 sm:p-4 flex flex-col sm:flex-row sm:items-center gap-3">
-      <div className="flex items-center gap-2 overflow-x-auto -mx-1 px-1 sm:mx-0 sm:px-0 sm:flex-1">
-        <button
-          onClick={() => onCategoryChange('')}
-          className={`shrink-0 h-8 px-3 rounded-full text-xs font-medium border transition ${
-            !categoryFilter
-              ? 'bg-primary text-primary-foreground border-primary'
-              : 'bg-background text-foreground border-border hover:bg-muted'
-          }`}
-        >
-          Todas as categorias
-        </button>
-        {categories.map((c) => (
-          <button
-            key={c.id}
-            onClick={() => onCategoryChange(c.id)}
-            className={`shrink-0 h-8 px-3 rounded-full text-xs font-medium border transition ${
-              categoryFilter === c.id
-                ? 'bg-primary text-primary-foreground border-primary'
-                : 'bg-background text-foreground border-border hover:bg-muted'
-            }`}
-          >
-            {c.name}
-          </button>
-        ))}
-      </div>
-      <div className="flex items-center gap-2 sm:ml-auto">
-        <label className="text-xs text-muted-foreground whitespace-nowrap">Ordenar:</label>
-        <select
-          value={sortKey}
-          onChange={(e) => onSortChange(e.target.value as SortKey)}
-          className="h-8 rounded-md border border-border bg-background px-2 text-xs"
-        >
-          <option value="relevance">Mais relevantes</option>
-          <option value="discount">Maior desconto</option>
-          <option value="min_qty">Menor mínimo</option>
-        </select>
-        <span className="hidden sm:inline text-xs text-muted-foreground">
-          {totalCount} produto{totalCount === 1 ? '' : 's'}
-        </span>
-      </div>
-    </div>
-  );
-}
-
 /* ----------------------------- B2B PRODUCT CARD ----------------------------- */
 
 function B2bProductCard({ product, index }: { product: Product; index: number }) {
