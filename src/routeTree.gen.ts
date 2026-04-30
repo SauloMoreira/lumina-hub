@@ -21,6 +21,7 @@ import { Route as DevolucaoRouteImport } from './routes/devolucao'
 import { Route as ContatoRouteImport } from './routes/contato'
 import { Route as ContaRouteImport } from './routes/conta'
 import { Route as CondicoesDeUsoRouteImport } from './routes/condicoes-de-uso'
+import { Route as CompraRapidaRouteImport } from './routes/compra-rapida'
 import { Route as CheckoutRouteImport } from './routes/checkout'
 import { Route as CatalogoRouteImport } from './routes/catalogo'
 import { Route as CarrinhoRouteImport } from './routes/carrinho'
@@ -134,6 +135,11 @@ const ContaRoute = ContaRouteImport.update({
 const CondicoesDeUsoRoute = CondicoesDeUsoRouteImport.update({
   id: '/condicoes-de-uso',
   path: '/condicoes-de-uso',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CompraRapidaRoute = CompraRapidaRouteImport.update({
+  id: '/compra-rapida',
+  path: '/compra-rapida',
   getParentRoute: () => rootRouteImport,
 } as any)
 const CheckoutRoute = CheckoutRouteImport.update({
@@ -424,6 +430,7 @@ export interface FileRoutesByFullPath {
   '/carrinho': typeof CarrinhoRoute
   '/catalogo': typeof CatalogoRoute
   '/checkout': typeof CheckoutRouteWithChildren
+  '/compra-rapida': typeof CompraRapidaRoute
   '/condicoes-de-uso': typeof CondicoesDeUsoRoute
   '/conta': typeof ContaRouteWithChildren
   '/contato': typeof ContatoRoute
@@ -492,6 +499,7 @@ export interface FileRoutesByTo {
   '/carrinho': typeof CarrinhoRoute
   '/catalogo': typeof CatalogoRoute
   '/checkout': typeof CheckoutRouteWithChildren
+  '/compra-rapida': typeof CompraRapidaRoute
   '/condicoes-de-uso': typeof CondicoesDeUsoRoute
   '/conta': typeof ContaRouteWithChildren
   '/contato': typeof ContatoRoute
@@ -561,6 +569,7 @@ export interface FileRoutesById {
   '/carrinho': typeof CarrinhoRoute
   '/catalogo': typeof CatalogoRoute
   '/checkout': typeof CheckoutRouteWithChildren
+  '/compra-rapida': typeof CompraRapidaRoute
   '/condicoes-de-uso': typeof CondicoesDeUsoRoute
   '/conta': typeof ContaRouteWithChildren
   '/contato': typeof ContatoRoute
@@ -631,6 +640,7 @@ export interface FileRouteTypes {
     | '/carrinho'
     | '/catalogo'
     | '/checkout'
+    | '/compra-rapida'
     | '/condicoes-de-uso'
     | '/conta'
     | '/contato'
@@ -699,6 +709,7 @@ export interface FileRouteTypes {
     | '/carrinho'
     | '/catalogo'
     | '/checkout'
+    | '/compra-rapida'
     | '/condicoes-de-uso'
     | '/conta'
     | '/contato'
@@ -767,6 +778,7 @@ export interface FileRouteTypes {
     | '/carrinho'
     | '/catalogo'
     | '/checkout'
+    | '/compra-rapida'
     | '/condicoes-de-uso'
     | '/conta'
     | '/contato'
@@ -836,6 +848,7 @@ export interface RootRouteChildren {
   CarrinhoRoute: typeof CarrinhoRoute
   CatalogoRoute: typeof CatalogoRoute
   CheckoutRoute: typeof CheckoutRouteWithChildren
+  CompraRapidaRoute: typeof CompraRapidaRoute
   CondicoesDeUsoRoute: typeof CondicoesDeUsoRoute
   ContaRoute: typeof ContaRouteWithChildren
   ContatoRoute: typeof ContatoRoute
@@ -975,6 +988,13 @@ declare module '@tanstack/react-router' {
       path: '/condicoes-de-uso'
       fullPath: '/condicoes-de-uso'
       preLoaderRoute: typeof CondicoesDeUsoRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/compra-rapida': {
+      id: '/compra-rapida'
+      path: '/compra-rapida'
+      fullPath: '/compra-rapida'
+      preLoaderRoute: typeof CompraRapidaRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/checkout': {
@@ -1406,6 +1426,7 @@ const rootRouteChildren: RootRouteChildren = {
   CarrinhoRoute: CarrinhoRoute,
   CatalogoRoute: CatalogoRoute,
   CheckoutRoute: CheckoutRouteWithChildren,
+  CompraRapidaRoute: CompraRapidaRoute,
   CondicoesDeUsoRoute: CondicoesDeUsoRoute,
   ContaRoute: ContaRouteWithChildren,
   ContatoRoute: ContatoRoute,

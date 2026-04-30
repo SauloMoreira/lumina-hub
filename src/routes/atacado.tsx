@@ -268,7 +268,15 @@ function AtacadoPage() {
               Condições especiais para compras em quantidade.
             </p>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
+            {(isApproved || companyStatus === 'pending') && (
+              <Link
+                to={'/compra-rapida' as never}
+                className="inline-flex items-center gap-2 h-10 px-4 rounded-md bg-primary/10 text-primary border border-primary/30 text-sm font-semibold hover:bg-primary/15 transition"
+              >
+                <Zap className="w-4 h-4" /> Compra rápida por código
+              </Link>
+            )}
             <CartButton />
             {isApproved && (
               <a
@@ -282,6 +290,11 @@ function AtacadoPage() {
             )}
           </div>
         </div>
+        {companyStatus === 'pending' && (
+          <p className="text-xs text-muted-foreground -mt-2 mb-3">
+            Compra rápida disponível com preço de varejo enquanto sua empresa está em análise.
+          </p>
+        )}
 
         {/* Filtros B2B */}
         <B2BProductFilters
