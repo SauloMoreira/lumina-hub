@@ -67,6 +67,7 @@ import { Route as AdminSettingsFreteLocalRouteImport } from './routes/admin.sett
 import { Route as AdminSettingsCompanyRouteImport } from './routes/admin.settings.company'
 import { Route as AdminProdutosQualidadeRouteImport } from './routes/admin.produtos.qualidade'
 import { Route as AdminProdutosCombosRouteImport } from './routes/admin.produtos.combos'
+import { Route as AdminProdutosAtributosRotulosRouteImport } from './routes/admin.produtos.atributos-rotulos'
 import { Route as AdminProdutosIdRouteImport } from './routes/admin.produtos.$id'
 import { Route as AdminPedidosOrderIdRouteImport } from './routes/admin.pedidos.$orderId'
 import { Route as AdminInstitutionalPagesIdRouteImport } from './routes/admin.institutional-pages.$id'
@@ -373,6 +374,12 @@ const AdminProdutosCombosRoute = AdminProdutosCombosRouteImport.update({
   path: '/admin/produtos/combos',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AdminProdutosAtributosRotulosRoute =
+  AdminProdutosAtributosRotulosRouteImport.update({
+    id: '/admin/produtos/atributos-rotulos',
+    path: '/admin/produtos/atributos-rotulos',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const AdminProdutosIdRoute = AdminProdutosIdRouteImport.update({
   id: '/admin/produtos/$id',
   path: '/admin/produtos/$id',
@@ -501,6 +508,7 @@ export interface FileRoutesByFullPath {
   '/admin/institutional-pages/$id': typeof AdminInstitutionalPagesIdRoute
   '/admin/pedidos/$orderId': typeof AdminPedidosOrderIdRoute
   '/admin/produtos/$id': typeof AdminProdutosIdRoute
+  '/admin/produtos/atributos-rotulos': typeof AdminProdutosAtributosRotulosRoute
   '/admin/produtos/combos': typeof AdminProdutosCombosRoute
   '/admin/produtos/qualidade': typeof AdminProdutosQualidadeRoute
   '/admin/settings/company': typeof AdminSettingsCompanyRoute
@@ -573,6 +581,7 @@ export interface FileRoutesByTo {
   '/admin/institutional-pages/$id': typeof AdminInstitutionalPagesIdRoute
   '/admin/pedidos/$orderId': typeof AdminPedidosOrderIdRoute
   '/admin/produtos/$id': typeof AdminProdutosIdRoute
+  '/admin/produtos/atributos-rotulos': typeof AdminProdutosAtributosRotulosRoute
   '/admin/produtos/combos': typeof AdminProdutosCombosRoute
   '/admin/produtos/qualidade': typeof AdminProdutosQualidadeRoute
   '/admin/settings/company': typeof AdminSettingsCompanyRoute
@@ -646,6 +655,7 @@ export interface FileRoutesById {
   '/admin/institutional-pages/$id': typeof AdminInstitutionalPagesIdRoute
   '/admin/pedidos/$orderId': typeof AdminPedidosOrderIdRoute
   '/admin/produtos/$id': typeof AdminProdutosIdRoute
+  '/admin/produtos/atributos-rotulos': typeof AdminProdutosAtributosRotulosRoute
   '/admin/produtos/combos': typeof AdminProdutosCombosRoute
   '/admin/produtos/qualidade': typeof AdminProdutosQualidadeRoute
   '/admin/settings/company': typeof AdminSettingsCompanyRoute
@@ -720,6 +730,7 @@ export interface FileRouteTypes {
     | '/admin/institutional-pages/$id'
     | '/admin/pedidos/$orderId'
     | '/admin/produtos/$id'
+    | '/admin/produtos/atributos-rotulos'
     | '/admin/produtos/combos'
     | '/admin/produtos/qualidade'
     | '/admin/settings/company'
@@ -792,6 +803,7 @@ export interface FileRouteTypes {
     | '/admin/institutional-pages/$id'
     | '/admin/pedidos/$orderId'
     | '/admin/produtos/$id'
+    | '/admin/produtos/atributos-rotulos'
     | '/admin/produtos/combos'
     | '/admin/produtos/qualidade'
     | '/admin/settings/company'
@@ -864,6 +876,7 @@ export interface FileRouteTypes {
     | '/admin/institutional-pages/$id'
     | '/admin/pedidos/$orderId'
     | '/admin/produtos/$id'
+    | '/admin/produtos/atributos-rotulos'
     | '/admin/produtos/combos'
     | '/admin/produtos/qualidade'
     | '/admin/settings/company'
@@ -931,6 +944,7 @@ export interface RootRouteChildren {
   AdminFinanceiroResumoRoute: typeof AdminFinanceiroResumoRoute
   AdminInstitutionalPagesIdRoute: typeof AdminInstitutionalPagesIdRoute
   AdminProdutosIdRoute: typeof AdminProdutosIdRoute
+  AdminProdutosAtributosRotulosRoute: typeof AdminProdutosAtributosRotulosRoute
   AdminProdutosCombosRoute: typeof AdminProdutosCombosRoute
   AdminProdutosQualidadeRoute: typeof AdminProdutosQualidadeRoute
   AdminSettingsCompanyRoute: typeof AdminSettingsCompanyRoute
@@ -1351,6 +1365,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminProdutosCombosRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/admin/produtos/atributos-rotulos': {
+      id: '/admin/produtos/atributos-rotulos'
+      path: '/admin/produtos/atributos-rotulos'
+      fullPath: '/admin/produtos/atributos-rotulos'
+      preLoaderRoute: typeof AdminProdutosAtributosRotulosRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/admin/produtos/$id': {
       id: '/admin/produtos/$id'
       path: '/admin/produtos/$id'
@@ -1533,6 +1554,7 @@ const rootRouteChildren: RootRouteChildren = {
   AdminFinanceiroResumoRoute: AdminFinanceiroResumoRoute,
   AdminInstitutionalPagesIdRoute: AdminInstitutionalPagesIdRoute,
   AdminProdutosIdRoute: AdminProdutosIdRoute,
+  AdminProdutosAtributosRotulosRoute: AdminProdutosAtributosRotulosRoute,
   AdminProdutosCombosRoute: AdminProdutosCombosRoute,
   AdminProdutosQualidadeRoute: AdminProdutosQualidadeRoute,
   AdminSettingsCompanyRoute: AdminSettingsCompanyRoute,

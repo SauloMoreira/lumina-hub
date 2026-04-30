@@ -13,6 +13,8 @@ import type { Product, Category } from '@/lib/domain';
 import { FREE_SHIPPING_THRESHOLD, formatBRL } from '@/lib/domain';
 import { trackSearch } from '@/lib/tracking';
 import { searchProducts, getCatalogAttributeFacets } from '@/server/productSearch.functions';
+import { getPublicAttributeLabels } from '@/server/productAttributeLabels.functions';
+import { buildLabelLookup } from '@/lib/attributeLabels';
 import { getPublicCompanySettings } from '@/server/institutional.functions';
 import {
   TECH_FILTERS,
@@ -128,6 +130,30 @@ function CatalogPage() {
     (selectedTech.ip_rating?.length ?? 0);
 
   const attrFilters = useMemo(() => toAttrFilterPayload(selectedTech), [selectedTech]);
+
+  // Rótulos amigáveis cadastrados pelo admin (cache 10min)
+  const { data: techLabels } = useQuery({
+    queryKey: ['public-attribute-labels', 'catalog-tech'],
+    staleTime: 1000 * 60 * 10,
+    queryFn: () =>
+      getPublicAttributeLabels({
+        data: { attributeKeys: ['color_temperature', 'voltage', 'ip_rating', 'power'] },
+      }),
+  });
+  const labelLookup = useMemo(() => buildLabelLookup(techLabels ?? []), [techLabels]);
+
+  /** Aplica rótulo amigável ao texto da opção do filtro técnico, quando existir. */
+  function decorateOptionLabel(
+    defKey: TechFilterKey,
+    opt: { id: string; label: string; values?: string[] },
+  ): string {
+    if (!opt.values || opt.values.length === 0) return opt.label;
+    for (const v of opt.values) {
+      const f = labelLookup.find(defKey, v);
+      if (f) return f.display_label;
+    }
+    return opt.label;
+  }
 
   // Facets disponíveis para o contexto atual (categoria)
   const { data: facetsData } = useQuery({
@@ -323,13 +349,14 @@ function CatalogPage() {
                 return ids.map((id) => {
                   const opt = def.options.find((o) => o.id === id);
                   if (!opt) return null;
+                  const friendly = decorateOptionLabel(def.key, opt as any);
                   return (
                     <button
                       key={`${def.key}-${id}`}
                       onClick={() => toggleTechId(def.key, id)}
                       className="inline-flex items-center gap-1.5 text-xs bg-primary-tint text-primary px-2.5 py-1 rounded-full hover:bg-primary/10"
                     >
-                      {def.label}: {opt.label} <X className="w-3 h-3" />
+                      {def.label}: {friendly} <X className="w-3 h-3" />
                     </button>
                   );
                 });
@@ -498,7 +525,7 @@ function CatalogPage() {
                                 onChange={() => toggleTechId(def.key, opt.id)}
                                 className="rounded border-border"
                               />
-                              <span className="text-muted-foreground">{opt.label}</span>
+                              <span className="text-muted-foreground">{decorateOptionLabel(def.key, opt as any)}</span>
                             </label>
                           ))}
                         </div>
