@@ -1122,7 +1122,27 @@ export const getAdminOperations = createServerFn({ method: 'GET' })
       });
     }
 
-    // Fiscal
+    // Catálogo — qualidade de cadastro
+    if (productQuality.featuredBelow70 > 0) {
+      alerts.push({
+        id: 'alert-products-featured-low-quality',
+        title: 'Produtos destacados com cadastro incompleto',
+        description: `${productQuality.featuredBelow70} produto(s) marcado(s) como destaque têm score de qualidade abaixo de 70. Corrija ou remova o destaque.`,
+        severity: 'high',
+        ctaLabel: 'Ver qualidade do cadastro',
+        ctaHref: '/admin/produtos/qualidade',
+      });
+    }
+    if (productQuality.ruim > 0) {
+      alerts.push({
+        id: 'alert-products-quality-ruim',
+        title: 'Produtos com qualidade ruim',
+        description: `${productQuality.ruim} produto(s) com score abaixo de 40 — afeta SEO, conversão e cálculo de margem.`,
+        severity: 'medium',
+        ctaLabel: 'Ver qualidade do cadastro',
+        ctaHref: '/admin/produtos/qualidade',
+      });
+    }
     if (fiscal.companyFiscalIncomplete) {
       alerts.push({
         id: 'alert-fiscal-company-data',
