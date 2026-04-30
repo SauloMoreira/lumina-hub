@@ -8,15 +8,12 @@ export const Route = createFileRoute('/admin/financeiro/impostos')({
 
 function ImpostosPage() {
   return (
-    <AdminLayout>
+    <AdminLayout title="Impostos e dados fiscais">
       <div className="space-y-4">
-        <div>
-          <h1 className="text-2xl font-bold">Impostos e dados fiscais</h1>
-          <p className="text-muted-foreground">
-            Prepare seus produtos e pedidos para emissão fiscal e futura integração com ERP ou
-            emissor de NF-e.
-          </p>
-        </div>
+        <p className="text-muted-foreground">
+          Prepare seus produtos e pedidos para emissão fiscal e futura integração com ERP ou
+          emissor de NF-e.
+        </p>
 
         <div className="bg-card border border-border rounded-xl p-6">
           <div className="flex items-start gap-3">
