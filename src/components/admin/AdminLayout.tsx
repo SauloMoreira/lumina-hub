@@ -1,5 +1,6 @@
 import { useNavigate } from '@tanstack/react-router';
-import { useEffect, type ReactNode } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
+import { Search } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useIsAdmin } from '@/hooks/useIsAdmin';
 import { AdminSidebar } from './AdminSidebar';
@@ -7,6 +8,8 @@ import { Toaster } from '@/components/ui/sonner';
 import { PageSkeleton } from '@/components/layout/PageSkeleton';
 import { RequireAdminMfa } from '@/components/auth/RequireAdminMfa';
 import { AdminAlertsBell } from './AdminAlertsBell';
+import { AdminCommandPalette } from './AdminCommandPalette';
+import { Button } from '@/components/ui/button';
 
 export function AdminLayout({ children, title, action }: { children: ReactNode; title: string; action?: ReactNode }) {
   const { user, loading } = useAuth();
