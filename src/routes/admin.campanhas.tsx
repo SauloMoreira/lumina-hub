@@ -259,7 +259,7 @@ function CampanhasPage() {
     c.status === 'active' && c.ends_at && new Date(c.ends_at) < new Date();
 
   return (
-    <AdminLayout>
+    <AdminLayout title="Campanhas de Marketing">
       <div className="space-y-6">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
