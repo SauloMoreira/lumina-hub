@@ -236,6 +236,31 @@ function ReportsPage() {
   const [products, setProducts] = useState<ProductsReportResult | null>(null);
   const [productsLoading, setProductsLoading] = useState(false);
 
+  // B2B
+  const [b2b, setB2b] = useState<{
+    cards: B2bCards;
+    companies: B2bCompanyRow[];
+    products: B2bProductRow[];
+  } | null>(null);
+  const [b2bLoading, setB2bLoading] = useState(false);
+
+  // Cupons
+  const [coupons, setCoupons] = useState<{
+    cards: CouponsCards;
+    coupons: CouponPerfRow[];
+    orders: DiscountByOrderRow[];
+  } | null>(null);
+  const [couponsLoading, setCouponsLoading] = useState(false);
+
+  // Frete
+  const [shipping, setShipping] = useState<{
+    cards: ShippingCards;
+    orders: { rows: ShippingOrderRow[]; total: number; page: number; pageSize: number };
+    districts: ShippingDistrictRow[];
+  } | null>(null);
+  const [shippingLoading, setShippingLoading] = useState(false);
+  const [shippingPage, setShippingPage] = useState(1);
+
   const filters = useMemo(
     () => ({
       preset,
