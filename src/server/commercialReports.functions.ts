@@ -772,11 +772,13 @@ export const getCouponsReport = createServerFn({ method: 'POST' })
       const cards: CouponsCards = {
         rangeFrom: range.from.toISOString(),
         rangeTo: range.to.toISOString(),
-        totalDiscounts: couponDiscountTotal + b2bDiscountTotal,
+        totalDiscounts: couponDiscountTotal + b2bDiscountTotal + bundleDiscountTotal,
         b2bDiscounts: b2bDiscountTotal,
         couponDiscounts: couponDiscountTotal,
+        bundleDiscounts: bundleDiscountTotal,
         couponsUsed: couponAgg.size,
         ordersWithCoupon,
+        ordersWithBundle,
         averageTicketWithCoupon:
           ordersWithCoupon > 0 ? revenueWithCoupon / ordersWithCoupon : 0,
         averageMarginWithCoupon:
@@ -795,7 +797,7 @@ export const getCouponsReport = createServerFn({ method: 'POST' })
       const discountOrders: DiscountByOrderRow[] = orders
         .filter((o) => {
           const m = orderMetrics.get(o.id)!;
-          return m.coupon_discount > 0 || m.b2b_discount > 0;
+          return m.coupon_discount > 0 || m.b2b_discount > 0 || m.bundle_discount > 0;
         })
         .map((o) => {
           const m = orderMetrics.get(o.id)!;
@@ -808,7 +810,8 @@ export const getCouponsReport = createServerFn({ method: 'POST' })
             coupon_code: o.coupon_code,
             coupon_discount: m.coupon_discount,
             b2b_discount: m.b2b_discount,
-            total_discount: m.coupon_discount + m.b2b_discount,
+            bundle_discount: m.bundle_discount,
+            total_discount: m.coupon_discount + m.b2b_discount + m.bundle_discount,
             final_revenue: m.revenue,
             margin_percent: m.margin_percent,
             margin_status: statusOf(m.margin_percent, m.incomplete),
