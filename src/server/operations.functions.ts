@@ -170,6 +170,60 @@ export const getAdminOperations = createServerFn({ method: 'GET' })
       b2bAllowsCoupon = Boolean((bs as { allow_coupon_in_b2b?: boolean } | null)?.allow_coupon_in_b2b);
     } catch {}
 
+    // Revisão Comercial — contadores de catálogo (varejo + B2B)
+    const commercial = {
+      productsCriticalMargin: 0, // varejo abaixo da mínima
+      productsAttentionMargin: 0,
+      productsNegativeMargin: 0,
+      b2bCriticalMargin: 0,
+    };
+    try {
+      const { computeCommercialReview } = await import('@/lib/commercialReview');
+      const { data: financeS } = await supabaseAdmin
+        .from('finance_settings')
+        .select('default_min_margin_percent')
+        .limit(1)
+        .maybeSingle();
+      const defMin =
+        Number((financeS as { default_min_margin_percent?: number | string | null } | null)
+          ?.default_min_margin_percent) || 25;
+      const { data: prodList } = await supabaseAdmin
+        .from('products')
+        .select(
+          'id, price, sale_price, cost_price, min_margin_percent, b2b_enabled, b2b_price, b2b_min_qty',
+        )
+        .eq('active', true)
+        .limit(2000);
+      for (const p of (prodList ?? []) as Array<{
+        id: string;
+        price: number | null;
+        sale_price: number | null;
+        cost_price: number | null;
+        min_margin_percent: number | null;
+        b2b_enabled: boolean | null;
+        b2b_price: number | null;
+        b2b_min_qty: number | null;
+      }>) {
+        const r = computeCommercialReview(
+          {
+            id: p.id,
+            price: p.price,
+            sale_price: p.sale_price,
+            cost_price: p.cost_price,
+            min_margin_percent: p.min_margin_percent,
+            b2b_enabled: p.b2b_enabled,
+            b2b_price: p.b2b_price,
+            b2b_min_qty: p.b2b_min_qty,
+          },
+          defMin,
+        );
+        const codes = new Set(r.issues.map((i) => i.code));
+        if (codes.has('critical_margin')) commercial.productsCriticalMargin += 1;
+        if (codes.has('attention_margin')) commercial.productsAttentionMargin += 1;
+        if (codes.has('negative_margin')) commercial.productsNegativeMargin += 1;
+        if (codes.has('b2b_critical')) commercial.b2bCriticalMargin += 1;
+      }
+    } catch {}
 
     // ============================================================
     // Produtos
