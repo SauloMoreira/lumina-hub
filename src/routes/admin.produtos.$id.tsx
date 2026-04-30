@@ -484,3 +484,84 @@ function Section({ title, children }: { title: string; children: React.ReactNode
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return <div className="space-y-1.5"><Label className="text-xs">{label}</Label>{children}</div>;
 }
+
+function QualityPanel({ quality }: { quality: ReturnType<typeof computeProductQuality> }) {
+  const c = qualityClassColor(quality.classification);
+  const top = quality.issues.slice(0, 5);
+  return (
+    <div className="bg-card border border-border rounded-xl p-5 space-y-3">
+      <div className="flex items-center justify-between">
+        <h2 className="font-display font-semibold text-sm uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
+          <Sparkles className="w-3.5 h-3.5" /> Qualidade do cadastro
+        </h2>
+        <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${c.bg} ${c.text}`}>
+          {qualityClassLabel(quality.classification)}
+        </span>
+      </div>
+
+      <div className="space-y-1">
+        <div className="flex items-baseline justify-between">
+          <span className="text-3xl font-semibold tabular-nums">{quality.score}</span>
+          <span className="text-xs text-muted-foreground">de 100</span>
+        </div>
+        <div className="h-2 bg-muted rounded-full overflow-hidden">
+          <div
+            className={`h-full transition-all ${
+              quality.score >= 91 ? 'bg-emerald-500' :
+              quality.score >= 71 ? 'bg-sky-500' :
+              quality.score >= 41 ? 'bg-amber-500' : 'bg-red-500'
+            }`}
+            style={{ width: `${quality.score}%` }}
+          />
+        </div>
+      </div>
+
+      <div className="grid grid-cols-2 gap-1.5 text-[11px]">
+        <GroupBar label="Mídia" g={quality.groups.media} />
+        <GroupBar label="Conteúdo" g={quality.groups.content} />
+        <GroupBar label="SEO" g={quality.groups.seo} />
+        <GroupBar label="Fiscal/Custo" g={quality.groups.fiscal} />
+      </div>
+
+      {top.length > 0 ? (
+        <div className="space-y-1.5 pt-1">
+          <p className="text-xs font-medium text-muted-foreground">Para melhorar:</p>
+          <ul className="space-y-1">
+            {top.map((i) => (
+              <li key={i.code} className="text-xs flex items-start gap-1.5">
+                <AlertTriangle className="w-3 h-3 text-amber-600 mt-0.5 shrink-0" />
+                <span><strong className="text-foreground">{i.label}.</strong> <span className="text-muted-foreground">{i.hint}</span></span>
+              </li>
+            ))}
+            {quality.issues.length > top.length && (
+              <li className="text-[11px] text-muted-foreground/70">+ {quality.issues.length - top.length} outras pendências.</li>
+            )}
+          </ul>
+        </div>
+      ) : (
+        <p className="text-xs text-emerald-700 dark:text-emerald-400 flex items-center gap-1.5 pt-1">
+          <CheckCircle2 className="w-3.5 h-3.5" /> Cadastro completo. Pronto para destaque.
+        </p>
+      )}
+
+      <p className="text-[11px] text-muted-foreground border-t border-border pt-2">
+        Os avisos são informativos. Produtos com score abaixo de {QUALITY_FEATURED_MIN} não podem ser destacados em vitrines premium.
+      </p>
+    </div>
+  );
+}
+
+function GroupBar({ label, g }: { label: string; g: { score: number; max: number } }) {
+  const pct = g.max ? Math.round((g.score / g.max) * 100) : 0;
+  return (
+    <div className="space-y-0.5">
+      <div className="flex items-center justify-between">
+        <span className="text-muted-foreground">{label}</span>
+        <span className="tabular-nums text-foreground">{g.score}/{g.max}</span>
+      </div>
+      <div className="h-1 bg-muted rounded-full overflow-hidden">
+        <div className={`h-full ${pct >= 80 ? 'bg-emerald-500' : pct >= 50 ? 'bg-sky-500' : pct > 0 ? 'bg-amber-500' : 'bg-red-500'}`} style={{ width: `${pct}%` }} />
+      </div>
+    </div>
+  );
+}
