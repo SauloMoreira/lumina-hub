@@ -397,6 +397,8 @@ function ProductForm() {
             seoKeywords={form.seo_keywords}
             onChange={(field, value) => setForm((f) => ({ ...f, [field]: value }))}
           />
+
+          {!isNew && <ProductRelationsSection productId={id} />}
         </div>
 
         <div className="space-y-4">
