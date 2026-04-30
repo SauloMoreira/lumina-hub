@@ -947,6 +947,14 @@ export type Database = {
           default_currency: string
           default_min_margin_percent: number
           id: string
+          invoice_default_cfop: string | null
+          invoice_default_nature: string | null
+          invoice_default_series: string | null
+          invoice_environment: string
+          invoice_provider: string | null
+          invoice_required_min_value: number | null
+          invoice_required_policy: string
+          invoice_tax_regime: string | null
           mp_fee_boleto_fixed: number
           mp_fee_boleto_percent: number
           mp_fee_credit_fixed: number
@@ -966,6 +974,14 @@ export type Database = {
           default_currency?: string
           default_min_margin_percent?: number
           id?: string
+          invoice_default_cfop?: string | null
+          invoice_default_nature?: string | null
+          invoice_default_series?: string | null
+          invoice_environment?: string
+          invoice_provider?: string | null
+          invoice_required_min_value?: number | null
+          invoice_required_policy?: string
+          invoice_tax_regime?: string | null
           mp_fee_boleto_fixed?: number
           mp_fee_boleto_percent?: number
           mp_fee_credit_fixed?: number
@@ -985,6 +1001,14 @@ export type Database = {
           default_currency?: string
           default_min_margin_percent?: number
           id?: string
+          invoice_default_cfop?: string | null
+          invoice_default_nature?: string | null
+          invoice_default_series?: string | null
+          invoice_environment?: string
+          invoice_provider?: string | null
+          invoice_required_min_value?: number | null
+          invoice_required_policy?: string
+          invoice_tax_regime?: string | null
           mp_fee_boleto_fixed?: number
           mp_fee_boleto_percent?: number
           mp_fee_credit_fixed?: number
@@ -1719,6 +1743,48 @@ export type Database = {
         }
         Relationships: []
       }
+      order_invoice_audit: {
+        Row: {
+          changed_by: string | null
+          changed_by_email: string | null
+          created_at: string
+          event_type: string
+          id: string
+          new_data: Json | null
+          new_status: string | null
+          notes: string | null
+          order_id: string
+          previous_data: Json | null
+          previous_status: string | null
+        }
+        Insert: {
+          changed_by?: string | null
+          changed_by_email?: string | null
+          created_at?: string
+          event_type: string
+          id?: string
+          new_data?: Json | null
+          new_status?: string | null
+          notes?: string | null
+          order_id: string
+          previous_data?: Json | null
+          previous_status?: string | null
+        }
+        Update: {
+          changed_by?: string | null
+          changed_by_email?: string | null
+          created_at?: string
+          event_type?: string
+          id?: string
+          new_data?: Json | null
+          new_status?: string | null
+          notes?: string | null
+          order_id?: string
+          previous_data?: Json | null
+          previous_status?: string | null
+        }
+        Relationships: []
+      }
       order_items: {
         Row: {
           applied_unit_price: number | null
@@ -1864,8 +1930,19 @@ export type Database = {
           estimated_net_amount: number | null
           external_reference: string | null
           id: string
+          invoice_access_key: string | null
+          invoice_danfe_url: string | null
+          invoice_issued_at: string | null
+          invoice_notes: string | null
           invoice_number: string | null
+          invoice_registered_at: string | null
+          invoice_registered_by: string | null
+          invoice_required: boolean
+          invoice_series: string | null
+          invoice_status: string
+          invoice_updated_at: string | null
           invoice_url: string | null
+          invoice_xml_url: string | null
           local_delivery_district: string | null
           local_delivery_eta: string | null
           local_delivery_zone_id: string | null
@@ -1942,8 +2019,19 @@ export type Database = {
           estimated_net_amount?: number | null
           external_reference?: string | null
           id?: string
+          invoice_access_key?: string | null
+          invoice_danfe_url?: string | null
+          invoice_issued_at?: string | null
+          invoice_notes?: string | null
           invoice_number?: string | null
+          invoice_registered_at?: string | null
+          invoice_registered_by?: string | null
+          invoice_required?: boolean
+          invoice_series?: string | null
+          invoice_status?: string
+          invoice_updated_at?: string | null
           invoice_url?: string | null
+          invoice_xml_url?: string | null
           local_delivery_district?: string | null
           local_delivery_eta?: string | null
           local_delivery_zone_id?: string | null
@@ -2020,8 +2108,19 @@ export type Database = {
           estimated_net_amount?: number | null
           external_reference?: string | null
           id?: string
+          invoice_access_key?: string | null
+          invoice_danfe_url?: string | null
+          invoice_issued_at?: string | null
+          invoice_notes?: string | null
           invoice_number?: string | null
+          invoice_registered_at?: string | null
+          invoice_registered_by?: string | null
+          invoice_required?: boolean
+          invoice_series?: string | null
+          invoice_status?: string
+          invoice_updated_at?: string | null
           invoice_url?: string | null
+          invoice_xml_url?: string | null
           local_delivery_district?: string | null
           local_delivery_eta?: string | null
           local_delivery_zone_id?: string | null
