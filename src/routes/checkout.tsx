@@ -11,6 +11,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { useCart } from '@/stores/cartStore';
 import { formatBRL } from '@/lib/domain';
 import { lookupCep, calculateShipping, applyCoupon, createOrder, lookupLocalDeliveryZone } from '@/server/checkout.functions';
+import { getCartBundlePreview } from '@/server/cartBundlePreview.functions';
 import { createMercadoPagoPreference } from '@/server/payment.functions';
 import { getPublicCompanySettings } from '@/server/institutional.functions';
 import { useCartPricing, maskCnpj } from '@/hooks/useCartPricing';
