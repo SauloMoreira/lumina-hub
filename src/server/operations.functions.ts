@@ -1,6 +1,7 @@
 import { createServerFn } from '@tanstack/react-start';
 import { requireAdmin } from '@/integrations/supabase/admin-middleware';
 import { supabaseAdmin } from '@/integrations/supabase/client.server';
+import { fetchSeoQuickCounts } from './seoInsights.functions';
 
 /**
  * Agrega todos os contadores e alertas usados pelo
@@ -302,6 +303,28 @@ export const getAdminOperations = createServerFn({ method: 'GET' })
     } catch {}
 
     // ============================================================
+    // SEO Insights (counts leves)
+    // ============================================================
+    let seo: Awaited<ReturnType<typeof fetchSeoQuickCounts>> = {
+      productsNoSeoTitle: 0,
+      productsNoSeoDescription: 0,
+      productsNoImage: 0,
+      productsNoDescription: 0,
+      categoriesNoDescription: 0,
+      homepageMissingSeo: false,
+      b2bMissingSeo: false,
+    };
+    try { seo = await fetchSeoQuickCounts(); } catch {}
+
+    const seoTotalIssues =
+      seo.productsNoSeoTitle +
+      seo.productsNoSeoDescription +
+      seo.productsNoImage +
+      seo.categoriesNoDescription +
+      (seo.homepageMissingSeo ? 1 : 0) +
+      (seo.b2bMissingSeo ? 1 : 0);
+
+    // ============================================================
     // Monta cards
     // ============================================================
     const cards: OperationsCard[] = [
@@ -449,6 +472,18 @@ export const getAdminOperations = createServerFn({ method: 'GET' })
         ctaHref: '/admin/carrinhos-abandonados',
         group: 'Pedidos',
       },
+      {
+        id: 'seo-pendencias',
+        title: 'SEO com pendências',
+        description: 'Produtos, categorias ou páginas com SEO incompleto. Corrigir ajuda a aparecer no Google.',
+        qty: seoTotalIssues,
+        status: seoTotalIssues === 0
+          ? 'ok'
+          : (seo.homepageMissingSeo || seo.productsNoSeoTitle > 10 ? 'danger' : 'warn'),
+        ctaLabel: 'Ver SEO Insights',
+        ctaHref: '/admin/seo',
+        group: 'Marketing',
+      },
     ];
 
     // ============================================================
@@ -584,6 +619,48 @@ export const getAdminOperations = createServerFn({ method: 'GET' })
         severity: 'high',
         ctaLabel: 'Ver detalhes',
         ctaHref: '/admin',
+      });
+    }
+
+    // SEO alerts
+    if (seo.homepageMissingSeo) {
+      alerts.push({
+        id: 'alert-seo-home',
+        title: 'Homepage sem SEO configurado',
+        description: 'A homepage está sem título ou descrição SEO — perde tráfego do Google.',
+        severity: 'high',
+        ctaLabel: 'Configurar SEO',
+        ctaHref: '/admin/conteudo/homepage',
+      });
+    }
+    if (seo.b2bMissingSeo) {
+      alerts.push({
+        id: 'alert-seo-b2b',
+        title: 'Vitrine B2B sem SEO',
+        description: 'A página B2B está sem título e descrição SEO configurados.',
+        severity: 'medium',
+        ctaLabel: 'Ver SEO Insights',
+        ctaHref: '/admin/seo',
+      });
+    }
+    if (seo.productsNoSeoTitle > 0 || seo.productsNoSeoDescription > 0) {
+      alerts.push({
+        id: 'alert-seo-products',
+        title: 'Produtos com SEO incompleto',
+        description: `${seo.productsNoSeoTitle} sem título SEO, ${seo.productsNoSeoDescription} sem meta description.`,
+        severity: 'medium',
+        ctaLabel: 'Ver SEO Insights',
+        ctaHref: '/admin/seo',
+      });
+    }
+    if (seo.categoriesNoDescription > 0) {
+      alerts.push({
+        id: 'alert-seo-categories',
+        title: 'Categorias sem descrição',
+        description: `${seo.categoriesNoDescription} categoria(s) sem descrição prejudicam a navegação e o SEO.`,
+        severity: 'low',
+        ctaLabel: 'Ver SEO Insights',
+        ctaHref: '/admin/seo',
       });
     }
 
