@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { getCartPricing } from '@/server/b2bPricing.functions';
-import type { B2bPricingResult } from '@/server/b2bPricing.functions';
+import type { B2bPricingResult } from '@/lib/b2bPricingShared';
 import { useCart } from '@/stores/cartStore';
 
 /**
