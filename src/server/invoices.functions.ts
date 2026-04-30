@@ -357,7 +357,7 @@ export const registerInvoice = createServerFn({ method: 'POST' })
 
     const { error: updErr } = await supabaseAdmin
       .from('orders')
-      .update(update)
+      .update(update as never)
       .eq('id', data.orderId);
     if (updErr) return { ok: false as const, error: updErr.message };
 
@@ -418,7 +418,7 @@ export const setInvoiceStatus = createServerFn({ method: 'POST' })
 
     const { error } = await supabaseAdmin
       .from('orders')
-      .update(update)
+      .update(update as never)
       .eq('id', data.orderId);
     if (error) return { ok: false as const, error: error.message };
 
