@@ -235,6 +235,8 @@ async function loadBundlesWithItems(filter: {
       is_featured: !!b.is_featured,
       start_date: b.start_date,
       end_date: b.end_date,
+      discount_type: (b.discount_type ?? 'none') as BundleDiscountType,
+      discount_value: Number(b.discount_value ?? 0),
       items,
       subtotal,
       items_count: items.length,
