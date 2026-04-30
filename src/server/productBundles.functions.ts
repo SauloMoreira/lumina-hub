@@ -36,6 +36,8 @@ export type BundleItemPublic = {
   status: 'ok' | 'inactive' | 'no_price' | 'no_stock';
 };
 
+export type BundleDiscountType = 'none' | 'fixed_amount' | 'percentage';
+
 export type BundlePublic = {
   id: string;
   slug: string | null;
@@ -46,12 +48,17 @@ export type BundlePublic = {
   is_featured: boolean;
   start_date: string | null;
   end_date: string | null;
+  discount_type: BundleDiscountType;
+  discount_value: number;
   items: BundleItemPublic[];
   subtotal: number;
   items_count: number;
   total_units: number;
   availability: BundleAvailability;
 };
+
+// Limite seguro de desconto percentual para combos (admin pode rever depois)
+export const BUNDLE_PERCENT_LIMIT = 50;
 
 export type BundleAdminRow = {
   id: string;
@@ -143,7 +150,7 @@ async function loadBundlesWithItems(filter: {
     .from('product_bundles')
     .select(
       `id, slug, name, description, image_url, is_active, is_featured,
-       start_date, end_date, updated_at,
+       start_date, end_date, discount_type, discount_value, updated_at,
        items:product_bundle_items (
          id, product_id, quantity, sort_order, is_required,
          product:products (
@@ -228,6 +235,8 @@ async function loadBundlesWithItems(filter: {
       is_featured: !!b.is_featured,
       start_date: b.start_date,
       end_date: b.end_date,
+      discount_type: (b.discount_type ?? 'none') as BundleDiscountType,
+      discount_value: Number(b.discount_value ?? 0),
       items,
       subtotal,
       items_count: items.length,
@@ -368,6 +377,24 @@ export const adminGetBundle = createServerFn({ method: 'POST' })
 // ----------------------------------------------------------------------------
 const slugRegex = /^[a-z0-9-]+$/;
 
+const DiscountTypeEnum = z.enum(['none', 'fixed_amount', 'percentage']);
+
+function validateDiscount(input: { discountType?: BundleDiscountType; discountValue?: number }) {
+  const t = input.discountType ?? 'none';
+  const v = Number(input.discountValue ?? 0);
+  if (t === 'none') return { discount_type: 'none' as const, discount_value: 0 };
+  if (!Number.isFinite(v) || v <= 0) {
+    throw new Error('bundle_discount_value_invalid');
+  }
+  if (t === 'percentage' && v > BUNDLE_PERCENT_LIMIT) {
+    throw new Error('bundle_discount_percent_over_limit');
+  }
+  if (t === 'fixed_amount' && v > 100000) {
+    throw new Error('bundle_discount_value_invalid');
+  }
+  return { discount_type: t, discount_value: Math.round(v * 100) / 100 };
+}
+
 const AdminCreateInput = z.object({
   name: z.string().trim().min(2).max(160),
   slug: z.string().trim().min(2).max(160).regex(slugRegex).optional(),
@@ -378,6 +405,8 @@ const AdminCreateInput = z.object({
   startDate: z.string().datetime().optional().nullable(),
   endDate: z.string().datetime().optional().nullable(),
   notes: z.string().trim().max(2000).optional().nullable(),
+  discountType: DiscountTypeEnum.optional(),
+  discountValue: z.number().min(0).max(100000).optional(),
 });
 
 function slugify(s: string) {
@@ -396,6 +425,10 @@ export const adminCreateBundle = createServerFn({ method: 'POST' })
     await requireAdmin();
     const { supabaseAdmin } = await import('@/integrations/supabase/client.server');
     const slug = data.slug || slugify(data.name);
+    const disc = validateDiscount({
+      discountType: data.discountType,
+      discountValue: data.discountValue,
+    });
     const { data: row, error } = await supabaseAdmin
       .from('product_bundles')
       .insert({
@@ -408,9 +441,8 @@ export const adminCreateBundle = createServerFn({ method: 'POST' })
         start_date: data.startDate ?? null,
         end_date: data.endDate ?? null,
         notes: data.notes ?? null,
-        // Desconto preparado para fase futura — não usado nesta onda
-        discount_type: 'none',
-        discount_value: 0,
+        discount_type: disc.discount_type,
+        discount_value: disc.discount_value,
       })
       .select('id')
       .single();
@@ -435,6 +467,8 @@ const AdminUpdateInput = z.object({
   startDate: z.string().datetime().optional().nullable(),
   endDate: z.string().datetime().optional().nullable(),
   notes: z.string().trim().max(2000).optional().nullable(),
+  discountType: DiscountTypeEnum.optional(),
+  discountValue: z.number().min(0).max(100000).optional(),
 });
 
 export const adminUpdateBundle = createServerFn({ method: 'POST' })
@@ -452,6 +486,8 @@ export const adminUpdateBundle = createServerFn({ method: 'POST' })
       start_date?: string | null;
       end_date?: string | null;
       notes?: string | null;
+      discount_type?: BundleDiscountType;
+      discount_value?: number;
     };
     const patch: BundlePatch = {};
     if (data.name !== undefined) patch.name = data.name;
@@ -463,6 +499,14 @@ export const adminUpdateBundle = createServerFn({ method: 'POST' })
     if (data.startDate !== undefined) patch.start_date = data.startDate;
     if (data.endDate !== undefined) patch.end_date = data.endDate;
     if (data.notes !== undefined) patch.notes = data.notes;
+    if (data.discountType !== undefined || data.discountValue !== undefined) {
+      const disc = validateDiscount({
+        discountType: data.discountType,
+        discountValue: data.discountValue,
+      });
+      patch.discount_type = disc.discount_type;
+      patch.discount_value = disc.discount_value;
+    }
 
     // Se for ativar, valida cadastro
     if (data.isActive === true) {

@@ -73,7 +73,11 @@ type BundleMetaPatch = {
   startDate?: string | null;
   endDate?: string | null;
   notes?: string | null;
+  discountType?: 'none' | 'fixed_amount' | 'percentage';
+  discountValue?: number;
 };
+
+const BUNDLE_PERCENT_LIMIT = 50;
 
 function BundlesAdminPage() {
   const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -375,9 +379,121 @@ function BundleMetaForm({
         />
       </div>
 
+      <BundleDiscountSection bundle={bundle} onChange={onChange} />
+
       {saving && (
         <div className="text-xs text-muted-foreground flex items-center gap-2">
           <Loader2 className="w-3 h-3 animate-spin" /> Salvando…
+        </div>
+      )}
+    </div>
+  );
+}
+
+function BundleDiscountSection({
+  bundle,
+  onChange,
+}: {
+  bundle: BundlePublic;
+  onChange: (patch: BundleMetaPatch) => void;
+}) {
+  const [type, setType] = useState<NonNullable<BundleMetaPatch['discountType']>>(
+    (bundle.discount_type ?? 'none') as NonNullable<BundleMetaPatch['discountType']>
+  );
+  const [value, setValue] = useState<string>(String(bundle.discount_value ?? 0));
+
+  const numValue = Number(value) || 0;
+  const eligible = bundle.subtotal;
+  const estimated =
+    type === 'fixed_amount'
+      ? Math.min(numValue, eligible)
+      : type === 'percentage'
+      ? Math.min(eligible, Math.round(eligible * (Math.min(numValue, 100) / 100) * 100) / 100)
+      : 0;
+  const totalAfter = Math.max(0, eligible - estimated);
+  const overLimit = type === 'percentage' && numValue > BUNDLE_PERCENT_LIMIT;
+  const invalid =
+    type !== 'none' && (numValue <= 0 || (type === 'fixed_amount' && numValue > eligible));
+
+  function commit(nextType: NonNullable<BundleMetaPatch['discountType']>, nextValue: number) {
+    if (nextType === 'none') {
+      onChange({ discountType: 'none', discountValue: 0 });
+      return;
+    }
+    if (nextValue <= 0) return;
+    if (nextType === 'percentage' && nextValue > BUNDLE_PERCENT_LIMIT) return;
+    onChange({ discountType: nextType, discountValue: nextValue });
+  }
+
+  return (
+    <div className="space-y-3 pt-3 border-t border-border">
+      <div className="flex items-center gap-2">
+        <h3 className="text-sm font-semibold">Desconto do combo</h3>
+        <span className="text-[10px] uppercase tracking-wider text-muted-foreground bg-muted px-1.5 py-0.5 rounded">
+          backend valida
+        </span>
+      </div>
+
+      <div className="grid sm:grid-cols-2 gap-3">
+        <Field label="Tipo de desconto">
+          <select
+            value={type}
+            onChange={(e) => {
+              const t = e.target.value as NonNullable<BundleMetaPatch['discountType']>;
+              setType(t);
+              if (t === 'none') {
+                setValue('0');
+                commit('none', 0);
+              }
+            }}
+            className="w-full h-10 px-3 rounded-md border border-input bg-background text-sm"
+          >
+            <option value="none">Sem desconto</option>
+            <option value="fixed_amount">Valor fixo (R$)</option>
+            <option value="percentage">Percentual (%)</option>
+          </select>
+        </Field>
+        <Field label={type === 'percentage' ? 'Valor (%)' : 'Valor (R$)'}>
+          <Input
+            type="number"
+            min={0}
+            step={type === 'percentage' ? 1 : 0.01}
+            value={value}
+            disabled={type === 'none'}
+            onChange={(e) => setValue(e.target.value)}
+            onBlur={() => commit(type, Number(value) || 0)}
+          />
+        </Field>
+      </div>
+
+      <p className="text-[11px] text-muted-foreground">
+        {type === 'fixed_amount' && 'Reduz um valor fixo em reais do subtotal do combo. '}
+        {type === 'percentage' &&
+          `Reduz uma porcentagem sobre o subtotal dos itens elegíveis. Limite seguro: ${BUNDLE_PERCENT_LIMIT}%. `}
+        {type === 'none' && 'Combo estrutural, sem desconto comercial. '}
+        Descontos de combo não acumulam com preço empresa (B2B) por padrão.
+      </p>
+
+      {overLimit && (
+        <div className="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded px-2 py-1.5">
+          Acima do limite seguro de {BUNDLE_PERCENT_LIMIT}%. Ajuste para salvar.
+        </div>
+      )}
+      {invalid && !overLimit && (
+        <div className="text-xs text-red-700 bg-red-50 border border-red-200 rounded px-2 py-1.5">
+          Valor inválido para o tipo selecionado.
+        </div>
+      )}
+
+      {type !== 'none' && bundle.items.length > 0 && (
+        <div className="rounded-md border border-border bg-surface/40 p-3 text-xs space-y-1">
+          <div className="font-medium text-foreground">Prévia (sem aplicar ainda)</div>
+          <div className="flex justify-between"><span>Subtotal dos itens</span><span>{formatBRL(eligible)}</span></div>
+          <div className="flex justify-between text-emerald-700"><span>Desconto estimado</span><span>− {formatBRL(estimated)}</span></div>
+          <div className="flex justify-between font-semibold border-t border-border pt-1 mt-1"><span>Total estimado do combo</span><span>{formatBRL(totalAfter)}</span></div>
+          <div className="text-[10px] text-muted-foreground pt-1">
+            Revise a margem dos produtos antes de aplicar desconto. O backend é a fonte da verdade no carrinho.
+          </div>
         </div>
       )}
     </div>
