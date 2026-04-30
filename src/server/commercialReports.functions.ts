@@ -647,6 +647,7 @@ export const getCouponsReport = createServerFn({ method: 'POST' })
         margin_percent: number;
         coupon_discount: number;
         b2b_discount: number;
+        bundle_discount: number;
       };
       const orderMetrics = new Map<string, OrderMetrics>();
       for (const o of orders) {
@@ -670,6 +671,7 @@ export const getCouponsReport = createServerFn({ method: 'POST' })
           margin_percent: marginPercent,
           coupon_discount: couponDisc,
           b2b_discount: Number(o.b2b_discount_total ?? 0),
+          bundle_discount: Number(o.bundle_discount_total ?? 0),
         });
       }
 
