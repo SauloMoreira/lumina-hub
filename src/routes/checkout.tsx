@@ -1,7 +1,7 @@
 import { createFileRoute, Link, useNavigate } from '@tanstack/react-router';
 import { useEffect, useMemo, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { ArrowLeft, ArrowRight, Check, Loader2, MapPin, Truck, CreditCard, ShoppingBag, Store } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Check, Loader2, MapPin, Truck, CreditCard, ShoppingBag, Store, Building2, BadgePercent } from 'lucide-react';
 import { toast } from 'sonner';
 import { StoreLayout } from '@/components/layout/StoreLayout';
 import { Button } from '@/components/ui/button';
@@ -13,6 +13,7 @@ import { formatBRL } from '@/lib/domain';
 import { lookupCep, calculateShipping, applyCoupon, createOrder, lookupLocalDeliveryZone } from '@/server/checkout.functions';
 import { createMercadoPagoPreference } from '@/server/payment.functions';
 import { getPublicCompanySettings } from '@/server/institutional.functions';
+import { useCartPricing, maskCnpj } from '@/hooks/useCartPricing';
 import { buildSeo } from '@/lib/seo';
 import { trackPurchase, trackBeginCheckout } from '@/lib/tracking';
 import { redirectToExternalCheckout } from '@/lib/externalCheckout';
@@ -96,7 +97,11 @@ function CheckoutPage() {
     ? (localZone?.price ?? 0)
     : (selectedShipping?.price ?? 0);
 
-  const subtotal = cart.subtotal();
+  const { pricing, refetch: refetchPricing } = useCartPricing();
+  const subtotalRetail = pricing?.retail_subtotal ?? cart.subtotal();
+  const subtotal = pricing?.applied_subtotal ?? cart.subtotal();
+  const b2bSavings = pricing?.b2b_discount_total ?? 0;
+  const isB2bOrder = Boolean(pricing?.has_b2b_items);
   const total = useMemo(
     () => Math.max(0, subtotal - discount + shippingCost),
     [subtotal, discount, shippingCost]
@@ -286,6 +291,10 @@ function CheckoutPage() {
     if (submitting) return;
     setSubmitting(true);
     try {
+      // Re-valida pricing com o backend antes de criar o pedido para garantir
+      // que o usuário não veja preço antigo enquanto o servidor recalcula.
+      refetchPricing();
+
       const r = await createOrder({
         data: {
           items: cart.items.map((i) => ({
@@ -590,15 +599,41 @@ function CheckoutPage() {
               <>
                 <h2 className="font-display font-bold text-xl mb-5">Revisão e pagamento</h2>
 
+                {pricing?.company_approved && pricing.company && (
+                  <section className="mb-5 pb-5 border-b border-border">
+                    <h3 className="font-semibold text-sm mb-2 text-muted-foreground uppercase tracking-wide">Compra empresa</h3>
+                    <div className="flex items-start gap-3 rounded-lg border border-primary/30 bg-primary-tint/40 p-3">
+                      <Building2 className="w-5 h-5 text-primary mt-0.5 shrink-0" />
+                      <div className="text-sm">
+                        <p className="font-medium">{pricing.company.trade_name || pricing.company.legal_name}</p>
+                        <p className="text-xs text-muted-foreground">CNPJ {maskCnpj(pricing.company.cnpj)} · Responsável: {pricing.company.contact_name}</p>
+                        {b2bSavings > 0 && (
+                          <p className="text-xs text-success mt-1 inline-flex items-center gap-1">
+                            <BadgePercent className="w-3 h-3" /> Você economiza {formatBRL(b2bSavings)} com preço empresa.
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  </section>
+                )}
+
                 <section className="mb-5 pb-5 border-b border-border">
                   <h3 className="font-semibold text-sm mb-2 text-muted-foreground uppercase tracking-wide">Itens</h3>
                   <div className="space-y-2.5">
-                    {cart.items.map((i) => (
-                      <div key={i.productId} className="flex justify-between items-center text-sm">
-                        <span className="line-clamp-1">{i.qty}× {i.name}</span>
-                        <span className="font-medium shrink-0 ml-3">{formatBRL(i.price * i.qty)}</span>
-                      </div>
-                    ))}
+                    {cart.items.map((i) => {
+                      const priced = pricing?.items.find((p) => p.product_id === i.productId);
+                      const unit = priced?.applied_unit_price ?? i.price;
+                      const isB2b = priced?.pricing_source === 'b2b';
+                      return (
+                        <div key={i.productId} className="flex justify-between items-center text-sm">
+                          <span className="line-clamp-1">
+                            {i.qty}× {i.name}
+                            {isB2b && <span className="ml-1.5 text-[10px] font-semibold text-success uppercase">B2B</span>}
+                          </span>
+                          <span className="font-medium shrink-0 ml-3">{formatBRL(unit * i.qty)}</span>
+                        </div>
+                      );
+                    })}
                   </div>
                 </section>
 
@@ -690,7 +725,13 @@ function CheckoutPage() {
             </div>
 
             <div className="space-y-2 text-sm border-t border-border pt-4">
-              <div className="flex justify-between"><span className="text-muted-foreground">Subtotal</span><span>{formatBRL(subtotal)}</span></div>
+              <div className="flex justify-between"><span className="text-muted-foreground">Subtotal</span><span>{formatBRL(subtotalRetail)}</span></div>
+              {b2bSavings > 0 && (
+                <div className="flex justify-between text-success">
+                  <span>Desconto empresa</span>
+                  <span>−{formatBRL(b2bSavings)}</span>
+                </div>
+              )}
               {discount > 0 && (
                 <div className="flex justify-between text-success"><span>Desconto ({couponCode})</span><span>−{formatBRL(discount)}</span></div>
               )}
@@ -706,6 +747,9 @@ function CheckoutPage() {
                 <span className="font-medium">Total</span>
                 <span className="font-display font-extrabold text-2xl text-primary">{formatBRL(total)}</span>
               </div>
+              {isB2bOrder && (
+                <p className="text-[10px] text-muted-foreground text-right">Total inclui preço empresa validado pelo backend.</p>
+              )}
               <p className="text-xs text-muted-foreground text-right">em até 12x de {formatBRL(total / 12)}</p>
             </div>
           </aside>

@@ -129,6 +129,49 @@ export const getAdminOperations = createServerFn({ method: 'GET' })
       (q) => q.in('status', ['nova', 'em_andamento']),
     );
 
+    // Pedidos B2B pagos aguardando separação
+    const b2bPaidAwaitingShipping = await safeCount(
+      () => supabaseAdmin.from('orders'),
+      (q) =>
+        q
+          .eq('order_type', 'b2b')
+          .eq('payment_status', 'paid')
+          .in('status', ['paid', 'confirmed', 'preparing']),
+    );
+
+    // Receita / ticket médio B2B do dia + total economizado em B2B hoje
+    let b2bRevenueToday = 0;
+    let b2bOrdersPaidToday = 0;
+    let b2bAvgTicketToday = 0;
+    let b2bDiscountGivenToday = 0;
+    try {
+      const { data: b2bPaid } = await supabaseAdmin
+        .from('orders')
+        .select('total, b2b_discount_total')
+        .eq('order_type', 'b2b')
+        .eq('payment_status', 'paid')
+        .gte('paid_at', startOfTodayISO());
+      b2bOrdersPaidToday = (b2bPaid ?? []).length;
+      b2bRevenueToday = (b2bPaid ?? []).reduce((s, o) => s + Number(o.total ?? 0), 0);
+      b2bDiscountGivenToday = (b2bPaid ?? []).reduce(
+        (s, o) => s + Number((o as { b2b_discount_total?: number }).b2b_discount_total ?? 0),
+        0,
+      );
+      b2bAvgTicketToday = b2bOrdersPaidToday > 0 ? b2bRevenueToday / b2bOrdersPaidToday : 0;
+    } catch {}
+
+    // Configuração B2B (cupom)
+    let b2bAllowsCoupon = false;
+    try {
+      const { data: bs } = await supabaseAdmin
+        .from('b2b_settings')
+        .select('allow_coupon_in_b2b')
+        .limit(1)
+        .maybeSingle();
+      b2bAllowsCoupon = Boolean((bs as { allow_coupon_in_b2b?: boolean } | null)?.allow_coupon_in_b2b);
+    } catch {}
+
+
     // ============================================================
     // Produtos
     // ============================================================
@@ -422,6 +465,29 @@ export const getAdminOperations = createServerFn({ method: 'GET' })
         status: openNegotiations === 0 ? 'ok' : 'warn',
         ctaLabel: 'Ver negociações',
         ctaHref: null,
+        group: 'B2B',
+      },
+      {
+        id: 'b2b-paid-awaiting',
+        title: 'Pedidos B2B pagos aguardando separação',
+        description: 'Pedidos de empresa já pagos que precisam ser separados — priorize.',
+        qty: b2bPaidAwaitingShipping,
+        status: b2bPaidAwaitingShipping === 0 ? 'ok' : 'warn',
+        ctaLabel: 'Ver pedidos',
+        ctaHref: '/admin/pedidos',
+        group: 'B2B',
+      },
+      {
+        id: 'b2b-revenue-today',
+        title: 'Vendas B2B pagas hoje',
+        description:
+          b2bOrdersPaidToday > 0
+            ? `Ticket médio ${new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(b2bAvgTicketToday)} · ${new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(b2bDiscountGivenToday)} concedidos em desconto empresa.`
+            : 'Nenhum pedido B2B pago foi registrado hoje ainda.',
+        qty: b2bOrdersPaidToday,
+        status: 'ok',
+        ctaLabel: 'Ver pedidos B2B',
+        ctaHref: '/admin/pedidos',
         group: 'B2B',
       },
       {
@@ -723,6 +789,26 @@ export const getAdminOperations = createServerFn({ method: 'GET' })
         severity: 'high',
         ctaLabel: 'Corrigir integrações',
         ctaHref: '/admin/integracoes',
+      });
+    }
+    if (b2bPaidAwaitingShipping > 0) {
+      alerts.push({
+        id: 'alert-b2b-paid-awaiting',
+        title: 'Pedidos B2B pagos aguardando separação',
+        description: `${b2bPaidAwaitingShipping} pedido(s) de empresa pago(s) precisam ser separados — clientes B2B costumam ser exigentes com prazo.`,
+        severity: 'medium',
+        ctaLabel: 'Ver pedidos',
+        ctaHref: '/admin/pedidos',
+      });
+    }
+    if (b2bAllowsCoupon) {
+      alerts.push({
+        id: 'alert-b2b-coupon-on',
+        title: 'Cupons permitidos em pedidos B2B',
+        description: 'A configuração atual permite acumular cupom sobre o preço empresa. Revise se realmente quer essa política.',
+        severity: 'low',
+        ctaLabel: 'Revisar configurações B2B',
+        ctaHref: '/admin/configuracoes-b2b',
       });
     }
 

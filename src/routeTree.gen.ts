@@ -48,6 +48,7 @@ import { Route as AdminFunilRouteImport } from './routes/admin.funil'
 import { Route as AdminEmpresasRouteImport } from './routes/admin.empresas'
 import { Route as AdminCuponsRouteImport } from './routes/admin.cupons'
 import { Route as AdminContactMessagesRouteImport } from './routes/admin.contact-messages'
+import { Route as AdminConfiguracoesB2bRouteImport } from './routes/admin.configuracoes-b2b'
 import { Route as AdminCategoriasRouteImport } from './routes/admin.categorias'
 import { Route as AdminCarrinhosAbandonadosRouteImport } from './routes/admin.carrinhos-abandonados'
 import { Route as AdminCampanhasPerformanceRouteImport } from './routes/admin.campanhas-performance'
@@ -262,6 +263,11 @@ const AdminContactMessagesRoute = AdminContactMessagesRouteImport.update({
   path: '/admin/contact-messages',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AdminConfiguracoesB2bRoute = AdminConfiguracoesB2bRouteImport.update({
+  id: '/admin/configuracoes-b2b',
+  path: '/admin/configuracoes-b2b',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AdminCategoriasRoute = AdminCategoriasRouteImport.update({
   id: '/admin/categorias',
   path: '/admin/categorias',
@@ -384,6 +390,7 @@ export interface FileRoutesByFullPath {
   '/admin/campanhas-performance': typeof AdminCampanhasPerformanceRoute
   '/admin/carrinhos-abandonados': typeof AdminCarrinhosAbandonadosRoute
   '/admin/categorias': typeof AdminCategoriasRoute
+  '/admin/configuracoes-b2b': typeof AdminConfiguracoesB2bRoute
   '/admin/contact-messages': typeof AdminContactMessagesRoute
   '/admin/cupons': typeof AdminCuponsRoute
   '/admin/empresas': typeof AdminEmpresasRoute
@@ -443,6 +450,7 @@ export interface FileRoutesByTo {
   '/admin/campanhas-performance': typeof AdminCampanhasPerformanceRoute
   '/admin/carrinhos-abandonados': typeof AdminCarrinhosAbandonadosRoute
   '/admin/categorias': typeof AdminCategoriasRoute
+  '/admin/configuracoes-b2b': typeof AdminConfiguracoesB2bRoute
   '/admin/contact-messages': typeof AdminContactMessagesRoute
   '/admin/cupons': typeof AdminCuponsRoute
   '/admin/empresas': typeof AdminEmpresasRoute
@@ -503,6 +511,7 @@ export interface FileRoutesById {
   '/admin/campanhas-performance': typeof AdminCampanhasPerformanceRoute
   '/admin/carrinhos-abandonados': typeof AdminCarrinhosAbandonadosRoute
   '/admin/categorias': typeof AdminCategoriasRoute
+  '/admin/configuracoes-b2b': typeof AdminConfiguracoesB2bRoute
   '/admin/contact-messages': typeof AdminContactMessagesRoute
   '/admin/cupons': typeof AdminCuponsRoute
   '/admin/empresas': typeof AdminEmpresasRoute
@@ -564,6 +573,7 @@ export interface FileRouteTypes {
     | '/admin/campanhas-performance'
     | '/admin/carrinhos-abandonados'
     | '/admin/categorias'
+    | '/admin/configuracoes-b2b'
     | '/admin/contact-messages'
     | '/admin/cupons'
     | '/admin/empresas'
@@ -623,6 +633,7 @@ export interface FileRouteTypes {
     | '/admin/campanhas-performance'
     | '/admin/carrinhos-abandonados'
     | '/admin/categorias'
+    | '/admin/configuracoes-b2b'
     | '/admin/contact-messages'
     | '/admin/cupons'
     | '/admin/empresas'
@@ -682,6 +693,7 @@ export interface FileRouteTypes {
     | '/admin/campanhas-performance'
     | '/admin/carrinhos-abandonados'
     | '/admin/categorias'
+    | '/admin/configuracoes-b2b'
     | '/admin/contact-messages'
     | '/admin/cupons'
     | '/admin/empresas'
@@ -742,6 +754,7 @@ export interface RootRouteChildren {
   AdminCampanhasPerformanceRoute: typeof AdminCampanhasPerformanceRoute
   AdminCarrinhosAbandonadosRoute: typeof AdminCarrinhosAbandonadosRoute
   AdminCategoriasRoute: typeof AdminCategoriasRoute
+  AdminConfiguracoesB2bRoute: typeof AdminConfiguracoesB2bRoute
   AdminContactMessagesRoute: typeof AdminContactMessagesRoute
   AdminCuponsRoute: typeof AdminCuponsRoute
   AdminEmpresasRoute: typeof AdminEmpresasRoute
@@ -1045,6 +1058,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminContactMessagesRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/admin/configuracoes-b2b': {
+      id: '/admin/configuracoes-b2b'
+      path: '/admin/configuracoes-b2b'
+      fullPath: '/admin/configuracoes-b2b'
+      preLoaderRoute: typeof AdminConfiguracoesB2bRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/admin/categorias': {
       id: '/admin/categorias'
       path: '/admin/categorias'
@@ -1240,6 +1260,7 @@ const rootRouteChildren: RootRouteChildren = {
   AdminCampanhasPerformanceRoute: AdminCampanhasPerformanceRoute,
   AdminCarrinhosAbandonadosRoute: AdminCarrinhosAbandonadosRoute,
   AdminCategoriasRoute: AdminCategoriasRoute,
+  AdminConfiguracoesB2bRoute: AdminConfiguracoesB2bRoute,
   AdminContactMessagesRoute: AdminContactMessagesRoute,
   AdminCuponsRoute: AdminCuponsRoute,
   AdminEmpresasRoute: AdminEmpresasRoute,
