@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from '@tanstack/react-router';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { useEffect } from 'react';
+import React, { useEffect } from 'react';
 import * as LucideIcons from 'lucide-react';
 import { Sparkles, Truck, Shield, MessageSquareText, ArrowRight, Lightbulb, Zap, Cable, Plug, Sun, LayoutGrid, Wrench, Package, Tag, Flame, Star } from 'lucide-react';
 import { StoreLayout } from '@/components/layout/StoreLayout';
