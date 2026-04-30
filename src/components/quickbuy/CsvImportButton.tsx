@@ -7,6 +7,7 @@ import {
   CSV_TEMPLATE_CONTENT,
   parseQuickBuyCsv,
   type CsvLineIssue,
+  type CsvParseError,
   type CsvParsedRow,
 } from '@/lib/quickBuyCsv';
 
