@@ -29,6 +29,8 @@ interface Product {
   b2b_enabled: boolean;
   b2b_price: number | null;
   b2b_min_qty: number | null;
+  /** Conjunto de attribute_keys (lowercase) cadastrados pra esse produto. */
+  tech_attr_keys?: Set<string>;
   quality?: ReturnType<typeof computeProductQuality>;
 }
 
