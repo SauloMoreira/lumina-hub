@@ -339,6 +339,48 @@ function ReportsPage() {
     };
   }, [tab, filters]);
 
+  // Carrega B2B (lazy)
+  useEffect(() => {
+    if (tab !== 'b2b') return;
+    let alive = true;
+    setB2bLoading(true);
+    getB2bReport({ data: filters })
+      .then((r) => alive && setB2b(r))
+      .catch((e) => toast.error(e instanceof Error ? e.message : 'Erro ao carregar B2B.'))
+      .finally(() => alive && setB2bLoading(false));
+    return () => {
+      alive = false;
+    };
+  }, [tab, filters]);
+
+  // Carrega Cupons (lazy)
+  useEffect(() => {
+    if (tab !== 'coupons') return;
+    let alive = true;
+    setCouponsLoading(true);
+    getCouponsReport({ data: filters })
+      .then((r) => alive && setCoupons(r))
+      .catch((e) => toast.error(e instanceof Error ? e.message : 'Erro ao carregar cupons.'))
+      .finally(() => alive && setCouponsLoading(false));
+    return () => {
+      alive = false;
+    };
+  }, [tab, filters]);
+
+  // Carrega Frete (lazy)
+  useEffect(() => {
+    if (tab !== 'shipping') return;
+    let alive = true;
+    setShippingLoading(true);
+    getShippingReport({ data: { ...filters, page: shippingPage, pageSize: 50 } })
+      .then((r) => alive && setShipping(r))
+      .catch((e) => toast.error(e instanceof Error ? e.message : 'Erro ao carregar frete.'))
+      .finally(() => alive && setShippingLoading(false));
+    return () => {
+      alive = false;
+    };
+  }, [tab, filters, shippingPage]);
+
   // Reset página quando filtros mudam
   useEffect(() => {
     setPage(1);
