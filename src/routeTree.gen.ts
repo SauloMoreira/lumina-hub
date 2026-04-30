@@ -48,6 +48,7 @@ import { Route as AdminCuponsRouteImport } from './routes/admin.cupons'
 import { Route as AdminContactMessagesRouteImport } from './routes/admin.contact-messages'
 import { Route as AdminCategoriasRouteImport } from './routes/admin.categorias'
 import { Route as AdminCarrinhosAbandonadosRouteImport } from './routes/admin.carrinhos-abandonados'
+import { Route as AdminCampanhasPerformanceRouteImport } from './routes/admin.campanhas-performance'
 import { Route as AdminCampanhasRouteImport } from './routes/admin.campanhas'
 import { Route as AdminBannersRouteImport } from './routes/admin.banners'
 import { Route as AdminAutomacoesRouteImport } from './routes/admin.automacoes'
@@ -260,6 +261,12 @@ const AdminCarrinhosAbandonadosRoute =
     path: '/admin/carrinhos-abandonados',
     getParentRoute: () => rootRouteImport,
   } as any)
+const AdminCampanhasPerformanceRoute =
+  AdminCampanhasPerformanceRouteImport.update({
+    id: '/admin/campanhas-performance',
+    path: '/admin/campanhas-performance',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const AdminCampanhasRoute = AdminCampanhasRouteImport.update({
   id: '/admin/campanhas',
   path: '/admin/campanhas',
@@ -362,6 +369,7 @@ export interface FileRoutesByFullPath {
   '/admin/automacoes': typeof AdminAutomacoesRoute
   '/admin/banners': typeof AdminBannersRoute
   '/admin/campanhas': typeof AdminCampanhasRoute
+  '/admin/campanhas-performance': typeof AdminCampanhasPerformanceRoute
   '/admin/carrinhos-abandonados': typeof AdminCarrinhosAbandonadosRoute
   '/admin/categorias': typeof AdminCategoriasRoute
   '/admin/contact-messages': typeof AdminContactMessagesRoute
@@ -418,6 +426,7 @@ export interface FileRoutesByTo {
   '/admin/automacoes': typeof AdminAutomacoesRoute
   '/admin/banners': typeof AdminBannersRoute
   '/admin/campanhas': typeof AdminCampanhasRoute
+  '/admin/campanhas-performance': typeof AdminCampanhasPerformanceRoute
   '/admin/carrinhos-abandonados': typeof AdminCarrinhosAbandonadosRoute
   '/admin/categorias': typeof AdminCategoriasRoute
   '/admin/contact-messages': typeof AdminContactMessagesRoute
@@ -475,6 +484,7 @@ export interface FileRoutesById {
   '/admin/automacoes': typeof AdminAutomacoesRoute
   '/admin/banners': typeof AdminBannersRoute
   '/admin/campanhas': typeof AdminCampanhasRoute
+  '/admin/campanhas-performance': typeof AdminCampanhasPerformanceRoute
   '/admin/carrinhos-abandonados': typeof AdminCarrinhosAbandonadosRoute
   '/admin/categorias': typeof AdminCategoriasRoute
   '/admin/contact-messages': typeof AdminContactMessagesRoute
@@ -533,6 +543,7 @@ export interface FileRouteTypes {
     | '/admin/automacoes'
     | '/admin/banners'
     | '/admin/campanhas'
+    | '/admin/campanhas-performance'
     | '/admin/carrinhos-abandonados'
     | '/admin/categorias'
     | '/admin/contact-messages'
@@ -589,6 +600,7 @@ export interface FileRouteTypes {
     | '/admin/automacoes'
     | '/admin/banners'
     | '/admin/campanhas'
+    | '/admin/campanhas-performance'
     | '/admin/carrinhos-abandonados'
     | '/admin/categorias'
     | '/admin/contact-messages'
@@ -645,6 +657,7 @@ export interface FileRouteTypes {
     | '/admin/automacoes'
     | '/admin/banners'
     | '/admin/campanhas'
+    | '/admin/campanhas-performance'
     | '/admin/carrinhos-abandonados'
     | '/admin/categorias'
     | '/admin/contact-messages'
@@ -702,6 +715,7 @@ export interface RootRouteChildren {
   AdminAutomacoesRoute: typeof AdminAutomacoesRoute
   AdminBannersRoute: typeof AdminBannersRoute
   AdminCampanhasRoute: typeof AdminCampanhasRoute
+  AdminCampanhasPerformanceRoute: typeof AdminCampanhasPerformanceRoute
   AdminCarrinhosAbandonadosRoute: typeof AdminCarrinhosAbandonadosRoute
   AdminCategoriasRoute: typeof AdminCategoriasRoute
   AdminContactMessagesRoute: typeof AdminContactMessagesRoute
@@ -1005,6 +1019,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminCarrinhosAbandonadosRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/admin/campanhas-performance': {
+      id: '/admin/campanhas-performance'
+      path: '/admin/campanhas-performance'
+      fullPath: '/admin/campanhas-performance'
+      preLoaderRoute: typeof AdminCampanhasPerformanceRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/admin/campanhas': {
       id: '/admin/campanhas'
       path: '/admin/campanhas'
@@ -1176,6 +1197,7 @@ const rootRouteChildren: RootRouteChildren = {
   AdminAutomacoesRoute: AdminAutomacoesRoute,
   AdminBannersRoute: AdminBannersRoute,
   AdminCampanhasRoute: AdminCampanhasRoute,
+  AdminCampanhasPerformanceRoute: AdminCampanhasPerformanceRoute,
   AdminCarrinhosAbandonadosRoute: AdminCarrinhosAbandonadosRoute,
   AdminCategoriasRoute: AdminCategoriasRoute,
   AdminContactMessagesRoute: AdminContactMessagesRoute,
