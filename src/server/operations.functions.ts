@@ -277,6 +277,33 @@ export const getAdminOperations = createServerFn({ method: 'GET' })
           .not('processing_error', 'is', null),
     );
 
+    // Notas fiscais
+    const stale24hInv = stale24h;
+    const invoicesPending = await safeCount(
+      () => supabaseAdmin.from('orders'),
+      (q) => q.eq('payment_status', 'paid').eq('invoice_status', 'pendente_emissao'),
+    );
+    const invoicesError = await safeCount(
+      () => supabaseAdmin.from('orders'),
+      (q) => q.eq('payment_status', 'paid').eq('invoice_status', 'erro_emissao'),
+    );
+    const invoicesOverdue = await safeCount(
+      () => supabaseAdmin.from('orders'),
+      (q) =>
+        q
+          .eq('payment_status', 'paid')
+          .eq('invoice_status', 'pendente_emissao')
+          .lt('paid_at', stale24hInv),
+    );
+    const invoicesB2bMissing = await safeCount(
+      () => supabaseAdmin.from('orders'),
+      (q) =>
+        q
+          .eq('payment_status', 'paid')
+          .eq('order_type', 'b2b')
+          .in('invoice_status', ['nao_necessaria', 'pendente_emissao']),
+    );
+
     // ============================================================
     // Operação de hoje
     // ============================================================
@@ -581,6 +608,24 @@ export const getAdminOperations = createServerFn({ method: 'GET' })
         ctaLabel: 'Ver SEO Insights',
         ctaHref: '/admin/seo',
         group: 'Marketing',
+      },
+      {
+        id: 'invoices-pending',
+        title: 'Notas fiscais pendentes',
+        description:
+          invoicesOverdue > 0
+            ? `${invoicesOverdue} pedido(s) pago(s) há +24h sem nota registrada.`
+            : 'Pedidos pagos aguardando registro de NF-e.',
+        qty: invoicesPending,
+        status:
+          invoicesPending === 0
+            ? 'ok'
+            : invoicesOverdue > 0 || invoicesError > 0
+              ? 'danger'
+              : 'warn',
+        ctaLabel: 'Ver notas fiscais',
+        ctaHref: '/admin/financeiro/notas-fiscais',
+        group: 'Financeiro',
       },
     ];
 
