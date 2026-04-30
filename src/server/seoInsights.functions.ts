@@ -457,6 +457,4 @@ export const getSeoInsights = createServerFn({ method: 'GET' })
 
 // =====================================================================
 // Counts leves para o Painel do Dia (sem carregar listas)
-// =====================================================================
-// Re-export from server-only module for back-compat
-export { fetchSeoQuickCounts, type SeoQuickCounts } from './seoInsights.server';
+// fetchSeoQuickCounts moved to ./seoInsights.server (server-only)
