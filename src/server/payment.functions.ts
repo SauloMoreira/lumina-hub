@@ -111,7 +111,7 @@ export const createMercadoPagoPreference = createServerFn({ method: 'POST' })
     }
     const expectedTotal = Math.max(
       0,
-      Number(order.subtotal) - Number(order.discount ?? 0) + Number(order.shipping_cost ?? 0)
+      Number(order.subtotal) - Number(order.discount ?? 0) - Number(order.bundle_discount_total ?? 0) + Number(order.shipping_cost ?? 0)
     );
     if (Math.abs(expectedTotal - Number(order.total)) > 0.05) {
       console.error('[MP] total divergente', { expectedTotal, total: order.total });
