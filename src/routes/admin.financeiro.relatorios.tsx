@@ -228,7 +228,7 @@ function ReportsPage() {
   const [deliveryMethod, setDeliveryMethod] = useState<string>('');
 
   // Aba ativa
-  const [tab, setTab] = useState<'sales' | 'margin' | 'products' | 'b2b' | 'coupons' | 'shipping' | 'mp' | 'invoices'>('sales');
+  const [tab, setTab] = useState<TabKey>('sales');
 
   // Dados
   const [cards, setCards] = useState<FinanceReportCards | null>(null);
@@ -280,14 +280,14 @@ function ReportsPage() {
   const [mpList, setMpList] = useState<MpListResult | null>(null);
   const [mpLoading, setMpLoading] = useState(false);
   const [mpPage, setMpPage] = useState(1);
-  const [mpFeeSource, setMpFeeSource] = useState<'all' | 'mercado_pago_real' | 'estimated' | 'unknown'>('all');
+  const [mpFeeSource, setMpFeeSource] = useState<MpFeeSourceFilter>('all');
 
   // Notas fiscais
   const [invCards, setInvCards] = useState<InvoiceReportCards | null>(null);
   const [invList, setInvList] = useState<InvoiceListResult | null>(null);
   const [invLoading, setInvLoading] = useState(false);
   const [invPage, setInvPage] = useState(1);
-  const [invStatus, setInvStatus] = useState<'all' | 'nao_necessaria' | 'pendente_emissao' | 'emitida' | 'erro_emissao' | 'cancelada' | 'paid_no_invoice' | 'paid_over_24h' | 'b2b_no_invoice'>('all');
+  const [invStatus, setInvStatus] = useState<InvStatusFilter>('all');
 
   const filters = useMemo(
     () => ({
