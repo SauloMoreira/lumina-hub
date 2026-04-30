@@ -37,6 +37,10 @@ const SYNONYMS: Record<string, string[]> = {
   'luz neutra': ['4000k', 'branco neutro'],
   'branco neutro': ['4000k', 'luz neutra'],
   '4000k': ['luz neutra', 'branco neutro'],
+  // Voltagem
+  bivolt: ['127v', '220v', 'bi volt', 'bi-volt'],
+  'bi volt': ['bivolt'],
+  'bi-volt': ['bivolt'],
   // Tipos de luminária
   refletor: ['holofote', 'projetor'],
   holofote: ['refletor', 'projetor'],
@@ -56,8 +60,9 @@ const SYNONYMS: Record<string, string[]> = {
 // "18 w" -> "18w", "6500 k" -> "6500k", "ip 66" -> "ip66"
 function compactUnits(s: string): string {
   return s
-    .replace(/(\d)\s+(w|k|v|ip|a|hz|mm|cm|m)\b/g, '$1$2')
-    .replace(/\bip\s+(\d{2})\b/g, 'ip$1');
+    .replace(/(\d)\s+(w|k|v|ip|a|hz|mm|cm|m|lm)\b/g, '$1$2')
+    .replace(/\bip\s+(\d{2})\b/g, 'ip$1')
+    .replace(/\bbi[\s-]+volt\b/g, 'bivolt');
 }
 
 /**
