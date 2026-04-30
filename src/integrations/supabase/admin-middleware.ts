@@ -1,6 +1,5 @@
 import { createMiddleware } from '@tanstack/react-start';
 import { requireSupabaseAuth } from './auth-middleware';
-import { supabaseAdmin } from './client.server';
 
 /**
  * Middleware que estende requireSupabaseAuth garantindo que o usuário
@@ -11,6 +10,7 @@ import { supabaseAdmin } from './client.server';
 export const requireAdmin = createMiddleware({ type: 'function' })
   .middleware([requireSupabaseAuth])
   .server(async ({ next, context }) => {
+    const { supabaseAdmin } = await import('./client.server');
     const userId = (context as { userId: string }).userId;
     const { data, error } = await supabaseAdmin
       .from('profiles')
@@ -38,6 +38,7 @@ export const requireAdmin = createMiddleware({ type: 'function' })
 export const requireAdminMfa = createMiddleware({ type: 'function' })
   .middleware([requireAdmin])
   .server(async ({ next, context }) => {
+    const { supabaseAdmin } = await import('./client.server');
     const ctx = context as {
       adminUserId: string;
       adminEmail: string | null;
@@ -79,6 +80,7 @@ export const requireAdminMfa = createMiddleware({ type: 'function' })
 export const requireAdminMfaSoft = createMiddleware({ type: 'function' })
   .middleware([requireAdmin])
   .server(async ({ next, context }) => {
+    const { supabaseAdmin } = await import('./client.server');
     const ctx = context as {
       adminUserId: string;
       adminEmail: string | null;
