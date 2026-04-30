@@ -51,7 +51,11 @@ function ProductQualityPage() {
       case 'no_cost':      arr = arr.filter((r) => r.quality.issues.some((i) => i.code === 'no_cost')); break;
       case 'no_seo':       arr = arr.filter((r) => r.quality.issues.some((i) => i.code === 'no_seo_title' || i.code === 'no_seo_description')); break;
       case 'no_fiscal':    arr = arr.filter((r) => r.quality.issues.some((i) => ['no_ncm','no_weight','no_dimensions'].includes(i.code))); break;
-      case 'no_tech':      arr = arr.filter((r) => r.quality.issues.some((i) => i.code === 'no_tech_attrs')); break;
+      case 'no_tech':              arr = arr.filter((r) => r.quality.issues.some((i) => i.code === 'no_tech_attrs')); break;
+      case 'no_tech_power':        arr = arr.filter((r) => r.quality.issues.some((i) => i.code === 'no_tech_power')); break;
+      case 'no_tech_color_temp':   arr = arr.filter((r) => r.quality.issues.some((i) => i.code === 'no_tech_color_temp')); break;
+      case 'no_tech_voltage':      arr = arr.filter((r) => r.quality.issues.some((i) => i.code === 'no_tech_voltage')); break;
+      case 'no_tech_ip_rating':    arr = arr.filter((r) => r.quality.issues.some((i) => i.code === 'no_tech_ip_rating')); break;
     }
     const term = q.trim().toLowerCase();
     if (term) arr = arr.filter((r) => r.name.toLowerCase().includes(term) || (r.sku ?? '').toLowerCase().includes(term));
