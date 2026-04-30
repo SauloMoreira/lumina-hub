@@ -500,8 +500,10 @@ function HomePage() {
         </div>
       </section>
 
-      {/* OFERTAS DA SEMANA (produtos com sale_price) */}
-      {deals && deals.length > 0 && (
+      {/* OFERTAS DA SEMANA — vitrine configurável substitui hardcoded quando ativa */}
+      {offersShowcase ? (
+        <HomepageShowcaseSection showcase={offersShowcase} />
+      ) : (deals && deals.length > 0 && (
         <section className="container mx-auto px-4 py-8">
           <div className="flex items-end justify-between mb-6">
             <div>
@@ -520,7 +522,7 @@ function HomePage() {
             {deals.map((p, i) => <ProductCard key={p.id} product={p} index={i} />)}
           </div>
         </section>
-      )}
+      ))}
 
       {/* CATEGORIAS */}
       <section className="container mx-auto px-4 py-8">
@@ -560,21 +562,30 @@ function HomePage() {
         </div>
       </section>
 
-      {/* PRODUTOS DESTAQUE */}
-      <section className="container mx-auto px-4 py-12">
-        <div className="flex items-end justify-between mb-6">
-          <div>
-            <div className="label-meta mb-2">Mais procurados</div>
-            <h2 className="font-display font-bold text-2xl tracking-tight">Produtos em destaque</h2>
+      {/* OUTRAS VITRINES CONFIGURÁVEIS (bundles, category, new_arrivals, custom) */}
+      {otherShowcases.map((s) => (
+        <HomepageShowcaseSection key={s.id} showcase={s} />
+      ))}
+
+      {/* PRODUTOS DESTAQUE — vitrine configurável substitui hardcoded quando ativa */}
+      {featuredShowcase ? (
+        <HomepageShowcaseSection showcase={featuredShowcase} />
+      ) : (featured && featured.length > 0 && (
+        <section className="container mx-auto px-4 py-12">
+          <div className="flex items-end justify-between mb-6">
+            <div>
+              <div className="label-meta mb-2">Mais procurados</div>
+              <h2 className="font-display font-bold text-2xl tracking-tight">Produtos em destaque</h2>
+            </div>
+            <Link to="/catalogo" className="text-sm text-primary hover:underline font-medium hidden sm:inline-flex items-center gap-1">
+              Ver tudo <ArrowRight className="w-3.5 h-3.5" />
+            </Link>
           </div>
-          <Link to="/catalogo" className="text-sm text-primary hover:underline font-medium hidden sm:inline-flex items-center gap-1">
-            Ver tudo <ArrowRight className="w-3.5 h-3.5" />
-          </Link>
-        </div>
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-          {featured?.map((p, i) => <ProductCard key={p.id} product={p} index={i} />)}
-        </div>
-      </section>
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+            {featured.map((p, i) => <ProductCard key={p.id} product={p} index={i} />)}
+          </div>
+        </section>
+      ))}
 
       {/* MARKETING / CONFIANÇA (administrável) */}
       {(homepage?.main_cta_is_active ?? true) && (() => {
