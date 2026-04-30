@@ -525,16 +525,10 @@ function CompanyFiscalBlock({
           )}
           <div className="mt-3 flex flex-wrap gap-2">
             <Link
-              to="/admin/configuracoes"
-              className="inline-flex items-center text-xs px-3 py-1.5 rounded-md border border-border hover:bg-muted"
-            >
-              Editar dados da empresa
-            </Link>
-            <Link
               to="/admin/financeiro/configuracoes"
               className="inline-flex items-center text-xs px-3 py-1.5 rounded-md border border-border hover:bg-muted"
             >
-              Configurações financeiras
+              Completar dados fiscais
             </Link>
           </div>
         </div>
