@@ -157,15 +157,95 @@ function HomePage() {
     return () => clearTimeout(t);
   }, [queryClient]);
 
-  const PROMO_CARDS: Array<{
-    icon: any; title: string; desc: string; tone: string;
-    to?: string; searchParams?: Record<string, any>; onClick?: () => void;
-  }> = [
-    { icon: Flame, title: 'Ofertas da semana', desc: 'Descontos imperdíveis', to: '/catalogo', searchParams: { oferta: true }, tone: 'from-orange-500 to-red-500' },
-    { icon: Star, title: 'Destaques da loja', desc: 'O que está bombando', to: '/catalogo', searchParams: { sort: 'best_sellers' }, tone: 'from-amber-400 to-yellow-500' },
-    { icon: Truck, title: 'Frete grátis', desc: `Acima de ${formatBRL(FREE_SHIPPING_THRESHOLD)}`, to: '/catalogo', searchParams: { shipping: 'free' }, tone: 'from-emerald-500 to-teal-500' },
-    { icon: Sparkles, title: 'Atendimento IA 24h', desc: 'Tire dúvidas técnicas', tone: 'from-violet-500 to-indigo-500', onClick: () => { if (typeof window !== 'undefined') window.dispatchEvent(new Event('open-chat')); } },
+  type PromoCardItem = {
+    key: string;
+    icon: any;
+    title: string;
+    desc: string;
+    tone: string;
+    to?: string;
+    searchParams?: Record<string, any>;
+    href?: string;
+    newTab?: boolean;
+    onClick?: () => void;
+  };
+
+  const PROMO_CARDS_FALLBACK: PromoCardItem[] = [
+    { key: 'fb-ofertas', icon: Flame, title: 'Ofertas da semana', desc: 'Descontos imperdíveis', to: '/catalogo', searchParams: { oferta: true }, tone: 'from-orange-500 to-red-500' },
+    { key: 'fb-destaques', icon: Star, title: 'Destaques da loja', desc: 'O que está bombando', to: '/catalogo', searchParams: { sort: 'best_sellers' }, tone: 'from-amber-400 to-yellow-500' },
+    { key: 'fb-frete', icon: Truck, title: 'Frete grátis', desc: `Acima de ${formatBRL(FREE_SHIPPING_THRESHOLD)}`, to: '/catalogo', searchParams: { shipping: 'free' }, tone: 'from-emerald-500 to-teal-500' },
+    { key: 'fb-ia', icon: Sparkles, title: 'Atendimento IA 24h', desc: 'Tire dúvidas técnicas', tone: 'from-violet-500 to-indigo-500', onClick: () => { if (typeof window !== 'undefined') window.dispatchEvent(new Event('open-chat')); } },
   ];
+
+  const PROMO_TONES = [
+    'from-orange-500 to-red-500',
+    'from-amber-400 to-yellow-500',
+    'from-emerald-500 to-teal-500',
+    'from-violet-500 to-indigo-500',
+    'from-sky-500 to-blue-500',
+    'from-pink-500 to-rose-500',
+  ];
+
+  const promoCardsToRender: PromoCardItem[] = (promoCards && promoCards.length > 0)
+    ? promoCards.map((c, i) => {
+        const Icon = getLucideIcon(c.icon, Sparkles);
+        const link = (c.link_url ?? '').trim();
+        const isChat = link === '#chat';
+        const ext = isExternalLink(link);
+        return {
+          key: c.id,
+          icon: Icon,
+          title: c.title,
+          desc: c.description ?? '',
+          tone: c.visual_variant?.trim() || PROMO_TONES[i % PROMO_TONES.length],
+          to: !isChat && !ext && link ? link : undefined,
+          href: !isChat && ext ? link : undefined,
+          newTab: ext,
+          onClick: isChat ? () => { if (typeof window !== 'undefined') window.dispatchEvent(new Event('open-chat')); } : undefined,
+        };
+      })
+    : PROMO_CARDS_FALLBACK;
+
+  type BenefitCardItem = { key: string; icon: any; title: string; desc: string; href?: string; to?: string; newTab?: boolean };
+  const BENEFITS_FALLBACK: BenefitCardItem[] = [
+    { key: 'fb-ia', icon: Sparkles, title: 'IA 24h', desc: 'Atendimento inteligente sempre disponível' },
+    { key: 'fb-truck', icon: Truck, title: 'Entrega Rápida', desc: 'Logística otimizada via Melhor Envio' },
+    { key: 'fb-nf', icon: Shield, title: 'NF Garantida', desc: 'Nota fiscal em todos os pedidos' },
+  ];
+  const benefitsToRender: BenefitCardItem[] = (benefitCards && benefitCards.length > 0)
+    ? benefitCards.map((c) => {
+        const link = (c.link_url ?? '').trim();
+        const ext = isExternalLink(link);
+        return {
+          key: c.id,
+          icon: getLucideIcon(c.icon, Sparkles),
+          title: c.title,
+          desc: c.description ?? '',
+          to: !ext && link ? link : undefined,
+          href: ext ? link : undefined,
+          newTab: ext,
+        };
+      })
+    : BENEFITS_FALLBACK;
+
+  type FeaturedCategoryItem = { key: string; slug: string; name: string; icon: any; imageUrl?: string | null };
+  const featuredCategoriesToRender: FeaturedCategoryItem[] = (featuredCategories && featuredCategories.length > 0)
+    ? featuredCategories
+        .filter((fc) => fc.category && fc.category.active !== false)
+        .map((fc) => ({
+          key: fc.id,
+          slug: fc.category!.slug,
+          name: fc.custom_title?.trim() || fc.category!.name,
+          icon: getLucideIcon(fc.icon ?? fc.category!.icon, Package),
+          imageUrl: fc.custom_image_url ?? null,
+        }))
+    : (categories ?? []).map((c) => ({
+        key: c.id,
+        slug: c.slug,
+        name: c.name,
+        icon: ICONS[c.icon ?? 'Package'] ?? Package,
+        imageUrl: null,
+      }));
 
   return (
     <StoreLayout>
