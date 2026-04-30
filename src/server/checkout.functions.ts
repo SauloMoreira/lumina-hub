@@ -563,24 +563,40 @@ export const createOrder = createServerFn({ method: 'POST' })
 
     // Criar itens (com memória da regra B2B aplicada)
     const { error: itemsErr } = await supabase.from('order_items').insert(
-      lines.map((i) => ({
-        order_id: order.id,
-        product_id: i.productId,
-        product_name: i.name,
-        product_sku: i.sku ?? null,
-        product_image: i.image ?? null,
-        unit_price: i.appliedUnitPrice,
-        qty: i.qty,
-        total_price: i.appliedUnitPrice * i.qty,
-        retail_unit_price: i.retailUnitPrice,
-        b2b_unit_price: i.b2bUnitPrice,
-        applied_unit_price: i.appliedUnitPrice,
-        b2b_discount_unit: i.b2bDiscountUnit,
-        b2b_discount_total: i.b2bDiscountTotal,
-        pricing_source: i.pricingSource,
-        b2b_min_quantity: i.b2bMinQuantity,
-        b2b_rule_applied: i.b2bRuleApplied,
-      }))
+      lines.map((i) => {
+        const totalPrice = i.appliedUnitPrice * i.qty;
+        const hasCost = i.unitCost != null;
+        const totalCost = hasCost ? Number((i.unitCost! * i.qty).toFixed(2)) : null;
+        const grossMarginAmount = hasCost ? Number((totalPrice - totalCost!).toFixed(2)) : null;
+        const grossMarginPercent =
+          hasCost && totalPrice > 0
+            ? Number(((grossMarginAmount! / totalPrice) * 100).toFixed(2))
+            : null;
+        return {
+          order_id: order.id,
+          product_id: i.productId,
+          product_name: i.name,
+          product_sku: i.sku ?? null,
+          product_image: i.image ?? null,
+          unit_price: i.appliedUnitPrice,
+          qty: i.qty,
+          total_price: totalPrice,
+          retail_unit_price: i.retailUnitPrice,
+          b2b_unit_price: i.b2bUnitPrice,
+          applied_unit_price: i.appliedUnitPrice,
+          b2b_discount_unit: i.b2bDiscountUnit,
+          b2b_discount_total: i.b2bDiscountTotal,
+          pricing_source: i.pricingSource,
+          b2b_min_quantity: i.b2bMinQuantity,
+          b2b_rule_applied: i.b2bRuleApplied,
+          // Snapshot de custo / margem (Fase 8)
+          unit_cost: i.unitCost,
+          total_cost: totalCost,
+          gross_margin_amount: grossMarginAmount,
+          gross_margin_percent: grossMarginPercent,
+          cost_source: hasCost ? 'product' : 'none',
+        };
+      })
     );
 
     if (itemsErr) {
