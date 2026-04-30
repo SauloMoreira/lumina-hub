@@ -12,8 +12,16 @@ import { supabase } from '@/integrations/supabase/client';
 import type { Product, Category } from '@/lib/domain';
 import { FREE_SHIPPING_THRESHOLD, formatBRL } from '@/lib/domain';
 import { trackSearch } from '@/lib/tracking';
-import { searchProducts } from '@/server/productSearch.functions';
+import { searchProducts, getCatalogAttributeFacets } from '@/server/productSearch.functions';
 import { getPublicCompanySettings } from '@/server/institutional.functions';
+import {
+  TECH_FILTERS,
+  toAttrFilterPayload,
+  parseFilterCsv,
+  joinFilterCsv,
+  type SelectedTechFilters,
+  type TechFilterKey,
+} from '@/lib/catalogTechFilters';
 
 const PAGE_SIZE = 24;
 
@@ -28,6 +36,11 @@ const searchSchema = z.object({
   precoMin: z.coerce.number().min(0).optional(),
   precoMax: z.coerce.number().min(0).optional(),
   estoque: z.coerce.boolean().optional(),
+  // Filtros técnicos (CSV de ids)
+  pot: z.string().max(120).optional(),
+  cor: z.string().max(120).optional(),
+  volt: z.string().max(120).optional(),
+  ip: z.string().max(120).optional(),
 });
 
 import { buildSeo } from '@/lib/seo';
