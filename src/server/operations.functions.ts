@@ -694,6 +694,38 @@ export const getAdminOperations = createServerFn({ method: 'GET' })
       });
     }
 
+    // Marketing Integrations (pixels/analytics)
+    if (!hasGa4) {
+      alerts.push({
+        id: 'alert-no-ga4',
+        title: 'Google Analytics 4 não configurado',
+        description: 'Sem GA4 você não mede tráfego, conversões nem origem das vendas.',
+        severity: 'medium',
+        ctaLabel: 'Configurar GA4',
+        ctaHref: '/admin/integracoes',
+      });
+    }
+    if (!hasMetaPixel) {
+      alerts.push({
+        id: 'alert-no-meta-pixel',
+        title: 'Meta Pixel não configurado',
+        description: 'Sem o Meta Pixel, campanhas no Facebook/Instagram não otimizam para vendas.',
+        severity: 'low',
+        ctaLabel: 'Configurar Meta Pixel',
+        ctaHref: '/admin/integracoes',
+      });
+    }
+    if (activeBadFormatCount > 0) {
+      alerts.push({
+        id: 'alert-integrations-bad-format',
+        title: 'Integração ativa com ID inválido',
+        description: `${activeBadFormatCount} integração(ões) ativa(s) com ID em formato inválido — não estão coletando dados.`,
+        severity: 'high',
+        ctaLabel: 'Corrigir integrações',
+        ctaHref: '/admin/integracoes',
+      });
+    }
+
     return {
       cards,
       alerts,
