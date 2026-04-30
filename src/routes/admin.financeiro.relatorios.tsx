@@ -219,6 +219,10 @@ function CalcStatusBadge({ status }: { status: CalcStatus }) {
   return <span className={`text-[10px] px-1.5 py-0.5 rounded ${m.cls}`}>{m.label}</span>;
 }
 
+type TabKey = 'sales' | 'margin' | 'products' | 'b2b' | 'coupons' | 'shipping' | 'mp' | 'invoices';
+type MpFeeSourceFilter = 'all' | 'mercado_pago_real' | 'estimated' | 'unknown';
+type InvStatusFilter = 'all' | 'nao_necessaria' | 'pendente_emissao' | 'emitida' | 'erro_emissao' | 'cancelada' | 'paid_no_invoice' | 'paid_over_24h' | 'b2b_no_invoice';
+
 function ReportsPage() {
   // Filtros
   const [preset, setPreset] = useState<ReportPreset>('this_month');
