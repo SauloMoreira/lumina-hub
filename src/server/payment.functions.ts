@@ -157,6 +157,15 @@ export const createMercadoPagoPreference = createServerFn({ method: 'POST' })
         unit_price: -Number(Number(order.discount).toFixed(2)),
       });
     }
+    if (Number(order.bundle_discount_total ?? 0) > 0) {
+      mpItems.push({
+        id: 'bundle_discount',
+        title: 'Desconto de combo',
+        quantity: 1,
+        currency_id: 'BRL',
+        unit_price: -Number(Number(order.bundle_discount_total).toFixed(2)),
+      });
+    }
 
     const orderIdParam = encodeURIComponent(order.id);
     const returnBaseUrl = getPublicReturnUrl(siteUrl);
