@@ -362,6 +362,10 @@ function ProductPage() {
             </section>
           );
         })()}
+
+        <div className="mt-12">
+          <RelatedProductsBlock productId={product.id} excludeProductIds={[product.id]} />
+        </div>
       </div>
     </StoreLayout>
   );
