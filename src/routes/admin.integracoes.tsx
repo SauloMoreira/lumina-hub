@@ -1,7 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
-import { Plus, Trash2, ExternalLink, Loader2, ShieldCheck } from 'lucide-react';
+import { Plus, Trash2, ExternalLink, Loader2, ShieldCheck, FlaskConical, CheckCircle2, AlertTriangle } from 'lucide-react';
 import { AdminLayout } from '@/components/admin/AdminLayout';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -14,6 +14,7 @@ import {
   listIntegrations,
   upsertIntegration,
   deleteIntegration,
+  testIntegration,
   type MarketingIntegration,
   type IntegrationProvider,
   type ConsentCategory,
@@ -78,6 +79,7 @@ function IntegrationsPage() {
   const [items, setItems] = useState<MarketingIntegration[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [testingId, setTestingId] = useState<string | null>(null);
   const [form, setForm] = useState<{
     provider: IntegrationProvider;
     account_id: string;
@@ -168,6 +170,34 @@ function IntegrationsPage() {
       toast.error(e?.message || 'Falha ao excluir');
     }
   }
+
+  async function handleTest(item: MarketingIntegration) {
+    setTestingId(item.id);
+    try {
+      const r = await testIntegration({ data: { id: item.id } });
+      if (!r.formatOk) {
+        toast.error('ID com formato inválido. Verifique o valor informado.');
+      } else if (r.reachable === 'ok') {
+        toast.success('Configuração válida — endpoint do provedor respondeu OK.');
+      } else if (r.reachable === 'failed') {
+        toast.warning(`Formato OK, mas o provedor recusou (${r.detail || 'erro'}). Confirme o ID.`);
+      } else {
+        toast.success('Formato do ID válido. Este provedor não permite teste de alcance — verifique o pixel no painel oficial.');
+      }
+    } catch (e: any) {
+      toast.error(e?.message || 'Falha ao testar');
+    } finally {
+      setTestingId(null);
+    }
+  }
+
+  // Pendências para o card de status
+  const configuredProviders = new Set(items.map((i) => i.provider));
+  const activeWithBadFormat = items.filter(
+    (i) => i.enabled && !isValidId(i.provider, i.account_id),
+  );
+  const missingGa4 = !configuredProviders.has('ga4');
+  const missingMetaPixel = !configuredProviders.has('meta_pixel');
 
   const info = PROVIDER_INFO[form.provider];
 
