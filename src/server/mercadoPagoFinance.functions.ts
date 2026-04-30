@@ -128,7 +128,7 @@ export const listMpPayments = createServerFn({ method: 'POST' })
     let q = supabaseAdmin
       .from('orders')
       .select(
-        'id, order_number, customer_name, created_at, paid_at, payment_status, mp_webhook_status, mp_payment_method, mp_payment_type, mp_gross_amount, mp_fee_amount, estimated_fee_amount, mp_net_amount, estimated_net_amount, payment_fee_source, mp_last_webhook_at, mp_webhook_error',
+        'id, order_number, address_snapshot, created_at, paid_at, payment_status, mp_webhook_status, mp_payment_method, mp_payment_type, mp_gross_amount, mp_fee_amount, estimated_fee_amount, mp_net_amount, estimated_net_amount, payment_fee_source, mp_last_webhook_at, mp_webhook_error',
         { count: 'exact' },
       )
       .eq('payment_provider', 'mercadopago')
@@ -141,21 +141,22 @@ export const listMpPayments = createServerFn({ method: 'POST' })
     if (data.source !== 'all') q = q.eq('payment_fee_source', data.source);
     if (data.search) {
       const s = `%${data.search}%`;
-      q = q.or(`customer_name.ilike.${s},customer_email.ilike.${s}`);
+      q = q.or(`mp_payment_id.ilike.${s},customer_email.ilike.${s}`);
     }
 
     const offset = (data.page - 1) * data.pageSize;
     const { data: rows, count } = await q.range(offset, offset + data.pageSize - 1);
 
-    const out: MpPaymentRow[] = ((rows ?? []) as Array<Record<string, unknown>>).map((o) => {
+    const out: MpPaymentRow[] = ((rows ?? []) as unknown as Array<Record<string, unknown>>).map((o) => {
       const src = String(o.payment_fee_source ?? 'unknown') as MpPaymentRow['source'];
       const feeReal = o.mp_fee_amount != null ? Number(o.mp_fee_amount) : null;
       const feeEst = o.estimated_fee_amount != null ? Number(o.estimated_fee_amount) : null;
       const net = o.mp_net_amount != null ? Number(o.mp_net_amount) : (o.estimated_net_amount != null ? Number(o.estimated_net_amount) : null);
+      const snap = (o.address_snapshot as { recipient?: string } | null) ?? null;
       return {
         orderId: String(o.id),
         orderNumber: (o.order_number as number | null) ?? null,
-        customerName: (o.customer_name as string | null) ?? null,
+        customerName: snap?.recipient ?? null,
         createdAt: String(o.created_at),
         paidAt: o.paid_at ? String(o.paid_at) : null,
         paymentStatus: (o.payment_status as string | null) ?? null,
