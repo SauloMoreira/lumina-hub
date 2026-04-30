@@ -11,6 +11,7 @@ import {
   ShoppingCart,
   Sparkles,
   Tag,
+  Zap,
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { buildSeo } from '@/lib/seo';
