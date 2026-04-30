@@ -33,6 +33,7 @@ export type CommercialReviewRow = {
   id: string;
   name: string;
   sku: string | null;
+  slug: string | null;
   active: boolean;
   category_id: string | null;
   category_name: string | null;
