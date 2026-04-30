@@ -62,13 +62,35 @@ function ProductQualityPage() {
   return (
     <AdminLayout
       title="Qualidade do cadastro"
-      action={<Link to={'/admin/produtos' as any}><Button variant="ghost" size="sm"><ArrowLeft className="w-4 h-4 mr-1" /> Produtos</Button></Link>}
+      action={
+        <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleRefresh}
+            disabled={isFetching}
+          >
+            <RefreshCw className={`w-4 h-4 mr-1 ${isFetching ? 'animate-spin' : ''}`} />
+            {isFetching ? 'Atualizando…' : 'Atualizar scores'}
+          </Button>
+          <Link to={'/admin/produtos' as any}>
+            <Button variant="ghost" size="sm"><ArrowLeft className="w-4 h-4 mr-1" /> Produtos</Button>
+          </Link>
+        </div>
+      }
     >
       <div className="space-y-6">
-        <p className="text-sm text-muted-foreground max-w-2xl">
-          Score de 0 a 100 baseado em mídia, conteúdo, SEO, fiscal/logística e custo. Os avisos são <strong>não-bloqueantes</strong> — o produto continua sendo vendido normalmente.
-          Apenas o destaque (vitrines premium, featured) exige score mínimo de <strong>70</strong>.
-        </p>
+        <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-2">
+          <p className="text-sm text-muted-foreground max-w-2xl">
+            Score de 0 a 100 baseado em mídia, conteúdo, SEO, fiscal/logística e custo. Os avisos são <strong>não-bloqueantes</strong> — o produto continua sendo vendido normalmente.
+            Apenas o destaque (vitrines premium, featured) exige score mínimo de <strong>70</strong>.
+          </p>
+          {dataUpdatedAt > 0 && (
+            <span className="text-[11px] text-muted-foreground whitespace-nowrap">
+              Atualizado às {new Date(dataUpdatedAt).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
+            </span>
+          )}
+        </div>
 
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
           <SummaryCard label="Total" value={counts?.total ?? 0} onClick={() => setFilter('all')} active={filter==='all'} />
