@@ -396,7 +396,18 @@ export const adminUpdateBundle = createServerFn({ method: 'POST' })
   .handler(async ({ data }) => {
     await requireAdmin();
     const { supabaseAdmin } = await import('@/integrations/supabase/client.server');
-    const patch: Record<string, unknown> = {};
+    type BundlePatch = {
+      name?: string;
+      slug?: string;
+      description?: string | null;
+      image_url?: string | null;
+      is_active?: boolean;
+      is_featured?: boolean;
+      start_date?: string | null;
+      end_date?: string | null;
+      notes?: string | null;
+    };
+    const patch: BundlePatch = {};
     if (data.name !== undefined) patch.name = data.name;
     if (data.slug !== undefined) patch.slug = data.slug;
     if (data.description !== undefined) patch.description = data.description;
@@ -502,7 +513,8 @@ export const adminUpdateBundleItem = createServerFn({ method: 'POST' })
   .inputValidator((i: unknown) => AdminUpdateItemInput.parse(i))
   .handler(async ({ data }) => {
     await requireAdmin();
-    const patch: Record<string, unknown> = {};
+    type ItemPatch = { quantity?: number; sort_order?: number; is_required?: boolean };
+    const patch: ItemPatch = {};
     if (data.quantity !== undefined) patch.quantity = data.quantity;
     if (data.sortOrder !== undefined) patch.sort_order = data.sortOrder;
     if (data.isRequired !== undefined) patch.is_required = data.isRequired;
