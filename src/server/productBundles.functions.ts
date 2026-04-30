@@ -275,6 +275,52 @@ export const getPublicBundleBySlug = createServerFn({ method: 'POST' })
   });
 
 // ----------------------------------------------------------------------------
+// PUBLIC: combos que contêm um produto específico
+// ----------------------------------------------------------------------------
+const ListByProductInput = z.object({
+  productId: z.string().uuid(),
+  limit: z.number().int().min(1).max(12).optional(),
+});
+
+export const listPublicBundlesByProduct = createServerFn({ method: 'POST' })
+  .inputValidator((i: unknown) => ListByProductInput.parse(i))
+  .handler(async ({ data }) => {
+    const { supabaseAdmin } = await import('@/integrations/supabase/client.server');
+    // 1. Busca os bundle_ids que contêm este produto
+    const { data: links, error } = await supabaseAdmin
+      .from('product_bundle_items')
+      .select('bundle_id')
+      .eq('product_id', data.productId);
+    if (error) throw error;
+    const bundleIds = Array.from(
+      new Set(((links ?? []) as Array<{ bundle_id: string }>).map((l) => l.bundle_id))
+    );
+    if (bundleIds.length === 0) return [];
+
+    // 2. Carrega os combos completos, filtrando por ativos/validade
+    const bundles = await loadBundlesWithItems({
+      bundleIds,
+      onlyActive: true,
+      featuredFirst: true,
+      limit: data.limit ?? 4,
+    });
+
+    // 3. Filtra: precisa ter pelo menos 1 item, slug válido, e nenhum
+    //    obrigatório quebrado (inativo/sem preço)
+    const valid = bundles.filter((b) => {
+      if (!b.slug) return false;
+      if (b.items.length === 0) return false;
+      const broken = b.items.some(
+        (it) => it.is_required && (it.status === 'inactive' || it.status === 'no_price')
+      );
+      if (broken) return false;
+      return true;
+    });
+
+    return valid.slice(0, data.limit ?? 4);
+  });
+
+// ----------------------------------------------------------------------------
 // ADMIN: lista combos
 // ----------------------------------------------------------------------------
 export const adminListBundles = createServerFn({ method: 'POST' })
