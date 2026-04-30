@@ -319,6 +319,7 @@ export const createOrder = createServerFn({ method: 'POST' })
       b2bDiscountTotal: number;
       b2bMinQuantity: number | null;
       b2bRuleApplied: string;
+      unitCost: number | null;
     };
     const lines: LineComputed[] = [];
     for (const it of pricing.items) {
