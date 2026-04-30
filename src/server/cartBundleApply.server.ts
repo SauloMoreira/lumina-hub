@@ -1,0 +1,375 @@
+/**
+ * Onda 9E.4b — Helper backend para APLICAR descontos de combo.
+ *
+ * Não é uma server function; é um módulo server-only chamado de dentro de
+ * createOrder. A fonte da verdade do cálculo é a RPC `validate_cart_bundles`
+ * (mesma usada pela prévia). Aqui:
+ *  - resolvemos conflitos entre combos que disputam o mesmo item
+ *    (escolha gulosa por maior desconto);
+ *  - rateamos o desconto proporcionalmente entre os itens elegíveis
+ *    (com ajuste de centavos no último item);
+ *  - retornamos uma estrutura pronta para gravar em orders / order_items.
+ */
+
+import { supabaseAdmin } from '@/integrations/supabase/client.server';
+
+export type ApplyCartBundlesInput = {
+  userId: string | null;
+  /** Itens do carrinho (mesmo formato passado para validate_cart_bundles). */
+  items: Array<{ productId: string; qty: number }>;
+  /** Cupom efetivamente aplicado no pedido (após validar). */
+  hasCoupon: boolean;
+};
+
+export type AppliedBundleItem = {
+  product_id: string;
+  required_qty: number;
+  cart_qty: number;
+  unit_price: number;
+  pricing_source: 'b2b' | 'retail';
+  considered_qty: number; // min(cart_qty, required_qty) — quantidade que conta para o combo
+  bundle_discount_amount: number; // fatia rateada (≥ 0, 2 casas)
+};
+
+export type AppliedBundle = {
+  bundle_id: string;
+  bundle_name: string;
+  bundle_slug: string | null;
+  discount_type: 'fixed_amount' | 'percentage';
+  discount_value: number;
+  eligible_subtotal: number;
+  discount_amount: number; // efetivamente aplicado, ≥ 0
+  allocation_method: 'proportional_by_item_subtotal';
+  items: AppliedBundleItem[];
+};
+
+export type BlockedBundle = {
+  bundle_id: string;
+  bundle_name: string;
+  status: 'blocked_by_b2b' | 'blocked_by_coupon' | 'missing_items' | 'expired' | 'inactive' | 'not_eligible' | string;
+  reason: string | null;
+};
+
+export type ApplyCartBundlesResult = {
+  /** Soma total de bundle_discount_amount aplicado (= sum(applied.discount_amount)). */
+  bundle_discount_total: number;
+  /** Detalhes auditáveis (combos aplicados + bloqueados). Vai para orders.bundle_discount_details. */
+  details: {
+    version: 1;
+    has_coupon: boolean;
+    allow_with_coupon: boolean;
+    applied: AppliedBundle[];
+    blocked: BlockedBundle[];
+  };
+  /**
+   * Mapa product_id → { bundle_id, bundle_name, discount_amount, eligible }
+   * para preencher order_items.
+   *
+   * Se um produto está em mais de um combo aplicado (improvável após resolução,
+   * mas possível com quantidades disjuntas), somamos os descontos e mantemos
+   * o bundle do maior aporte.
+   */
+  perItem: Map<
+    string,
+    {
+      bundle_id: string;
+      bundle_name: string;
+      bundle_discount_amount: number;
+      bundle_discount_eligible: boolean;
+      block_reason: string | null;
+    }
+  >;
+};
+
+type RpcRow = {
+  bundle_id: string;
+  bundle_slug: string | null;
+  bundle_name: string;
+  bundle_image: string | null;
+  discount_type: 'none' | 'fixed_amount' | 'percentage';
+  discount_value: number;
+  status: string;
+  eligible_subtotal: number;
+  estimated_discount: number;
+  considered_items: Array<{
+    product_id: string;
+    required_qty: number;
+    cart_qty: number;
+    unit_price: number;
+    pricing_source: 'b2b' | 'retail';
+  }>;
+  missing_items: unknown[];
+  reason: string | null;
+  warnings: string[];
+};
+
+function round2(n: number): number {
+  return Math.round(n * 100) / 100;
+}
+
+/**
+ * Calcula descontos de combo a aplicar no pedido.
+ *
+ * Regras de produto:
+ * 1. Cupom vence sobre combo (`allow_bundle_discount_with_coupon=false` por padrão).
+ *    Se há cupom e a config não permite, NENHUM combo é aplicado — todos viram blocked_by_coupon.
+ * 2. Itens com pricing_source='b2b' nunca recebem desconto de combo (já tratado pela RPC).
+ * 3. Múltiplos combos elegíveis: aplicar todos, mas cada (product_id, unidade) só conta para 1 combo.
+ *    Resolução: ordenar combos por estimated_discount desc; ao processar cada combo, "consumir"
+ *    o quanto do cart_qty já foi usado por combos anteriores. Se o combo perder seus itens
+ *    obrigatórios pela competição, ele é descartado.
+ * 4. Rateio dentro do combo: proporcional ao `unit_price * considered_qty` de cada item elegível.
+ *    Diferença de centavos vai para o último item.
+ */
+export async function computeBundleApplication(
+  input: ApplyCartBundlesInput
+): Promise<ApplyCartBundlesResult> {
+  const empty: ApplyCartBundlesResult = {
+    bundle_discount_total: 0,
+    details: {
+      version: 1,
+      has_coupon: input.hasCoupon,
+      allow_with_coupon: false,
+      applied: [],
+      blocked: [],
+    },
+    perItem: new Map(),
+  };
+
+  if (!input.items || input.items.length === 0) return empty;
+
+  // Buscar config de acúmulo com cupom (mesma usada pela prévia).
+  const { data: settingsRow } = await supabaseAdmin
+    .from('b2b_settings')
+    .select('allow_bundle_discount_with_coupon')
+    .order('created_at', { ascending: true })
+    .limit(1)
+    .maybeSingle();
+  const allowWithCoupon = Boolean(
+    (settingsRow as { allow_bundle_discount_with_coupon?: boolean } | null)?.allow_bundle_discount_with_coupon
+  );
+  empty.details.allow_with_coupon = allowWithCoupon;
+
+  // Chamar a RPC que já calcula tudo (status, eligible_subtotal, estimated_discount, considered_items).
+  const { data: rows, error } = await supabaseAdmin.rpc('validate_cart_bundles', {
+    _user_id: input.userId,
+    _items: input.items.map((i) => ({ product_id: i.productId, qty: i.qty })),
+    // Importante: passamos hasCoupon real para o RPC já marcar blocked_by_coupon
+    // quando a config não permite acúmulo.
+    _has_coupon: input.hasCoupon,
+  });
+
+  if (error) {
+    console.error('[computeBundleApplication] rpc error:', error);
+    return empty;
+  }
+
+  const list = (rows ?? []) as RpcRow[];
+  if (list.length === 0) return empty;
+
+  // Separar elegíveis x bloqueados.
+  const eligible = list.filter((r) => r.status === 'eligible_preview' && Number(r.estimated_discount) > 0);
+  const blocked: BlockedBundle[] = list
+    .filter((r) => r.status !== 'eligible_preview' || Number(r.estimated_discount) <= 0)
+    .map((r) => ({
+      bundle_id: r.bundle_id,
+      bundle_name: r.bundle_name,
+      status: r.status,
+      reason: r.reason,
+    }));
+
+  // Ordenar elegíveis por maior desconto primeiro (resolução de conflito gulosa).
+  eligible.sort((a, b) => Number(b.estimated_discount) - Number(a.estimated_discount));
+
+  // Quantidades já consumidas por combos aplicados, por produto.
+  const consumed = new Map<string, number>();
+  // Carrinho original (qty disponível por produto).
+  const cartQty = new Map<string, number>();
+  for (const it of input.items) {
+    cartQty.set(it.productId, (cartQty.get(it.productId) ?? 0) + it.qty);
+  }
+
+  const applied: AppliedBundle[] = [];
+  const perItem: ApplyCartBundlesResult['perItem'] = new Map();
+
+  for (const row of eligible) {
+    const considered = row.considered_items ?? [];
+    if (considered.length === 0) {
+      blocked.push({
+        bundle_id: row.bundle_id,
+        bundle_name: row.bundle_name,
+        status: 'not_eligible',
+        reason: 'Sem itens considerados.',
+      });
+      continue;
+    }
+
+    // Para cada item considerado, calcular quanto deste produto ainda está disponível
+    // (cart_qty − consumido por combos aplicados anteriormente).
+    type ItemBuild = {
+      product_id: string;
+      required_qty: number;
+      cart_qty: number;
+      unit_price: number;
+      pricing_source: 'b2b' | 'retail';
+      considered_qty: number;
+      line_eligible: number; // unit_price * considered_qty para itens varejo
+    };
+    const builds: ItemBuild[] = [];
+    let lostRequired = false;
+
+    for (const ci of considered) {
+      const totalCart = cartQty.get(ci.product_id) ?? 0;
+      const used = consumed.get(ci.product_id) ?? 0;
+      const available = Math.max(0, totalCart - used);
+      // Quantidade que CONTA para este combo: até required_qty, limitado ao disponível.
+      const consideredQty = Math.min(ci.required_qty, available);
+
+      if (consideredQty < ci.required_qty) {
+        // Item obrigatório perdeu unidades para combo anterior. RPC só inclui considered_items
+        // com cart_qty>0; esse caso é tratado como conflito → descartar combo.
+        lostRequired = true;
+        break;
+      }
+
+      const unitPrice = Number(ci.unit_price ?? 0);
+      const lineEligible = ci.pricing_source === 'b2b' ? 0 : unitPrice * consideredQty;
+      builds.push({
+        product_id: ci.product_id,
+        required_qty: ci.required_qty,
+        cart_qty: ci.cart_qty,
+        unit_price: unitPrice,
+        pricing_source: ci.pricing_source,
+        considered_qty: consideredQty,
+        line_eligible: lineEligible,
+      });
+    }
+
+    if (lostRequired) {
+      blocked.push({
+        bundle_id: row.bundle_id,
+        bundle_name: row.bundle_name,
+        status: 'not_eligible',
+        reason: 'Itens já alocados a outro combo neste pedido.',
+      });
+      continue;
+    }
+
+    const eligibleSubtotalForRebate = builds.reduce((s, b) => s + b.line_eligible, 0);
+    if (eligibleSubtotalForRebate <= 0) {
+      blocked.push({
+        bundle_id: row.bundle_id,
+        bundle_name: row.bundle_name,
+        status: 'not_eligible',
+        reason: 'Sem subtotal varejo elegível.',
+      });
+      continue;
+    }
+
+    // Recalcular desconto local com o subtotal recortado (pode ser menor que estimated_discount
+    // se itens varejo perderam unidades). Usar mesmas regras do RPC.
+    let bundleDiscount = 0;
+    if (row.discount_type === 'fixed_amount') {
+      bundleDiscount = Math.min(Math.max(0, Number(row.discount_value)), eligibleSubtotalForRebate);
+    } else if (row.discount_type === 'percentage') {
+      const pct = Math.min(Math.max(0, Number(row.discount_value)), 50); // limite de segurança 50%
+      bundleDiscount = Math.min(round2(eligibleSubtotalForRebate * (pct / 100)), eligibleSubtotalForRebate);
+    }
+    bundleDiscount = round2(bundleDiscount);
+
+    if (bundleDiscount <= 0) {
+      blocked.push({
+        bundle_id: row.bundle_id,
+        bundle_name: row.bundle_name,
+        status: 'not_eligible',
+        reason: 'Desconto resultante zero após resolução.',
+      });
+      continue;
+    }
+
+    // Rateio proporcional entre itens varejo. Itens B2B mantêm 0.
+    const rebateItems: AppliedBundleItem[] = builds.map((b) => ({
+      product_id: b.product_id,
+      required_qty: b.required_qty,
+      cart_qty: b.cart_qty,
+      unit_price: b.unit_price,
+      pricing_source: b.pricing_source,
+      considered_qty: b.considered_qty,
+      bundle_discount_amount: 0,
+    }));
+
+    let allocated = 0;
+    let lastEligibleIdx = -1;
+    for (let i = 0; i < builds.length; i++) {
+      const b = builds[i];
+      if (b.line_eligible <= 0) continue;
+      lastEligibleIdx = i;
+      const share = round2((b.line_eligible / eligibleSubtotalForRebate) * bundleDiscount);
+      rebateItems[i].bundle_discount_amount = share;
+      allocated += share;
+    }
+    // Ajuste de centavos no último item elegível.
+    if (lastEligibleIdx >= 0 && Math.abs(allocated - bundleDiscount) > 0.001) {
+      const diff = round2(bundleDiscount - allocated);
+      rebateItems[lastEligibleIdx].bundle_discount_amount = round2(
+        rebateItems[lastEligibleIdx].bundle_discount_amount + diff
+      );
+    }
+
+    applied.push({
+      bundle_id: row.bundle_id,
+      bundle_name: row.bundle_name,
+      bundle_slug: row.bundle_slug,
+      discount_type: row.discount_type as 'fixed_amount' | 'percentage',
+      discount_value: Number(row.discount_value),
+      eligible_subtotal: round2(eligibleSubtotalForRebate),
+      discount_amount: bundleDiscount,
+      allocation_method: 'proportional_by_item_subtotal',
+      items: rebateItems,
+    });
+
+    // Atualizar consumido + perItem
+    for (const r of rebateItems) {
+      consumed.set(r.product_id, (consumed.get(r.product_id) ?? 0) + r.considered_qty);
+      const prev = perItem.get(r.product_id);
+      const eligible = r.pricing_source !== 'b2b';
+      if (!prev) {
+        perItem.set(r.product_id, {
+          bundle_id: row.bundle_id,
+          bundle_name: row.bundle_name,
+          bundle_discount_amount: r.bundle_discount_amount,
+          bundle_discount_eligible: eligible,
+          block_reason: eligible ? null : 'b2b_price_applied',
+        });
+      } else {
+        // Soma descontos; mantém referência do bundle de maior aporte.
+        const newAmount = round2(prev.bundle_discount_amount + r.bundle_discount_amount);
+        if (r.bundle_discount_amount > prev.bundle_discount_amount) {
+          perItem.set(r.product_id, {
+            bundle_id: row.bundle_id,
+            bundle_name: row.bundle_name,
+            bundle_discount_amount: newAmount,
+            bundle_discount_eligible: true,
+            block_reason: null,
+          });
+        } else {
+          prev.bundle_discount_amount = newAmount;
+        }
+      }
+    }
+  }
+
+  const bundleDiscountTotal = round2(applied.reduce((s, a) => s + a.discount_amount, 0));
+
+  return {
+    bundle_discount_total: bundleDiscountTotal,
+    details: {
+      version: 1,
+      has_coupon: input.hasCoupon,
+      allow_with_coupon: allowWithCoupon,
+      applied,
+      blocked,
+    },
+    perItem,
+  };
+}
