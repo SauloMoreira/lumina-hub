@@ -664,6 +664,7 @@ export const getAdminOperations = createServerFn({ method: 'GET' })
       });
     }
 
+    return {
       cards,
       alerts,
       daily: {
