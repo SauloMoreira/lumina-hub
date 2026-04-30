@@ -447,6 +447,65 @@ function CatalogPage() {
                   Frete grátis
                 </label>
               </div>
+
+              {(facetsData?.facets?.length ?? 0) > 0 && (
+                <div className="space-y-5 pt-1">
+                  <div>
+                    <h3 className="font-display font-semibold text-sm mb-1">Filtros técnicos</h3>
+                    <p className="text-[11px] text-muted-foreground leading-snug">
+                      Encontre produtos pela potência, cor da luz, voltagem ou proteção.
+                    </p>
+                  </div>
+                  {TECH_FILTERS.map((def) => {
+                    const facetValues = facetsByKey.get(def.key);
+                    if (!facetValues || facetValues.size === 0) return null;
+                    // Mostra apenas opções que têm pelo menos um produto cadastrado.
+                    const visibleOptions = def.options.filter((opt) => {
+                      if (def.kind === 'value') {
+                        return opt.values.some((v) => facetValues.has(v.toLowerCase()));
+                      }
+                      // Para potência (range), checa se há valor numérico dentro do intervalo.
+                      const min = opt.min ?? 0;
+                      const max = opt.max ?? 99999;
+                      for (const v of facetValues) {
+                        const n = Number(v);
+                        if (Number.isFinite(n) && n >= min && n <= max) return true;
+                      }
+                      return false;
+                    });
+                    if (visibleOptions.length === 0) return null;
+                    const selectedIds = selectedTech[def.key] ?? [];
+                    return (
+                      <div key={def.key}>
+                        <div className="flex items-center justify-between mb-2">
+                          <h4 className="text-sm font-medium">{def.label}</h4>
+                          {selectedIds.length > 0 && (
+                            <button
+                              onClick={() => clearTechKey(def.key)}
+                              className="text-[11px] text-muted-foreground hover:text-foreground underline"
+                            >
+                              limpar
+                            </button>
+                          )}
+                        </div>
+                        <div className="space-y-1.5">
+                          {visibleOptions.map((opt) => (
+                            <label key={opt.id} className="flex items-center gap-2 text-sm cursor-pointer">
+                              <input
+                                type="checkbox"
+                                checked={selectedIds.includes(opt.id)}
+                                onChange={() => toggleTechId(def.key, opt.id)}
+                                className="rounded border-border"
+                              />
+                              <span className="text-muted-foreground">{opt.label}</span>
+                            </label>
+                          ))}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
             </div>
           </aside>
 
