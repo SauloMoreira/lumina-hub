@@ -47,6 +47,26 @@ import {
   type MarginStatus,
   type CalcStatus,
 } from '@/server/marginReports.functions';
+import {
+  getB2bReport,
+  getCouponsReport,
+  getShippingReport,
+  exportB2bCompaniesCsv,
+  exportB2bProductsCsv,
+  exportCouponsCsv,
+  exportDiscountsByOrderCsv,
+  exportShippingByOrderCsv,
+  exportShippingByDistrictCsv,
+  type B2bCards,
+  type B2bCompanyRow,
+  type B2bProductRow,
+  type CouponsCards,
+  type CouponPerfRow,
+  type DiscountByOrderRow,
+  type ShippingCards,
+  type ShippingOrderRow,
+  type ShippingDistrictRow,
+} from '@/server/commercialReports.functions';
 
 export const Route = createFileRoute('/admin/financeiro/relatorios')({
   head: () =>
