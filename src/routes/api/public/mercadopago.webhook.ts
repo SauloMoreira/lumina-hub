@@ -285,29 +285,42 @@ export const Route = createFileRoute('/api/public/mercadopago/webhook')({
           return new Response('ok', { status: 200 });
         }
 
-        // 6) Atualizar pedido
-        type OrderUpdate = {
-          payment_status: string;
-          mp_payment_id: string;
-          payment_provider: string;
-          mp_merchant_order_id?: string;
-          paid_at?: string;
-          status?: string;
-          cancelled_reason?: string;
-        };
-        const updates: OrderUpdate = {
+        // 6) Atualizar pedido — inclui campos financeiros do MP (Onda 2)
+        const fees = await computeMpFees({
+          transaction_amount: payment.transaction_amount ?? null,
+          fee_details: payment.fee_details ?? null,
+          payment_method_id: payment.payment_method_id ?? null,
+          payment_type_id: payment.payment_type_id ?? null,
+        });
+        const nowIso = new Date().toISOString();
+        const updates: Record<string, unknown> = {
           payment_status: mappedStatus,
           mp_payment_id: String(payment.id),
           payment_provider: 'mercadopago',
+          mp_payment_method: payment.payment_method_id ?? null,
+          mp_payment_type: payment.payment_type_id ?? null,
+          mp_gross_amount: fees.gross,
+          mp_fee_amount: fees.feeReal,
+          mp_net_amount: fees.netReal,
+          mp_fee_details: fees.feeDetails as never,
+          estimated_fee_amount: fees.feeEstimated,
+          estimated_net_amount: fees.netEstimated,
+          payment_fee_source: fees.source,
+          payment_fee_calculated_at: nowIso,
+          mp_last_webhook_at: nowIso,
+          mp_webhook_status: payment.status ?? null,
+          mp_webhook_error: null,
         };
+        if (payment.payment_method_id) updates.payment_method = payment.payment_method_id;
         if (payment.order?.id) updates.mp_merchant_order_id = String(payment.order.id);
         if (willBePaid) {
-          updates.paid_at = payment.date_approved ?? new Date().toISOString();
+          updates.paid_at = payment.date_approved ?? nowIso;
           if (order.status === 'pending') updates.status = 'confirmed';
         } else if (mappedStatus === 'cancelled' || mappedStatus === 'rejected') {
           if (order.status === 'pending') updates.status = 'cancelled';
           updates.cancelled_reason = `Pagamento ${mappedStatus} (${payment.status_detail ?? ''})`.trim();
         }
+
 
         const { error: updErr } = await supabaseAdmin
           .from('orders')
