@@ -425,6 +425,10 @@ export const adminCreateBundle = createServerFn({ method: 'POST' })
     await requireAdmin();
     const { supabaseAdmin } = await import('@/integrations/supabase/client.server');
     const slug = data.slug || slugify(data.name);
+    const disc = validateDiscount({
+      discountType: data.discountType,
+      discountValue: data.discountValue,
+    });
     const { data: row, error } = await supabaseAdmin
       .from('product_bundles')
       .insert({
@@ -437,9 +441,8 @@ export const adminCreateBundle = createServerFn({ method: 'POST' })
         start_date: data.startDate ?? null,
         end_date: data.endDate ?? null,
         notes: data.notes ?? null,
-        // Desconto preparado para fase futura — não usado nesta onda
-        discount_type: 'none',
-        discount_value: 0,
+        discount_type: disc.discount_type,
+        discount_value: disc.discount_value,
       })
       .select('id')
       .single();
@@ -464,6 +467,8 @@ const AdminUpdateInput = z.object({
   startDate: z.string().datetime().optional().nullable(),
   endDate: z.string().datetime().optional().nullable(),
   notes: z.string().trim().max(2000).optional().nullable(),
+  discountType: DiscountTypeEnum.optional(),
+  discountValue: z.number().min(0).max(100000).optional(),
 });
 
 export const adminUpdateBundle = createServerFn({ method: 'POST' })
