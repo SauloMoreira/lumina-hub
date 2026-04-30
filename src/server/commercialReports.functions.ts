@@ -101,6 +101,7 @@ type OrderRow = {
   shipping_cost: number | string | null;
   discount: number | string | null;
   b2b_discount_total: number | string | null;
+  bundle_discount_total: number | string | null;
   retail_subtotal: number | string | null;
   b2b_subtotal: number | string | null;
   coupon_code: string | null;
