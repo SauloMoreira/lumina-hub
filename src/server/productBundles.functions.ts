@@ -486,6 +486,8 @@ export const adminUpdateBundle = createServerFn({ method: 'POST' })
       start_date?: string | null;
       end_date?: string | null;
       notes?: string | null;
+      discount_type?: BundleDiscountType;
+      discount_value?: number;
     };
     const patch: BundlePatch = {};
     if (data.name !== undefined) patch.name = data.name;
@@ -497,6 +499,14 @@ export const adminUpdateBundle = createServerFn({ method: 'POST' })
     if (data.startDate !== undefined) patch.start_date = data.startDate;
     if (data.endDate !== undefined) patch.end_date = data.endDate;
     if (data.notes !== undefined) patch.notes = data.notes;
+    if (data.discountType !== undefined || data.discountValue !== undefined) {
+      const disc = validateDiscount({
+        discountType: data.discountType,
+        discountValue: data.discountValue,
+      });
+      patch.discount_type = disc.discount_type;
+      patch.discount_value = disc.discount_value;
+    }
 
     // Se for ativar, valida cadastro
     if (data.isActive === true) {
