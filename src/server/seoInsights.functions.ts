@@ -1,7 +1,6 @@
 import { createServerFn } from '@tanstack/react-start';
 import { z } from 'zod';
 import { requireAdmin } from '@/integrations/supabase/admin-middleware';
-import { supabaseAdmin } from '@/integrations/supabase/client.server';
 
 export type SeoSeverity = 'ok' | 'warn' | 'danger';
 
@@ -304,6 +303,7 @@ export const getSeoInsights = createServerFn({ method: 'GET' })
       .parse(input ?? {}),
   )
   .handler(async ({ data }): Promise<SeoInsights> => {
+    const { supabaseAdmin } = await import('@/integrations/supabase/client.server');
     const productLimit = data?.productLimit ?? 500;
 
     // Categorias (mapa nome)
