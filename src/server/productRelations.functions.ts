@@ -103,7 +103,7 @@ export const getRelationsForProduct = createServerFn({ method: 'POST' })
     const { supabaseAdmin } = await import('@/integrations/supabase/client.server');
     const { data: rows, error } = await supabaseAdmin.rpc('get_product_relations_public', {
       _product_id: data.productId,
-      _user_id: userId,
+      _user_id: userId ?? undefined,
       _limit: data.limit ?? 12,
     });
     if (error) throw error;
