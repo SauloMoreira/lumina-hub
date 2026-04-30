@@ -1450,7 +1450,7 @@ function B2bSection({
                 <tr key={`${r.company_id ?? 'x'}-${i}`} className="border-t border-border hover:bg-muted/20">
                   <td className="px-3 py-2 truncate max-w-[200px]">
                     {r.company_id ? (
-                      <Link to="/admin/empresas/$id" params={{ id: r.company_id }} className="text-primary hover:underline">{r.company_name}</Link>
+                      <Link to="/admin/empresas" search={{ id: r.company_id }} className="text-primary hover:underline">{r.company_name}</Link>
                     ) : r.company_name}
                   </td>
                   <td className="px-3 py-2 text-xs text-muted-foreground">{r.cnpj_masked}</td>
