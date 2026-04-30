@@ -3164,6 +3164,7 @@ export type Database = {
           stock_qty: number
         }[]
       }
+      get_homepage_showcases_public: { Args: never; Returns: Json }
       get_product_relations_public: {
         Args: { _limit?: number; _product_id: string; _user_id?: string }
         Returns: {
