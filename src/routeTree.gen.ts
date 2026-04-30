@@ -65,6 +65,9 @@ import { Route as AdminSettingsCompanyRouteImport } from './routes/admin.setting
 import { Route as AdminProdutosIdRouteImport } from './routes/admin.produtos.$id'
 import { Route as AdminPedidosOrderIdRouteImport } from './routes/admin.pedidos.$orderId'
 import { Route as AdminInstitutionalPagesIdRouteImport } from './routes/admin.institutional-pages.$id'
+import { Route as AdminFinanceiroResumoRouteImport } from './routes/admin.financeiro.resumo'
+import { Route as AdminFinanceiroMargemRouteImport } from './routes/admin.financeiro.margem'
+import { Route as AdminFinanceiroConfiguracoesRouteImport } from './routes/admin.financeiro.configuracoes'
 import { Route as AdminConteudoHomepageRouteImport } from './routes/admin.conteudo.homepage'
 import { Route as ApiPublicMercadopagoWebhookRouteImport } from './routes/api/public/mercadopago.webhook'
 
@@ -352,6 +355,22 @@ const AdminInstitutionalPagesIdRoute =
     path: '/admin/institutional-pages/$id',
     getParentRoute: () => rootRouteImport,
   } as any)
+const AdminFinanceiroResumoRoute = AdminFinanceiroResumoRouteImport.update({
+  id: '/admin/financeiro/resumo',
+  path: '/admin/financeiro/resumo',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminFinanceiroMargemRoute = AdminFinanceiroMargemRouteImport.update({
+  id: '/admin/financeiro/margem',
+  path: '/admin/financeiro/margem',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminFinanceiroConfiguracoesRoute =
+  AdminFinanceiroConfiguracoesRouteImport.update({
+    id: '/admin/financeiro/configuracoes',
+    path: '/admin/financeiro/configuracoes',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const AdminConteudoHomepageRoute = AdminConteudoHomepageRouteImport.update({
   id: '/admin/conteudo/homepage',
   path: '/admin/conteudo/homepage',
@@ -412,6 +431,9 @@ export interface FileRoutesByFullPath {
   '/produto/$slug': typeof ProdutoSlugRoute
   '/admin/': typeof AdminIndexRoute
   '/admin/conteudo/homepage': typeof AdminConteudoHomepageRoute
+  '/admin/financeiro/configuracoes': typeof AdminFinanceiroConfiguracoesRoute
+  '/admin/financeiro/margem': typeof AdminFinanceiroMargemRoute
+  '/admin/financeiro/resumo': typeof AdminFinanceiroResumoRoute
   '/admin/institutional-pages/$id': typeof AdminInstitutionalPagesIdRoute
   '/admin/pedidos/$orderId': typeof AdminPedidosOrderIdRoute
   '/admin/produtos/$id': typeof AdminProdutosIdRoute
@@ -472,6 +494,9 @@ export interface FileRoutesByTo {
   '/produto/$slug': typeof ProdutoSlugRoute
   '/admin': typeof AdminIndexRoute
   '/admin/conteudo/homepage': typeof AdminConteudoHomepageRoute
+  '/admin/financeiro/configuracoes': typeof AdminFinanceiroConfiguracoesRoute
+  '/admin/financeiro/margem': typeof AdminFinanceiroMargemRoute
+  '/admin/financeiro/resumo': typeof AdminFinanceiroResumoRoute
   '/admin/institutional-pages/$id': typeof AdminInstitutionalPagesIdRoute
   '/admin/pedidos/$orderId': typeof AdminPedidosOrderIdRoute
   '/admin/produtos/$id': typeof AdminProdutosIdRoute
@@ -533,6 +558,9 @@ export interface FileRoutesById {
   '/produto/$slug': typeof ProdutoSlugRoute
   '/admin/': typeof AdminIndexRoute
   '/admin/conteudo/homepage': typeof AdminConteudoHomepageRoute
+  '/admin/financeiro/configuracoes': typeof AdminFinanceiroConfiguracoesRoute
+  '/admin/financeiro/margem': typeof AdminFinanceiroMargemRoute
+  '/admin/financeiro/resumo': typeof AdminFinanceiroResumoRoute
   '/admin/institutional-pages/$id': typeof AdminInstitutionalPagesIdRoute
   '/admin/pedidos/$orderId': typeof AdminPedidosOrderIdRoute
   '/admin/produtos/$id': typeof AdminProdutosIdRoute
@@ -595,6 +623,9 @@ export interface FileRouteTypes {
     | '/produto/$slug'
     | '/admin/'
     | '/admin/conteudo/homepage'
+    | '/admin/financeiro/configuracoes'
+    | '/admin/financeiro/margem'
+    | '/admin/financeiro/resumo'
     | '/admin/institutional-pages/$id'
     | '/admin/pedidos/$orderId'
     | '/admin/produtos/$id'
@@ -655,6 +686,9 @@ export interface FileRouteTypes {
     | '/produto/$slug'
     | '/admin'
     | '/admin/conteudo/homepage'
+    | '/admin/financeiro/configuracoes'
+    | '/admin/financeiro/margem'
+    | '/admin/financeiro/resumo'
     | '/admin/institutional-pages/$id'
     | '/admin/pedidos/$orderId'
     | '/admin/produtos/$id'
@@ -715,6 +749,9 @@ export interface FileRouteTypes {
     | '/produto/$slug'
     | '/admin/'
     | '/admin/conteudo/homepage'
+    | '/admin/financeiro/configuracoes'
+    | '/admin/financeiro/margem'
+    | '/admin/financeiro/resumo'
     | '/admin/institutional-pages/$id'
     | '/admin/pedidos/$orderId'
     | '/admin/produtos/$id'
@@ -771,6 +808,9 @@ export interface RootRouteChildren {
   ProdutoSlugRoute: typeof ProdutoSlugRoute
   AdminIndexRoute: typeof AdminIndexRoute
   AdminConteudoHomepageRoute: typeof AdminConteudoHomepageRoute
+  AdminFinanceiroConfiguracoesRoute: typeof AdminFinanceiroConfiguracoesRoute
+  AdminFinanceiroMargemRoute: typeof AdminFinanceiroMargemRoute
+  AdminFinanceiroResumoRoute: typeof AdminFinanceiroResumoRoute
   AdminInstitutionalPagesIdRoute: typeof AdminInstitutionalPagesIdRoute
   AdminProdutosIdRoute: typeof AdminProdutosIdRoute
   AdminSettingsCompanyRoute: typeof AdminSettingsCompanyRoute
@@ -1177,6 +1217,27 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminInstitutionalPagesIdRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/admin/financeiro/resumo': {
+      id: '/admin/financeiro/resumo'
+      path: '/admin/financeiro/resumo'
+      fullPath: '/admin/financeiro/resumo'
+      preLoaderRoute: typeof AdminFinanceiroResumoRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin/financeiro/margem': {
+      id: '/admin/financeiro/margem'
+      path: '/admin/financeiro/margem'
+      fullPath: '/admin/financeiro/margem'
+      preLoaderRoute: typeof AdminFinanceiroMargemRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin/financeiro/configuracoes': {
+      id: '/admin/financeiro/configuracoes'
+      path: '/admin/financeiro/configuracoes'
+      fullPath: '/admin/financeiro/configuracoes'
+      preLoaderRoute: typeof AdminFinanceiroConfiguracoesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/admin/conteudo/homepage': {
       id: '/admin/conteudo/homepage'
       path: '/admin/conteudo/homepage'
@@ -1277,6 +1338,9 @@ const rootRouteChildren: RootRouteChildren = {
   ProdutoSlugRoute: ProdutoSlugRoute,
   AdminIndexRoute: AdminIndexRoute,
   AdminConteudoHomepageRoute: AdminConteudoHomepageRoute,
+  AdminFinanceiroConfiguracoesRoute: AdminFinanceiroConfiguracoesRoute,
+  AdminFinanceiroMargemRoute: AdminFinanceiroMargemRoute,
+  AdminFinanceiroResumoRoute: AdminFinanceiroResumoRoute,
   AdminInstitutionalPagesIdRoute: AdminInstitutionalPagesIdRoute,
   AdminProdutosIdRoute: AdminProdutosIdRoute,
   AdminSettingsCompanyRoute: AdminSettingsCompanyRoute,
