@@ -427,8 +427,32 @@ export const getAdminOperations = createServerFn({ method: 'GET' })
     } catch {}
 
     // ============================================================
-    // Monta cards
+    // Fiscal (sub-onda 4a)
     // ============================================================
+    let fiscal = {
+      productsActive: 0,
+      productsFiscalComplete: 0,
+      productsFiscalIncomplete: 0,
+      productsNeedReview: 0,
+      productsNoNcm: 0,
+      productsNoUnit: 0,
+      productsNoOrigin: 0,
+      productsNoWeightOrDims: 0,
+      productsNoEan: 0,
+      paidOrdersWithFiscalIssues: 0,
+      companyFiscalIncomplete: false,
+      taxRegimeMissing: false,
+    };
+    try {
+      const { fetchFiscalQuickCounts } = await import('./fiscalInsights.server');
+      fiscal = await fetchFiscalQuickCounts();
+    } catch {}
+
+    const fiscalTotalIssues =
+      fiscal.productsFiscalIncomplete +
+      fiscal.productsNeedReview +
+      (fiscal.companyFiscalIncomplete ? 1 : 0);
+
     const cards: OperationsCard[] = [
       {
         id: 'paid-awaiting-shipping',
