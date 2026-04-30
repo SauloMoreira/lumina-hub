@@ -173,6 +173,7 @@ export const getCommercialReviewReport = createServerFn({ method: 'GET' })
       id: string;
       name: string | null;
       sku: string | null;
+      slug: string | null;
       active: boolean;
       category_id: string | null;
       brand: string | null;
