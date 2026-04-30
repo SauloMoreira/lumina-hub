@@ -129,6 +129,49 @@ export const getAdminOperations = createServerFn({ method: 'GET' })
       (q) => q.in('status', ['nova', 'em_andamento']),
     );
 
+    // Pedidos B2B pagos aguardando separação
+    const b2bPaidAwaitingShipping = await safeCount(
+      () => supabaseAdmin.from('orders'),
+      (q) =>
+        q
+          .eq('order_type', 'b2b')
+          .eq('payment_status', 'paid')
+          .in('status', ['paid', 'confirmed', 'preparing']),
+    );
+
+    // Receita / ticket médio B2B do dia + total economizado em B2B hoje
+    let b2bRevenueToday = 0;
+    let b2bOrdersPaidToday = 0;
+    let b2bAvgTicketToday = 0;
+    let b2bDiscountGivenToday = 0;
+    try {
+      const { data: b2bPaid } = await supabaseAdmin
+        .from('orders')
+        .select('total, b2b_discount_total')
+        .eq('order_type', 'b2b')
+        .eq('payment_status', 'paid')
+        .gte('paid_at', startOfTodayISO());
+      b2bOrdersPaidToday = (b2bPaid ?? []).length;
+      b2bRevenueToday = (b2bPaid ?? []).reduce((s, o) => s + Number(o.total ?? 0), 0);
+      b2bDiscountGivenToday = (b2bPaid ?? []).reduce(
+        (s, o) => s + Number((o as { b2b_discount_total?: number }).b2b_discount_total ?? 0),
+        0,
+      );
+      b2bAvgTicketToday = b2bOrdersPaidToday > 0 ? b2bRevenueToday / b2bOrdersPaidToday : 0;
+    } catch {}
+
+    // Configuração B2B (cupom)
+    let b2bAllowsCoupon = false;
+    try {
+      const { data: bs } = await supabaseAdmin
+        .from('b2b_settings')
+        .select('allow_coupon_in_b2b')
+        .limit(1)
+        .maybeSingle();
+      b2bAllowsCoupon = Boolean((bs as { allow_coupon_in_b2b?: boolean } | null)?.allow_coupon_in_b2b);
+    } catch {}
+
+
     // ============================================================
     // Produtos
     // ============================================================
