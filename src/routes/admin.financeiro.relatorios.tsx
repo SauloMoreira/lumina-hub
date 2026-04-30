@@ -490,6 +490,36 @@ function ReportsPage() {
     };
   }, [tab, filters, invPage, invStatus]);
 
+  // Carrega Campanhas / UTM (lazy)
+  useEffect(() => {
+    if (tab !== 'utm') return;
+    let alive = true;
+    setUtmLoading(true);
+    const utmFilters = { ...filters, attribution };
+    Promise.all([
+      getCampaignCards({ data: utmFilters }),
+      getCampaignPerformance({ data: utmFilters }),
+      getOriginPerformance({ data: utmFilters }),
+      getAttributedOrders({ data: { ...utmFilters, page: utmPage, pageSize: 50 } }),
+      getAttributionQuality({ data: utmFilters }),
+    ])
+      .then(([c, camps, origins, orders, q]) => {
+        if (!alive) return;
+        setUtmCards(c);
+        setUtmCampaigns(camps);
+        setUtmOrigins(origins);
+        setUtmOrders(orders);
+        setUtmQuality(q);
+      })
+      .catch((e) =>
+        toast.error(e instanceof Error ? e.message : 'Erro ao carregar campanhas / UTM.'),
+      )
+      .finally(() => alive && setUtmLoading(false));
+    return () => {
+      alive = false;
+    };
+  }, [tab, filters, utmPage, attribution]);
+
   // Reset página quando filtros mudam
   useEffect(() => {
     setPage(1);
@@ -497,6 +527,7 @@ function ReportsPage() {
     setShippingPage(1);
     setMpPage(1);
     setInvPage(1);
+    setUtmPage(1);
   }, [preset, orderType, paymentStatus, paymentMethod, deliveryMethod]);
 
   const cardDefs: CardDef[] = cards
