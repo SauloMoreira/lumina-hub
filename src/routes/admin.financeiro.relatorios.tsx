@@ -633,15 +633,9 @@ function ReportsPage() {
               <TabsTrigger value="sales">Vendas</TabsTrigger>
               <TabsTrigger value="margin">Margem e lucro</TabsTrigger>
               <TabsTrigger value="products">Produtos</TabsTrigger>
-              <TabsTrigger value="b2b" disabled>
-                B2B / Atacado · em breve
-              </TabsTrigger>
-              <TabsTrigger value="coupons" disabled>
-                Cupons · em breve
-              </TabsTrigger>
-              <TabsTrigger value="shipping" disabled>
-                Frete · em breve
-              </TabsTrigger>
+              <TabsTrigger value="b2b">B2B / Atacado</TabsTrigger>
+              <TabsTrigger value="coupons">Cupons</TabsTrigger>
+              <TabsTrigger value="shipping">Frete</TabsTrigger>
               <TabsTrigger value="mp" disabled>
                 Mercado Pago · em breve
               </TabsTrigger>
