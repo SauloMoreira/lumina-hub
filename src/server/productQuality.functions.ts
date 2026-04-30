@@ -3,11 +3,12 @@ import { requireAdmin } from '@/integrations/supabase/admin-middleware';
 import { computeProductQuality, type QualityResult } from '@/lib/productQuality';
 
 const PRODUCT_QUALITY_SELECT = `
-  id, name, slug, sku, brand, active, featured,
+  id, name, slug, sku, brand, active, featured, tags,
   description, specs, seo_title, seo_description, seo_keywords,
   ncm, weight_kg, height_cm, width_cm, length_cm,
   cost_price, category_id, images,
-  product_images(alt_text, original_url)
+  product_images(alt_text, original_url),
+  product_attributes(attribute_key, attribute_value, attribute_unit, is_visible)
 `;
 
 export type ProductQualityRow = {
