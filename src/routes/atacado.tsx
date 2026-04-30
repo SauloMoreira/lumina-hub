@@ -50,8 +50,6 @@ type CompanyStatus = 'guest' | 'pf' | 'pending' | 'approved' | 'blocked' | 'reje
 
 type Category = { id: string; name: string; slug: string };
 
-type SortKey = 'relevance' | 'discount' | 'min_qty';
-
 export const Route = createFileRoute('/atacado')({
   head: () =>
     buildSeo({
@@ -62,6 +60,19 @@ export const Route = createFileRoute('/atacado')({
     }),
   component: AtacadoPage,
 });
+
+function onlyDigits(s: string | null | undefined) {
+  return (s ?? '').replace(/\D+/g, '');
+}
+
+function useDebounced<T>(value: T, delay = 280): T {
+  const [v, setV] = useState(value);
+  useEffect(() => {
+    const id = setTimeout(() => setV(value), delay);
+    return () => clearTimeout(id);
+  }, [value, delay]);
+  return v;
+}
 
 function AtacadoPage() {
   const [settings, setSettings] = useState<B2bSettings | null>(null);
