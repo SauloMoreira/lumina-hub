@@ -282,58 +282,103 @@ export const createOrder = createServerFn({ method: 'POST' })
     const { supabase, userId } = context;
 
     // ========================================================
-    // VALIDAÇÃO SERVER-SIDE: preço e estoque
+    // VALIDAÇÃO SERVER-SIDE: preço (B2B + varejo) e estoque
     // Nunca confiar no unitPrice/qty enviados pelo cliente.
-    // Carrega os produtos do banco e usa SEMPRE o preço atual
-    // (sale_price ?? price) e checa o estoque disponível.
+    // Usa a engine `validate_b2b_pricing` para definir, item a item,
+    // se aplica preço empresa ou varejo (mín/múltiplo/validade/empresa aprovada).
     // ========================================================
-    const productIds = Array.from(new Set(data.items.map((i) => i.productId)));
-    const { data: products, error: prodErr } = await supabase
-      .from('products')
-      .select('id, name, price, sale_price, stock_qty, active')
-      .in('id', productIds);
-    if (prodErr) {
-      return { ok: false as const, error: 'Não foi possível validar os produtos. Tente novamente.' };
-    }
-    const productMap = new Map((products ?? []).map((p) => [p.id, p]));
+    const { computeB2bPricing } = await import('@/server/b2bPricing.functions');
+    const pricing = await computeB2bPricing({
+      userId,
+      items: data.items.map((i) => ({ productId: i.productId, qty: i.qty })),
+    });
 
-    // Itens normalizados com preço autoritativo do servidor
-    const validatedItems: Array<{
+    // Mapeia ids p/ snapshot do cliente (sku/image enviados ficam só como hint)
+    const clientHints = new Map(data.items.map((i) => [i.productId, i] as const));
+
+    // Carrega nomes/skus/imagens atuais para snapshot consistente
+    const productIds = Array.from(new Set(data.items.map((i) => i.productId)));
+    const { data: prodMeta } = await supabase
+      .from('products')
+      .select('id, name, sku, images')
+      .in('id', productIds);
+    const metaMap = new Map((prodMeta ?? []).map((p) => [p.id, p]));
+
+    // Verifica disponibilidade + estoque por item priceado
+    type LineComputed = {
       productId: string;
       name: string;
       sku: string | null;
       image: string | null;
-      unitPrice: number;
       qty: number;
-    }> = [];
-
-    for (const i of data.items) {
-      const p = productMap.get(i.productId);
-      if (!p || p.active === false) {
+      retailUnitPrice: number;
+      b2bUnitPrice: number | null;
+      appliedUnitPrice: number;
+      pricingSource: 'retail' | 'b2b';
+      b2bDiscountUnit: number;
+      b2bDiscountTotal: number;
+      b2bMinQuantity: number | null;
+      b2bRuleApplied: string;
+    };
+    const lines: LineComputed[] = [];
+    for (const it of pricing.items) {
+      if (!it.available) {
         return { ok: false as const, error: `Produto indisponível foi removido do catálogo. Atualize o carrinho.` };
       }
-      if (p.stock_qty < i.qty) {
+      if ((it.stock_qty ?? 0) < it.qty) {
         return {
           ok: false as const,
-          error: `Estoque insuficiente para "${p.name}" (disponível: ${p.stock_qty}). Ajuste a quantidade.`,
+          error: `Estoque insuficiente para "${it.name}" (disponível: ${it.stock_qty ?? 0}). Ajuste a quantidade.`,
         };
       }
-      const serverPrice = Number(p.sale_price ?? p.price);
-      validatedItems.push({
-        productId: p.id,
-        name: p.name, // usa o nome atual do banco
-        sku: i.sku ?? null,
-        image: i.image ?? null,
-        unitPrice: serverPrice,
-        qty: i.qty,
+      // Bloqueia preço B2B inválido por mínimo/múltiplo (não cai silenciosamente para varejo
+      // se o cliente DECLAROU intenção B2B no carrinho enviando qty respeitando regras).
+      // Estratégia conservadora: se a fonte é "retail" mas o produto tem b2b_enabled e empresa aprovada,
+      // permitimos prosseguir com varejo (compra mista). Não bloqueamos.
+      const meta = metaMap.get(it.product_id);
+      const hint = clientHints.get(it.product_id);
+      lines.push({
+        productId: it.product_id,
+        name: it.name ?? meta?.name ?? '',
+        sku: meta?.sku ?? hint?.sku ?? null,
+        image: hint?.image ?? (meta?.images?.[0] ?? null),
+        qty: it.qty,
+        retailUnitPrice: Number(it.retail_unit_price ?? 0),
+        b2bUnitPrice: it.b2b_unit_price != null ? Number(it.b2b_unit_price) : null,
+        appliedUnitPrice: Number(it.applied_unit_price ?? it.retail_unit_price ?? 0),
+        pricingSource: (it.pricing_source ?? 'retail') as 'retail' | 'b2b',
+        b2bDiscountUnit: Number(it.b2b_discount_unit ?? 0),
+        b2bDiscountTotal: Number(it.b2b_discount_total ?? 0),
+        b2bMinQuantity: it.b2b_min_quantity ?? null,
+        b2bRuleApplied: it.reason ?? 'retail',
       });
     }
 
-    // Recalcula subtotal/desconto/total no servidor (nunca confiar no cliente)
-    const subtotal = validatedItems.reduce((s, i) => s + i.unitPrice * i.qty, 0);
+    const retailSubtotal = Number(pricing.retail_subtotal ?? 0);
+    const subtotal = Number(pricing.applied_subtotal ?? 0); // já com desconto B2B
+    const b2bDiscountTotal = Number(pricing.b2b_discount_total ?? 0);
+    const isB2bOrder = pricing.has_b2b_items && pricing.company_approved;
 
+    // Cupom: respeita configuração allow_coupon_in_b2b quando o pedido tiver itens B2B
     let discount = 0;
     if (data.couponCode) {
+      let couponAllowed = true;
+      if (isB2bOrder) {
+        const { supabaseAdmin } = await import('@/integrations/supabase/client.server');
+        const { data: settings } = await supabaseAdmin
+          .from('b2b_settings')
+          .select('allow_coupon_in_b2b')
+          .order('created_at', { ascending: true })
+          .limit(1)
+          .maybeSingle();
+        couponAllowed = Boolean((settings as { allow_coupon_in_b2b?: boolean } | null)?.allow_coupon_in_b2b);
+      }
+      if (!couponAllowed) {
+        return {
+          ok: false as const,
+          error: 'Cupons promocionais não são acumulativos com condições B2B neste pedido.',
+        };
+      }
       const { data: rows } = await supabase.rpc('apply_coupon' as never, {
         _code: data.couponCode,
         _subtotal: subtotal,
@@ -479,6 +524,16 @@ export const createOrder = createServerFn({ method: 'POST' })
         address_snapshot: (data.address ?? null) as never,
         notes: data.notes ?? null,
         delivery_method: deliveryMethodValue,
+        // === Campos B2B ===
+        order_type: isB2bOrder ? 'b2b' : 'b2c',
+        company_id: isB2bOrder ? pricing.company?.id ?? null : null,
+        company_name: isB2bOrder ? pricing.company?.trade_name ?? pricing.company?.legal_name ?? null : null,
+        company_cnpj: isB2bOrder ? pricing.company?.cnpj ?? null : null,
+        company_contact_name: isB2bOrder ? pricing.company?.contact_name ?? null : null,
+        retail_subtotal: retailSubtotal,
+        b2b_subtotal: subtotal,
+        b2b_discount_total: b2bDiscountTotal,
+        pricing_validated_at: pricing.validated_at,
         ...(pickupSnap ?? {}),
         ...(localZoneInfo
           ? {
@@ -504,17 +559,25 @@ export const createOrder = createServerFn({ method: 'POST' })
       return { ok: false as const, error: orderErr?.message ?? 'Falha ao criar pedido' };
     }
 
-    // Criar itens
+    // Criar itens (com memória da regra B2B aplicada)
     const { error: itemsErr } = await supabase.from('order_items').insert(
-      validatedItems.map((i) => ({
+      lines.map((i) => ({
         order_id: order.id,
         product_id: i.productId,
         product_name: i.name,
         product_sku: i.sku ?? null,
         product_image: i.image ?? null,
-        unit_price: i.unitPrice,
+        unit_price: i.appliedUnitPrice,
         qty: i.qty,
-        total_price: i.unitPrice * i.qty,
+        total_price: i.appliedUnitPrice * i.qty,
+        retail_unit_price: i.retailUnitPrice,
+        b2b_unit_price: i.b2bUnitPrice,
+        applied_unit_price: i.appliedUnitPrice,
+        b2b_discount_unit: i.b2bDiscountUnit,
+        b2b_discount_total: i.b2bDiscountTotal,
+        pricing_source: i.pricingSource,
+        b2b_min_quantity: i.b2bMinQuantity,
+        b2b_rule_applied: i.b2bRuleApplied,
       }))
     );
 
