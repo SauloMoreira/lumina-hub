@@ -524,6 +524,16 @@ export const createOrder = createServerFn({ method: 'POST' })
         address_snapshot: (data.address ?? null) as never,
         notes: data.notes ?? null,
         delivery_method: deliveryMethodValue,
+        // === Campos B2B ===
+        order_type: isB2bOrder ? 'b2b' : 'b2c',
+        company_id: isB2bOrder ? pricing.company?.id ?? null : null,
+        company_name: isB2bOrder ? pricing.company?.trade_name ?? pricing.company?.legal_name ?? null : null,
+        company_cnpj: isB2bOrder ? pricing.company?.cnpj ?? null : null,
+        company_contact_name: isB2bOrder ? pricing.company?.contact_name ?? null : null,
+        retail_subtotal: retailSubtotal,
+        b2b_subtotal: subtotal,
+        b2b_discount_total: b2bDiscountTotal,
+        pricing_validated_at: pricing.validated_at,
         ...(pickupSnap ?? {}),
         ...(localZoneInfo
           ? {
@@ -549,17 +559,25 @@ export const createOrder = createServerFn({ method: 'POST' })
       return { ok: false as const, error: orderErr?.message ?? 'Falha ao criar pedido' };
     }
 
-    // Criar itens
+    // Criar itens (com memória da regra B2B aplicada)
     const { error: itemsErr } = await supabase.from('order_items').insert(
-      validatedItems.map((i) => ({
+      lines.map((i) => ({
         order_id: order.id,
         product_id: i.productId,
         product_name: i.name,
         product_sku: i.sku ?? null,
         product_image: i.image ?? null,
-        unit_price: i.unitPrice,
+        unit_price: i.appliedUnitPrice,
         qty: i.qty,
-        total_price: i.unitPrice * i.qty,
+        total_price: i.appliedUnitPrice * i.qty,
+        retail_unit_price: i.retailUnitPrice,
+        b2b_unit_price: i.b2bUnitPrice,
+        applied_unit_price: i.appliedUnitPrice,
+        b2b_discount_unit: i.b2bDiscountUnit,
+        b2b_discount_total: i.b2bDiscountTotal,
+        pricing_source: i.pricingSource,
+        b2b_min_quantity: i.b2bMinQuantity,
+        b2b_rule_applied: i.b2bRuleApplied,
       }))
     );
 
