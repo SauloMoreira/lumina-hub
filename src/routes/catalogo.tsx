@@ -13,6 +13,8 @@ import type { Product, Category } from '@/lib/domain';
 import { FREE_SHIPPING_THRESHOLD, formatBRL } from '@/lib/domain';
 import { trackSearch } from '@/lib/tracking';
 import { searchProducts, getCatalogAttributeFacets } from '@/server/productSearch.functions';
+import { getPublicAttributeLabels } from '@/server/productAttributeLabels.functions';
+import { buildLabelLookup } from '@/lib/attributeLabels';
 import { getPublicCompanySettings } from '@/server/institutional.functions';
 import {
   TECH_FILTERS,
