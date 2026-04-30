@@ -318,6 +318,22 @@ function CatalogPage() {
                   Destaques <X className="w-3 h-3" />
                 </button>
               )}
+              {TECH_FILTERS.flatMap((def) => {
+                const ids = selectedTech[def.key] ?? [];
+                return ids.map((id) => {
+                  const opt = def.options.find((o) => o.id === id);
+                  if (!opt) return null;
+                  return (
+                    <button
+                      key={`${def.key}-${id}`}
+                      onClick={() => toggleTechId(def.key, id)}
+                      className="inline-flex items-center gap-1.5 text-xs bg-primary-tint text-primary px-2.5 py-1 rounded-full hover:bg-primary/10"
+                    >
+                      {def.label}: {opt.label} <X className="w-3 h-3" />
+                    </button>
+                  );
+                });
+              })}
               <button onClick={clearFilters} className="text-xs text-muted-foreground underline hover:text-foreground ml-1">
                 Limpar filtros
               </button>
