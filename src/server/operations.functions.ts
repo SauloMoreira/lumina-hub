@@ -474,6 +474,23 @@ export const getAdminOperations = createServerFn({ method: 'GET' })
       financeAlerts = await fetchFinanceAlertCounts();
     } catch {}
 
+    // Qualidade do cadastro de produtos (helper isolado)
+    let productQuality = { activeBelow70: 0, featuredBelow70: 0, ruim: 0 };
+    try {
+      const { computeProductQuality } = await import('@/lib/productQuality');
+      const { data } = await supabaseAdmin
+        .from('products')
+        .select('id, featured, description, specs, seo_title, seo_description, slug, ncm, weight_kg, height_cm, width_cm, length_cm, cost_price, category_id, images, product_images(alt_text, original_url)')
+        .eq('active', true)
+        .limit(1000);
+      for (const p of (data ?? []) as any[]) {
+        const q = computeProductQuality(p);
+        if (q.score < 70) productQuality.activeBelow70++;
+        if (p.featured && q.score < 70) productQuality.featuredBelow70++;
+        if (q.classification === 'ruim') productQuality.ruim++;
+      }
+    } catch {}
+
     const cards: OperationsCard[] = [
       {
         id: 'paid-awaiting-shipping',
