@@ -1,7 +1,10 @@
 import { createServerFn } from '@tanstack/react-start';
 import { z } from 'zod';
 import { requireAdmin } from '@/integrations/supabase/admin-middleware';
-import { supabaseAdmin } from '@/integrations/supabase/client.server';
+
+async function getSupabaseAdmin() {
+  return (await import('@/integrations/supabase/client.server')).supabaseAdmin;
+}
 
 // ============================================================
 // Tipos compartilhados (cliente pode importar destes apenas tipos)
@@ -72,6 +75,7 @@ export type FinanceMarginRow = {
 // ============================================================
 
 async function loadSettings(): Promise<FinanceSettings> {
+  const supabaseAdmin = await getSupabaseAdmin();
   const { data, error } = await supabaseAdmin
     .from('finance_settings')
     .select('*')
