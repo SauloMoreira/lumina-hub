@@ -31,10 +31,8 @@ function ProductQualityPage() {
 
   const handleRefresh = async () => {
     try {
-      // Invalida também alertas/contadores que dependem da qualidade
-      qc.invalidateQueries({ queryKey: ['admin-counters'] });
-      qc.invalidateQueries({ queryKey: ['day-panel'] });
-      qc.invalidateQueries({ queryKey: ['operations-counters'] });
+      // Invalida também o feed de operações (contadores do menu + Painel do Dia)
+      qc.invalidateQueries({ queryKey: ['admin-operations'] });
       await refetch();
       toast.success('Scores de qualidade atualizados com sucesso.');
     } catch {
