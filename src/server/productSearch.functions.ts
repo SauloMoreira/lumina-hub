@@ -42,7 +42,7 @@ export const searchProducts = createServerFn({ method: 'POST' })
       categoryId = cat?.id ?? null;
     }
 
-    const { data: rows, error } = await supabaseAdmin.rpc('search_products_public', {
+    const { data: rows, error } = await (supabaseAdmin as any).rpc('search_products_public', {
       _terms: terms,
       _category_id: categoryId,
       _brand: data.brand ?? null,
@@ -107,7 +107,7 @@ export const autocompleteSearch = createServerFn({ method: 'POST' })
     const terms = expandSearchTerms(data.q);
     if (!terms.length) return { suggestions: [] as Array<any> };
 
-    const { data: rows, error } = await supabaseAdmin.rpc('autocomplete_products_public', {
+    const { data: rows, error } = await (supabaseAdmin as any).rpc('autocomplete_products_public', {
       _terms: terms,
       _limit: 6,
     });
