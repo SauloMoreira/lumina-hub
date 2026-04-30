@@ -68,9 +68,14 @@ function ProdutosList() {
     <AdminLayout
       title="Produtos"
       action={
-        <Link to={'/admin/produtos/novo' as any}>
-          <Button size="sm"><Plus className="w-4 h-4 mr-1" /> Novo produto</Button>
-        </Link>
+        <div className="flex items-center gap-2">
+          <Link to={'/admin/produtos/qualidade' as any}>
+            <Button variant="outline" size="sm"><Sparkles className="w-4 h-4 mr-1" /> Qualidade</Button>
+          </Link>
+          <Link to={'/admin/produtos/novo' as any}>
+            <Button size="sm"><Plus className="w-4 h-4 mr-1" /> Novo produto</Button>
+          </Link>
+        </div>
       }
     >
       <div className="bg-card border border-border rounded-xl">
