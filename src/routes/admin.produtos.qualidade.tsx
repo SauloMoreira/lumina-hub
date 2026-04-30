@@ -11,7 +11,7 @@ import { qualityClassColor, qualityClassLabel, type QualityClass } from '@/lib/p
 
 export const Route = createFileRoute('/admin/produtos/qualidade')({ component: ProductQualityPage });
 
-type Filter = 'all' | 'ruim' | 'atencao' | 'active_low' | 'featured_low' | 'no_image' | 'no_cost' | 'no_seo' | 'no_fiscal' | 'no_tech';
+type Filter = 'all' | 'ruim' | 'atencao' | 'active_low' | 'featured_low' | 'no_image' | 'no_cost' | 'no_seo' | 'no_fiscal' | 'no_tech' | 'no_tech_power' | 'no_tech_color_temp' | 'no_tech_voltage' | 'no_tech_ip_rating';
 
 function ProductQualityPage() {
   const [filter, setFilter] = useState<Filter>('all');
@@ -51,7 +51,11 @@ function ProductQualityPage() {
       case 'no_cost':      arr = arr.filter((r) => r.quality.issues.some((i) => i.code === 'no_cost')); break;
       case 'no_seo':       arr = arr.filter((r) => r.quality.issues.some((i) => i.code === 'no_seo_title' || i.code === 'no_seo_description')); break;
       case 'no_fiscal':    arr = arr.filter((r) => r.quality.issues.some((i) => ['no_ncm','no_weight','no_dimensions'].includes(i.code))); break;
-      case 'no_tech':      arr = arr.filter((r) => r.quality.issues.some((i) => i.code === 'no_tech_attrs')); break;
+      case 'no_tech':              arr = arr.filter((r) => r.quality.issues.some((i) => i.code === 'no_tech_attrs')); break;
+      case 'no_tech_power':        arr = arr.filter((r) => r.quality.issues.some((i) => i.code === 'no_tech_power')); break;
+      case 'no_tech_color_temp':   arr = arr.filter((r) => r.quality.issues.some((i) => i.code === 'no_tech_color_temp')); break;
+      case 'no_tech_voltage':      arr = arr.filter((r) => r.quality.issues.some((i) => i.code === 'no_tech_voltage')); break;
+      case 'no_tech_ip_rating':    arr = arr.filter((r) => r.quality.issues.some((i) => i.code === 'no_tech_ip_rating')); break;
     }
     const term = q.trim().toLowerCase();
     if (term) arr = arr.filter((r) => r.name.toLowerCase().includes(term) || (r.sku ?? '').toLowerCase().includes(term));
@@ -106,6 +110,10 @@ function ProductQualityPage() {
           <FilterPill icon={<Search className="w-3.5 h-3.5" />} label="SEO incompleto" value="no_seo" filter={filter} setFilter={setFilter} />
           <FilterPill icon={<FileText className="w-3.5 h-3.5" />} label="Fiscal/logística" value="no_fiscal" filter={filter} setFilter={setFilter} />
           <FilterPill icon={<Package className="w-3.5 h-3.5" />} label="Sem atributos técnicos" value="no_tech" filter={filter} setFilter={setFilter} />
+          <FilterPill icon={<Package className="w-3.5 h-3.5" />} label="Sem potência" value="no_tech_power" filter={filter} setFilter={setFilter} />
+          <FilterPill icon={<Package className="w-3.5 h-3.5" />} label="Sem temperatura" value="no_tech_color_temp" filter={filter} setFilter={setFilter} />
+          <FilterPill icon={<Package className="w-3.5 h-3.5" />} label="Sem voltagem" value="no_tech_voltage" filter={filter} setFilter={setFilter} />
+          <FilterPill icon={<Package className="w-3.5 h-3.5" />} label="Sem IP" value="no_tech_ip_rating" filter={filter} setFilter={setFilter} />
         </div>
 
         <div className="bg-card border border-border rounded-xl">

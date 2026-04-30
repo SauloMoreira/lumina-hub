@@ -29,6 +29,8 @@ interface Product {
   b2b_enabled: boolean;
   b2b_price: number | null;
   b2b_min_qty: number | null;
+  /** Conjunto de attribute_keys (lowercase) cadastrados pra esse produto. */
+  tech_attr_keys?: Set<string>;
   quality?: ReturnType<typeof computeProductQuality>;
 }
 
@@ -40,7 +42,12 @@ type QuickFilter =
   | 'b2b_incomplete'
   | 'low_stock'
   | 'zero_stock'
-  | 'bad_quality';
+  | 'bad_quality'
+  | 'no_tech_attrs'
+  | 'no_power'
+  | 'no_color_temp'
+  | 'no_voltage'
+  | 'no_ip_rating';
 
 const FILTERS: Array<{ id: QuickFilter; label: string }> = [
   { id: 'all', label: 'Todos' },
@@ -51,6 +58,11 @@ const FILTERS: Array<{ id: QuickFilter; label: string }> = [
   { id: 'low_stock', label: 'Estoque baixo' },
   { id: 'zero_stock', label: 'Estoque zerado' },
   { id: 'bad_quality', label: 'Qualidade ruim' },
+  { id: 'no_tech_attrs', label: 'Sem atributos técnicos' },
+  { id: 'no_power', label: 'Sem potência' },
+  { id: 'no_color_temp', label: 'Sem temperatura' },
+  { id: 'no_voltage', label: 'Sem voltagem' },
+  { id: 'no_ip_rating', label: 'Sem IP' },
 ];
 
 function ProdutosList() {
@@ -61,10 +73,25 @@ function ProdutosList() {
 
   const load = async () => {
     setLoading(true);
-    const { data } = await supabase
-      .from('products')
-      .select('*, product_images(url_thumb, url_card, original_url, is_primary, sort_order, alt_text)')
-      .order('created_at', { ascending: false });
+    const [{ data }, { data: attrs }] = await Promise.all([
+      supabase
+        .from('products')
+        .select('*, product_images(url_thumb, url_card, original_url, is_primary, sort_order, alt_text)')
+        .order('created_at', { ascending: false }),
+      supabase
+        .from('product_attributes')
+        .select('product_id, attribute_key, attribute_value')
+        .limit(20000),
+    ]);
+    const attrMap = new Map<string, Set<string>>();
+    (attrs ?? []).forEach((a: any) => {
+      const v = (a.attribute_value ?? '').toString().trim();
+      if (!v) return;
+      const k = (a.attribute_key ?? '').toString().toLowerCase();
+      if (!k) return;
+      if (!attrMap.has(a.product_id)) attrMap.set(a.product_id, new Set());
+      attrMap.get(a.product_id)!.add(k);
+    });
     const mapped = (data ?? []).map((p: any) => {
       const imgs = (p.product_images ?? []).slice().sort((a: any, b: any) => {
         if (a.is_primary !== b.is_primary) return a.is_primary ? -1 : 1;
@@ -73,7 +100,8 @@ function ProdutosList() {
       const fromTable = imgs.map((i: any) => i.url_thumb ?? i.url_card ?? i.original_url).filter(Boolean);
       const merged = fromTable.length ? fromTable : (p.images ?? []);
       const quality = computeProductQuality(p);
-      return { ...p, images: merged, quality };
+      const tech_attr_keys = attrMap.get(p.id) ?? new Set<string>();
+      return { ...p, images: merged, quality, tech_attr_keys };
     });
     setProducts(mapped as any);
     setLoading(false);
@@ -117,6 +145,16 @@ function ProdutosList() {
           return p.stock_qty <= 0;
         case 'bad_quality':
           return p.quality?.classification === 'ruim';
+        case 'no_tech_attrs':
+          return !p.tech_attr_keys || p.tech_attr_keys.size === 0;
+        case 'no_power':
+          return !p.tech_attr_keys?.has('power');
+        case 'no_color_temp':
+          return !p.tech_attr_keys?.has('color_temperature');
+        case 'no_voltage':
+          return !p.tech_attr_keys?.has('voltage');
+        case 'no_ip_rating':
+          return !p.tech_attr_keys?.has('ip_rating');
         case 'all':
         default:
           return true;
@@ -129,6 +167,7 @@ function ProdutosList() {
       all: products.length,
       no_image: 0, no_cost: 0, no_ncm: 0,
       b2b_incomplete: 0, low_stock: 0, zero_stock: 0, bad_quality: 0,
+      no_tech_attrs: 0, no_power: 0, no_color_temp: 0, no_voltage: 0, no_ip_rating: 0,
     };
     for (const p of products) {
       if (!p.images || p.images.length === 0) c.no_image += 1;
@@ -139,6 +178,12 @@ function ProdutosList() {
       if (p.stock_qty > 0 && p.stock_qty <= min) c.low_stock += 1;
       if (p.stock_qty <= 0) c.zero_stock += 1;
       if (p.quality?.classification === 'ruim') c.bad_quality += 1;
+      const keys = p.tech_attr_keys;
+      if (!keys || keys.size === 0) c.no_tech_attrs += 1;
+      if (!keys?.has('power')) c.no_power += 1;
+      if (!keys?.has('color_temperature')) c.no_color_temp += 1;
+      if (!keys?.has('voltage')) c.no_voltage += 1;
+      if (!keys?.has('ip_rating')) c.no_ip_rating += 1;
     }
     return c;
   }, [products]);

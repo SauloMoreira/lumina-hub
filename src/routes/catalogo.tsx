@@ -1,6 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { useQuery, keepPreviousData } from '@tanstack/react-query';
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Search, SlidersHorizontal, ChevronLeft, ChevronRight, X, Truck, MessageCircle, Tag } from 'lucide-react';
 import { z } from 'zod';
 import { StoreLayout } from '@/components/layout/StoreLayout';
@@ -12,8 +12,16 @@ import { supabase } from '@/integrations/supabase/client';
 import type { Product, Category } from '@/lib/domain';
 import { FREE_SHIPPING_THRESHOLD, formatBRL } from '@/lib/domain';
 import { trackSearch } from '@/lib/tracking';
-import { searchProducts } from '@/server/productSearch.functions';
+import { searchProducts, getCatalogAttributeFacets } from '@/server/productSearch.functions';
 import { getPublicCompanySettings } from '@/server/institutional.functions';
+import {
+  TECH_FILTERS,
+  toAttrFilterPayload,
+  parseFilterCsv,
+  joinFilterCsv,
+  type SelectedTechFilters,
+  type TechFilterKey,
+} from '@/lib/catalogTechFilters';
 
 const PAGE_SIZE = 24;
 
@@ -28,6 +36,11 @@ const searchSchema = z.object({
   precoMin: z.coerce.number().min(0).optional(),
   precoMax: z.coerce.number().min(0).optional(),
   estoque: z.coerce.boolean().optional(),
+  // Filtros técnicos (CSV de ids)
+  pot: z.string().max(120).optional(),
+  cor: z.string().max(120).optional(),
+  volt: z.string().max(120).optional(),
+  ip: z.string().max(120).optional(),
 });
 
 import { buildSeo } from '@/lib/seo';
@@ -100,6 +113,36 @@ function CatalogPage() {
 
   const sortValue = search.sort ?? (search.q ? 'relevance' : 'featured');
 
+  // Filtros técnicos selecionados (parsed da URL)
+  const selectedTech: SelectedTechFilters = useMemo(() => ({
+    power: parseFilterCsv(search.pot),
+    color_temperature: parseFilterCsv(search.cor),
+    voltage: parseFilterCsv(search.volt),
+    ip_rating: parseFilterCsv(search.ip),
+  }), [search.pot, search.cor, search.volt, search.ip]);
+
+  const techCount =
+    (selectedTech.power?.length ?? 0) +
+    (selectedTech.color_temperature?.length ?? 0) +
+    (selectedTech.voltage?.length ?? 0) +
+    (selectedTech.ip_rating?.length ?? 0);
+
+  const attrFilters = useMemo(() => toAttrFilterPayload(selectedTech), [selectedTech]);
+
+  // Facets disponíveis para o contexto atual (categoria)
+  const { data: facetsData } = useQuery({
+    queryKey: ['catalog-facets', search.cat ?? ''],
+    staleTime: 1000 * 60 * 5,
+    queryFn: () => getCatalogAttributeFacets({ data: { categorySlug: search.cat || undefined } }),
+  });
+  const facetsByKey = useMemo(() => {
+    const m = new Map<string, Set<string>>();
+    (facetsData?.facets ?? []).forEach((g) => {
+      m.set(g.key, new Set(g.values.map((v) => v.value.toLowerCase())));
+    });
+    return m;
+  }, [facetsData]);
+
   const { data, isLoading, isFetching } = useQuery({
     queryKey: [
       'products', 'catalog-search',
@@ -107,6 +150,8 @@ function CatalogPage() {
       search.precoMin ?? null, search.precoMax ?? null,
       !!search.estoque, !!search.oferta, search.shipping ?? '',
       sortValue, page,
+      // Filtros técnicos entram na chave para invalidar cache
+      JSON.stringify(attrFilters),
     ],
     placeholderData: keepPreviousData,
     staleTime: 30_000,
@@ -125,6 +170,7 @@ function CatalogPage() {
           page,
           pageSize: PAGE_SIZE,
           source: 'public_store',
+          attrFilters: attrFilters.length > 0 ? attrFilters : undefined,
         },
       });
       return res;
@@ -168,10 +214,30 @@ function CatalogPage() {
 
   const hasActiveFilters = !!(
     search.cat || search.oferta || search.shipping || search.sort || search.q ||
-    search.marca || search.precoMin != null || search.precoMax != null || search.estoque
+    search.marca || search.precoMin != null || search.precoMax != null || search.estoque ||
+    techCount > 0
   );
 
   const clearFilters = () => navigate({ search: {} as any });
+
+  const techKeyToCsv: Record<TechFilterKey, 'pot' | 'cor' | 'volt' | 'ip'> = {
+    power: 'pot',
+    color_temperature: 'cor',
+    voltage: 'volt',
+    ip_rating: 'ip',
+  };
+
+  const toggleTechId = (key: TechFilterKey, id: string) => {
+    const current = (selectedTech[key] ?? []).slice();
+    const idx = current.indexOf(id);
+    if (idx >= 0) current.splice(idx, 1);
+    else current.push(id);
+    navigate({ search: (s: any) => ({ ...s, [techKeyToCsv[key]]: joinFilterCsv(current), page: 1 }) as any });
+  };
+
+  const clearTechKey = (key: TechFilterKey) => {
+    navigate({ search: (s: any) => ({ ...s, [techKeyToCsv[key]]: undefined, page: 1 }) as any });
+  };
 
   return (
     <StoreLayout>
@@ -252,6 +318,22 @@ function CatalogPage() {
                   Destaques <X className="w-3 h-3" />
                 </button>
               )}
+              {TECH_FILTERS.flatMap((def) => {
+                const ids = selectedTech[def.key] ?? [];
+                return ids.map((id) => {
+                  const opt = def.options.find((o) => o.id === id);
+                  if (!opt) return null;
+                  return (
+                    <button
+                      key={`${def.key}-${id}`}
+                      onClick={() => toggleTechId(def.key, id)}
+                      className="inline-flex items-center gap-1.5 text-xs bg-primary-tint text-primary px-2.5 py-1 rounded-full hover:bg-primary/10"
+                    >
+                      {def.label}: {opt.label} <X className="w-3 h-3" />
+                    </button>
+                  );
+                });
+              })}
               <button onClick={clearFilters} className="text-xs text-muted-foreground underline hover:text-foreground ml-1">
                 Limpar filtros
               </button>
@@ -365,6 +447,66 @@ function CatalogPage() {
                   Frete grátis
                 </label>
               </div>
+
+              {(facetsData?.facets?.length ?? 0) > 0 && (
+                <div className="space-y-5 pt-1">
+                  <div>
+                    <h3 className="font-display font-semibold text-sm mb-1">Filtros técnicos</h3>
+                    <p className="text-[11px] text-muted-foreground leading-snug">
+                      Encontre produtos pela potência, cor da luz, voltagem ou proteção.
+                    </p>
+                  </div>
+                  {TECH_FILTERS.map((def) => {
+                    const facetValues = facetsByKey.get(def.key);
+                    if (!facetValues || facetValues.size === 0) return null;
+                    // Mostra apenas opções que têm pelo menos um produto cadastrado.
+                    const visibleOptions = def.options.filter((opt: any) => {
+                      if (def.kind === 'value') {
+                        const values: string[] = opt.values ?? [];
+                        return values.some((v) => facetValues.has(v.toLowerCase()));
+                      }
+                      // Para potência (range), checa se há valor numérico dentro do intervalo.
+                      const min: number = opt.min ?? 0;
+                      const max: number = opt.max ?? 99999;
+                      for (const v of facetValues) {
+                        const n = Number(v);
+                        if (Number.isFinite(n) && n >= min && n <= max) return true;
+                      }
+                      return false;
+                    });
+                    if (visibleOptions.length === 0) return null;
+                    const selectedIds = selectedTech[def.key] ?? [];
+                    return (
+                      <div key={def.key}>
+                        <div className="flex items-center justify-between mb-2">
+                          <h4 className="text-sm font-medium">{def.label}</h4>
+                          {selectedIds.length > 0 && (
+                            <button
+                              onClick={() => clearTechKey(def.key)}
+                              className="text-[11px] text-muted-foreground hover:text-foreground underline"
+                            >
+                              limpar
+                            </button>
+                          )}
+                        </div>
+                        <div className="space-y-1.5">
+                          {visibleOptions.map((opt) => (
+                            <label key={opt.id} className="flex items-center gap-2 text-sm cursor-pointer">
+                              <input
+                                type="checkbox"
+                                checked={selectedIds.includes(opt.id)}
+                                onChange={() => toggleTechId(def.key, opt.id)}
+                                className="rounded border-border"
+                              />
+                              <span className="text-muted-foreground">{opt.label}</span>
+                            </label>
+                          ))}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
             </div>
           </aside>
 

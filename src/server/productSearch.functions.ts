@@ -6,6 +6,25 @@ import { expandSearchTerms, normalizeSearch } from '@/lib/searchNormalize';
 // ----------------------------------------------------------------
 // searchProducts — usado pela /catalogo (público)
 // ----------------------------------------------------------------
+const ALLOWED_FILTER_KEYS = new Set([
+  'power',
+  'color_temperature',
+  'voltage',
+  'ip_rating',
+]);
+
+const attrFilterSchema = z
+  .object({
+    key: z.string().min(1).max(80),
+    values: z.array(z.string().min(1).max(60)).max(20).optional(),
+    min: z.number().min(0).max(1000000).optional(),
+    max: z.number().min(0).max(1000000).optional(),
+  })
+  .refine(
+    (f) => (f.values && f.values.length > 0) || f.min != null || f.max != null,
+    { message: 'attr filter precisa de values ou min/max' },
+  );
+
 const searchInput = z.object({
   q: z.string().max(200).optional(),
   categorySlug: z.string().max(120).optional(),
@@ -18,6 +37,7 @@ const searchInput = z.object({
   freeShipping: z.boolean().optional(),
   b2bOnly: z.boolean().optional(),
   minQtyMax: z.number().int().min(1).max(100000).optional(),
+  attrFilters: z.array(attrFilterSchema).max(10).optional(),
   sort: z
     .enum([
       'relevance',
@@ -56,6 +76,16 @@ export const searchProducts = createServerFn({ method: 'POST' })
       categoryId = cat?.id ?? null;
     }
 
+    // Sanitiza attrFilters: só chaves permitidas
+    const sanitizedAttrFilters = (data.attrFilters ?? [])
+      .filter((f) => ALLOWED_FILTER_KEYS.has(f.key.toLowerCase()))
+      .map((f) => ({
+        key: f.key.toLowerCase(),
+        ...(f.values && f.values.length > 0 ? { values: f.values } : {}),
+        ...(f.min != null ? { min: f.min } : {}),
+        ...(f.max != null ? { max: f.max } : {}),
+      }));
+
     const { data: rows, error } = await (supabaseAdmin as any).rpc('search_products_public', {
       _terms: terms,
       _category_id: categoryId,
@@ -70,6 +100,7 @@ export const searchProducts = createServerFn({ method: 'POST' })
       _offset: offset,
       _b2b_only: data.b2bOnly ?? false,
       _min_qty_max: data.minQtyMax ?? null,
+      _attr_filters: sanitizedAttrFilters.length > 0 ? sanitizedAttrFilters : null,
     });
 
     if (error) {
@@ -152,4 +183,69 @@ export const autocompleteSearch = createServerFn({ method: 'POST' })
     }));
 
     return { suggestions };
+  });
+
+// ----------------------------------------------------------------
+// getCatalogAttributeFacets — opções de filtros técnicos disponíveis
+// ----------------------------------------------------------------
+const facetsInput = z.object({
+  categorySlug: z.string().max(120).optional(),
+  categoryId: z.string().uuid().optional(),
+});
+
+export type CatalogFacetValue = {
+  value: string;
+  productCount: number;
+};
+
+export type CatalogFacetGroup = {
+  key: string;
+  label: string;
+  unit: string | null;
+  values: CatalogFacetValue[];
+};
+
+const FACET_KEYS = ['power', 'color_temperature', 'voltage', 'ip_rating'] as const;
+
+export const getCatalogAttributeFacets = createServerFn({ method: 'POST' })
+  .inputValidator((input: unknown) => facetsInput.parse(input))
+  .handler(async ({ data }): Promise<{ facets: CatalogFacetGroup[] }> => {
+    let categoryId: string | null = data.categoryId ?? null;
+    if (!categoryId && data.categorySlug) {
+      const { data: cat } = await supabaseAdmin
+        .from('categories')
+        .select('id')
+        .eq('slug', data.categorySlug)
+        .maybeSingle();
+      categoryId = cat?.id ?? null;
+    }
+
+    const { data: rows, error } = await (supabaseAdmin as any).rpc('get_catalog_attribute_facets', {
+      _category_id: categoryId,
+      _keys: FACET_KEYS as unknown as string[],
+    });
+
+    if (error) {
+      console.error('[getCatalogAttributeFacets] RPC error', error);
+      return { facets: [] };
+    }
+
+    const grouped = new Map<string, CatalogFacetGroup>();
+    for (const r of (rows ?? []) as Array<any>) {
+      const key = String(r.attribute_key);
+      if (!grouped.has(key)) {
+        grouped.set(key, {
+          key,
+          label: r.attribute_label ?? key,
+          unit: r.attribute_unit ?? null,
+          values: [],
+        });
+      }
+      grouped.get(key)!.values.push({
+        value: String(r.attribute_value),
+        productCount: Number(r.product_count ?? 0),
+      });
+    }
+
+    return { facets: Array.from(grouped.values()) };
   });

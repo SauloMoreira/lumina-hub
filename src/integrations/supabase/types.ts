@@ -3250,6 +3250,16 @@ export type Database = {
           stock_qty: number
         }[]
       }
+      get_catalog_attribute_facets: {
+        Args: { _category_id?: string; _keys?: string[] }
+        Returns: {
+          attribute_key: string
+          attribute_label: string
+          attribute_unit: string
+          attribute_value: string
+          product_count: number
+        }[]
+      }
       get_homepage_showcases_public: { Args: never; Returns: Json }
       get_product_relations_public: {
         Args: { _limit?: number; _product_id: string; _user_id?: string }
@@ -3352,45 +3362,86 @@ export type Database = {
         }[]
       }
       search_normalize: { Args: { _text: string }; Returns: string }
-      search_products_public: {
-        Args: {
-          _b2b_only?: boolean
-          _brand?: string
-          _category_id?: string
-          _free_shipping?: boolean
-          _in_stock?: boolean
-          _limit?: number
-          _min_qty_max?: number
-          _offset?: number
-          _on_sale?: boolean
-          _price_max?: number
-          _price_min?: number
-          _sort?: string
-          _terms?: string[]
-        }
-        Returns: {
-          b2b_enabled: boolean
-          b2b_min_qty: number
-          b2b_price: number
-          b2b_qty_multiple: number
-          b2b_show_in_vitrine: boolean
-          b2b_valid_until: string
-          brand: string
-          category_id: string
-          featured: boolean
-          free_shipping_eligible: boolean
-          id: string
-          images: string[]
-          name: string
-          price: number
-          relevance: number
-          sale_price: number
-          slug: string
-          stock_qty: number
-          tags: string[]
-          total_count: number
-        }[]
-      }
+      search_products_public:
+        | {
+            Args: {
+              _b2b_only?: boolean
+              _brand?: string
+              _category_id?: string
+              _free_shipping?: boolean
+              _in_stock?: boolean
+              _limit?: number
+              _min_qty_max?: number
+              _offset?: number
+              _on_sale?: boolean
+              _price_max?: number
+              _price_min?: number
+              _sort?: string
+              _terms?: string[]
+            }
+            Returns: {
+              b2b_enabled: boolean
+              b2b_min_qty: number
+              b2b_price: number
+              b2b_qty_multiple: number
+              b2b_show_in_vitrine: boolean
+              b2b_valid_until: string
+              brand: string
+              category_id: string
+              featured: boolean
+              free_shipping_eligible: boolean
+              id: string
+              images: string[]
+              name: string
+              price: number
+              relevance: number
+              sale_price: number
+              slug: string
+              stock_qty: number
+              tags: string[]
+              total_count: number
+            }[]
+          }
+        | {
+            Args: {
+              _attr_filters?: Json
+              _b2b_only?: boolean
+              _brand?: string
+              _category_id?: string
+              _free_shipping?: boolean
+              _in_stock?: boolean
+              _limit?: number
+              _min_qty_max?: number
+              _offset?: number
+              _on_sale?: boolean
+              _price_max?: number
+              _price_min?: number
+              _sort?: string
+              _terms?: string[]
+            }
+            Returns: {
+              b2b_enabled: boolean
+              b2b_min_qty: number
+              b2b_price: number
+              b2b_qty_multiple: number
+              b2b_show_in_vitrine: boolean
+              b2b_valid_until: string
+              brand: string
+              category_id: string
+              featured: boolean
+              free_shipping_eligible: boolean
+              id: string
+              images: string[]
+              name: string
+              price: number
+              relevance: number
+              sale_price: number
+              slug: string
+              stock_qty: number
+              tags: string[]
+              total_count: number
+            }[]
+          }
       sync_product_images_array: {
         Args: { _product_id: string }
         Returns: undefined
