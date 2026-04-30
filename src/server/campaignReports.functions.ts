@@ -910,7 +910,7 @@ export const exportCampaignPerformanceCsv = createServerFn({ method: 'POST' })
       r.recovered,
       r.couponsUsed,
     ]);
-    return { csv: toCsv(headers, body), filename: `campanhas_${Date.now()}.csv` };
+    return { content: toCsv(headers, body), filename: `campanhas_${Date.now()}.csv` };
   });
 
 export const exportOriginPerformanceCsv = createServerFn({ method: 'POST' })
@@ -948,7 +948,7 @@ export const exportOriginPerformanceCsv = createServerFn({ method: 'POST' })
       r.ordersB2B,
       r.ordersB2C,
     ]);
-    return { csv: toCsv(headers, body), filename: `origens_${Date.now()}.csv` };
+    return { content: toCsv(headers, body), filename: `origens_${Date.now()}.csv` };
   });
 
 export const exportAttributedOrdersCsv = createServerFn({ method: 'POST' })
@@ -996,7 +996,7 @@ export const exportAttributedOrdersCsv = createServerFn({ method: 'POST' })
       r.marginPercent == null ? '' : r.marginPercent.toFixed(2).replace('.', ','),
       r.calcStatus,
     ]);
-    return { csv: toCsv(headers, body), filename: `pedidos_atribuidos_${Date.now()}.csv` };
+    return { content: toCsv(headers, body), filename: `pedidos_atribuidos_${Date.now()}.csv` };
   });
 
 export const exportAttributionQualityCsv = createServerFn({ method: 'POST' })
@@ -1014,7 +1014,7 @@ export const exportAttributionQualityCsv = createServerFn({ method: 'POST' })
       ['Taxa de atribuição (%)', q.attributionRate.toFixed(2).replace('.', ',')],
     ];
     return {
-      csv: toCsv(headers, body),
+      content: toCsv(headers, body),
       filename: `qualidade_atribuicao_${Date.now()}.csv`,
     };
   });
