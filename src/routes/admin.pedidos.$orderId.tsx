@@ -19,6 +19,7 @@ import {
   addOrderNote,
   resendOrderEmail,
 } from '@/server/orderAdmin.functions';
+import { InvoiceBlock } from '@/components/admin/InvoiceBlock';
 
 export const Route = createFileRoute('/admin/pedidos/$orderId')({
   component: OrderDetailPage,
