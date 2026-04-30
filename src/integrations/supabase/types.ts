@@ -1520,43 +1520,106 @@ export type Database = {
       }
       marketing_campaigns: {
         Row: {
+          audience: string | null
+          banner_id: string | null
+          base_url: string | null
+          budget_planned: number | null
+          budget_spent: number | null
+          category_ids: string[]
+          channel: string | null
           click_count: number | null
           content: string | null
+          coupon_id: string | null
           created_at: string | null
+          description: string | null
+          ends_at: string | null
+          final_url: string | null
           id: string
           name: string
+          notes: string | null
+          objective: string | null
           open_count: number | null
+          product_ids: string[]
           scheduled_at: string | null
           sent_count: number | null
+          starts_at: string | null
           status: string | null
           subject: string | null
           type: string | null
+          updated_at: string
+          utm_campaign: string | null
+          utm_content: string | null
+          utm_medium: string | null
+          utm_source: string | null
+          utm_term: string | null
         }
         Insert: {
+          audience?: string | null
+          banner_id?: string | null
+          base_url?: string | null
+          budget_planned?: number | null
+          budget_spent?: number | null
+          category_ids?: string[]
+          channel?: string | null
           click_count?: number | null
           content?: string | null
+          coupon_id?: string | null
           created_at?: string | null
+          description?: string | null
+          ends_at?: string | null
+          final_url?: string | null
           id?: string
           name: string
+          notes?: string | null
+          objective?: string | null
           open_count?: number | null
+          product_ids?: string[]
           scheduled_at?: string | null
           sent_count?: number | null
+          starts_at?: string | null
           status?: string | null
           subject?: string | null
           type?: string | null
+          updated_at?: string
+          utm_campaign?: string | null
+          utm_content?: string | null
+          utm_medium?: string | null
+          utm_source?: string | null
+          utm_term?: string | null
         }
         Update: {
+          audience?: string | null
+          banner_id?: string | null
+          base_url?: string | null
+          budget_planned?: number | null
+          budget_spent?: number | null
+          category_ids?: string[]
+          channel?: string | null
           click_count?: number | null
           content?: string | null
+          coupon_id?: string | null
           created_at?: string | null
+          description?: string | null
+          ends_at?: string | null
+          final_url?: string | null
           id?: string
           name?: string
+          notes?: string | null
+          objective?: string | null
           open_count?: number | null
+          product_ids?: string[]
           scheduled_at?: string | null
           sent_count?: number | null
+          starts_at?: string | null
           status?: string | null
           subject?: string | null
           type?: string | null
+          updated_at?: string
+          utm_campaign?: string | null
+          utm_content?: string | null
+          utm_medium?: string | null
+          utm_source?: string | null
+          utm_term?: string | null
         }
         Relationships: []
       }
@@ -1668,6 +1731,9 @@ export type Database = {
           mp_preference_id: string | null
           notes: string | null
           order_number: number
+          origin_context: string | null
+          origin_page: string | null
+          origin_path: string | null
           paid_at: string | null
           payment_error: string | null
           payment_id: string | null
@@ -1681,6 +1747,7 @@ export type Database = {
           pickup_store_name: string | null
           pickup_store_phone: string | null
           public_access_token: string | null
+          referrer_url: string | null
           shipping_carrier: string | null
           shipping_cost: number
           shipping_service: string | null
@@ -1691,6 +1758,11 @@ export type Database = {
           tracking_code: string | null
           updated_at: string | null
           user_id: string
+          utm_campaign: string | null
+          utm_content: string | null
+          utm_medium: string | null
+          utm_source: string | null
+          utm_term: string | null
         }
         Insert: {
           address_id?: string | null
@@ -1715,6 +1787,9 @@ export type Database = {
           mp_preference_id?: string | null
           notes?: string | null
           order_number?: never
+          origin_context?: string | null
+          origin_page?: string | null
+          origin_path?: string | null
           paid_at?: string | null
           payment_error?: string | null
           payment_id?: string | null
@@ -1728,6 +1803,7 @@ export type Database = {
           pickup_store_name?: string | null
           pickup_store_phone?: string | null
           public_access_token?: string | null
+          referrer_url?: string | null
           shipping_carrier?: string | null
           shipping_cost?: number
           shipping_service?: string | null
@@ -1738,6 +1814,11 @@ export type Database = {
           tracking_code?: string | null
           updated_at?: string | null
           user_id: string
+          utm_campaign?: string | null
+          utm_content?: string | null
+          utm_medium?: string | null
+          utm_source?: string | null
+          utm_term?: string | null
         }
         Update: {
           address_id?: string | null
@@ -1762,6 +1843,9 @@ export type Database = {
           mp_preference_id?: string | null
           notes?: string | null
           order_number?: never
+          origin_context?: string | null
+          origin_page?: string | null
+          origin_path?: string | null
           paid_at?: string | null
           payment_error?: string | null
           payment_id?: string | null
@@ -1775,6 +1859,7 @@ export type Database = {
           pickup_store_name?: string | null
           pickup_store_phone?: string | null
           public_access_token?: string | null
+          referrer_url?: string | null
           shipping_carrier?: string | null
           shipping_cost?: number
           shipping_service?: string | null
@@ -1785,6 +1870,11 @@ export type Database = {
           tracking_code?: string | null
           updated_at?: string | null
           user_id?: string
+          utm_campaign?: string | null
+          utm_content?: string | null
+          utm_medium?: string | null
+          utm_source?: string | null
+          utm_term?: string | null
         }
         Relationships: [
           {

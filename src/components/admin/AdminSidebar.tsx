@@ -170,7 +170,7 @@ const groups: Group[] = [
       { label: 'Pixels e Analytics', soon: true },
       { to: '/admin/automacoes', label: 'Automações', icon: Sparkles },
       { label: 'E-mail e WhatsApp marketing', soon: true },
-      { label: 'Performance de campanhas', soon: true },
+      { to: '/admin/campanhas-performance', label: 'Performance de campanhas', icon: Megaphone },
     ],
   },
   {

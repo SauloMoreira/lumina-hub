@@ -259,6 +259,20 @@ const CreateOrderInput = z.object({
     .optional(),
   couponCode: z.string().optional().nullable(),
   notes: z.string().optional().nullable(),
+  tracking: z
+    .object({
+      utm_source: z.string().max(200).nullable().optional(),
+      utm_medium: z.string().max(200).nullable().optional(),
+      utm_campaign: z.string().max(200).nullable().optional(),
+      utm_term: z.string().max(200).nullable().optional(),
+      utm_content: z.string().max(200).nullable().optional(),
+      origin_page: z.string().max(500).nullable().optional(),
+      origin_path: z.string().max(500).nullable().optional(),
+      origin_context: z.string().max(200).nullable().optional(),
+      referrer_url: z.string().max(500).nullable().optional(),
+    })
+    .nullable()
+    .optional(),
 });
 
 export const createOrder = createServerFn({ method: 'POST' })
@@ -473,6 +487,15 @@ export const createOrder = createServerFn({ method: 'POST' })
               local_delivery_eta: localZoneInfo.eta,
             }
           : {}),
+        utm_source: data.tracking?.utm_source ?? null,
+        utm_medium: data.tracking?.utm_medium ?? null,
+        utm_campaign: data.tracking?.utm_campaign ?? null,
+        utm_term: data.tracking?.utm_term ?? null,
+        utm_content: data.tracking?.utm_content ?? null,
+        origin_page: data.tracking?.origin_page ?? null,
+        origin_path: data.tracking?.origin_path ?? null,
+        origin_context: data.tracking?.origin_context ?? null,
+        referrer_url: data.tracking?.referrer_url ?? null,
       } as never)
       .select('id, order_number')
       .single();

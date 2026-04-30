@@ -317,6 +317,7 @@ function CheckoutPage() {
           },
           couponCode,
           notes: notes || null,
+          tracking: (await import('@/lib/leadTracking')).getLeadTrackingPayload(),
         },
       });
       if (r.ok) {
