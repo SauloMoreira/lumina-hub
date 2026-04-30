@@ -75,6 +75,19 @@ const PROVIDER_INFO: Record<
 
 const PROVIDERS = Object.keys(PROVIDER_INFO) as IntegrationProvider[];
 
+const ID_PATTERNS: Record<IntegrationProvider, RegExp> = {
+  ga4: /^G-[A-Z0-9]{6,}$/i,
+  gtm: /^GTM-[A-Z0-9]{4,}$/i,
+  meta_pixel: /^[0-9]{6,20}$/,
+  tiktok_pixel: /^[A-Z0-9]{15,30}$/i,
+  clarity: /^[a-z0-9]{6,20}$/i,
+  google_ads: /^AW-[0-9]{6,}$/i,
+};
+
+function isValidId(provider: IntegrationProvider, accountId: string): boolean {
+  return ID_PATTERNS[provider].test(accountId.trim());
+}
+
 function IntegrationsPage() {
   const [items, setItems] = useState<MarketingIntegration[]>([]);
   const [loading, setLoading] = useState(true);
