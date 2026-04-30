@@ -859,6 +859,38 @@ export const getAdminOperations = createServerFn({ method: 'GET' })
       });
     }
 
+    // Notas fiscais
+    if (invoicesOverdue > 0) {
+      alerts.push({
+        id: 'alert-invoices-overdue',
+        title: 'Notas fiscais atrasadas (>24h)',
+        description: `${invoicesOverdue} pedido(s) pago(s) há mais de 24h ainda sem NF-e registrada.`,
+        severity: 'high',
+        ctaLabel: 'Registrar notas',
+        ctaHref: '/admin/financeiro/notas-fiscais?onlyOverdue=1',
+      });
+    }
+    if (invoicesError > 0) {
+      alerts.push({
+        id: 'alert-invoices-error',
+        title: 'Notas fiscais com erro de emissão',
+        description: `${invoicesError} pedido(s) marcado(s) com erro de emissão. Verifique e corrija.`,
+        severity: 'high',
+        ctaLabel: 'Ver notas com erro',
+        ctaHref: '/admin/financeiro/notas-fiscais?status=erro_emissao',
+      });
+    }
+    if (invoicesB2bMissing > 0) {
+      alerts.push({
+        id: 'alert-invoices-b2b-missing',
+        title: 'Pedidos B2B pagos sem nota fiscal',
+        description: `${invoicesB2bMissing} pedido(s) de empresa pago(s) ainda sem NF-e — clientes B2B exigem nota.`,
+        severity: 'high',
+        ctaLabel: 'Ver notas B2B',
+        ctaHref: '/admin/financeiro/notas-fiscais?orderType=b2b&status=sem_nota',
+      });
+    }
+
     return {
       cards,
       alerts,
