@@ -1,6 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { useQuery, keepPreviousData } from '@tanstack/react-query';
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Search, SlidersHorizontal, ChevronLeft, ChevronRight, X, Truck, MessageCircle, Tag } from 'lucide-react';
 import { z } from 'zod';
 import { StoreLayout } from '@/components/layout/StoreLayout';
