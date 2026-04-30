@@ -325,6 +325,36 @@ export const getAdminOperations = createServerFn({ method: 'GET' })
       (seo.b2bMissingSeo ? 1 : 0);
 
     // ============================================================
+    // Marketing Integrations (pixels/analytics)
+    // ============================================================
+    let hasGa4 = false;
+    let hasMetaPixel = false;
+    let activeBadFormatCount = 0;
+    try {
+      const { data: integs } = await supabaseAdmin
+        .from('marketing_integrations')
+        .select('provider, account_id, enabled');
+      const ID_PATTERNS: Record<string, RegExp> = {
+        ga4: /^G-[A-Z0-9]{6,}$/i,
+        gtm: /^GTM-[A-Z0-9]{4,}$/i,
+        meta_pixel: /^[0-9]{6,20}$/,
+        tiktok_pixel: /^[A-Z0-9]{15,30}$/i,
+        clarity: /^[a-z0-9]{6,20}$/i,
+        google_ads: /^AW-[0-9]{6,}$/i,
+      };
+      (integs ?? []).forEach((i: any) => {
+        if (i.provider === 'ga4') hasGa4 = true;
+        if (i.provider === 'meta_pixel') hasMetaPixel = true;
+        if (i.enabled) {
+          const re = ID_PATTERNS[i.provider];
+          if (re && !re.test(String(i.account_id ?? '').trim())) {
+            activeBadFormatCount += 1;
+          }
+        }
+      });
+    } catch {}
+
+    // ============================================================
     // Monta cards
     // ============================================================
     const cards: OperationsCard[] = [
