@@ -477,7 +477,7 @@ export async function updateProductFiscalRow(
     id: p.id,
     name: p.name,
     sku: p.sku,
-    active: p.active,
+    active: p.active ?? true,
     category_id: p.category_id,
     category_name: (p as any).categories?.name ?? null,
     ncm: p.ncm,
