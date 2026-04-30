@@ -40,7 +40,12 @@ type QuickFilter =
   | 'b2b_incomplete'
   | 'low_stock'
   | 'zero_stock'
-  | 'bad_quality';
+  | 'bad_quality'
+  | 'no_tech_attrs'
+  | 'no_power'
+  | 'no_color_temp'
+  | 'no_voltage'
+  | 'no_ip_rating';
 
 const FILTERS: Array<{ id: QuickFilter; label: string }> = [
   { id: 'all', label: 'Todos' },
@@ -51,6 +56,11 @@ const FILTERS: Array<{ id: QuickFilter; label: string }> = [
   { id: 'low_stock', label: 'Estoque baixo' },
   { id: 'zero_stock', label: 'Estoque zerado' },
   { id: 'bad_quality', label: 'Qualidade ruim' },
+  { id: 'no_tech_attrs', label: 'Sem atributos técnicos' },
+  { id: 'no_power', label: 'Sem potência' },
+  { id: 'no_color_temp', label: 'Sem temperatura' },
+  { id: 'no_voltage', label: 'Sem voltagem' },
+  { id: 'no_ip_rating', label: 'Sem IP' },
 ];
 
 function ProdutosList() {
