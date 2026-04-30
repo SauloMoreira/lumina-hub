@@ -214,10 +214,30 @@ function CatalogPage() {
 
   const hasActiveFilters = !!(
     search.cat || search.oferta || search.shipping || search.sort || search.q ||
-    search.marca || search.precoMin != null || search.precoMax != null || search.estoque
+    search.marca || search.precoMin != null || search.precoMax != null || search.estoque ||
+    techCount > 0
   );
 
   const clearFilters = () => navigate({ search: {} as any });
+
+  const techKeyToCsv: Record<TechFilterKey, 'pot' | 'cor' | 'volt' | 'ip'> = {
+    power: 'pot',
+    color_temperature: 'cor',
+    voltage: 'volt',
+    ip_rating: 'ip',
+  };
+
+  const toggleTechId = (key: TechFilterKey, id: string) => {
+    const current = (selectedTech[key] ?? []).slice();
+    const idx = current.indexOf(id);
+    if (idx >= 0) current.splice(idx, 1);
+    else current.push(id);
+    navigate({ search: (s: any) => ({ ...s, [techKeyToCsv[key]]: joinFilterCsv(current), page: 1 }) as any });
+  };
+
+  const clearTechKey = (key: TechFilterKey) => {
+    navigate({ search: (s: any) => ({ ...s, [techKeyToCsv[key]]: undefined, page: 1 }) as any });
+  };
 
   return (
     <StoreLayout>
