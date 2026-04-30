@@ -212,6 +212,7 @@ function CartPage() {
           </aside>
         </div>
 
+        <CartBundlePreview />
         <CartUpsell />
       </div>
     </StoreLayout>
