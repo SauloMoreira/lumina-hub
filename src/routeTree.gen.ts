@@ -22,6 +22,7 @@ import { Route as ContatoRouteImport } from './routes/contato'
 import { Route as ContaRouteImport } from './routes/conta'
 import { Route as CondicoesDeUsoRouteImport } from './routes/condicoes-de-uso'
 import { Route as CompraRapidaRouteImport } from './routes/compra-rapida'
+import { Route as CombosRouteImport } from './routes/combos'
 import { Route as CheckoutRouteImport } from './routes/checkout'
 import { Route as CatalogoRouteImport } from './routes/catalogo'
 import { Route as CarrinhoRouteImport } from './routes/carrinho'
@@ -34,6 +35,7 @@ import { Route as ProdutoSlugRouteImport } from './routes/produto.$slug'
 import { Route as InstitucionalSlugRouteImport } from './routes/institucional.$slug'
 import { Route as ContaPedidosRouteImport } from './routes/conta.pedidos'
 import { Route as ContaEmpresaRouteImport } from './routes/conta.empresa'
+import { Route as ComboSlugRouteImport } from './routes/combo.$slug'
 import { Route as CheckoutSuccessRouteImport } from './routes/checkout.success'
 import { Route as CheckoutPendingRouteImport } from './routes/checkout.pending'
 import { Route as CheckoutFailureRouteImport } from './routes/checkout.failure'
@@ -143,6 +145,11 @@ const CompraRapidaRoute = CompraRapidaRouteImport.update({
   path: '/compra-rapida',
   getParentRoute: () => rootRouteImport,
 } as any)
+const CombosRoute = CombosRouteImport.update({
+  id: '/combos',
+  path: '/combos',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const CheckoutRoute = CheckoutRouteImport.update({
   id: '/checkout',
   path: '/checkout',
@@ -202,6 +209,11 @@ const ContaEmpresaRoute = ContaEmpresaRouteImport.update({
   id: '/empresa',
   path: '/empresa',
   getParentRoute: () => ContaRoute,
+} as any)
+const ComboSlugRoute = ComboSlugRouteImport.update({
+  id: '/combo/$slug',
+  path: '/combo/$slug',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const CheckoutSuccessRoute = CheckoutSuccessRouteImport.update({
   id: '/success',
@@ -436,6 +448,7 @@ export interface FileRoutesByFullPath {
   '/carrinho': typeof CarrinhoRoute
   '/catalogo': typeof CatalogoRoute
   '/checkout': typeof CheckoutRouteWithChildren
+  '/combos': typeof CombosRoute
   '/compra-rapida': typeof CompraRapidaRoute
   '/condicoes-de-uso': typeof CondicoesDeUsoRoute
   '/conta': typeof ContaRouteWithChildren
@@ -471,6 +484,7 @@ export interface FileRoutesByFullPath {
   '/checkout/failure': typeof CheckoutFailureRoute
   '/checkout/pending': typeof CheckoutPendingRoute
   '/checkout/success': typeof CheckoutSuccessRoute
+  '/combo/$slug': typeof ComboSlugRoute
   '/conta/empresa': typeof ContaEmpresaRoute
   '/conta/pedidos': typeof ContaPedidosRoute
   '/institucional/$slug': typeof InstitucionalSlugRoute
@@ -506,6 +520,7 @@ export interface FileRoutesByTo {
   '/carrinho': typeof CarrinhoRoute
   '/catalogo': typeof CatalogoRoute
   '/checkout': typeof CheckoutRouteWithChildren
+  '/combos': typeof CombosRoute
   '/compra-rapida': typeof CompraRapidaRoute
   '/condicoes-de-uso': typeof CondicoesDeUsoRoute
   '/conta': typeof ContaRouteWithChildren
@@ -541,6 +556,7 @@ export interface FileRoutesByTo {
   '/checkout/failure': typeof CheckoutFailureRoute
   '/checkout/pending': typeof CheckoutPendingRoute
   '/checkout/success': typeof CheckoutSuccessRoute
+  '/combo/$slug': typeof ComboSlugRoute
   '/conta/empresa': typeof ContaEmpresaRoute
   '/conta/pedidos': typeof ContaPedidosRoute
   '/institucional/$slug': typeof InstitucionalSlugRoute
@@ -577,6 +593,7 @@ export interface FileRoutesById {
   '/carrinho': typeof CarrinhoRoute
   '/catalogo': typeof CatalogoRoute
   '/checkout': typeof CheckoutRouteWithChildren
+  '/combos': typeof CombosRoute
   '/compra-rapida': typeof CompraRapidaRoute
   '/condicoes-de-uso': typeof CondicoesDeUsoRoute
   '/conta': typeof ContaRouteWithChildren
@@ -612,6 +629,7 @@ export interface FileRoutesById {
   '/checkout/failure': typeof CheckoutFailureRoute
   '/checkout/pending': typeof CheckoutPendingRoute
   '/checkout/success': typeof CheckoutSuccessRoute
+  '/combo/$slug': typeof ComboSlugRoute
   '/conta/empresa': typeof ContaEmpresaRoute
   '/conta/pedidos': typeof ContaPedidosRoute
   '/institucional/$slug': typeof InstitucionalSlugRoute
@@ -649,6 +667,7 @@ export interface FileRouteTypes {
     | '/carrinho'
     | '/catalogo'
     | '/checkout'
+    | '/combos'
     | '/compra-rapida'
     | '/condicoes-de-uso'
     | '/conta'
@@ -684,6 +703,7 @@ export interface FileRouteTypes {
     | '/checkout/failure'
     | '/checkout/pending'
     | '/checkout/success'
+    | '/combo/$slug'
     | '/conta/empresa'
     | '/conta/pedidos'
     | '/institucional/$slug'
@@ -719,6 +739,7 @@ export interface FileRouteTypes {
     | '/carrinho'
     | '/catalogo'
     | '/checkout'
+    | '/combos'
     | '/compra-rapida'
     | '/condicoes-de-uso'
     | '/conta'
@@ -754,6 +775,7 @@ export interface FileRouteTypes {
     | '/checkout/failure'
     | '/checkout/pending'
     | '/checkout/success'
+    | '/combo/$slug'
     | '/conta/empresa'
     | '/conta/pedidos'
     | '/institucional/$slug'
@@ -789,6 +811,7 @@ export interface FileRouteTypes {
     | '/carrinho'
     | '/catalogo'
     | '/checkout'
+    | '/combos'
     | '/compra-rapida'
     | '/condicoes-de-uso'
     | '/conta'
@@ -824,6 +847,7 @@ export interface FileRouteTypes {
     | '/checkout/failure'
     | '/checkout/pending'
     | '/checkout/success'
+    | '/combo/$slug'
     | '/conta/empresa'
     | '/conta/pedidos'
     | '/institucional/$slug'
@@ -860,6 +884,7 @@ export interface RootRouteChildren {
   CarrinhoRoute: typeof CarrinhoRoute
   CatalogoRoute: typeof CatalogoRoute
   CheckoutRoute: typeof CheckoutRouteWithChildren
+  CombosRoute: typeof CombosRoute
   CompraRapidaRoute: typeof CompraRapidaRoute
   CondicoesDeUsoRoute: typeof CondicoesDeUsoRoute
   ContaRoute: typeof ContaRouteWithChildren
@@ -892,6 +917,7 @@ export interface RootRouteChildren {
   AdminSegurancaRoute: typeof AdminSegurancaRoute
   AdminSeoRoute: typeof AdminSeoRoute
   AdminWhatsappTemplatesRoute: typeof AdminWhatsappTemplatesRoute
+  ComboSlugRoute: typeof ComboSlugRoute
   InstitucionalSlugRoute: typeof InstitucionalSlugRoute
   ProdutoSlugRoute: typeof ProdutoSlugRoute
   AdminIndexRoute: typeof AdminIndexRoute
@@ -1010,6 +1036,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof CompraRapidaRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/combos': {
+      id: '/combos'
+      path: '/combos'
+      fullPath: '/combos'
+      preLoaderRoute: typeof CombosRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/checkout': {
       id: '/checkout'
       path: '/checkout'
@@ -1093,6 +1126,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/conta/empresa'
       preLoaderRoute: typeof ContaEmpresaRouteImport
       parentRoute: typeof ContaRoute
+    }
+    '/combo/$slug': {
+      id: '/combo/$slug'
+      path: '/combo/$slug'
+      fullPath: '/combo/$slug'
+      preLoaderRoute: typeof ComboSlugRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/checkout/success': {
       id: '/checkout/success'
@@ -1446,6 +1486,7 @@ const rootRouteChildren: RootRouteChildren = {
   CarrinhoRoute: CarrinhoRoute,
   CatalogoRoute: CatalogoRoute,
   CheckoutRoute: CheckoutRouteWithChildren,
+  CombosRoute: CombosRoute,
   CompraRapidaRoute: CompraRapidaRoute,
   CondicoesDeUsoRoute: CondicoesDeUsoRoute,
   ContaRoute: ContaRouteWithChildren,
@@ -1478,6 +1519,7 @@ const rootRouteChildren: RootRouteChildren = {
   AdminSegurancaRoute: AdminSegurancaRoute,
   AdminSeoRoute: AdminSeoRoute,
   AdminWhatsappTemplatesRoute: AdminWhatsappTemplatesRoute,
+  ComboSlugRoute: ComboSlugRoute,
   InstitucionalSlugRoute: InstitucionalSlugRoute,
   ProdutoSlugRoute: ProdutoSlugRoute,
   AdminIndexRoute: AdminIndexRoute,
