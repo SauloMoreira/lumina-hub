@@ -184,3 +184,68 @@ export const autocompleteSearch = createServerFn({ method: 'POST' })
 
     return { suggestions };
   });
+
+// ----------------------------------------------------------------
+// getCatalogAttributeFacets — opções de filtros técnicos disponíveis
+// ----------------------------------------------------------------
+const facetsInput = z.object({
+  categorySlug: z.string().max(120).optional(),
+  categoryId: z.string().uuid().optional(),
+});
+
+export type CatalogFacetValue = {
+  value: string;
+  productCount: number;
+};
+
+export type CatalogFacetGroup = {
+  key: string;
+  label: string;
+  unit: string | null;
+  values: CatalogFacetValue[];
+};
+
+const FACET_KEYS = ['power', 'color_temperature', 'voltage', 'ip_rating'] as const;
+
+export const getCatalogAttributeFacets = createServerFn({ method: 'POST' })
+  .inputValidator((input: unknown) => facetsInput.parse(input))
+  .handler(async ({ data }): Promise<{ facets: CatalogFacetGroup[] }> => {
+    let categoryId: string | null = data.categoryId ?? null;
+    if (!categoryId && data.categorySlug) {
+      const { data: cat } = await supabaseAdmin
+        .from('categories')
+        .select('id')
+        .eq('slug', data.categorySlug)
+        .maybeSingle();
+      categoryId = cat?.id ?? null;
+    }
+
+    const { data: rows, error } = await (supabaseAdmin as any).rpc('get_catalog_attribute_facets', {
+      _category_id: categoryId,
+      _keys: FACET_KEYS as unknown as string[],
+    });
+
+    if (error) {
+      console.error('[getCatalogAttributeFacets] RPC error', error);
+      return { facets: [] };
+    }
+
+    const grouped = new Map<string, CatalogFacetGroup>();
+    for (const r of (rows ?? []) as Array<any>) {
+      const key = String(r.attribute_key);
+      if (!grouped.has(key)) {
+        grouped.set(key, {
+          key,
+          label: r.attribute_label ?? key,
+          unit: r.attribute_unit ?? null,
+          values: [],
+        });
+      }
+      grouped.get(key)!.values.push({
+        value: String(r.attribute_value),
+        productCount: Number(r.product_count ?? 0),
+      });
+    }
+
+    return { facets: Array.from(grouped.values()) };
+  });
