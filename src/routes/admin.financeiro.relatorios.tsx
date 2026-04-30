@@ -723,12 +723,8 @@ function ReportsPage() {
               <TabsTrigger value="b2b">B2B / Atacado</TabsTrigger>
               <TabsTrigger value="coupons">Cupons</TabsTrigger>
               <TabsTrigger value="shipping">Frete</TabsTrigger>
-              <TabsTrigger value="mp" disabled>
-                Mercado Pago · em breve
-              </TabsTrigger>
-              <TabsTrigger value="invoices" disabled>
-                Notas fiscais · em breve
-              </TabsTrigger>
+              <TabsTrigger value="mp">Mercado Pago</TabsTrigger>
+              <TabsTrigger value="invoices">Notas fiscais</TabsTrigger>
               <TabsTrigger value="utm" disabled>
                 Campanhas / UTM · em breve
               </TabsTrigger>
