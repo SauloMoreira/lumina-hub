@@ -217,12 +217,10 @@ function ProductForm() {
       if (res.error) throw res.error;
 
       if (!isNew) await imageManagerRef.current?.refetchImages();
-      // Invalida caches que dependem dos dados do produto (qualidade, listagens, alertas)
+      // Invalida caches que dependem dos dados do produto (qualidade, listagens, contadores do menu / Painel do Dia)
       qc.invalidateQueries({ queryKey: ['admin-product-quality'] });
       qc.invalidateQueries({ queryKey: ['admin-products'] });
-      qc.invalidateQueries({ queryKey: ['admin-counters'] });
-      qc.invalidateQueries({ queryKey: ['day-panel'] });
-      qc.invalidateQueries({ queryKey: ['operations-counters'] });
+      qc.invalidateQueries({ queryKey: ['admin-operations'] });
       toast.success(isNew ? 'Produto criado' : 'Produto e imagens atualizados');
 
       const newId = isNew ? (res.data as { id?: string } | null)?.id : id;
