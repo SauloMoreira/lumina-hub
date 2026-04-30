@@ -108,6 +108,7 @@ export async function sendOrderEmail(opts: SendOrderEmailOptions): Promise<{
       subtotal: Number(order.subtotal ?? 0),
       shippingTotal: Number(order.shipping_cost ?? 0),
       discountTotal: Number(order.discount ?? 0),
+      bundleDiscountTotal: Number((order as any).bundle_discount_total ?? 0),
       total: Number(order.total ?? 0),
       orderUrl,
       retryUrl,
