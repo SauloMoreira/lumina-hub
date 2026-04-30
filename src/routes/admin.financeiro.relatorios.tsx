@@ -895,6 +895,27 @@ function ReportsPage() {
               />
             </TabsContent>
 
+            {/* ABA: CAMPANHAS / UTM */}
+            <TabsContent value="utm" className="space-y-4 mt-4">
+              <UtmSection
+                cards={utmCards}
+                campaigns={utmCampaigns}
+                origins={utmOrigins}
+                orders={utmOrders}
+                quality={utmQuality}
+                loading={utmLoading}
+                page={utmPage}
+                setPage={setUtmPage}
+                attribution={attribution}
+                setAttribution={setAttribution}
+                onExportCampaigns={() => handleExport(exportCampaignPerformanceCsv, 'campanhas')}
+                onExportOrigins={() => handleExport(exportOriginPerformanceCsv, 'origens')}
+                onExportOrders={() => handleExport(exportAttributedOrdersCsv, 'pedidos atribuídos')}
+                onExportQuality={() => handleExport(exportAttributionQualityCsv, 'qualidade da atribuição')}
+                exporting={exporting}
+              />
+            </TabsContent>
+
           </Tabs>
         </div>
       </TooltipProvider>
