@@ -1,0 +1,713 @@
+import { createFileRoute, Link } from '@tanstack/react-router';
+import { useState } from 'react';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import {
+  ArrowLeft,
+  Plus,
+  Loader2,
+  Search,
+  Trash2,
+  AlertCircle,
+  CheckCircle2,
+  PackagePlus,
+  Star,
+  ExternalLink,
+  Eye,
+  EyeOff,
+} from 'lucide-react';
+import { toast } from 'sonner';
+import { AdminLayout } from '@/components/admin/AdminLayout';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Switch } from '@/components/ui/switch';
+import { Textarea } from '@/components/ui/textarea';
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from '@/components/ui/dialog';
+import { formatBRL } from '@/lib/domain';
+import {
+  adminListBundles,
+  adminCreateBundle,
+  adminUpdateBundle,
+  adminDeleteBundle,
+  adminGetBundle,
+  adminAddBundleItem,
+  adminRemoveBundleItem,
+  adminUpdateBundleItem,
+  adminSearchProductsForBundle,
+  type BundleAdminRow,
+  type BundlePublic,
+  type BundleAvailability,
+} from '@/server/productBundles.functions';
+
+export const Route = createFileRoute('/admin/produtos/combos')({
+  component: BundlesAdminPage,
+});
+
+const AVAILABILITY_LABEL: Record<BundleAvailability, string> = {
+  available: 'Disponível',
+  partial: 'Parcialmente indisponível',
+  unavailable: 'Indisponível',
+  needs_review: 'Necessita revisão',
+};
+
+const AVAILABILITY_TONE: Record<BundleAvailability, string> = {
+  available: 'bg-emerald-50 text-emerald-700 border-emerald-200',
+  partial: 'bg-amber-50 text-amber-700 border-amber-200',
+  unavailable: 'bg-red-50 text-red-700 border-red-200',
+  needs_review: 'bg-muted text-muted-foreground border-border',
+};
+
+function BundlesAdminPage() {
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [createOpen, setCreateOpen] = useState(false);
+  const qc = useQueryClient();
+
+  const listQ = useQuery({
+    queryKey: ['admin-bundles'],
+    queryFn: () => adminListBundles({ data: {} }),
+    staleTime: 5_000,
+  });
+
+  return (
+    <AdminLayout>
+      <div className="flex items-center justify-between gap-3 mb-6">
+        <div className="flex items-center gap-3">
+          <Link to="/admin">
+            <Button variant="ghost" size="sm">
+              <ArrowLeft className="w-4 h-4 mr-1" /> Admin
+            </Button>
+          </Link>
+          <div>
+            <h1 className="font-display text-2xl font-bold">Kits e Combos</h1>
+            <p className="text-sm text-muted-foreground">
+              Agrupe produtos para compra conjunta. Descontos de combo serão aplicados em
+              uma próxima etapa.
+            </p>
+          </div>
+        </div>
+        <Button onClick={() => setCreateOpen(true)} className="gap-2">
+          <Plus className="w-4 h-4" /> Novo combo
+        </Button>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-[360px_1fr] gap-4">
+        {/* Listagem */}
+        <div className="bg-card border border-border rounded-xl p-3 min-h-[300px]">
+          {listQ.isLoading ? (
+            <div className="text-xs text-muted-foreground flex items-center gap-2 p-3">
+              <Loader2 className="w-3 h-3 animate-spin" /> Carregando…
+            </div>
+          ) : (listQ.data ?? []).length === 0 ? (
+            <EmptyAdminState onCreate={() => setCreateOpen(true)} />
+          ) : (
+            <ul className="space-y-1">
+              {(listQ.data ?? []).map((b) => (
+                <li key={b.id}>
+                  <button
+                    type="button"
+                    onClick={() => setSelectedId(b.id)}
+                    className={`w-full text-left p-2 rounded-md flex items-center gap-2 border ${
+                      selectedId === b.id
+                        ? 'bg-accent/40 border-border'
+                        : 'border-transparent hover:bg-accent/30'
+                    }`}
+                  >
+                    <BundleListThumb row={b} />
+                    <div className="flex-1 min-w-0">
+                      <div className="text-sm font-medium truncate flex items-center gap-1">
+                        {b.is_featured && (
+                          <Star className="w-3 h-3 text-amber-500 shrink-0" />
+                        )}
+                        {b.name}
+                      </div>
+                      <div className="text-[11px] text-muted-foreground truncate">
+                        {b.items_count} {b.items_count === 1 ? 'item' : 'itens'}
+                        {' · '}
+                        {b.is_active ? 'Ativo' : 'Inativo'}
+                      </div>
+                    </div>
+                  </button>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+
+        {/* Editor */}
+        <div>
+          {selectedId ? (
+            <BundleEditor
+              bundleId={selectedId}
+              onDeleted={() => {
+                setSelectedId(null);
+                qc.invalidateQueries({ queryKey: ['admin-bundles'] });
+              }}
+            />
+          ) : (
+            <div className="bg-card border border-border rounded-xl p-10 text-center text-sm text-muted-foreground">
+              Selecione um combo na lista para editar, ou clique em{' '}
+              <strong>Novo combo</strong>.
+            </div>
+          )}
+        </div>
+      </div>
+
+      <CreateBundleDialog
+        open={createOpen}
+        onOpenChange={setCreateOpen}
+        onCreated={(id) => {
+          setSelectedId(id);
+          qc.invalidateQueries({ queryKey: ['admin-bundles'] });
+        }}
+      />
+    </AdminLayout>
+  );
+}
+
+function BundleListThumb({ row }: { row: BundleAdminRow }) {
+  return (
+    <div className="w-10 h-10 rounded bg-surface flex-shrink-0 overflow-hidden flex items-center justify-center">
+      {row.image_url ? (
+        <img src={row.image_url} alt="" className="w-full h-full object-cover" />
+      ) : (
+        <PackagePlus className="w-4 h-4 text-muted-foreground" />
+      )}
+    </div>
+  );
+}
+
+function EmptyAdminState({ onCreate }: { onCreate: () => void }) {
+  return (
+    <div className="p-6 text-center space-y-3">
+      <PackagePlus className="w-8 h-8 text-muted-foreground mx-auto" />
+      <div className="text-sm font-medium">Você ainda não criou kits ou combos.</div>
+      <Button size="sm" onClick={onCreate}>
+        <Plus className="w-4 h-4 mr-1" /> Criar primeiro combo
+      </Button>
+    </div>
+  );
+}
+
+// ----------------------------------------------------------------------------
+// Editor
+// ----------------------------------------------------------------------------
+function BundleEditor({ bundleId, onDeleted }: { bundleId: string; onDeleted: () => void }) {
+  const qc = useQueryClient();
+  const detailQ = useQuery({
+    queryKey: ['admin-bundle', bundleId],
+    queryFn: () => adminGetBundle({ data: { id: bundleId } }),
+    staleTime: 0,
+  });
+
+  const updateMut = useMutation({
+    mutationFn: (vars: Parameters<typeof adminUpdateBundle>[0]['data']) =>
+      adminUpdateBundle({ data: vars }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['admin-bundle', bundleId] });
+      qc.invalidateQueries({ queryKey: ['admin-bundles'] });
+    },
+    onError: (err: any) => {
+      const msg = String(err?.message ?? '');
+      if (msg.includes('slug_already_exists')) toast.error('Já existe um combo com esse slug.');
+      else if (msg.includes('bundle_has_no_items'))
+        toast.error('Adicione produtos antes de ativar o combo.');
+      else if (msg.includes('bundle_has_broken_items'))
+        toast.error('Há itens obrigatórios sem preço ou inativos. Corrija antes de ativar.');
+      else toast.error('Erro ao salvar.');
+    },
+  });
+
+  const deleteMut = useMutation({
+    mutationFn: () => adminDeleteBundle({ data: { id: bundleId } }),
+    onSuccess: () => {
+      toast.success('Combo removido');
+      onDeleted();
+    },
+    onError: () => toast.error('Erro ao remover combo'),
+  });
+
+  if (detailQ.isLoading || !detailQ.data) {
+    return (
+      <div className="bg-card border border-border rounded-xl p-6 text-xs text-muted-foreground flex items-center gap-2">
+        <Loader2 className="w-3 h-3 animate-spin" /> Carregando combo…
+      </div>
+    );
+  }
+
+  const b = detailQ.data;
+
+  return (
+    <div className="space-y-4">
+      <BundleMetaForm
+        bundle={b}
+        onChange={(patch) => updateMut.mutate({ id: bundleId, ...patch })}
+        saving={updateMut.isPending}
+        onDelete={() => {
+          if (confirm(`Remover combo "${b.name}"?`)) deleteMut.mutate();
+        }}
+      />
+      <BundleItemsSection bundle={b} />
+      <DiscountFutureNotice />
+    </div>
+  );
+}
+
+function BundleMetaForm({
+  bundle,
+  onChange,
+  saving,
+  onDelete,
+}: {
+  bundle: BundlePublic;
+  onChange: (patch: Partial<Parameters<typeof adminUpdateBundle>[0]['data']>) => void;
+  saving: boolean;
+  onDelete: () => void;
+}) {
+  const [name, setName] = useState(bundle.name);
+  const [slug, setSlug] = useState(bundle.slug ?? '');
+  const [description, setDescription] = useState(bundle.description ?? '');
+  const [imageUrl, setImageUrl] = useState(bundle.image_url ?? '');
+
+  return (
+    <div className="bg-card border border-border rounded-xl p-5 space-y-4">
+      <div className="flex items-start justify-between gap-3">
+        <div className="flex-1 min-w-0">
+          <h2 className="font-display text-lg font-semibold truncate">{bundle.name}</h2>
+          <div className="flex items-center gap-2 mt-1">
+            <AvailabilityBadge availability={bundle.availability} />
+            {bundle.slug && (
+              <Link
+                to="/combo/$slug"
+                params={{ slug: bundle.slug }}
+                target="_blank"
+                rel="noreferrer"
+                className="text-xs text-muted-foreground hover:text-foreground inline-flex items-center gap-1"
+              >
+                <ExternalLink className="w-3 h-3" /> /combo/{bundle.slug}
+              </Link>
+            )}
+          </div>
+        </div>
+        <Button variant="ghost" size="sm" onClick={onDelete}>
+          <Trash2 className="w-4 h-4 mr-1" /> Excluir
+        </Button>
+      </div>
+
+      <div className="grid sm:grid-cols-2 gap-3">
+        <Field label="Nome">
+          <Input
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            onBlur={() => name !== bundle.name && onChange({ name })}
+          />
+        </Field>
+        <Field label="Slug (URL)">
+          <Input
+            value={slug}
+            onChange={(e) =>
+              setSlug(
+                e.target.value
+                  .toLowerCase()
+                  .replace(/[^a-z0-9-]/g, '-')
+                  .replace(/-+/g, '-')
+              )
+            }
+            onBlur={() => slug && slug !== (bundle.slug ?? '') && onChange({ slug })}
+            placeholder="kit-iluminacao-led"
+          />
+        </Field>
+      </div>
+
+      <Field label="Descrição">
+        <Textarea
+          rows={3}
+          value={description}
+          onChange={(e) => setDescription(e.target.value)}
+          onBlur={() =>
+            description !== (bundle.description ?? '') &&
+            onChange({ description: description || null })
+          }
+        />
+      </Field>
+
+      <Field label="URL da imagem do combo">
+        <Input
+          value={imageUrl}
+          onChange={(e) => setImageUrl(e.target.value)}
+          onBlur={() =>
+            imageUrl !== (bundle.image_url ?? '') &&
+            onChange({ imageUrl: imageUrl || null })
+          }
+          placeholder="https://…"
+        />
+      </Field>
+
+      <div className="grid sm:grid-cols-2 gap-3 pt-2 border-t border-border">
+        <ToggleRow
+          label="Combo ativo"
+          checked={bundle.is_active}
+          onChange={(v) => onChange({ isActive: v })}
+          icon={bundle.is_active ? Eye : EyeOff}
+          help="Quando ativo, aparece na vitrine pública /combos."
+        />
+        <ToggleRow
+          label="Destacar combo"
+          checked={bundle.is_featured}
+          onChange={(v) => onChange({ isFeatured: v })}
+          icon={Star}
+          help="Destaque aparece primeiro na listagem pública."
+        />
+      </div>
+
+      {saving && (
+        <div className="text-xs text-muted-foreground flex items-center gap-2">
+          <Loader2 className="w-3 h-3 animate-spin" /> Salvando…
+        </div>
+      )}
+    </div>
+  );
+}
+
+function Field({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <label className="block space-y-1">
+      <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
+        {label}
+      </span>
+      {children}
+    </label>
+  );
+}
+
+function ToggleRow({
+  label,
+  checked,
+  onChange,
+  icon: Icon,
+  help,
+}: {
+  label: string;
+  checked: boolean;
+  onChange: (v: boolean) => void;
+  icon: typeof Star;
+  help?: string;
+}) {
+  return (
+    <label className="flex items-start gap-3 p-3 rounded-md border border-border bg-surface/40 cursor-pointer">
+      <Switch checked={checked} onCheckedChange={onChange} />
+      <div className="flex-1 min-w-0">
+        <div className="text-sm font-medium flex items-center gap-1.5">
+          <Icon className="w-3.5 h-3.5" /> {label}
+        </div>
+        {help && <p className="text-[11px] text-muted-foreground mt-0.5">{help}</p>}
+      </div>
+    </label>
+  );
+}
+
+function AvailabilityBadge({ availability }: { availability: BundleAvailability }) {
+  return (
+    <span
+      className={`inline-flex items-center gap-1 text-[10px] font-medium px-2 py-0.5 rounded-full border ${AVAILABILITY_TONE[availability]}`}
+    >
+      {availability === 'available' ? (
+        <CheckCircle2 className="w-3 h-3" />
+      ) : (
+        <AlertCircle className="w-3 h-3" />
+      )}
+      {AVAILABILITY_LABEL[availability]}
+    </span>
+  );
+}
+
+// ----------------------------------------------------------------------------
+// Itens
+// ----------------------------------------------------------------------------
+function BundleItemsSection({ bundle }: { bundle: BundlePublic }) {
+  const qc = useQueryClient();
+  const [search, setSearch] = useState('');
+  const [showResults, setShowResults] = useState(false);
+
+  const searchQ = useQuery({
+    queryKey: ['admin-bundle-search', search],
+    queryFn: () => adminSearchProductsForBundle({ data: { query: search, limit: 10 } }),
+    enabled: search.trim().length >= 2,
+    staleTime: 5_000,
+  });
+
+  const addMut = useMutation({
+    mutationFn: (productId: string) =>
+      adminAddBundleItem({
+        data: {
+          bundleId: bundle.id,
+          productId,
+          quantity: 1,
+          sortOrder: bundle.items.length,
+          isRequired: true,
+        },
+      }),
+    onSuccess: (res) => {
+      toast.success(res.merged ? 'Quantidade somada' : 'Produto adicionado');
+      setSearch('');
+      setShowResults(false);
+      qc.invalidateQueries({ queryKey: ['admin-bundle', bundle.id] });
+      qc.invalidateQueries({ queryKey: ['admin-bundles'] });
+    },
+    onError: () => toast.error('Erro ao adicionar produto'),
+  });
+
+  const removeMut = useMutation({
+    mutationFn: (id: string) => adminRemoveBundleItem({ data: { id } }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['admin-bundle', bundle.id] });
+      qc.invalidateQueries({ queryKey: ['admin-bundles'] });
+    },
+    onError: () => toast.error('Erro ao remover'),
+  });
+
+  const updateItemMut = useMutation({
+    mutationFn: (vars: Parameters<typeof adminUpdateBundleItem>[0]['data']) =>
+      adminUpdateBundleItem({ data: vars }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['admin-bundle', bundle.id] });
+    },
+    onError: () => toast.error('Erro ao atualizar item'),
+  });
+
+  return (
+    <div className="bg-card border border-border rounded-xl p-5 space-y-3">
+      <div>
+        <h3 className="font-display font-semibold text-sm uppercase tracking-wider text-muted-foreground">
+          Produtos do combo
+        </h3>
+        <p className="text-[11px] text-muted-foreground mt-0.5">
+          Subtotal estimado:{' '}
+          <strong className="text-foreground">{formatBRL(bundle.subtotal)}</strong> ·{' '}
+          {bundle.total_units} {bundle.total_units === 1 ? 'unidade' : 'unidades'}
+        </p>
+      </div>
+
+      <div className="relative rounded-lg border border-dashed border-border bg-surface/40 p-3">
+        <div className="relative">
+          <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+          <Input
+            placeholder="Buscar produto por nome, SKU ou EAN…"
+            value={search}
+            onChange={(e) => {
+              setSearch(e.target.value);
+              setShowResults(true);
+            }}
+            onFocus={() => setShowResults(true)}
+            className="pl-8 h-9"
+          />
+        </div>
+        {showResults && search.trim().length >= 2 && (
+          <div className="absolute z-20 left-3 right-3 mt-1 rounded-md border border-border bg-popover shadow-lg max-h-72 overflow-auto">
+            {searchQ.isLoading && (
+              <div className="p-3 text-xs text-muted-foreground flex items-center gap-2">
+                <Loader2 className="w-3 h-3 animate-spin" /> Buscando…
+              </div>
+            )}
+            {searchQ.data?.length === 0 && !searchQ.isLoading && (
+              <div className="p-3 text-xs text-muted-foreground">
+                Nenhum produto encontrado.
+              </div>
+            )}
+            {searchQ.data?.map((p) => (
+              <button
+                key={p.id}
+                type="button"
+                disabled={addMut.isPending}
+                onClick={() => addMut.mutate(p.id)}
+                className="w-full text-left flex items-center gap-2 p-2 hover:bg-accent/40 border-b border-border last:border-b-0"
+              >
+                <div className="w-9 h-9 rounded bg-surface overflow-hidden">
+                  {p.image && (
+                    <img src={p.image} alt="" className="w-full h-full object-cover" />
+                  )}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="text-sm font-medium truncate">{p.name}</div>
+                  <div className="text-[11px] text-muted-foreground truncate">
+                    {p.sku ? `SKU ${p.sku}` : ''} {p.brand ? `· ${p.brand}` : ''}
+                    {!p.active && ' · inativo'}
+                  </div>
+                </div>
+                <Plus className="w-4 h-4 text-muted-foreground" />
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {bundle.items.length === 0 ? (
+        <div className="rounded-md border border-dashed border-border p-6 text-center text-xs text-muted-foreground">
+          Adicione ao menos um produto para ativar o combo.
+        </div>
+      ) : (
+        <div className="border border-border rounded-md divide-y divide-border">
+          {bundle.items.map((it) => (
+            <div key={it.id} className="flex items-center gap-2 p-2">
+              <div className="w-10 h-10 rounded bg-surface overflow-hidden flex-shrink-0">
+                {it.product.image && (
+                  <img
+                    src={it.product.image}
+                    alt=""
+                    className="w-full h-full object-cover"
+                  />
+                )}
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="text-sm font-medium truncate">{it.product.name}</div>
+                <div className="text-[11px] text-muted-foreground truncate flex items-center gap-2">
+                  {it.product.sku && <span>SKU {it.product.sku}</span>}
+                  <span>{formatBRL(it.product.final_price)}</span>
+                  <span>· estoque {it.product.stock_qty}</span>
+                  {it.status !== 'ok' && (
+                    <span className="inline-flex items-center gap-1 text-amber-600">
+                      <AlertCircle className="w-3 h-3" />
+                      {it.status === 'inactive' && 'inativo'}
+                      {it.status === 'no_price' && 'sem preço'}
+                      {it.status === 'no_stock' && 'sem estoque'}
+                    </span>
+                  )}
+                </div>
+              </div>
+              <input
+                type="number"
+                min={1}
+                value={it.quantity}
+                onChange={(e) => {
+                  const qty = Math.max(1, Number(e.target.value) || 1);
+                  updateItemMut.mutate({ id: it.id, quantity: qty });
+                }}
+                className="w-16 h-8 text-xs rounded border border-border bg-background px-2"
+                title="Quantidade"
+              />
+              <input
+                type="number"
+                min={0}
+                value={it.sort_order}
+                onChange={(e) => {
+                  const so = Math.max(0, Number(e.target.value) || 0);
+                  updateItemMut.mutate({ id: it.id, sortOrder: so });
+                }}
+                className="w-14 h-8 text-xs rounded border border-border bg-background px-2"
+                title="Ordem"
+              />
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => {
+                  if (confirm('Remover este item do combo?')) removeMut.mutate(it.id);
+                }}
+                className="text-muted-foreground hover:text-destructive h-8 w-8 p-0"
+              >
+                <Trash2 className="w-4 h-4" />
+              </Button>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function DiscountFutureNotice() {
+  return (
+    <div className="rounded-md border border-dashed border-border bg-surface/40 p-3 text-[11px] text-muted-foreground">
+      <strong className="text-foreground">Descontos de combo:</strong> serão aplicados em
+      uma próxima etapa. Nesta fase, o combo apenas agrupa produtos para compra conjunta —
+      o carrinho e o checkout continuam aplicando o preço normal de cada item (e o preço
+      empresa B2B quando aplicável).
+    </div>
+  );
+}
+
+// ----------------------------------------------------------------------------
+// Criar combo
+// ----------------------------------------------------------------------------
+function CreateBundleDialog({
+  open,
+  onOpenChange,
+  onCreated,
+}: {
+  open: boolean;
+  onOpenChange: (v: boolean) => void;
+  onCreated: (id: string) => void;
+}) {
+  const [name, setName] = useState('');
+  const [description, setDescription] = useState('');
+
+  const createMut = useMutation({
+    mutationFn: () =>
+      adminCreateBundle({
+        data: {
+          name: name.trim(),
+          description: description.trim() || null,
+        },
+      }),
+    onSuccess: (res) => {
+      toast.success('Combo criado. Adicione os produtos.');
+      onOpenChange(false);
+      setName('');
+      setDescription('');
+      onCreated(res.id);
+    },
+    onError: (err: any) => {
+      if (String(err?.message ?? '').includes('slug_already_exists'))
+        toast.error('Já existe um combo com esse nome.');
+      else toast.error('Erro ao criar combo');
+    },
+  });
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Novo combo</DialogTitle>
+          <DialogDescription>
+            Crie o combo com nome e descrição. Em seguida, adicione os produtos e
+            quantidades.
+          </DialogDescription>
+        </DialogHeader>
+        <div className="space-y-3">
+          <Field label="Nome do combo">
+            <Input
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              placeholder="Kit iluminação LED para sala"
+              maxLength={160}
+            />
+          </Field>
+          <Field label="Descrição (opcional)">
+            <Textarea
+              rows={3}
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              maxLength={2000}
+            />
+          </Field>
+        </div>
+        <DialogFooter>
+          <Button variant="ghost" onClick={() => onOpenChange(false)}>
+            Cancelar
+          </Button>
+          <Button
+            onClick={() => createMut.mutate()}
+            disabled={name.trim().length < 2 || createMut.isPending}
+          >
+            {createMut.isPending && <Loader2 className="w-3 h-3 animate-spin mr-2" />}
+            Criar combo
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
