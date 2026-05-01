@@ -24,7 +24,7 @@ import {
   Settings as SettingsIcon,
   Boxes,
   Sparkles,
-  Lock,
+  
   Briefcase,
   Globe,
   AlertCircle,
