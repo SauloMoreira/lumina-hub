@@ -88,7 +88,6 @@ const groups: Group[] = [
           'abandoned-carts',
         ],
       },
-      { label: 'Indicadores', soon: true },
     ],
   },
   {
@@ -103,9 +102,6 @@ const groups: Group[] = [
         counterIds: ['paid-awaiting-shipping', 'orders-awaiting-payment'],
       },
       { to: '/admin/carrinhos-abandonados', label: 'Carrinhos abandonados', icon: ShoppingBag, counterId: 'abandoned-carts' },
-      { label: 'Cupons utilizados', soon: true },
-      { label: 'Pagamentos', soon: true },
-      { label: 'Pós-venda', soon: true },
     ],
   },
   {
@@ -132,8 +128,6 @@ const groups: Group[] = [
           'no-price',
         ],
       },
-      { label: 'Condições B2B', soon: true },
-      { label: 'Importar produtos', soon: true },
       { to: '/admin/produtos/qualidade', label: 'Qualidade do cadastro', icon: Package, counterIds: ['products-quality-low'] },
       { to: '/admin/produtos/atributos-rotulos', label: 'Rótulos amigáveis', icon: Tags },
       { to: '/admin/produtos/combos', label: 'Kits e Combos', icon: PackagePlus },
@@ -144,7 +138,6 @@ const groups: Group[] = [
     label: 'Clientes & CRM',
     icon: Users,
     items: [
-      { label: 'Clientes', soon: true },
       {
         to: '/admin/leads',
         label: 'Leads',
@@ -154,7 +147,6 @@ const groups: Group[] = [
       { to: '/admin/funil', label: 'Funil comercial', icon: LayoutDashboard },
       { to: '/admin/contact-messages', label: 'Atendimentos', icon: Mail },
       { to: '/admin/whatsapp-templates', label: 'Modelos de WhatsApp', icon: MessageSquareText },
-      { label: 'Histórico de contatos', soon: true },
     ],
   },
   {
@@ -171,9 +163,6 @@ const groups: Group[] = [
       { to: '/admin/configuracoes-b2b', label: 'Configurações B2B', icon: Briefcase },
       { to: '/atacado', label: 'Vitrine atacado (loja)', icon: Store },
       { to: '/compra-rapida', label: 'Compra rápida (loja)', icon: PackagePlus },
-      { label: 'Negociações B2B', soon: true },
-      { label: 'Pedidos B2B', soon: true },
-      { label: 'Dashboard B2B', soon: true },
     ],
   },
   {
@@ -187,7 +176,6 @@ const groups: Group[] = [
       { to: '/admin/seo', label: 'SEO Insights', icon: Globe },
       { to: '/admin/integracoes', label: 'Pixels e Analytics', icon: BarChart3 },
       { to: '/admin/automacoes', label: 'Automações', icon: Sparkles },
-      { label: 'E-mail e WhatsApp marketing', soon: true },
       { to: '/admin/campanhas-performance', label: 'Performance de campanhas', icon: Megaphone },
     ],
   },
@@ -196,17 +184,12 @@ const groups: Group[] = [
     label: 'Logística',
     icon: Truck,
     items: [
-      { label: 'Retirada na loja', soon: true },
       {
         to: '/admin/settings/frete-local',
         label: 'Frete local Maricá/RJ',
         icon: Truck,
         counterId: 'local-zones-no-price',
       },
-      { label: 'Frete convencional', soon: true },
-      { label: 'Melhor Envio', soon: true },
-      { label: 'Entregas', soon: true },
-      { label: 'Rastreamento', soon: true },
     ],
   },
   {
@@ -216,10 +199,6 @@ const groups: Group[] = [
     items: [
       { to: '/admin/conteudo/homepage', label: 'Homepage', icon: LayoutDashboard },
       { to: '/admin/institutional-pages', label: 'Páginas institucionais', icon: FileText },
-      { label: 'Política de privacidade', soon: true },
-      { label: 'Termos de uso', soon: true },
-      { label: 'Trocas e devoluções', soon: true },
-      { label: 'FAQ', soon: true },
     ],
   },
   {
@@ -237,32 +216,11 @@ const groups: Group[] = [
     ],
   },
   {
-    id: 'relatorios',
-    label: 'Relatórios',
-    icon: BarChart3,
-    items: [
-      { label: 'Vendas', soon: true },
-      { label: 'Produtos', soon: true },
-      { label: 'Clientes', soon: true },
-      { label: 'Leads', soon: true },
-      { label: 'Marketing', soon: true },
-      { label: 'B2B', soon: true },
-      { label: 'Logística', soon: true },
-    ],
-  },
-  {
     id: 'config',
     label: 'Configurações',
     icon: SettingsIcon,
     items: [
       { to: '/admin/settings/company', label: 'Dados da empresa', icon: Building2 },
-      { label: 'Usuários e permissões', soon: true },
-      { label: 'WhatsApp', soon: true },
-      { label: 'E-mail', soon: true },
-      { label: 'Checkout', soon: true },
-      { label: 'Pagamentos', soon: true },
-      { label: 'LGPD e cookies', soon: true },
-      { label: 'Integrações', soon: true },
     ],
   },
   {
@@ -272,10 +230,6 @@ const groups: Group[] = [
     items: [
       { to: '/admin/seguranca', label: 'Segurança', icon: Shield },
       { to: '/admin/seguranca/auditoria', label: 'Auditoria', icon: ScrollText },
-      { label: 'Usuários administrativos', soon: true },
-      { label: 'MFA', soon: true },
-      { label: 'Logs de segurança', soon: true },
-      { label: 'Chaves e webhooks', soon: true },
     ],
   },
 ];
