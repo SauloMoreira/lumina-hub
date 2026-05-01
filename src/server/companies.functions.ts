@@ -182,11 +182,55 @@ export const adminUpdateCompanyStatus = createServerFn({ method: 'POST' })
       patch.blocked_by = null;
     }
 
+    const { data: prevCompany } = await supabaseAdmin
+      .from('companies')
+      .select('legal_name, trade_name, cnpj, status')
+      .eq('id', data.company_id)
+      .maybeSingle();
+
     const { error } = await supabaseAdmin
       .from('companies')
       .update(patch)
       .eq('id', data.company_id);
     if (error) throw new Error(error.message);
+
+    try {
+      const { logAdminAction } = await import('./security/auditLog');
+      const statusLabel: Record<string, string> = {
+        approved: 'aprovada',
+        rejected: 'rejeitada',
+        blocked: 'bloqueada',
+        pending: 'marcada como pendente',
+      };
+      const actionMap: Record<string, string> = {
+        approved: 'b2b_company_approved',
+        rejected: 'b2b_company_rejected',
+        blocked: 'b2b_company_blocked',
+        pending: 'b2b_company_unblocked',
+      };
+      const companyName =
+        (prevCompany as { trade_name?: string | null; legal_name?: string | null } | null)
+          ?.trade_name ??
+        (prevCompany as { legal_name?: string | null } | null)?.legal_name ??
+        'Empresa';
+      await logAdminAction({
+        adminId: userId,
+        action: actionMap[data.status] ?? 'b2b_company_updated',
+        resourceType: 'company',
+        resourceId: data.company_id,
+        description: `Empresa ${companyName} ${statusLabel[data.status] ?? data.status} para compras B2B.`,
+        before: { status: (prevCompany as { status?: string } | null)?.status ?? null },
+        after: {
+          status: data.status,
+          rejection_reason: patch.rejection_reason ?? null,
+          admin_notes: patch.admin_notes ?? null,
+          cnpj: (prevCompany as { cnpj?: string } | null)?.cnpj ?? null,
+        },
+      });
+    } catch {
+      // auditoria nunca quebra a operação
+    }
+
     return { ok: true };
   });
 

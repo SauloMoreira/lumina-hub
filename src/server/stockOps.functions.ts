@@ -135,14 +135,15 @@ const settingsInput = z.object({
 export const updateStockSettings = createServerFn({ method: 'POST' })
   .middleware([requireAdmin])
   .inputValidator((data) => settingsInput.parse(data))
-  .handler(async ({ data }): Promise<StockSettings> => {
+  .handler(async ({ data, context }): Promise<StockSettings> => {
     const { supabaseAdmin } = await import('@/integrations/supabase/client.server');
     const { data: existing } = await supabaseAdmin
       .from('stock_settings')
-      .select('id')
+      .select('*')
       .order('created_at', { ascending: true })
       .limit(1)
       .maybeSingle();
+    let result: StockSettings;
     if (!existing) {
       const { data: created, error } = await supabaseAdmin
         .from('stock_settings')
@@ -150,16 +151,34 @@ export const updateStockSettings = createServerFn({ method: 'POST' })
         .select('*')
         .single();
       if (error) throw new Error(error.message);
-      return created as StockSettings;
+      result = created as StockSettings;
+    } else {
+      const { data: updated, error } = await supabaseAdmin
+        .from('stock_settings')
+        .update(data)
+        .eq('id', (existing as { id: string }).id)
+        .select('*')
+        .single();
+      if (error) throw new Error(error.message);
+      result = updated as StockSettings;
     }
-    const { data: updated, error } = await supabaseAdmin
-      .from('stock_settings')
-      .update(data)
-      .eq('id', existing.id)
-      .select('*')
-      .single();
-    if (error) throw new Error(error.message);
-    return updated as StockSettings;
+    try {
+      const { logAdminAction } = await import('./security/auditLog');
+      const ctx = context as { adminUserId?: string; adminEmail?: string | null } | undefined;
+      await logAdminAction({
+        adminId: ctx?.adminUserId ?? '00000000-0000-0000-0000-000000000000',
+        adminEmail: ctx?.adminEmail ?? null,
+        action: 'stock_settings_updated',
+        resourceType: 'stock_settings',
+        resourceId: result.id ?? null,
+        description: 'Configurações de estoque atualizadas.',
+        before: existing ?? null,
+        after: data,
+      });
+    } catch {
+      // não bloquear
+    }
+    return result;
   });
 
 export const getStockReport = createServerFn({ method: 'GET' })
@@ -247,17 +266,17 @@ export const adjustProductStock = createServerFn({ method: 'POST' })
     if (updErr) throw new Error(updErr.message);
 
     try {
+      const { logAdminAction } = await import('./security/auditLog');
       const ctx = context as { adminUserId?: string; adminEmail?: string | null };
-      if (!ctx.adminUserId) throw new Error('no admin');
-      await supabaseAdmin.from('admin_audit_log').insert({
-        admin_id: ctx.adminUserId,
-        admin_email: ctx.adminEmail ?? null,
-        action: 'stock.manual_adjust',
-        resource_type: 'product',
-        resource_id: data.product_id,
-        description: `Ajuste manual de estoque: ${prev.stock_qty} → ${data.new_stock_qty}${data.reason ? ` (${data.reason})` : ''}`,
+      await logAdminAction({
+        adminId: ctx.adminUserId ?? '00000000-0000-0000-0000-000000000000',
+        adminEmail: ctx.adminEmail ?? null,
+        action: 'stock_manual_adjust',
+        resourceType: 'product_stock',
+        resourceId: data.product_id,
+        description: `Estoque de "${prev.name ?? 'produto'}" ajustado: ${prev.stock_qty} → ${data.new_stock_qty}${data.reason ? ` (${data.reason})` : ''}.`,
         before: { stock_qty: prev.stock_qty },
-        after: { stock_qty: data.new_stock_qty },
+        after: { stock_qty: data.new_stock_qty, reason: data.reason ?? null },
       });
     } catch {
       // não bloquear ajuste se auditoria falhar
