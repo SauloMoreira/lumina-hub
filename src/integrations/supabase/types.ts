@@ -3341,6 +3341,18 @@ export type Database = {
           product_count: number
         }[]
       }
+      get_commercial_review_counters: { Args: never; Returns: Json }
+      get_commercial_sales_aggregate: {
+        Args: { _sales_window_days?: number }
+        Returns: {
+          bundle_discount_window: number
+          last_sold_at: string
+          orders_count_window: number
+          product_id: string
+          qty_sold_window: number
+          revenue_window: number
+        }[]
+      }
       get_homepage_showcases_public: { Args: never; Returns: Json }
       get_product_relations_public: {
         Args: { _limit?: number; _product_id: string; _user_id?: string }
