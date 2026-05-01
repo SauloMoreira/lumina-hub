@@ -292,7 +292,7 @@ function AdminSecurityPage() {
                       {audit.events.map((e) => (
                         <tr key={e.id} className="border-b last:border-0">
                           <td className="py-2 pr-3 whitespace-nowrap text-xs text-muted-foreground">{fmt(e.created_at)}</td>
-                          <td className="py-2 pr-3 text-xs">{e.admin_email ?? e.admin_id.slice(0, 8)}</td>
+                          <td className="py-2 pr-3 text-xs">{e.admin_email ?? (e.admin_id ? e.admin_id.slice(0, 8) : 'sistema')}</td>
                           <td className="py-2 pr-3"><Badge variant="outline" className="text-[10px] uppercase">{e.action}</Badge></td>
                           <td className="py-2 pr-3 font-mono text-xs">
                             {e.resource_type}{e.resource_id ? `:${e.resource_id.slice(0, 8)}` : ''}

@@ -170,7 +170,7 @@ export type Database = {
         Row: {
           action: string
           admin_email: string | null
-          admin_id: string
+          admin_id: string | null
           after: Json | null
           before: Json | null
           created_at: string
@@ -179,12 +179,13 @@ export type Database = {
           ip: string | null
           resource_id: string | null
           resource_type: string
+          source: string
           user_agent: string | null
         }
         Insert: {
           action: string
           admin_email?: string | null
-          admin_id: string
+          admin_id?: string | null
           after?: Json | null
           before?: Json | null
           created_at?: string
@@ -193,12 +194,13 @@ export type Database = {
           ip?: string | null
           resource_id?: string | null
           resource_type: string
+          source?: string
           user_agent?: string | null
         }
         Update: {
           action?: string
           admin_email?: string | null
-          admin_id?: string
+          admin_id?: string | null
           after?: Json | null
           before?: Json | null
           created_at?: string
@@ -207,6 +209,7 @@ export type Database = {
           ip?: string | null
           resource_id?: string | null
           resource_type?: string
+          source?: string
           user_agent?: string | null
         }
         Relationships: []
@@ -3271,6 +3274,7 @@ export type Database = {
           valid: boolean
         }[]
       }
+      audit_jsonb_diff: { Args: { _after: Json; _before: Json }; Returns: Json }
       autocomplete_products_public: {
         Args: { _limit?: number; _terms: string[] }
         Returns: {

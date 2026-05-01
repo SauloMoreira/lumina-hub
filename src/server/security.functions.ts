@@ -143,7 +143,7 @@ export const listSecurityEvents = createServerFn({ method: 'POST' })
     return { events: rows ?? [] };
   });
 
-/** Lista o histórico de auditoria de ações administrativas. */
+/** Lista o histórico de auditoria de ações administrativas (versão simples – usada na Central de Segurança). */
 export const listAdminAuditLog = createServerFn({ method: 'POST' })
   .middleware([requireAdmin])
   .inputValidator(z.object({
@@ -164,20 +164,127 @@ export const listAdminAuditLog = createServerFn({ method: 'POST' })
     return { events: rows ?? [] };
   });
 
-/** Exporta auditoria como CSV (string). Limita a 5000 linhas. */
+/** Versão completa para a tela /admin/seguranca/auditoria com filtros e paginação. */
+export const searchAdminAuditLog = createServerFn({ method: 'POST' })
+  .middleware([requireAdmin])
+  .inputValidator(z.object({
+    days: z.number().int().min(1).max(365).default(30),
+    resourceType: z.string().max(50).optional(),
+    action: z.string().max(80).optional(),
+    adminId: z.string().uuid().optional(),
+    search: z.string().max(200).optional(),
+    page: z.number().int().min(1).default(1),
+    pageSize: z.number().int().min(10).max(200).default(50),
+  }))
+  .handler(async ({ data }) => {
+    const since = new Date(Date.now() - data.days * 24 * 60 * 60 * 1000).toISOString();
+    const from = (data.page - 1) * data.pageSize;
+    const to = from + data.pageSize - 1;
+
+    let q = supabaseAdmin
+      .from('admin_audit_log')
+      .select(
+        'id, admin_id, admin_email, action, resource_type, resource_id, description, ip, user_agent, source, created_at',
+        { count: 'exact' },
+      )
+      .gte('created_at', since)
+      .order('created_at', { ascending: false })
+      .range(from, to);
+
+    if (data.resourceType) q = q.eq('resource_type', data.resourceType);
+    if (data.action) q = q.eq('action', data.action);
+    if (data.adminId) q = q.eq('admin_id', data.adminId);
+    if (data.search && data.search.trim()) {
+      const term = data.search.trim().replace(/%/g, '');
+      q = q.or(
+        `description.ilike.%${term}%,admin_email.ilike.%${term}%,resource_id.ilike.%${term}%`,
+      );
+    }
+
+    const { data: rows, count, error } = await q;
+    if (error) throw new Error(error.message);
+    return {
+      events: rows ?? [],
+      total: count ?? 0,
+      page: data.page,
+      pageSize: data.pageSize,
+    };
+  });
+
+/** Detalhe completo de um log (inclui before/after já mascarados). */
+export const getAdminAuditLogDetail = createServerFn({ method: 'POST' })
+  .middleware([requireAdmin])
+  .inputValidator(z.object({ id: z.string().uuid() }))
+  .handler(async ({ data }) => {
+    const { data: row, error } = await supabaseAdmin
+      .from('admin_audit_log')
+      .select('*')
+      .eq('id', data.id)
+      .maybeSingle();
+    if (error) throw new Error(error.message);
+    if (!row) throw new Error('Registro não encontrado');
+    return { event: row };
+  });
+
+/** Opções de filtro (admins distintos, módulos e ações usadas nos últimos 90 dias). */
+export const getAdminAuditFilterOptions = createServerFn({ method: 'POST' })
+  .middleware([requireAdmin])
+  .handler(async () => {
+    const since = new Date(Date.now() - 90 * 24 * 60 * 60 * 1000).toISOString();
+    const { data: rows, error } = await supabaseAdmin
+      .from('admin_audit_log')
+      .select('admin_id, admin_email, action, resource_type')
+      .gte('created_at', since)
+      .limit(5000);
+    if (error) throw new Error(error.message);
+
+    const admins = new Map<string, { id: string; email: string | null }>();
+    const actions = new Set<string>();
+    const resourceTypes = new Set<string>();
+    for (const r of rows ?? []) {
+      if (r.admin_id) admins.set(r.admin_id, { id: r.admin_id, email: r.admin_email });
+      if (r.action) actions.add(r.action);
+      if (r.resource_type) resourceTypes.add(r.resource_type);
+    }
+    return {
+      admins: Array.from(admins.values()).sort((a, b) =>
+        (a.email ?? '').localeCompare(b.email ?? ''),
+      ),
+      actions: Array.from(actions).sort(),
+      resourceTypes: Array.from(resourceTypes).sort(),
+    };
+  });
+
+/** Exporta auditoria como CSV (string). Limita a 5000 linhas. Aceita os mesmos filtros. */
 export const exportAdminAuditCsv = createServerFn({ method: 'POST' })
   .middleware([requireAdmin])
   .inputValidator(z.object({
     days: z.number().int().min(1).max(365).default(90),
+    resourceType: z.string().max(50).optional(),
+    action: z.string().max(80).optional(),
+    adminId: z.string().uuid().optional(),
+    search: z.string().max(200).optional(),
   }))
   .handler(async ({ data }) => {
     const since = new Date(Date.now() - data.days * 24 * 60 * 60 * 1000).toISOString();
-    const { data: rows, error } = await supabaseAdmin
+    let q = supabaseAdmin
       .from('admin_audit_log')
       .select('created_at, admin_email, admin_id, action, resource_type, resource_id, description, ip, user_agent')
       .gte('created_at', since)
       .order('created_at', { ascending: false })
       .limit(5000);
+
+    if (data.resourceType) q = q.eq('resource_type', data.resourceType);
+    if (data.action) q = q.eq('action', data.action);
+    if (data.adminId) q = q.eq('admin_id', data.adminId);
+    if (data.search && data.search.trim()) {
+      const term = data.search.trim().replace(/%/g, '');
+      q = q.or(
+        `description.ilike.%${term}%,admin_email.ilike.%${term}%,resource_id.ilike.%${term}%`,
+      );
+    }
+
+    const { data: rows, error } = await q;
     if (error) throw new Error(error.message);
 
     const escape = (v: unknown) => {
@@ -190,5 +297,6 @@ export const exportAdminAuditCsv = createServerFn({ method: 'POST' })
     for (const r of rows ?? []) {
       lines.push(header.map((h) => escape((r as Record<string, unknown>)[h])).join(','));
     }
-    return { csv: lines.join('\n'), count: rows?.length ?? 0 };
+    // BOM para Excel reconhecer UTF-8
+    return { csv: '\uFEFF' + lines.join('\n'), count: rows?.length ?? 0 };
   });
