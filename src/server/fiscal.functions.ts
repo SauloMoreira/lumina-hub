@@ -203,9 +203,25 @@ const UpdateInput = z.object({
 export const updateProductFiscal = createServerFn({ method: 'POST' })
   .middleware([requireAdmin])
   .inputValidator((input: unknown) => UpdateInput.parse(input))
-  .handler(async ({ data }) => {
+  .handler(async ({ data, context }) => {
     const { updateProductFiscalRow } = await import('./fiscalInsights.server');
-    return updateProductFiscalRow(data);
+    const result = await updateProductFiscalRow(data);
+    try {
+      const { logAdminAction } = await import('./security/auditLog');
+      const ctx = context as { adminUserId?: string; adminEmail?: string | null } | undefined;
+      await logAdminAction({
+        adminId: ctx?.adminUserId ?? '00000000-0000-0000-0000-000000000000',
+        adminEmail: ctx?.adminEmail ?? null,
+        action: 'product_fiscal_updated',
+        resourceType: 'product_fiscal',
+        resourceId: data.id,
+        description: `Dados fiscais do produto atualizados (NCM/CFOP/EAN/Origem).`,
+        after: data,
+      });
+    } catch {
+      // não bloquear
+    }
+    return result;
   });
 
 // ============================================================
