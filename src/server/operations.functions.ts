@@ -901,6 +901,32 @@ export const getAdminOperations = createServerFn({ method: 'GET' })
         ctaHref: '/admin/produtos/revisao-comercial',
         group: 'Catálogo',
       },
+      {
+        id: 'commercial-stalled-with-stock',
+        title: 'Produtos parados com estoque',
+        description:
+          stalledWithStock > 0
+            ? `${stalledWithStock} produto(s) ativo(s) com estoque mas sem venda no período configurado.`
+            : 'Nenhum produto ativo parado no período analisado.',
+        qty: stalledWithStock,
+        status: stalledWithStock === 0 ? 'ok' : 'warn',
+        ctaLabel: 'Ver revisão comercial',
+        ctaHref: '/admin/produtos/revisao-comercial',
+        group: 'Catálogo',
+      },
+      {
+        id: 'commercial-high-movement-low-margin',
+        title: 'Alto giro com margem baixa',
+        description:
+          highMovementLowMargin > 0
+            ? `${highMovementLowMargin} produto(s) vendendo bem mas com margem abaixo da mínima — atenção ao resultado.`
+            : 'Nenhum produto de alto giro com margem comprometida.',
+        qty: highMovementLowMargin,
+        status: highMovementLowMargin === 0 ? 'ok' : 'danger',
+        ctaLabel: 'Ver revisão comercial',
+        ctaHref: '/admin/produtos/revisao-comercial',
+        group: 'Catálogo',
+      },
     ];
 
     // ============================================================
