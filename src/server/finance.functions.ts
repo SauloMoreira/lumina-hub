@@ -455,8 +455,13 @@ const ProductCostInput = z.object({
 export const updateProductCost = createServerFn({ method: 'POST' })
   .middleware([requireAdmin])
   .inputValidator((input: unknown) => ProductCostInput.parse(input))
-  .handler(async ({ data }) => {
+  .handler(async ({ data, context }) => {
     const supabaseAdmin = await getSupabaseAdmin();
+    const { data: prev } = await supabaseAdmin
+      .from('products')
+      .select('name, cost_price, min_margin_percent')
+      .eq('id', data.productId)
+      .maybeSingle();
     const { error } = await supabaseAdmin
       .from('products')
       .update({
@@ -465,6 +470,27 @@ export const updateProductCost = createServerFn({ method: 'POST' })
       } as never)
       .eq('id', data.productId);
     if (error) throw new Error(error.message);
+    try {
+      const { logAdminAction } = await import('./security/auditLog');
+      const ctx = context as { adminUserId?: string; adminEmail?: string | null } | undefined;
+      const productName = (prev as { name?: string } | null)?.name ?? 'Produto';
+      await logAdminAction({
+        adminId: ctx?.adminUserId ?? '00000000-0000-0000-0000-000000000000',
+        adminEmail: ctx?.adminEmail ?? null,
+        action: 'product_cost_updated',
+        resourceType: 'product_cost',
+        resourceId: data.productId,
+        description: `Custo/margem mínima de "${productName}" atualizado.`,
+        before: {
+          cost_price: (prev as { cost_price?: number | null } | null)?.cost_price ?? null,
+          min_margin_percent:
+            (prev as { min_margin_percent?: number | null } | null)?.min_margin_percent ?? null,
+        },
+        after: { cost_price: data.cost_price, min_margin_percent: data.min_margin_percent },
+      });
+    } catch {
+      // auditoria nunca quebra
+    }
     return { ok: true as const };
   });
 
