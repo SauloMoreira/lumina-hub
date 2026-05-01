@@ -225,6 +225,16 @@ export const getAdminOperations = createServerFn({ method: 'GET' })
       }
     } catch {}
 
+    // Revisão Comercial — Onda 2: contadores de giro (RPC leve)
+    let stalledWithStock = 0;
+    let highMovementLowMargin = 0;
+    try {
+      const { data: cr } = await supabaseAdmin.rpc('get_commercial_review_counters');
+      const j = (cr ?? {}) as Record<string, number>;
+      stalledWithStock = Number(j.stalled_with_stock ?? 0);
+      highMovementLowMargin = Number(j.high_movement_low_margin ?? 0);
+    } catch {}
+
     // ============================================================
     // Produtos
     // ============================================================
