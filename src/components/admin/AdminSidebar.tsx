@@ -31,6 +31,7 @@ import {
   MessageSquareText,
   PackagePlus,
   DollarSign,
+  ScrollText,
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import logo from '@/assets/logo-navbar.png';
@@ -270,10 +271,10 @@ const groups: Group[] = [
     icon: Shield,
     items: [
       { to: '/admin/seguranca', label: 'Segurança', icon: Shield },
+      { to: '/admin/seguranca/auditoria', label: 'Auditoria', icon: ScrollText },
       { label: 'Usuários administrativos', soon: true },
       { label: 'MFA', soon: true },
       { label: 'Logs de segurança', soon: true },
-      { label: 'Auditoria', soon: true },
       { label: 'Chaves e webhooks', soon: true },
     ],
   },

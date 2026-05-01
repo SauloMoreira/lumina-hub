@@ -65,6 +65,7 @@ import { Route as ApiPublicHealthRouteImport } from './routes/api/public/health'
 import { Route as ApiPublicCspReportRouteImport } from './routes/api/public/csp-report'
 import { Route as AdminSettingsFreteLocalRouteImport } from './routes/admin.settings.frete-local'
 import { Route as AdminSettingsCompanyRouteImport } from './routes/admin.settings.company'
+import { Route as AdminSegurancaAuditoriaRouteImport } from './routes/admin.seguranca.auditoria'
 import { Route as AdminProdutosRevisaoComercialRouteImport } from './routes/admin.produtos.revisao-comercial'
 import { Route as AdminProdutosQualidadeRouteImport } from './routes/admin.produtos.qualidade'
 import { Route as AdminProdutosEstoqueRouteImport } from './routes/admin.produtos.estoque'
@@ -366,6 +367,11 @@ const AdminSettingsCompanyRoute = AdminSettingsCompanyRouteImport.update({
   path: '/admin/settings/company',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AdminSegurancaAuditoriaRoute = AdminSegurancaAuditoriaRouteImport.update({
+  id: '/auditoria',
+  path: '/auditoria',
+  getParentRoute: () => AdminSegurancaRoute,
+} as any)
 const AdminProdutosRevisaoComercialRoute =
   AdminProdutosRevisaoComercialRouteImport.update({
     id: '/admin/produtos/revisao-comercial',
@@ -498,7 +504,7 @@ export interface FileRoutesByFullPath {
   '/admin/painel-do-dia': typeof AdminPainelDoDiaRoute
   '/admin/pedidos': typeof AdminPedidosRouteWithChildren
   '/admin/pendencias': typeof AdminPendenciasRoute
-  '/admin/seguranca': typeof AdminSegurancaRoute
+  '/admin/seguranca': typeof AdminSegurancaRouteWithChildren
   '/admin/seo': typeof AdminSeoRoute
   '/admin/whatsapp-templates': typeof AdminWhatsappTemplatesRoute
   '/checkout/failure': typeof CheckoutFailureRoute
@@ -526,6 +532,7 @@ export interface FileRoutesByFullPath {
   '/admin/produtos/estoque': typeof AdminProdutosEstoqueRoute
   '/admin/produtos/qualidade': typeof AdminProdutosQualidadeRoute
   '/admin/produtos/revisao-comercial': typeof AdminProdutosRevisaoComercialRoute
+  '/admin/seguranca/auditoria': typeof AdminSegurancaAuditoriaRoute
   '/admin/settings/company': typeof AdminSettingsCompanyRoute
   '/admin/settings/frete-local': typeof AdminSettingsFreteLocalRoute
   '/api/public/csp-report': typeof ApiPublicCspReportRoute
@@ -573,7 +580,7 @@ export interface FileRoutesByTo {
   '/admin/painel-do-dia': typeof AdminPainelDoDiaRoute
   '/admin/pedidos': typeof AdminPedidosRouteWithChildren
   '/admin/pendencias': typeof AdminPendenciasRoute
-  '/admin/seguranca': typeof AdminSegurancaRoute
+  '/admin/seguranca': typeof AdminSegurancaRouteWithChildren
   '/admin/seo': typeof AdminSeoRoute
   '/admin/whatsapp-templates': typeof AdminWhatsappTemplatesRoute
   '/checkout/failure': typeof CheckoutFailureRoute
@@ -601,6 +608,7 @@ export interface FileRoutesByTo {
   '/admin/produtos/estoque': typeof AdminProdutosEstoqueRoute
   '/admin/produtos/qualidade': typeof AdminProdutosQualidadeRoute
   '/admin/produtos/revisao-comercial': typeof AdminProdutosRevisaoComercialRoute
+  '/admin/seguranca/auditoria': typeof AdminSegurancaAuditoriaRoute
   '/admin/settings/company': typeof AdminSettingsCompanyRoute
   '/admin/settings/frete-local': typeof AdminSettingsFreteLocalRoute
   '/api/public/csp-report': typeof ApiPublicCspReportRoute
@@ -649,7 +657,7 @@ export interface FileRoutesById {
   '/admin/painel-do-dia': typeof AdminPainelDoDiaRoute
   '/admin/pedidos': typeof AdminPedidosRouteWithChildren
   '/admin/pendencias': typeof AdminPendenciasRoute
-  '/admin/seguranca': typeof AdminSegurancaRoute
+  '/admin/seguranca': typeof AdminSegurancaRouteWithChildren
   '/admin/seo': typeof AdminSeoRoute
   '/admin/whatsapp-templates': typeof AdminWhatsappTemplatesRoute
   '/checkout/failure': typeof CheckoutFailureRoute
@@ -677,6 +685,7 @@ export interface FileRoutesById {
   '/admin/produtos/estoque': typeof AdminProdutosEstoqueRoute
   '/admin/produtos/qualidade': typeof AdminProdutosQualidadeRoute
   '/admin/produtos/revisao-comercial': typeof AdminProdutosRevisaoComercialRoute
+  '/admin/seguranca/auditoria': typeof AdminSegurancaAuditoriaRoute
   '/admin/settings/company': typeof AdminSettingsCompanyRoute
   '/admin/settings/frete-local': typeof AdminSettingsFreteLocalRoute
   '/api/public/csp-report': typeof ApiPublicCspReportRoute
@@ -754,6 +763,7 @@ export interface FileRouteTypes {
     | '/admin/produtos/estoque'
     | '/admin/produtos/qualidade'
     | '/admin/produtos/revisao-comercial'
+    | '/admin/seguranca/auditoria'
     | '/admin/settings/company'
     | '/admin/settings/frete-local'
     | '/api/public/csp-report'
@@ -829,6 +839,7 @@ export interface FileRouteTypes {
     | '/admin/produtos/estoque'
     | '/admin/produtos/qualidade'
     | '/admin/produtos/revisao-comercial'
+    | '/admin/seguranca/auditoria'
     | '/admin/settings/company'
     | '/admin/settings/frete-local'
     | '/api/public/csp-report'
@@ -904,6 +915,7 @@ export interface FileRouteTypes {
     | '/admin/produtos/estoque'
     | '/admin/produtos/qualidade'
     | '/admin/produtos/revisao-comercial'
+    | '/admin/seguranca/auditoria'
     | '/admin/settings/company'
     | '/admin/settings/frete-local'
     | '/api/public/csp-report'
@@ -952,7 +964,7 @@ export interface RootRouteChildren {
   AdminPainelDoDiaRoute: typeof AdminPainelDoDiaRoute
   AdminPedidosRoute: typeof AdminPedidosRouteWithChildren
   AdminPendenciasRoute: typeof AdminPendenciasRoute
-  AdminSegurancaRoute: typeof AdminSegurancaRoute
+  AdminSegurancaRoute: typeof AdminSegurancaRouteWithChildren
   AdminSeoRoute: typeof AdminSeoRoute
   AdminWhatsappTemplatesRoute: typeof AdminWhatsappTemplatesRoute
   ComboSlugRoute: typeof ComboSlugRoute
@@ -1378,6 +1390,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminSettingsCompanyRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/admin/seguranca/auditoria': {
+      id: '/admin/seguranca/auditoria'
+      path: '/auditoria'
+      fullPath: '/admin/seguranca/auditoria'
+      preLoaderRoute: typeof AdminSegurancaAuditoriaRouteImport
+      parentRoute: typeof AdminSegurancaRoute
+    }
     '/admin/produtos/revisao-comercial': {
       id: '/admin/produtos/revisao-comercial'
       path: '/admin/produtos/revisao-comercial'
@@ -1540,6 +1559,18 @@ const AdminPedidosRouteWithChildren = AdminPedidosRoute._addFileChildren(
   AdminPedidosRouteChildren,
 )
 
+interface AdminSegurancaRouteChildren {
+  AdminSegurancaAuditoriaRoute: typeof AdminSegurancaAuditoriaRoute
+}
+
+const AdminSegurancaRouteChildren: AdminSegurancaRouteChildren = {
+  AdminSegurancaAuditoriaRoute: AdminSegurancaAuditoriaRoute,
+}
+
+const AdminSegurancaRouteWithChildren = AdminSegurancaRoute._addFileChildren(
+  AdminSegurancaRouteChildren,
+)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AtacadoRoute: AtacadoRoute,
@@ -1578,7 +1609,7 @@ const rootRouteChildren: RootRouteChildren = {
   AdminPainelDoDiaRoute: AdminPainelDoDiaRoute,
   AdminPedidosRoute: AdminPedidosRouteWithChildren,
   AdminPendenciasRoute: AdminPendenciasRoute,
-  AdminSegurancaRoute: AdminSegurancaRoute,
+  AdminSegurancaRoute: AdminSegurancaRouteWithChildren,
   AdminSeoRoute: AdminSeoRoute,
   AdminWhatsappTemplatesRoute: AdminWhatsappTemplatesRoute,
   ComboSlugRoute: ComboSlugRoute,
