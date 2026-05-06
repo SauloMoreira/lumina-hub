@@ -367,6 +367,15 @@ export const Route = createFileRoute("/api/public/mercadopago/webhook")({
           }
         }
 
+        // Sincronizar lead/CRM — idempotente, não bloqueia resposta ao MP
+        if (willBePaid) {
+          try {
+            const { syncApprovedOrderToLead } = await import("@/server/leadSync.server");
+            void syncApprovedOrderToLead(order.id);
+          } catch (e) {
+            console.error("[MP webhook] falha ao sincronizar lead", e);
+          }
+
         // E-mail transacional ao cliente — idempotente, não bloqueia resposta ao MP
         try {
           const { sendOrderEmail } = await import("@/server/email/orderEmails");
