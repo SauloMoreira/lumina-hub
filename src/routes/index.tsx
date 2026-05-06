@@ -20,6 +20,50 @@ import {
   Star,
 } from "lucide-react";
 import { getLucideIcon } from "@/lib/iconMap";
+import { StoreLayout } from "@/components/layout/StoreLayout";
+import { ProductCard } from "@/components/store/ProductCard";
+import { HeroCarousel, type HeroBanner } from "@/components/store/HeroCarousel";
+import { Button } from "@/components/ui/button";
+import { supabase } from "@/integrations/supabase/client";
+import type { Product, Category } from "@/lib/domain";
+import { FREE_SHIPPING_THRESHOLD, formatBRL } from "@/lib/domain";
+import { imageUrlsFromProductImages } from "@/lib/productImages";
+import { fetchHomepageSettings, isPromoBarVisible } from "@/lib/homepageContent";
+import {
+  fetchHomepageCards,
+  fetchHomepageFeaturedCategories,
+  fetchHomepageShowcasesPublic,
+  fetchHomepageSections,
+  DEFAULT_HOMEPAGE_SECTION_ORDER,
+  type HomepageSection,
+} from "@/lib/homepageBlocks";
+import { HomepageShowcaseSection } from "@/components/store/HomepageShowcaseSection";
+import logoHero from "@/assets/logo-hero.webp";
+
+import { buildSeo } from "@/lib/seo";
+
+export const Route = createFileRoute("/")({
+  head: () =>
+    buildSeo({
+      title: "Material Elétrico e Iluminação LED em Maricá/RJ",
+      description:
+        "Lâmpadas LED, disjuntores, cabos, refletores e tomadas com entrega rápida. Atendimento com IA 24h. Frete grátis acima de R$199.",
+      url: "/",
+    }),
+  component: HomePage,
+});
+
+const ICONS: Record<string, any> = {
+  Lightbulb,
+  Zap,
+  Cable,
+  Plug,
+  Sun,
+  LayoutGrid,
+  Wrench,
+  Package,
+};
+
 
 function isExternalLink(url?: string | null) {
   if (!url) return false;
