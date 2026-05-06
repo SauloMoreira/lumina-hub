@@ -43,7 +43,7 @@ export async function syncApprovedOrderToLead(orderId: string): Promise<{
       ? await supabaseAdmin
           .from("profiles")
           .select("name, email, phone")
-          .eq("id", order.user_id)
+          .eq("id", order.user_id as string)
           .single()
       : { data: null };
 
