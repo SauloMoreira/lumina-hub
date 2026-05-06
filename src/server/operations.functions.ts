@@ -83,13 +83,13 @@ export const getAdminOperations = createServerFn({ method: "GET" })
     // ============================================================
     const paidAwaitingShipping = await safeCount(
       () => supabaseAdmin.from("orders"),
-      (q) => q.eq("payment_status", "paid").in("status", ["paid", "confirmed", "preparing"]),
+      (q) => q.in("payment_status", ["paid", "approved"]).in("status", ["paid", "confirmed", "preparing"]),
     );
     const paidStuck24h = await safeCount(
       () => supabaseAdmin.from("orders"),
       (q) =>
         q
-          .eq("payment_status", "paid")
+          .in("payment_status", ["paid", "approved"])
           .in("status", ["paid", "confirmed", "preparing"])
           .lt("updated_at", stale24h),
     );
@@ -128,7 +128,7 @@ export const getAdminOperations = createServerFn({ method: "GET" })
       (q) =>
         q
           .eq("order_type", "b2b")
-          .eq("payment_status", "paid")
+          .in("payment_status", ["paid", "approved"])
           .in("status", ["paid", "confirmed", "preparing"]),
     );
 
@@ -142,7 +142,7 @@ export const getAdminOperations = createServerFn({ method: "GET" })
         .from("orders")
         .select("total, b2b_discount_total")
         .eq("order_type", "b2b")
-        .eq("payment_status", "paid")
+        .in("payment_status", ["paid", "approved"])
         .gte("paid_at", startOfTodayISO());
       b2bOrdersPaidToday = (b2bPaid ?? []).length;
       b2bRevenueToday = (b2bPaid ?? []).reduce((s, o) => s + Number(o.total ?? 0), 0);
@@ -329,17 +329,17 @@ export const getAdminOperations = createServerFn({ method: "GET" })
     const stale24hInv = stale24h;
     const invoicesPending = await safeCount(
       () => supabaseAdmin.from("orders"),
-      (q) => q.eq("payment_status", "paid").eq("invoice_status", "pendente_emissao"),
+      (q) => q.in("payment_status", ["paid", "approved"]).eq("invoice_status", "pendente_emissao"),
     );
     const invoicesError = await safeCount(
       () => supabaseAdmin.from("orders"),
-      (q) => q.eq("payment_status", "paid").eq("invoice_status", "erro_emissao"),
+      (q) => q.in("payment_status", ["paid", "approved"]).eq("invoice_status", "erro_emissao"),
     );
     const invoicesOverdue = await safeCount(
       () => supabaseAdmin.from("orders"),
       (q) =>
         q
-          .eq("payment_status", "paid")
+          .in("payment_status", ["paid", "approved"])
           .eq("invoice_status", "pendente_emissao")
           .lt("paid_at", stale24hInv),
     );
@@ -347,7 +347,7 @@ export const getAdminOperations = createServerFn({ method: "GET" })
       () => supabaseAdmin.from("orders"),
       (q) =>
         q
-          .eq("payment_status", "paid")
+          .in("payment_status", ["paid", "approved"])
           .eq("order_type", "b2b")
           .in("invoice_status", ["nao_necessaria", "pendente_emissao"]),
     );
@@ -361,7 +361,7 @@ export const getAdminOperations = createServerFn({ method: "GET" })
     );
     const ordersPaidToday = await safeCount(
       () => supabaseAdmin.from("orders"),
-      (q) => q.eq("payment_status", "paid").gte("paid_at", todayISO),
+      (q) => q.in("payment_status", ["paid", "approved"]).gte("paid_at", todayISO),
     );
     let revenueToday = 0;
     let productsSoldToday = 0;
@@ -370,7 +370,7 @@ export const getAdminOperations = createServerFn({ method: "GET" })
       const { data: paid } = await supabaseAdmin
         .from("orders")
         .select("id, total")
-        .eq("payment_status", "paid")
+        .in("payment_status", ["paid", "approved"])
         .gte("paid_at", todayISO);
       const ids = (paid ?? []).map((o) => o.id);
       revenueToday = (paid ?? []).reduce((s, o) => s + Number(o.total ?? 0), 0);
