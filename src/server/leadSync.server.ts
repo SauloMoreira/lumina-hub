@@ -31,7 +31,7 @@ export async function syncApprovedOrderToLead(orderId: string): Promise<{
     if (orderErr || !orderRaw) {
       return { ok: false, leadId: null, action: "error", reason: "order not found" };
     }
-    const order = orderRaw as Record<string, unknown>;
+    const order = orderRaw as unknown as Record<string, unknown>;
 
     // Só sincroniza pedidos com pagamento aprovado
     if (order.payment_status !== "approved" && order.payment_status !== "paid") {
