@@ -29,7 +29,6 @@ import { Route as CarrinhoRouteImport } from './routes/carrinho'
 import { Route as CadastroEmpresaRouteImport } from './routes/cadastro-empresa'
 import { Route as CadastroRouteImport } from './routes/cadastro'
 import { Route as AtacadoRouteImport } from './routes/atacado'
-import { Route as IndexRouteImport } from './routes/index'
 import { Route as AdminIndexRouteImport } from './routes/admin.index'
 import { Route as ProdutoSlugRouteImport } from './routes/produto.$slug'
 import { Route as InstitucionalSlugRouteImport } from './routes/institucional.$slug'
@@ -182,11 +181,6 @@ const CadastroRoute = CadastroRouteImport.update({
 const AtacadoRoute = AtacadoRouteImport.update({
   id: '/atacado',
   path: '/atacado',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const IndexRoute = IndexRouteImport.update({
-  id: '/',
-  path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AdminIndexRoute = AdminIndexRouteImport.update({
@@ -467,7 +461,6 @@ const ApiPublicMercadopagoWebhookRoute =
   } as any)
 
 export interface FileRoutesByFullPath {
-  '/': typeof IndexRoute
   '/atacado': typeof AtacadoRoute
   '/cadastro': typeof CadastroRoute
   '/cadastro-empresa': typeof CadastroEmpresaRoute
@@ -543,7 +536,6 @@ export interface FileRoutesByFullPath {
   '/api/public/mercadopago/webhook': typeof ApiPublicMercadopagoWebhookRoute
 }
 export interface FileRoutesByTo {
-  '/': typeof IndexRoute
   '/atacado': typeof AtacadoRoute
   '/cadastro': typeof CadastroRoute
   '/cadastro-empresa': typeof CadastroEmpresaRoute
@@ -620,7 +612,6 @@ export interface FileRoutesByTo {
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
-  '/': typeof IndexRoute
   '/atacado': typeof AtacadoRoute
   '/cadastro': typeof CadastroRoute
   '/cadastro-empresa': typeof CadastroEmpresaRoute
@@ -698,7 +689,6 @@ export interface FileRoutesById {
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
-    | '/'
     | '/atacado'
     | '/cadastro'
     | '/cadastro-empresa'
@@ -774,7 +764,6 @@ export interface FileRouteTypes {
     | '/api/public/mercadopago/webhook'
   fileRoutesByTo: FileRoutesByTo
   to:
-    | '/'
     | '/atacado'
     | '/cadastro'
     | '/cadastro-empresa'
@@ -850,7 +839,6 @@ export interface FileRouteTypes {
     | '/api/public/mercadopago/webhook'
   id:
     | '__root__'
-    | '/'
     | '/atacado'
     | '/cadastro'
     | '/cadastro-empresa'
@@ -927,7 +915,6 @@ export interface FileRouteTypes {
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
-  IndexRoute: typeof IndexRoute
   AtacadoRoute: typeof AtacadoRoute
   CadastroRoute: typeof CadastroRoute
   CadastroEmpresaRoute: typeof CadastroEmpresaRoute
@@ -1136,13 +1123,6 @@ declare module '@tanstack/react-router' {
       path: '/atacado'
       fullPath: '/atacado'
       preLoaderRoute: typeof AtacadoRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/': {
-      id: '/'
-      path: '/'
-      fullPath: '/'
-      preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/admin/': {
@@ -1572,7 +1552,6 @@ const AdminSegurancaRouteWithChildren = AdminSegurancaRoute._addFileChildren(
 )
 
 const rootRouteChildren: RootRouteChildren = {
-  IndexRoute: IndexRoute,
   AtacadoRoute: AtacadoRoute,
   CadastroRoute: CadastroRoute,
   CadastroEmpresaRoute: CadastroEmpresaRoute,
