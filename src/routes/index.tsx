@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import React, { useEffect, lazy, Suspense } from "react";
+import React, { useEffect, useState } from "react";
 import {
   Sparkles,
   Truck,
@@ -39,17 +39,73 @@ import {
 } from "@/lib/homepageBlocks";
 import { HomepageShowcaseSection } from "@/components/store/HomepageShowcaseSection";
 import logoHero from "@/assets/logo-hero.webp";
+import { optimizeBannerUrl } from "@/lib/bannerImages";
+import { fetchHomeBanners } from "@/server/homepage.functions";
 
 import { buildSeo } from "@/lib/seo";
 
 export const Route = createFileRoute("/")({
-  head: () =>
-    buildSeo({
+  loader: async () => {
+    try {
+      const banners = await fetchHomeBanners();
+      return { banners: banners as HeroBanner[] };
+    } catch {
+      return { banners: [] as HeroBanner[] };
+    }
+  },
+  head: ({ loaderData }) => {
+    const seo = buildSeo({
       title: "Material Elétrico e Iluminação LED em Maricá/RJ",
       description:
         "Lâmpadas LED, disjuntores, cabos, refletores e tomadas com entrega rápida. Atendimento com IA 24h. Frete grátis acima de R$199.",
       url: "/",
-    }),
+    });
+    // Preload the first banner's mobile image for LCP
+    const firstBanner = loaderData?.banners?.[0];
+    const preloadLinks: Array<Record<string, string>> = [];
+    if (firstBanner) {
+      const mobileSrc = optimizeBannerUrl(
+        firstBanner.image_mobile ?? firstBanner.image_desktop,
+        { width: 720, quality: 72 },
+      );
+      if (mobileSrc) {
+        preloadLinks.push({
+          rel: "preload",
+          as: "image",
+          href: mobileSrc,
+          type: "image/webp",
+          fetchPriority: "high",
+          media: "(max-width: 640px)",
+        } as any);
+      }
+      const tabletSrc = optimizeBannerUrl(firstBanner.image_desktop, { width: 1024, quality: 75 });
+      if (tabletSrc) {
+        preloadLinks.push({
+          rel: "preload",
+          as: "image",
+          href: tabletSrc,
+          type: "image/webp",
+          fetchPriority: "high",
+          media: "(min-width: 641px) and (max-width: 1024px)",
+        } as any);
+      }
+      const desktopSrc = optimizeBannerUrl(firstBanner.image_desktop, { width: 1280, quality: 75 });
+      if (desktopSrc) {
+        preloadLinks.push({
+          rel: "preload",
+          as: "image",
+          href: desktopSrc,
+          type: "image/webp",
+          fetchPriority: "high",
+          media: "(min-width: 1025px)",
+        } as any);
+      }
+    }
+    return {
+      ...seo,
+      links: [...(seo.links ?? []), ...preloadLinks],
+    };
+  },
   component: HomePage,
 });
 
@@ -81,6 +137,14 @@ function normalizeProductImages<T extends { images?: string[] | null; product_im
 
 function HomePage() {
   const queryClient = useQueryClient();
+  const { banners: ssrBanners } = Route.useLoaderData();
+
+  // Seed React Query cache with SSR banners
+  useEffect(() => {
+    if (ssrBanners && ssrBanners.length > 0) {
+      queryClient.setQueryData(["home-banners"], ssrBanners);
+    }
+  }, [ssrBanners, queryClient]);
 
   const { data: homepage } = useQuery({
     queryKey: ["homepage_settings"],
@@ -88,9 +152,11 @@ function HomePage() {
     queryFn: fetchHomepageSettings,
   });
 
+  // Use SSR banners as initialData so no flash
   const { data: banners } = useQuery({
     queryKey: ["home-banners"],
     staleTime: 1000 * 60 * 5,
+    initialData: ssrBanners.length > 0 ? ssrBanners : undefined,
     queryFn: async () => {
       const { data, error } = await supabase
         .from("home_banners")
@@ -103,9 +169,22 @@ function HomePage() {
     },
   });
 
+  // ---- Below-fold queries: deferred until after first paint ----
+  const [belowFoldReady, setBelowFoldReady] = useState(false);
+  useEffect(() => {
+    const hasRic = typeof window !== "undefined" && typeof window.requestIdleCallback === "function";
+    if (hasRic) {
+      const id = window.requestIdleCallback(() => setBelowFoldReady(true), { timeout: 1500 });
+      return () => window.cancelIdleCallback(id);
+    }
+    const t = setTimeout(() => setBelowFoldReady(true), 800);
+    return () => clearTimeout(t);
+  }, []);
+
   const { data: featured } = useQuery({
     queryKey: ["products", "featured"],
     staleTime: 1000 * 60 * 10,
+    enabled: belowFoldReady,
     queryFn: async () => {
       const { data, error } = await supabase
         .from("products")
@@ -121,6 +200,7 @@ function HomePage() {
   const { data: deals } = useQuery({
     queryKey: ["products", "deals"],
     staleTime: 1000 * 60 * 10,
+    enabled: belowFoldReady,
     queryFn: async () => {
       const { data, error } = await supabase
         .from("products")
@@ -140,6 +220,7 @@ function HomePage() {
   const { data: categories } = useQuery({
     queryKey: ["categories"],
     staleTime: 1000 * 60 * 60,
+    enabled: belowFoldReady,
     queryFn: async () => {
       const { data, error } = await supabase
         .from("categories")
@@ -154,24 +235,28 @@ function HomePage() {
   const { data: benefitCards } = useQuery({
     queryKey: ["homepage-cards", "benefit"],
     staleTime: 1000 * 60 * 5,
+    enabled: belowFoldReady,
     queryFn: () => fetchHomepageCards("benefit"),
   });
 
   const { data: promoCards } = useQuery({
     queryKey: ["homepage-cards", "promo"],
     staleTime: 1000 * 60 * 5,
+    enabled: belowFoldReady,
     queryFn: () => fetchHomepageCards("promo"),
   });
 
   const { data: featuredCategories } = useQuery({
     queryKey: ["homepage-featured-categories"],
     staleTime: 1000 * 60 * 5,
+    enabled: belowFoldReady,
     queryFn: fetchHomepageFeaturedCategories,
   });
 
   const { data: showcases } = useQuery({
     queryKey: ["homepage-showcases"],
     staleTime: 1000 * 60 * 5,
+    enabled: belowFoldReady,
     queryFn: fetchHomepageShowcasesPublic,
   });
 
@@ -189,6 +274,7 @@ function HomePage() {
   );
   // Prefetch do catálogo (adiado até idle para não competir com LCP)
   useEffect(() => {
+    if (!belowFoldReady) return;
     const run = () => {
       queryClient.prefetchQuery({
         queryKey: ["products", "catalog", undefined, undefined, 1],
@@ -218,7 +304,7 @@ function HomePage() {
     }
     const t = window.setTimeout(run, 1500);
     return () => clearTimeout(t);
-  }, [queryClient]);
+  }, [queryClient, belowFoldReady]);
 
   type PromoCardItem = {
     key: string;
@@ -375,8 +461,6 @@ function HomePage() {
         }));
 
   // ---- Renderizadores por section_key ----
-  // Cada bloco continua exatamente o mesmo JSX da versão anterior, apenas envolvido
-  // em uma função para que a ordem/visibilidade possa ser controlada via homepage_sections.
 
   const renderHero = () => (
     <div key="hero">
