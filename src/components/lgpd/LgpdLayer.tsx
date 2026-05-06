@@ -1,13 +1,17 @@
-import { lazy, Suspense, useEffect, useState } from 'react';
+import { lazy, Suspense, useEffect, useState } from "react";
 
 const CookieBanner = lazy(() =>
-  import('@/components/lgpd/CookieBanner').then((module) => ({ default: module.CookieBanner }))
+  import("@/components/lgpd/CookieBanner").then((module) => ({ default: module.CookieBanner })),
 );
 const CookiePreferencesModal = lazy(() =>
-  import('@/components/lgpd/CookiePreferencesModal').then((module) => ({ default: module.CookiePreferencesModal }))
+  import("@/components/lgpd/CookiePreferencesModal").then((module) => ({
+    default: module.CookiePreferencesModal,
+  })),
 );
 const ConditionalScripts = lazy(() =>
-  import('@/components/lgpd/ConditionalScripts').then((module) => ({ default: module.ConditionalScripts }))
+  import("@/components/lgpd/ConditionalScripts").then((module) => ({
+    default: module.ConditionalScripts,
+  })),
 );
 
 export function LgpdLayer() {
@@ -18,7 +22,7 @@ export function LgpdLayer() {
     let timeoutId: number | null = null;
 
     const activateWhenIdle = () => {
-      if (typeof window.requestIdleCallback === 'function') {
+      if (typeof window.requestIdleCallback === "function") {
         idleId = window.requestIdleCallback(() => setEnabled(true), { timeout: 1200 });
         return;
       }
@@ -26,14 +30,14 @@ export function LgpdLayer() {
       timeoutId = window.setTimeout(() => setEnabled(true), 500);
     };
 
-    if (document.readyState === 'complete') {
+    if (document.readyState === "complete") {
       activateWhenIdle();
     } else {
-      window.addEventListener('load', activateWhenIdle, { once: true });
+      window.addEventListener("load", activateWhenIdle, { once: true });
     }
 
     return () => {
-      window.removeEventListener('load', activateWhenIdle);
+      window.removeEventListener("load", activateWhenIdle);
       if (idleId !== null) window.cancelIdleCallback(idleId);
       if (timeoutId !== null) window.clearTimeout(timeoutId);
     };

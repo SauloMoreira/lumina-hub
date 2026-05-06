@@ -1,19 +1,19 @@
-import { useQuery } from '@tanstack/react-query';
-import { Link } from '@tanstack/react-router';
-import { ShoppingBag, BadgePercent, Plus, Sparkles } from 'lucide-react';
-import { toast } from 'sonner';
-import { getCartComplementary } from '@/server/productRelations.functions';
-import { useCart } from '@/stores/cartStore';
-import { formatBRL } from '@/lib/domain';
-import { trackAddToCart } from '@/lib/tracking';
+import { useQuery } from "@tanstack/react-query";
+import { Link } from "@tanstack/react-router";
+import { ShoppingBag, BadgePercent, Plus, Sparkles } from "lucide-react";
+import { toast } from "sonner";
+import { getCartComplementary } from "@/server/productRelations.functions";
+import { useCart } from "@/stores/cartStore";
+import { formatBRL } from "@/lib/domain";
+import { trackAddToCart } from "@/lib/tracking";
 
 export function CartUpsell() {
   const cart = useCart();
   const productIds = cart.items.map((i) => i.productId);
-  const cartKey = productIds.slice().sort().join(',');
+  const cartKey = productIds.slice().sort().join(",");
 
   const { data, isLoading } = useQuery({
-    queryKey: ['cart-complementary', cartKey],
+    queryKey: ["cart-complementary", cartKey],
     queryFn: () =>
       getCartComplementary({
         data: { productIds, limit: 6 },
@@ -36,7 +36,7 @@ export function CartUpsell() {
       </div>
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-3 xl:grid-cols-6 gap-3">
         {items.map((p) => {
-          const isB2b = p.pricing_source === 'b2b';
+          const isB2b = p.pricing_source === "b2b";
           const retail = p.sale_price ?? p.retail_price;
           const showStrike = isB2b && retail > p.applied_price;
           const outOfStock = p.stock_qty <= 0;
@@ -45,9 +45,18 @@ export function CartUpsell() {
               key={p.product_id}
               className="bg-background border border-border rounded-lg overflow-hidden flex flex-col hover:border-primary/40 transition"
             >
-              <Link to="/produto/$slug" params={{ slug: p.slug }} className="block aspect-square bg-surface relative">
+              <Link
+                to="/produto/$slug"
+                params={{ slug: p.slug }}
+                className="block aspect-square bg-surface relative"
+              >
                 {p.image ? (
-                  <img src={p.image} alt={p.name} loading="lazy" className="w-full h-full object-cover" />
+                  <img
+                    src={p.image}
+                    alt={p.name}
+                    loading="lazy"
+                    className="w-full h-full object-cover"
+                  />
                 ) : (
                   <div className="w-full h-full flex items-center justify-center text-text-faint">
                     <ShoppingBag className="w-7 h-7" />
@@ -69,9 +78,13 @@ export function CartUpsell() {
                 </Link>
                 <div className="mt-auto">
                   <div className="flex items-baseline gap-1 flex-wrap">
-                    <span className="font-display font-bold text-primary text-sm">{formatBRL(p.applied_price)}</span>
+                    <span className="font-display font-bold text-primary text-sm">
+                      {formatBRL(p.applied_price)}
+                    </span>
                     {showStrike && (
-                      <span className="text-[10px] text-text-faint line-through">{formatBRL(retail)}</span>
+                      <span className="text-[10px] text-text-faint line-through">
+                        {formatBRL(retail)}
+                      </span>
                     )}
                   </div>
                 </div>
@@ -87,17 +100,14 @@ export function CartUpsell() {
                       stock: p.stock_qty,
                       freeShippingEligible: p.free_shipping_eligible,
                     });
-                    trackAddToCart(
-                      { id: p.product_id, name: p.name, price: p.applied_price },
-                      1,
-                    );
-                    toast.success('Adicionado ao carrinho');
+                    trackAddToCart({ id: p.product_id, name: p.name, price: p.applied_price }, 1);
+                    toast.success("Adicionado ao carrinho");
                   }}
                   disabled={outOfStock}
                   className="mt-1 h-8 rounded-pill bg-accent text-accent-foreground text-[11px] font-semibold inline-flex items-center justify-center gap-1 hover:brightness-95 transition disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   <Plus className="w-3 h-3" />
-                  {outOfStock ? 'Indisponível' : 'Adicionar'}
+                  {outOfStock ? "Indisponível" : "Adicionar"}
                 </button>
               </div>
             </div>

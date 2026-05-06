@@ -1,21 +1,21 @@
-import { createFileRoute, Link } from '@tanstack/react-router';
-import { useMemo, useState } from 'react';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Plus, Pencil, Trash2, X, Tag } from 'lucide-react';
-import { toast } from 'sonner';
-import { AdminLayout } from '@/components/admin/AdminLayout';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-import { Switch } from '@/components/ui/switch';
+import { createFileRoute, Link } from "@tanstack/react-router";
+import { useMemo, useState } from "react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { Plus, Pencil, Trash2, X, Tag } from "lucide-react";
+import { toast } from "sonner";
+import { AdminLayout } from "@/components/admin/AdminLayout";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Switch } from "@/components/ui/switch";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
+} from "@/components/ui/select";
 import {
   Dialog,
   DialogContent,
@@ -23,17 +23,17 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from '@/components/ui/dialog';
-import { ATTRIBUTE_SUGGESTIONS } from '@/lib/productAttributes';
+} from "@/components/ui/dialog";
+import { ATTRIBUTE_SUGGESTIONS } from "@/lib/productAttributes";
 import {
   adminListAttributeLabels,
   adminCreateAttributeLabel,
   adminUpdateAttributeLabel,
   adminDeleteAttributeLabel,
   type AttributeLabelRow,
-} from '@/server/productAttributeLabels.functions';
+} from "@/server/productAttributeLabels.functions";
 
-export const Route = createFileRoute('/admin/produtos/atributos-rotulos')({
+export const Route = createFileRoute("/admin/produtos/atributos-rotulos")({
   component: AttributeLabelsAdmin,
 });
 
@@ -49,10 +49,10 @@ type FormState = {
 
 const EMPTY_FORM: FormState = {
   id: null,
-  attributeKey: 'color_temperature',
-  rawValue: '',
-  displayLabel: '',
-  helperText: '',
+  attributeKey: "color_temperature",
+  rawValue: "",
+  displayLabel: "",
+  helperText: "",
   sortOrder: 0,
   isActive: true,
 };
@@ -63,30 +63,30 @@ function attrLabel(key: string): string {
 
 function errorMessage(e: unknown): string {
   const msg = e instanceof Error ? e.message : String(e);
-  if (msg.includes('label_already_exists'))
-    return 'Já existe um rótulo para esse atributo + valor.';
-  if (msg.includes('not_authorized') || msg.includes('not_authenticated'))
-    return 'Você precisa estar logado como administrador.';
-  if (msg.includes('invalid_label')) return 'Rótulo inválido.';
-  if (msg.includes('invalid_value')) return 'Valor técnico inválido.';
-  return msg || 'Erro ao salvar.';
+  if (msg.includes("label_already_exists"))
+    return "Já existe um rótulo para esse atributo + valor.";
+  if (msg.includes("not_authorized") || msg.includes("not_authenticated"))
+    return "Você precisa estar logado como administrador.";
+  if (msg.includes("invalid_label")) return "Rótulo inválido.";
+  if (msg.includes("invalid_value")) return "Valor técnico inválido.";
+  return msg || "Erro ao salvar.";
 }
 
 function AttributeLabelsAdmin() {
   const qc = useQueryClient();
   const [form, setForm] = useState<FormState>(EMPTY_FORM);
   const [open, setOpen] = useState(false);
-  const [keyFilter, setKeyFilter] = useState<string>('all');
+  const [keyFilter, setKeyFilter] = useState<string>("all");
 
   const { data: rows = [], isLoading } = useQuery({
-    queryKey: ['admin-attribute-labels'],
+    queryKey: ["admin-attribute-labels"],
     queryFn: () => adminListAttributeLabels(),
   });
 
   const grouped = useMemo(() => {
     const map = new Map<string, AttributeLabelRow[]>();
     for (const r of rows) {
-      if (keyFilter !== 'all' && r.attribute_key !== keyFilter) continue;
+      if (keyFilter !== "all" && r.attribute_key !== keyFilter) continue;
       const arr = map.get(r.attribute_key) ?? [];
       arr.push(r);
       map.set(r.attribute_key, arr);
@@ -113,9 +113,9 @@ function AttributeLabelsAdmin() {
         },
       }),
     onSuccess: () => {
-      toast.success('Rótulo criado.');
-      qc.invalidateQueries({ queryKey: ['admin-attribute-labels'] });
-      qc.invalidateQueries({ queryKey: ['public-attribute-labels'] });
+      toast.success("Rótulo criado.");
+      qc.invalidateQueries({ queryKey: ["admin-attribute-labels"] });
+      qc.invalidateQueries({ queryKey: ["public-attribute-labels"] });
       setOpen(false);
       setForm(EMPTY_FORM);
     },
@@ -135,9 +135,9 @@ function AttributeLabelsAdmin() {
         },
       }),
     onSuccess: () => {
-      toast.success('Rótulo atualizado.');
-      qc.invalidateQueries({ queryKey: ['admin-attribute-labels'] });
-      qc.invalidateQueries({ queryKey: ['public-attribute-labels'] });
+      toast.success("Rótulo atualizado.");
+      qc.invalidateQueries({ queryKey: ["admin-attribute-labels"] });
+      qc.invalidateQueries({ queryKey: ["public-attribute-labels"] });
       setOpen(false);
       setForm(EMPTY_FORM);
     },
@@ -148,8 +148,8 @@ function AttributeLabelsAdmin() {
     mutationFn: (row: AttributeLabelRow) =>
       adminUpdateAttributeLabel({ data: { id: row.id, isActive: !row.is_active } }),
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ['admin-attribute-labels'] });
-      qc.invalidateQueries({ queryKey: ['public-attribute-labels'] });
+      qc.invalidateQueries({ queryKey: ["admin-attribute-labels"] });
+      qc.invalidateQueries({ queryKey: ["public-attribute-labels"] });
     },
     onError: (e) => toast.error(errorMessage(e)),
   });
@@ -157,9 +157,9 @@ function AttributeLabelsAdmin() {
   const deleteMut = useMutation({
     mutationFn: (id: string) => adminDeleteAttributeLabel({ data: { id } }),
     onSuccess: () => {
-      toast.success('Rótulo removido.');
-      qc.invalidateQueries({ queryKey: ['admin-attribute-labels'] });
-      qc.invalidateQueries({ queryKey: ['public-attribute-labels'] });
+      toast.success("Rótulo removido.");
+      qc.invalidateQueries({ queryKey: ["admin-attribute-labels"] });
+      qc.invalidateQueries({ queryKey: ["public-attribute-labels"] });
     },
     onError: (e) => toast.error(errorMessage(e)),
   });
@@ -175,7 +175,7 @@ function AttributeLabelsAdmin() {
       attributeKey: row.attribute_key,
       rawValue: row.raw_value,
       displayLabel: row.display_label,
-      helperText: row.helper_text ?? '',
+      helperText: row.helper_text ?? "",
       sortOrder: row.sort_order,
       isActive: row.is_active,
     });
@@ -192,9 +192,9 @@ function AttributeLabelsAdmin() {
               <h1 className="font-display text-2xl font-bold">Rótulos amigáveis de atributos</h1>
             </div>
             <p className="text-sm text-muted-foreground max-w-2xl mt-1">
-              Configure como valores técnicos aparecem na loja. Ex.: <strong>6500K</strong> →{' '}
-              <em>Luz fria</em>. Esses rótulos aparecem na ficha técnica do produto e nos filtros
-              do catálogo. Sem rótulo, exibimos o valor técnico original.
+              Configure como valores técnicos aparecem na loja. Ex.: <strong>6500K</strong> →{" "}
+              <em>Luz fria</em>. Esses rótulos aparecem na ficha técnica do produto e nos filtros do
+              catálogo. Sem rótulo, exibimos o valor técnico original.
             </p>
             <p className="text-xs text-muted-foreground mt-2">
               <Link to="/admin/produtos" className="underline hover:text-foreground">
@@ -293,7 +293,7 @@ function AttributeLabelsAdmin() {
         <Dialog open={open} onOpenChange={setOpen}>
           <DialogContent className="max-w-lg">
             <DialogHeader>
-              <DialogTitle>{form.id ? 'Editar rótulo' : 'Novo rótulo'}</DialogTitle>
+              <DialogTitle>{form.id ? "Editar rótulo" : "Novo rótulo"}</DialogTitle>
               <DialogDescription>
                 Define como um valor técnico aparece para o cliente.
               </DialogDescription>
@@ -388,7 +388,7 @@ function AttributeLabelsAdmin() {
                   !form.displayLabel.trim()
                 }
               >
-                {form.id ? 'Salvar' : 'Criar rótulo'}
+                {form.id ? "Salvar" : "Criar rótulo"}
               </Button>
             </DialogFooter>
           </DialogContent>

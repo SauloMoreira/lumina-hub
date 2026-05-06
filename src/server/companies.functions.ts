@@ -1,15 +1,15 @@
-import { createServerFn } from '@tanstack/react-start';
-import { z } from 'zod';
-import { requireSupabaseAuth } from '@/integrations/supabase/auth-middleware';
-import { supabaseAdmin } from '@/integrations/supabase/client.server';
-import { isValidCNPJ, onlyDigits } from '@/lib/cnpj';
-import { decideAutoApproval, lookupCnpj } from './cnpjLookup';
+import { createServerFn } from "@tanstack/react-start";
+import { z } from "zod";
+import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { supabaseAdmin } from "@/integrations/supabase/client.server";
+import { isValidCNPJ, onlyDigits } from "@/lib/cnpj";
+import { decideAutoApproval, lookupCnpj } from "./cnpjLookup";
 
 const cnpjSchema = z
   .string()
   .transform((v) => onlyDigits(v))
-  .refine((v) => v.length === 14, 'CNPJ deve ter 14 dígitos')
-  .refine((v) => isValidCNPJ(v), 'CNPJ inválido');
+  .refine((v) => v.length === 14, "CNPJ deve ter 14 dígitos")
+  .refine((v) => isValidCNPJ(v), "CNPJ inválido");
 
 const createCompanyInput = z.object({
   cnpj: cnpjSchema,
@@ -29,7 +29,7 @@ const createCompanyInput = z.object({
   address_state: z.string().trim().max(2).optional().nullable(),
 });
 
-export const createCompany = createServerFn({ method: 'POST' })
+export const createCompany = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((data: unknown) => createCompanyInput.parse(data))
   .handler(async ({ data, context }) => {
@@ -37,13 +37,13 @@ export const createCompany = createServerFn({ method: 'POST' })
 
     // Verifica duplicidade
     const { data: existing } = await supabaseAdmin
-      .from('companies')
-      .select('id, status')
-      .eq('cnpj', data.cnpj)
+      .from("companies")
+      .select("id, status")
+      .eq("cnpj", data.cnpj)
       .maybeSingle();
     if (existing) {
       throw new Error(
-        'Já existe uma empresa cadastrada com este CNPJ. Faça login ou solicite acesso.',
+        "Já existe uma empresa cadastrada com este CNPJ. Faça login ou solicite acesso.",
       );
     }
 
@@ -55,7 +55,7 @@ export const createCompany = createServerFn({ method: 'POST' })
     const adminNoteParts: string[] = [];
     if (cnpjInfo.ok) {
       adminNoteParts.push(
-        `ReceitaWS: ${cnpjInfo.situation || 'sem situação'}; abertura ${cnpjInfo.openedAt ?? 'n/d'}; razão "${cnpjInfo.legalName}"`,
+        `ReceitaWS: ${cnpjInfo.situation || "sem situação"}; abertura ${cnpjInfo.openedAt ?? "n/d"}; razão "${cnpjInfo.legalName}"`,
       );
     } else {
       adminNoteParts.push(`ReceitaWS indisponível: ${cnpjInfo.reason}`);
@@ -64,7 +64,7 @@ export const createCompany = createServerFn({ method: 'POST' })
 
     // Insere empresa via admin (auth já validada pelo middleware).
     const { data: company, error } = await supabaseAdmin
-      .from('companies')
+      .from("companies")
       .insert({
         cnpj: data.cnpj,
         legal_name: data.legal_name,
@@ -81,51 +81,51 @@ export const createCompany = createServerFn({ method: 'POST' })
         address_neighborhood: data.address_neighborhood ?? null,
         address_city: data.address_city ?? null,
         address_state: data.address_state ?? null,
-        status: autoApproved ? 'approved' : 'pending',
+        status: autoApproved ? "approved" : "pending",
         approved_at: autoApproved ? new Date().toISOString() : null,
         approved_by: null,
         blocked_at: null,
         blocked_by: null,
-        admin_notes: adminNoteParts.join(' | '),
+        admin_notes: adminNoteParts.join(" | "),
       })
-      .select('id')
+      .select("id")
       .single();
 
     if (error || !company) {
-      throw new Error(error?.message ?? 'Não foi possível cadastrar a empresa.');
+      throw new Error(error?.message ?? "Não foi possível cadastrar a empresa.");
     }
 
     // Vincula usuário como owner
-    const { error: linkErr } = await supabaseAdmin.from('company_users').insert({
+    const { error: linkErr } = await supabaseAdmin.from("company_users").insert({
       company_id: company.id,
       user_id: userId,
-      role: 'owner',
+      role: "owner",
     });
     if (linkErr) {
-      await supabaseAdmin.from('companies').delete().eq('id', company.id);
-      throw new Error('Falha ao vincular usuário à empresa: ' + linkErr.message);
+      await supabaseAdmin.from("companies").delete().eq("id", company.id);
+      throw new Error("Falha ao vincular usuário à empresa: " + linkErr.message);
     }
 
     return { id: company.id, auto_approved: autoApproved, reason: decision.reason };
   });
 
-export const getMyCompany = createServerFn({ method: 'GET' })
+export const getMyCompany = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
     const { supabase, userId } = context;
     const { data: link } = await supabase
-      .from('company_users')
-      .select('company_id, role')
-      .eq('user_id', userId)
-      .order('created_at', { ascending: true })
+      .from("company_users")
+      .select("company_id, role")
+      .eq("user_id", userId)
+      .order("created_at", { ascending: true })
       .limit(1)
       .maybeSingle();
     if (!link) return { company: null };
 
     const { data: company } = await supabase
-      .from('companies')
-      .select('*')
-      .eq('id', link.company_id)
+      .from("companies")
+      .select("*")
+      .eq("id", link.company_id)
       .maybeSingle();
 
     return { company: company ?? null, role: link.role };
@@ -133,12 +133,12 @@ export const getMyCompany = createServerFn({ method: 'GET' })
 
 const updateStatusInput = z.object({
   company_id: z.string().uuid(),
-  status: z.enum(['approved', 'rejected', 'blocked', 'pending']),
+  status: z.enum(["approved", "rejected", "blocked", "pending"]),
   rejection_reason: z.string().max(500).optional().nullable(),
   admin_notes: z.string().max(1000).optional().nullable(),
 });
 
-export const adminUpdateCompanyStatus = createServerFn({ method: 'POST' })
+export const adminUpdateCompanyStatus = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((data: unknown) => updateStatusInput.parse(data))
   .handler(async ({ data, context }) => {
@@ -146,14 +146,14 @@ export const adminUpdateCompanyStatus = createServerFn({ method: 'POST' })
 
     // verifica admin
     const { data: prof } = await supabaseAdmin
-      .from('profiles')
-      .select('role')
-      .eq('id', userId)
+      .from("profiles")
+      .select("role")
+      .eq("id", userId)
       .maybeSingle();
-    if (prof?.role !== 'admin') throw new Error('Acesso negado');
+    if (prof?.role !== "admin") throw new Error("Acesso negado");
 
     const patch: {
-      status: 'approved' | 'rejected' | 'blocked' | 'pending';
+      status: "approved" | "rejected" | "blocked" | "pending";
       admin_notes: string | null;
       rejection_reason: string | null;
       approved_at?: string | null;
@@ -163,19 +163,19 @@ export const adminUpdateCompanyStatus = createServerFn({ method: 'POST' })
     } = {
       status: data.status,
       admin_notes: data.admin_notes ?? null,
-      rejection_reason: data.status === 'rejected' ? (data.rejection_reason ?? null) : null,
+      rejection_reason: data.status === "rejected" ? (data.rejection_reason ?? null) : null,
     };
-    if (data.status === 'approved') {
+    if (data.status === "approved") {
       patch.approved_at = new Date().toISOString();
       patch.approved_by = userId;
       patch.blocked_at = null;
       patch.blocked_by = null;
     }
-    if (data.status === 'blocked') {
+    if (data.status === "blocked") {
       patch.blocked_at = new Date().toISOString();
       patch.blocked_by = userId;
     }
-    if (data.status === 'pending') {
+    if (data.status === "pending") {
       patch.approved_at = null;
       patch.approved_by = null;
       patch.blocked_at = null;
@@ -183,40 +183,37 @@ export const adminUpdateCompanyStatus = createServerFn({ method: 'POST' })
     }
 
     const { data: prevCompany } = await supabaseAdmin
-      .from('companies')
-      .select('legal_name, trade_name, cnpj, status')
-      .eq('id', data.company_id)
+      .from("companies")
+      .select("legal_name, trade_name, cnpj, status")
+      .eq("id", data.company_id)
       .maybeSingle();
 
-    const { error } = await supabaseAdmin
-      .from('companies')
-      .update(patch)
-      .eq('id', data.company_id);
+    const { error } = await supabaseAdmin.from("companies").update(patch).eq("id", data.company_id);
     if (error) throw new Error(error.message);
 
     try {
-      const { logAdminAction } = await import('./security/auditLog');
+      const { logAdminAction } = await import("./security/auditLog");
       const statusLabel: Record<string, string> = {
-        approved: 'aprovada',
-        rejected: 'rejeitada',
-        blocked: 'bloqueada',
-        pending: 'marcada como pendente',
+        approved: "aprovada",
+        rejected: "rejeitada",
+        blocked: "bloqueada",
+        pending: "marcada como pendente",
       };
       const actionMap: Record<string, string> = {
-        approved: 'b2b_company_approved',
-        rejected: 'b2b_company_rejected',
-        blocked: 'b2b_company_blocked',
-        pending: 'b2b_company_unblocked',
+        approved: "b2b_company_approved",
+        rejected: "b2b_company_rejected",
+        blocked: "b2b_company_blocked",
+        pending: "b2b_company_unblocked",
       };
       const companyName =
         (prevCompany as { trade_name?: string | null; legal_name?: string | null } | null)
           ?.trade_name ??
         (prevCompany as { legal_name?: string | null } | null)?.legal_name ??
-        'Empresa';
+        "Empresa";
       await logAdminAction({
         adminId: userId,
-        action: actionMap[data.status] ?? 'b2b_company_updated',
-        resourceType: 'company',
+        action: actionMap[data.status] ?? "b2b_company_updated",
+        resourceType: "company",
         resourceId: data.company_id,
         description: `Empresa ${companyName} ${statusLabel[data.status] ?? data.status} para compras B2B.`,
         before: { status: (prevCompany as { status?: string } | null)?.status ?? null },
@@ -234,15 +231,12 @@ export const adminUpdateCompanyStatus = createServerFn({ method: 'POST' })
     return { ok: true };
   });
 
-export const adminListCompanies = createServerFn({ method: 'POST' })
+export const adminListCompanies = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((data: unknown) =>
     z
       .object({
-        status: z
-          .enum(['pending', 'approved', 'blocked', 'rejected'])
-          .optional()
-          .nullable(),
+        status: z.enum(["pending", "approved", "blocked", "rejected"]).optional().nullable(),
         search: z.string().max(100).optional().nullable(),
       })
       .parse(data),
@@ -250,18 +244,18 @@ export const adminListCompanies = createServerFn({ method: 'POST' })
   .handler(async ({ data, context }) => {
     const { userId } = context;
     const { data: prof } = await supabaseAdmin
-      .from('profiles')
-      .select('role')
-      .eq('id', userId)
+      .from("profiles")
+      .select("role")
+      .eq("id", userId)
       .maybeSingle();
-    if (prof?.role !== 'admin') throw new Error('Acesso negado');
+    if (prof?.role !== "admin") throw new Error("Acesso negado");
 
     let q = supabaseAdmin
-      .from('companies')
-      .select('*')
-      .order('created_at', { ascending: false })
+      .from("companies")
+      .select("*")
+      .order("created_at", { ascending: false })
       .limit(200);
-    if (data.status) q = q.eq('status', data.status);
+    if (data.status) q = q.eq("status", data.status);
     if (data.search && data.search.trim()) {
       const s = `%${data.search.trim()}%`;
       q = q.or(`legal_name.ilike.${s},trade_name.ilike.${s},cnpj.ilike.${s}`);

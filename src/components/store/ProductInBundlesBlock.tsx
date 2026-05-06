@@ -1,31 +1,33 @@
-import { Link } from '@tanstack/react-router';
-import { useQuery } from '@tanstack/react-query';
-import { Package, ChevronRight } from 'lucide-react';
-import { listPublicBundlesByProduct } from '@/server/productBundles.functions';
-import { formatBRL } from '@/lib/domain';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
+import { Link } from "@tanstack/react-router";
+import { useQuery } from "@tanstack/react-query";
+import { Package, ChevronRight } from "lucide-react";
+import { listPublicBundlesByProduct } from "@/server/productBundles.functions";
+import { formatBRL } from "@/lib/domain";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 
 const MAX_VISIBLE = 4;
 
-function availabilityLabel(a: string): { label: string; variant: 'default' | 'secondary' | 'destructive' | 'outline' } {
+function availabilityLabel(a: string): {
+  label: string;
+  variant: "default" | "secondary" | "destructive" | "outline";
+} {
   switch (a) {
-    case 'available':
-      return { label: 'Disponível', variant: 'default' };
-    case 'partial':
-      return { label: 'Parcialmente disponível', variant: 'secondary' };
-    case 'unavailable':
-      return { label: 'Indisponível', variant: 'destructive' };
+    case "available":
+      return { label: "Disponível", variant: "default" };
+    case "partial":
+      return { label: "Parcialmente disponível", variant: "secondary" };
+    case "unavailable":
+      return { label: "Indisponível", variant: "destructive" };
     default:
-      return { label: 'Em revisão', variant: 'outline' };
+      return { label: "Em revisão", variant: "outline" };
   }
 }
 
 export function ProductInBundlesBlock({ productId }: { productId: string }) {
   const { data, isLoading } = useQuery({
-    queryKey: ['product-in-bundles', productId, MAX_VISIBLE],
-    queryFn: () =>
-      listPublicBundlesByProduct({ data: { productId, limit: MAX_VISIBLE } }),
+    queryKey: ["product-in-bundles", productId, MAX_VISIBLE],
+    queryFn: () => listPublicBundlesByProduct({ data: { productId, limit: MAX_VISIBLE } }),
     staleTime: 60_000,
   });
 
@@ -41,10 +43,7 @@ export function ProductInBundlesBlock({ productId }: { productId: string }) {
       <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
         <div className="flex items-center gap-2">
           <Package className="h-5 w-5 text-primary" aria-hidden />
-          <h2
-            id="product-in-bundles-heading"
-            className="text-xl font-semibold text-foreground"
-          >
+          <h2 id="product-in-bundles-heading" className="text-xl font-semibold text-foreground">
             Faz parte de um kit
           </h2>
         </div>
@@ -68,7 +67,7 @@ export function ProductInBundlesBlock({ productId }: { productId: string }) {
             >
               <Link
                 to="/combo/$slug"
-                params={{ slug: b.slug ?? '' }}
+                params={{ slug: b.slug ?? "" }}
                 className="block aspect-video w-full overflow-hidden bg-muted"
               >
                 {b.image_url ? (
@@ -87,26 +86,22 @@ export function ProductInBundlesBlock({ productId }: { productId: string }) {
 
               <div className="flex flex-1 flex-col gap-2 p-4">
                 <div className="flex items-start justify-between gap-2">
-                  <h3 className="line-clamp-2 text-sm font-semibold text-foreground">
-                    {b.name}
-                  </h3>
+                  <h3 className="line-clamp-2 text-sm font-semibold text-foreground">{b.name}</h3>
                   <Badge variant={av.variant} className="shrink-0 text-[10px]">
                     {av.label}
                   </Badge>
                 </div>
                 {b.description ? (
-                  <p className="line-clamp-2 text-xs text-muted-foreground">
-                    {b.description}
-                  </p>
+                  <p className="line-clamp-2 text-xs text-muted-foreground">{b.description}</p>
                 ) : null}
                 <div className="mt-1 text-xs text-muted-foreground">
-                  {b.items_count} {b.items_count === 1 ? 'item' : 'itens'}
+                  {b.items_count} {b.items_count === 1 ? "item" : "itens"}
                 </div>
                 <div className="text-sm font-medium text-foreground">
                   Subtotal estimado: {formatBRL(b.subtotal)}
                 </div>
                 <Button asChild size="sm" className="mt-2 w-full">
-                  <Link to="/combo/$slug" params={{ slug: b.slug ?? '' }}>
+                  <Link to="/combo/$slug" params={{ slug: b.slug ?? "" }}>
                     Ver kit
                   </Link>
                 </Button>

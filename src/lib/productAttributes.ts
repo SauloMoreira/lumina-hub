@@ -22,17 +22,33 @@ export type AttributeSuggestion = {
 };
 
 export const ATTRIBUTE_SUGGESTIONS: AttributeSuggestion[] = [
-  { key: 'power', label: 'Potência', unit: 'W', placeholder: '18', description: 'Potência elétrica do produto.' },
-  { key: 'color_temperature', label: 'Temperatura de cor', unit: 'K', placeholder: '6500', description: '3000K quente, 4000K neutra, 6500K fria.' },
-  { key: 'voltage', label: 'Voltagem', placeholder: '127V, 220V ou Bivolt' },
-  { key: 'ip_rating', label: 'Proteção IP', placeholder: 'IP65' },
-  { key: 'luminous_flux', label: 'Fluxo luminoso', unit: 'lm', placeholder: '1500' },
-  { key: 'color', label: 'Cor', placeholder: 'Branco, Preto…' },
-  { key: 'material', label: 'Material', placeholder: 'Alumínio, Plástico…' },
-  { key: 'application', label: 'Aplicação', placeholder: 'Interno, Externo, Industrial…' },
-  { key: 'installation_type', label: 'Tipo de instalação', placeholder: 'Embutir, Sobrepor, Pendente…' },
-  { key: 'warranty', label: 'Garantia', placeholder: '12 meses' },
-  { key: 'brand', label: 'Marca', placeholder: 'Ex.: Ourolux' },
+  {
+    key: "power",
+    label: "Potência",
+    unit: "W",
+    placeholder: "18",
+    description: "Potência elétrica do produto.",
+  },
+  {
+    key: "color_temperature",
+    label: "Temperatura de cor",
+    unit: "K",
+    placeholder: "6500",
+    description: "3000K quente, 4000K neutra, 6500K fria.",
+  },
+  { key: "voltage", label: "Voltagem", placeholder: "127V, 220V ou Bivolt" },
+  { key: "ip_rating", label: "Proteção IP", placeholder: "IP65" },
+  { key: "luminous_flux", label: "Fluxo luminoso", unit: "lm", placeholder: "1500" },
+  { key: "color", label: "Cor", placeholder: "Branco, Preto…" },
+  { key: "material", label: "Material", placeholder: "Alumínio, Plástico…" },
+  { key: "application", label: "Aplicação", placeholder: "Interno, Externo, Industrial…" },
+  {
+    key: "installation_type",
+    label: "Tipo de instalação",
+    placeholder: "Embutir, Sobrepor, Pendente…",
+  },
+  { key: "warranty", label: "Garantia", placeholder: "12 meses" },
+  { key: "brand", label: "Marca", placeholder: "Ex.: Ourolux" },
 ];
 
 const SUGGESTION_BY_KEY = new Map(ATTRIBUTE_SUGGESTIONS.map((s) => [s.key, s]));
@@ -45,10 +61,10 @@ export function getSuggestion(key: string): AttributeSuggestion | undefined {
 // Sanitização defensiva — removemos qualquer HTML para evitar XSS.
 // ---------------------------------------------------------------------------
 export function sanitizeAttributeText(input: string | null | undefined, maxLen = 500): string {
-  if (input == null) return '';
+  if (input == null) return "";
   const stripped = String(input)
-    .replace(/<[^>]*>/g, '')
-    .replace(/[\u0000-\u001F\u007F]/g, ' ')
+    .replace(/<[^>]*>/g, "")
+    .replace(/[\u0000-\u001F\u007F]/g, " ")
     .trim();
   return stripped.length > maxLen ? stripped.slice(0, maxLen) : stripped;
 }
@@ -56,8 +72,8 @@ export function sanitizeAttributeText(input: string | null | undefined, maxLen =
 export function normalizeKey(key: string): string {
   return sanitizeAttributeText(key, 80)
     .toLowerCase()
-    .replace(/[^a-z0-9_]+/g, '_')
-    .replace(/^_+|_+$/g, '');
+    .replace(/[^a-z0-9_]+/g, "_")
+    .replace(/^_+|_+$/g, "");
 }
 
 // ---------------------------------------------------------------------------
@@ -73,43 +89,43 @@ export function normalizeAttributeValue(
 ): NormalizedValue {
   const k = normalizeKey(key);
   const value = sanitizeAttributeText(rawValue, 500);
-  const unit = sanitizeAttributeText(rawUnit ?? '', 20);
+  const unit = sanitizeAttributeText(rawUnit ?? "", 20);
 
-  if (!value) return { value: '', unit: unit || null };
+  if (!value) return { value: "", unit: unit || null };
 
   switch (k) {
-    case 'power': {
+    case "power": {
       const m = value.match(/(\d+(?:[.,]\d+)?)\s*w?/i);
-      if (m) return { value: m[1].replace(',', '.'), unit: 'W' };
-      return { value, unit: unit || 'W' };
+      if (m) return { value: m[1].replace(",", "."), unit: "W" };
+      return { value, unit: unit || "W" };
     }
-    case 'color_temperature': {
+    case "color_temperature": {
       const lower = value.toLowerCase();
-      if (/luz\s*quente|branco\s*quente/.test(lower)) return { value: '3000', unit: 'K' };
-      if (/luz\s*neutra|branco\s*neutro/.test(lower)) return { value: '4000', unit: 'K' };
-      if (/luz\s*fria|branco\s*frio/.test(lower)) return { value: '6500', unit: 'K' };
+      if (/luz\s*quente|branco\s*quente/.test(lower)) return { value: "3000", unit: "K" };
+      if (/luz\s*neutra|branco\s*neutro/.test(lower)) return { value: "4000", unit: "K" };
+      if (/luz\s*fria|branco\s*frio/.test(lower)) return { value: "6500", unit: "K" };
       const m = value.match(/(\d{3,5})\s*k?/i);
-      if (m) return { value: m[1], unit: 'K' };
-      return { value, unit: unit || 'K' };
+      if (m) return { value: m[1], unit: "K" };
+      return { value, unit: unit || "K" };
     }
-    case 'voltage': {
-      const lower = value.toLowerCase().replace(/\s+/g, '');
-      if (/bi-?volt|biv/.test(lower)) return { value: 'Bivolt', unit: null };
+    case "voltage": {
+      const lower = value.toLowerCase().replace(/\s+/g, "");
+      if (/bi-?volt|biv/.test(lower)) return { value: "Bivolt", unit: null };
       const m = value.match(/(\d{2,3})\s*v?/i);
       if (m) return { value: `${m[1]}V`, unit: null };
       return { value, unit: unit || null };
     }
-    case 'ip_rating': {
+    case "ip_rating": {
       const m = value.match(/ip\s*(\d{2})/i);
       if (m) return { value: `IP${m[1]}`, unit: null };
-      return { value: value.toUpperCase().replace(/\s+/g, ''), unit: null };
+      return { value: value.toUpperCase().replace(/\s+/g, ""), unit: null };
     }
-    case 'luminous_flux': {
+    case "luminous_flux": {
       const m = value.match(/(\d{2,6})\s*lm?/i);
-      if (m) return { value: m[1], unit: 'lm' };
-      return { value, unit: unit || 'lm' };
+      if (m) return { value: m[1], unit: "lm" };
+      return { value, unit: unit || "lm" };
     }
-    case 'warranty': {
+    case "warranty": {
       const lower = value.toLowerCase();
       const meses = lower.match(/(\d{1,3})\s*(?:m|mes|meses)\b/);
       if (meses) return { value: `${meses[1]} meses`, unit: null };
@@ -129,9 +145,9 @@ export function normalizeAttributeValue(
 // Formatação para exibição.
 // ---------------------------------------------------------------------------
 export function formatAttributeDisplay(value: string, unit?: string | null): string {
-  const v = (value ?? '').trim();
-  if (!v) return '';
-  const u = (unit ?? '').trim();
+  const v = (value ?? "").trim();
+  if (!v) return "";
+  const u = (unit ?? "").trim();
   if (!u) return v;
   // Unidades coladas (W, K, lm) ficam sem espaço; outras com espaço
   const noSpace = /^(W|K|lm|kW|V|Hz|mA|A)$/i.test(u);
@@ -161,9 +177,9 @@ const WARRANTY_MONTHS_RE = /\b(\d{1,3})\s*(?:m|mes|meses)\b\s*(?:de\s*garantia|g
 const WARRANTY_YEARS_RE = /(?:garantia(?:\s*de)?\s*)?(\d{1,2})\s*(?:a|ano|anos)\b/gi;
 
 const COLOR_TEMP_KEYWORDS: Array<{ rx: RegExp; kelvin: string }> = [
-  { rx: /\b(luz\s*quente|branco\s*quente)\b/gi, kelvin: '3000' },
-  { rx: /\b(luz\s*neutra|branco\s*neutro)\b/gi, kelvin: '4000' },
-  { rx: /\b(luz\s*fria|branco\s*frio)\b/gi, kelvin: '6500' },
+  { rx: /\b(luz\s*quente|branco\s*quente)\b/gi, kelvin: "3000" },
+  { rx: /\b(luz\s*neutra|branco\s*neutro)\b/gi, kelvin: "4000" },
+  { rx: /\b(luz\s*fria|branco\s*frio)\b/gi, kelvin: "6500" },
 ];
 
 function uniq<T>(arr: T[]): T[] {
@@ -194,13 +210,13 @@ export type ParseInput = {
 export function parseAttributesFromText(input: ParseInput): ParsedAttribute[] {
   const text = sanitizeAttributeText(
     [
-      input.name ?? '',
-      input.seoTitle ?? '',
-      input.description ?? '',
-      input.seoDescription ?? '',
-      Array.isArray(input.tags) ? input.tags.join(' ') : '',
+      input.name ?? "",
+      input.seoTitle ?? "",
+      input.description ?? "",
+      input.seoDescription ?? "",
+      Array.isArray(input.tags) ? input.tags.join(" ") : "",
     ]
-      .join(' \n ')
+      .join(" \n ")
       .trim(),
     8000,
   );
@@ -209,17 +225,23 @@ export function parseAttributesFromText(input: ParseInput): ParsedAttribute[] {
   const out: ParsedAttribute[] = [];
 
   // Potência
-  const powers = uniq(collectMatches(text, POWER_RE).map((v) => v.replace(',', '.')));
+  const powers = uniq(collectMatches(text, POWER_RE).map((v) => v.replace(",", ".")));
   if (powers.length === 1) {
-    out.push({ key: 'power', label: 'Potência', value: powers[0], unit: 'W', match: `${powers[0]}W` });
+    out.push({
+      key: "power",
+      label: "Potência",
+      value: powers[0],
+      unit: "W",
+      match: `${powers[0]}W`,
+    });
   } else if (powers.length > 1) {
     out.push({
-      key: 'power',
-      label: 'Potência',
+      key: "power",
+      label: "Potência",
       value: powers[0],
-      unit: 'W',
+      unit: "W",
       conflict: powers.map((p) => `${p}W`),
-      match: powers.join(' / '),
+      match: powers.join(" / "),
     });
   }
 
@@ -231,35 +253,35 @@ export function parseAttributesFromText(input: ParseInput): ParsedAttribute[] {
   const kelvinsUniq = uniq(kelvins);
   if (kelvinsUniq.length === 1) {
     out.push({
-      key: 'color_temperature',
-      label: 'Temperatura de cor',
+      key: "color_temperature",
+      label: "Temperatura de cor",
       value: kelvinsUniq[0],
-      unit: 'K',
+      unit: "K",
       match: `${kelvinsUniq[0]}K`,
     });
   } else if (kelvinsUniq.length > 1) {
     out.push({
-      key: 'color_temperature',
-      label: 'Temperatura de cor',
+      key: "color_temperature",
+      label: "Temperatura de cor",
       value: kelvinsUniq[0],
-      unit: 'K',
+      unit: "K",
       conflict: kelvinsUniq.map((k) => `${k}K`),
-      match: kelvinsUniq.join(' / '),
+      match: kelvinsUniq.join(" / "),
     });
   }
 
   // Proteção IP
   const ips = uniq(collectMatches(text, IP_RE).map((v) => `IP${v}`));
   if (ips.length === 1) {
-    out.push({ key: 'ip_rating', label: 'Proteção IP', value: ips[0], unit: null, match: ips[0] });
+    out.push({ key: "ip_rating", label: "Proteção IP", value: ips[0], unit: null, match: ips[0] });
   } else if (ips.length > 1) {
     out.push({
-      key: 'ip_rating',
-      label: 'Proteção IP',
+      key: "ip_rating",
+      label: "Proteção IP",
       value: ips[0],
       unit: null,
       conflict: ips,
-      match: ips.join(' / '),
+      match: ips.join(" / "),
     });
   }
 
@@ -268,25 +290,31 @@ export function parseAttributesFromText(input: ParseInput): ParsedAttribute[] {
   const reVolt = new RegExp(VOLT_RE.source, VOLT_RE.flags);
   let mv: RegExpExecArray | null;
   while ((mv = reVolt.exec(text)) !== null) {
-    if (mv[2]) voltMatches.push('Bivolt');
+    if (mv[2]) voltMatches.push("Bivolt");
     else if (mv[1]) voltMatches.push(`${mv[1]}V`);
     if (reVolt.lastIndex === mv.index) reVolt.lastIndex++;
   }
   const volts = uniq(voltMatches);
   if (volts.length === 1) {
-    out.push({ key: 'voltage', label: 'Voltagem', value: volts[0], unit: null, match: volts[0] });
+    out.push({ key: "voltage", label: "Voltagem", value: volts[0], unit: null, match: volts[0] });
   } else if (volts.length > 1) {
     // Bivolt + 127/220 não é conflito real — bivolt vence
-    if (volts.includes('Bivolt')) {
-      out.push({ key: 'voltage', label: 'Voltagem', value: 'Bivolt', unit: null, match: volts.join(' / ') });
+    if (volts.includes("Bivolt")) {
+      out.push({
+        key: "voltage",
+        label: "Voltagem",
+        value: "Bivolt",
+        unit: null,
+        match: volts.join(" / "),
+      });
     } else {
       out.push({
-        key: 'voltage',
-        label: 'Voltagem',
+        key: "voltage",
+        label: "Voltagem",
         value: volts[0],
         unit: null,
         conflict: volts,
-        match: volts.join(' / '),
+        match: volts.join(" / "),
       });
     }
   }
@@ -295,20 +323,20 @@ export function parseAttributesFromText(input: ParseInput): ParsedAttribute[] {
   const lumens = uniq(collectMatches(text, LUMEN_RE));
   if (lumens.length === 1) {
     out.push({
-      key: 'luminous_flux',
-      label: 'Fluxo luminoso',
+      key: "luminous_flux",
+      label: "Fluxo luminoso",
       value: lumens[0],
-      unit: 'lm',
+      unit: "lm",
       match: `${lumens[0]}lm`,
     });
   } else if (lumens.length > 1) {
     out.push({
-      key: 'luminous_flux',
-      label: 'Fluxo luminoso',
+      key: "luminous_flux",
+      label: "Fluxo luminoso",
       value: lumens[0],
-      unit: 'lm',
+      unit: "lm",
       conflict: lumens.map((l) => `${l}lm`),
-      match: lumens.join(' / '),
+      match: lumens.join(" / "),
     });
   }
 
@@ -318,8 +346,8 @@ export function parseAttributesFromText(input: ParseInput): ParsedAttribute[] {
   if (monthMatches.length > 0) {
     const months = monthMatches[0];
     out.push({
-      key: 'warranty',
-      label: 'Garantia',
+      key: "warranty",
+      label: "Garantia",
       value: `${months} meses`,
       unit: null,
       match: `${months} meses`,
@@ -328,8 +356,8 @@ export function parseAttributesFromText(input: ParseInput): ParsedAttribute[] {
     const years = Number(yearMatches[0]);
     if (Number.isFinite(years) && years > 0 && years < 25) {
       out.push({
-        key: 'warranty',
-        label: 'Garantia',
+        key: "warranty",
+        label: "Garantia",
         value: `${years * 12} meses`,
         unit: null,
         match: `${years} ano(s)`,

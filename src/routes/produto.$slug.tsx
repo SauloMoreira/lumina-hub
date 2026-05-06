@@ -1,20 +1,20 @@
-import { createFileRoute, Link, notFound, useNavigate } from '@tanstack/react-router';
-import { useQuery } from '@tanstack/react-query';
-import { useEffect, useState } from 'react';
-import { ShoppingCart, Truck, Shield, ChevronRight, Check, Zap } from 'lucide-react';
-import { toast } from 'sonner';
-import { StoreLayout } from '@/components/layout/StoreLayout';
-import { supabase } from '@/integrations/supabase/client';
-import type { Product } from '@/lib/domain';
-import { formatBRL } from '@/lib/domain';
-import { useCart } from '@/stores/cartStore';
-import { buildSeo, SITE_URL, clamp } from '@/lib/seo';
-import { trackViewProduct, trackAddToCart } from '@/lib/tracking';
-import { ProductGallery } from '@/components/store/ProductGallery';
-import { pickUrl, type ProductImageRow } from '@/lib/productImages';
-import { RelatedProductsBlock } from '@/components/store/RelatedProductsBlock';
-import { ProductInBundlesBlock } from '@/components/store/ProductInBundlesBlock';
-import { ProductSpecsBlock } from '@/components/store/ProductSpecsBlock';
+import { createFileRoute, Link, notFound, useNavigate } from "@tanstack/react-router";
+import { useQuery } from "@tanstack/react-query";
+import { useEffect, useState } from "react";
+import { ShoppingCart, Truck, Shield, ChevronRight, Check, Zap } from "lucide-react";
+import { toast } from "sonner";
+import { StoreLayout } from "@/components/layout/StoreLayout";
+import { supabase } from "@/integrations/supabase/client";
+import type { Product } from "@/lib/domain";
+import { formatBRL } from "@/lib/domain";
+import { useCart } from "@/stores/cartStore";
+import { buildSeo, SITE_URL, clamp } from "@/lib/seo";
+import { trackViewProduct, trackAddToCart } from "@/lib/tracking";
+import { ProductGallery } from "@/components/store/ProductGallery";
+import { pickUrl, type ProductImageRow } from "@/lib/productImages";
+import { RelatedProductsBlock } from "@/components/store/RelatedProductsBlock";
+import { ProductInBundlesBlock } from "@/components/store/ProductInBundlesBlock";
+import { ProductSpecsBlock } from "@/components/store/ProductSpecsBlock";
 
 type FaqItem = { question: string; answer: string };
 type ProductWithSeo = Product & {
@@ -25,120 +25,144 @@ type ProductWithSeo = Product & {
 };
 
 function extractFaq(specs: Record<string, unknown> | null | undefined): FaqItem[] {
-  const raw = specs && typeof specs === 'object' ? (specs as Record<string, unknown>).seo_faq : null;
+  const raw =
+    specs && typeof specs === "object" ? (specs as Record<string, unknown>).seo_faq : null;
   if (!Array.isArray(raw)) return [];
   return raw
-    .filter((x): x is FaqItem => !!x && typeof x === 'object' && typeof (x as FaqItem).question === 'string' && typeof (x as FaqItem).answer === 'string')
+    .filter(
+      (x): x is FaqItem =>
+        !!x &&
+        typeof x === "object" &&
+        typeof (x as FaqItem).question === "string" &&
+        typeof (x as FaqItem).answer === "string",
+    )
     .slice(0, 6);
 }
 
-function buildProductJsonLd(p: ProductWithSeo, finalPrice: number, baseDesc: string, allImageUrls: string[]) {
+function buildProductJsonLd(
+  p: ProductWithSeo,
+  finalPrice: number,
+  baseDesc: string,
+  allImageUrls: string[],
+) {
   return {
-    '@context': 'https://schema.org',
-    '@type': 'Product',
+    "@context": "https://schema.org",
+    "@type": "Product",
     name: p.name,
     description: baseDesc,
     sku: p.sku ?? undefined,
     mpn: p.ncm ?? undefined,
-    brand: { '@type': 'Brand', name: p.brand || 'Led Maricá' },
+    brand: { "@type": "Brand", name: p.brand || "Led Maricá" },
     image: allImageUrls,
     offers: {
-      '@type': 'Offer',
+      "@type": "Offer",
       url: `${SITE_URL}/produto/${p.slug}`,
-      priceCurrency: 'BRL',
+      priceCurrency: "BRL",
       price: finalPrice,
-      priceValidUntil: new Date(Date.now() + 30 * 86400000).toISOString().split('T')[0],
-      availability: p.stock_qty > 0 ? 'https://schema.org/InStock' : 'https://schema.org/OutOfStock',
-      seller: { '@type': 'Organization', name: 'Led Maricá' },
+      priceValidUntil: new Date(Date.now() + 30 * 86400000).toISOString().split("T")[0],
+      availability:
+        p.stock_qty > 0 ? "https://schema.org/InStock" : "https://schema.org/OutOfStock",
+      seller: { "@type": "Organization", name: "Led Maricá" },
     },
   };
 }
 
 function buildFaqJsonLd(faq: FaqItem[]) {
   return {
-    '@context': 'https://schema.org',
-    '@type': 'FAQPage',
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
     mainEntity: faq.map((f) => ({
-      '@type': 'Question',
+      "@type": "Question",
       name: f.question,
-      acceptedAnswer: { '@type': 'Answer', text: f.answer },
+      acceptedAnswer: { "@type": "Answer", text: f.answer },
     })),
   };
 }
 
 function buildBreadcrumbJsonLd(p: ProductWithSeo) {
   return {
-    '@context': 'https://schema.org',
-    '@type': 'BreadcrumbList',
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
     itemListElement: [
-      { '@type': 'ListItem', position: 1, name: 'Início', item: SITE_URL },
-      { '@type': 'ListItem', position: 2, name: 'Catálogo', item: `${SITE_URL}/catalogo` },
-      { '@type': 'ListItem', position: 3, name: p.name, item: `${SITE_URL}/produto/${p.slug}` },
+      { "@type": "ListItem", position: 1, name: "Início", item: SITE_URL },
+      { "@type": "ListItem", position: 2, name: "Catálogo", item: `${SITE_URL}/catalogo` },
+      { "@type": "ListItem", position: 3, name: p.name, item: `${SITE_URL}/produto/${p.slug}` },
     ],
   };
 }
 
 const productQueryOptions = (slug: string) => ({
-  queryKey: ['product', slug],
+  queryKey: ["product", slug],
   queryFn: async () => {
-    const { data, error } = await supabase.from('products').select('*').eq('slug', slug).eq('active', true).maybeSingle();
+    const { data, error } = await supabase
+      .from("products")
+      .select("*")
+      .eq("slug", slug)
+      .eq("active", true)
+      .maybeSingle();
     if (error) throw error;
     if (!data) throw notFound();
     const { data: imgs } = await supabase
-      .from('product_images')
-      .select('*')
-      .eq('product_id', (data as { id: string }).id)
-      .order('is_primary', { ascending: false })
-      .order('sort_order', { ascending: true });
+      .from("product_images")
+      .select("*")
+      .eq("product_id", (data as { id: string }).id)
+      .order("is_primary", { ascending: false })
+      .order("sort_order", { ascending: true });
     return { ...(data as ProductWithSeo), product_images: (imgs ?? []) as ProductImageRow[] };
   },
 });
 
-export const Route = createFileRoute('/produto/$slug')({
+export const Route = createFileRoute("/produto/$slug")({
   loader: async ({ params, context }) => {
     const product = await context.queryClient.ensureQueryData(productQueryOptions(params.slug));
     return { product };
   },
   head: ({ loaderData }) => {
     const p = loaderData?.product;
-    if (!p) return buildSeo({ title: 'Produto', url: '/catalogo' });
+    if (!p) return buildSeo({ title: "Produto", url: "/catalogo" });
     const finalPrice = p.sale_price ?? p.price;
-    const baseDesc = p.description?.trim() || `${p.name} — disponível na Led Maricá com entrega rápida em Maricá/RJ. Frete grátis acima de R$199.`;
+    const baseDesc =
+      p.description?.trim() ||
+      `${p.name} — disponível na Led Maricá com entrega rápida em Maricá/RJ. Frete grátis acima de R$199.`;
     const description = clamp(p.seo_description || baseDesc, 160);
-    const title = p.seo_title || `${p.name}${p.brand ? ' — ' + p.brand : ''}`;
+    const title = p.seo_title || `${p.name}${p.brand ? " — " + p.brand : ""}`;
     const productImages = p.product_images ?? [];
     const allImageUrls = productImages.length
-      ? productImages.map((i) => pickUrl(i, 'full') ?? i.original_url).filter((u): u is string => !!u)
+      ? productImages
+          .map((i) => pickUrl(i, "full") ?? i.original_url)
+          .filter((u): u is string => !!u)
       : (p.images ?? []);
     const ogPrimary = productImages.find((i) => i.is_primary) ?? productImages[0];
-    const image = ogPrimary ? pickUrl(ogPrimary, 'og') ?? ogPrimary.original_url : allImageUrls[0];
+    const image = ogPrimary
+      ? (pickUrl(ogPrimary, "og") ?? ogPrimary.original_url)
+      : allImageUrls[0];
 
     const seo = buildSeo({
       title,
       description,
       url: `/produto/${p.slug}`,
       image: image ?? undefined,
-      type: 'product',
+      type: "product",
       product: {
         price: finalPrice,
-        availability: p.stock_qty > 0 ? 'InStock' : 'OutOfStock',
+        availability: p.stock_qty > 0 ? "InStock" : "OutOfStock",
         sku: p.sku,
         brand: p.brand,
       },
     });
 
-    if (p.seo_keywords) seo.meta.push({ name: 'keywords', content: p.seo_keywords });
+    if (p.seo_keywords) seo.meta.push({ name: "keywords", content: p.seo_keywords });
 
     const productJsonLd = JSON.stringify(buildProductJsonLd(p, finalPrice, baseDesc, allImageUrls));
 
     const faq = extractFaq(p.specs);
     const scripts: Array<{ type: string; children: string }> = [
-      { type: 'application/ld+json', children: productJsonLd },
-      { type: 'application/ld+json', children: JSON.stringify(buildBreadcrumbJsonLd(p)) },
+      { type: "application/ld+json", children: productJsonLd },
+      { type: "application/ld+json", children: JSON.stringify(buildBreadcrumbJsonLd(p)) },
     ];
     if (faq.length > 0) {
       scripts.push({
-        type: 'application/ld+json',
+        type: "application/ld+json",
         children: JSON.stringify(buildFaqJsonLd(faq)),
       });
     }
@@ -150,7 +174,9 @@ export const Route = createFileRoute('/produto/$slug')({
     <StoreLayout>
       <div className="container mx-auto px-4 py-24 text-center">
         <h1 className="font-display text-2xl font-bold mb-2">Produto não encontrado</h1>
-        <Link to="/catalogo" className="text-primary hover:underline">Voltar ao catálogo</Link>
+        <Link to="/catalogo" className="text-primary hover:underline">
+          Voltar ao catálogo
+        </Link>
       </div>
     </StoreLayout>
   ),
@@ -159,15 +185,18 @@ export const Route = createFileRoute('/produto/$slug')({
 function StarRating({ rating, count }: { rating: number; count?: number }) {
   return (
     <div className="flex items-center gap-1.5">
-      <div className="flex items-center text-accent text-sm leading-none" aria-label={`${rating.toFixed(1)} de 5`}>
+      <div
+        className="flex items-center text-accent text-sm leading-none"
+        aria-label={`${rating.toFixed(1)} de 5`}
+      >
         {Array.from({ length: 5 }, (_, i) => {
           const full = i < Math.floor(rating);
           const half = !full && i < rating;
-          return <span key={i}>{full ? '★' : half ? '☆' : '☆'}</span>;
+          return <span key={i}>{full ? "★" : half ? "☆" : "☆"}</span>;
         })}
       </div>
       <span className="text-xs font-medium text-foreground">{rating.toFixed(1)}</span>
-      {typeof count === 'number' && (
+      {typeof count === "number" && (
         <span className="text-xs text-muted-foreground">· {count} avaliações</span>
       )}
     </div>
@@ -187,44 +216,67 @@ function ProductPage() {
   }, [product]);
 
   if (isLoading) {
-    return <StoreLayout><div className="container mx-auto px-4 py-12"><div className="h-96 bg-surface animate-pulse rounded-xl" /></div></StoreLayout>;
+    return (
+      <StoreLayout>
+        <div className="container mx-auto px-4 py-12">
+          <div className="h-96 bg-surface animate-pulse rounded-xl" />
+        </div>
+      </StoreLayout>
+    );
   }
   if (!product) return null;
 
   const finalPrice = product.sale_price ?? product.price;
   const hasDiscount = product.sale_price != null && product.sale_price < product.price;
-  const discountPct = hasDiscount ? Math.round(((product.price - finalPrice) / product.price) * 100) : 0;
-  const productImages = (product as ProductWithSeo & { product_images?: ProductImageRow[] }).product_images ?? [];
-  const cartImage = productImages[0] ? pickUrl(productImages[0], 'thumb') ?? productImages[0].original_url : product.images[0] ?? null;
+  const discountPct = hasDiscount
+    ? Math.round(((product.price - finalPrice) / product.price) * 100)
+    : 0;
+  const productImages =
+    (product as ProductWithSeo & { product_images?: ProductImageRow[] }).product_images ?? [];
+  const cartImage = productImages[0]
+    ? (pickUrl(productImages[0], "thumb") ?? productImages[0].original_url)
+    : (product.images[0] ?? null);
   const maxQty = Math.min(10, Math.max(1, product.stock_qty));
 
-  const addToCart = (then?: 'checkout') => {
-    cart.addItem({
-      productId: product.id, name: product.name, slug: product.slug,
-      price: finalPrice, image: cartImage, stock: product.stock_qty,
-      freeShippingEligible: !!(product as any).free_shipping_eligible,
-    }, qty);
+  const addToCart = (then?: "checkout") => {
+    cart.addItem(
+      {
+        productId: product.id,
+        name: product.name,
+        slug: product.slug,
+        price: finalPrice,
+        image: cartImage,
+        stock: product.stock_qty,
+        freeShippingEligible: !!(product as any).free_shipping_eligible,
+      },
+      qty,
+    );
     trackAddToCart(product, qty);
-    if (then === 'checkout') {
-      navigate({ to: '/checkout' });
+    if (then === "checkout") {
+      navigate({ to: "/checkout" });
     } else {
-      toast.success('Adicionado ao carrinho');
+      toast.success("Adicionado ao carrinho");
     }
   };
 
-  const stockState = product.stock_qty > 10
-    ? { label: 'Em estoque', tone: 'text-success' }
-    : product.stock_qty > 0
-      ? { label: `Apenas ${product.stock_qty} em estoque`, tone: 'text-accent' }
-      : { label: 'Produto indisponível', tone: 'text-destructive' };
+  const stockState =
+    product.stock_qty > 10
+      ? { label: "Em estoque", tone: "text-success" }
+      : product.stock_qty > 0
+        ? { label: `Apenas ${product.stock_qty} em estoque`, tone: "text-accent" }
+        : { label: "Produto indisponível", tone: "text-destructive" };
 
   return (
     <StoreLayout>
       <div className="container mx-auto px-4 py-6">
         <nav className="flex items-center gap-1.5 text-xs text-muted-foreground mb-6">
-          <Link to="/" className="hover:text-foreground">Início</Link>
+          <Link to="/" className="hover:text-foreground">
+            Início
+          </Link>
           <ChevronRight className="w-3 h-3" />
-          <Link to="/catalogo" className="hover:text-foreground">Catálogo</Link>
+          <Link to="/catalogo" className="hover:text-foreground">
+            Catálogo
+          </Link>
           <ChevronRight className="w-3 h-3" />
           <span className="text-foreground line-clamp-1">{product.name}</span>
         </nav>
@@ -237,7 +289,9 @@ function ProductPage() {
             {product.description && (
               <section className="mt-10 max-w-2xl">
                 <h2 className="font-display font-semibold text-lg mb-3">Sobre este produto</h2>
-                <p className="text-sm text-muted-foreground leading-relaxed whitespace-pre-line">{product.description}</p>
+                <p className="text-sm text-muted-foreground leading-relaxed whitespace-pre-line">
+                  {product.description}
+                </p>
               </section>
             )}
 
@@ -248,7 +302,9 @@ function ProductPage() {
           <aside className="lg:sticky lg:top-6 lg:self-start space-y-4">
             <div>
               {product.brand && <div className="label-meta mb-1.5">{product.brand}</div>}
-              <h1 className="font-display font-bold text-2xl tracking-tight mb-2 leading-tight">{product.name}</h1>
+              <h1 className="font-display font-bold text-2xl tracking-tight mb-2 leading-tight">
+                {product.name}
+              </h1>
               <StarRating rating={4.7} count={128} />
             </div>
 
@@ -264,31 +320,42 @@ function ProductPage() {
               <div className="flex items-baseline gap-2 flex-wrap">
                 <span className="text-[15px] text-destructive font-medium">R$</span>
                 <span className="font-display font-extrabold text-foreground text-3xl sm:text-4xl leading-none break-all">
-                  {finalPrice.toFixed(2).replace('.', ',')}
+                  {finalPrice.toFixed(2).replace(".", ",")}
                 </span>
               </div>
               <div className="text-xs text-muted-foreground mt-2">
-                ou em até <strong className="text-foreground">12x de {formatBRL(finalPrice / 12)}</strong> sem juros no cartão
+                ou em até{" "}
+                <strong className="text-foreground">12x de {formatBRL(finalPrice / 12)}</strong> sem
+                juros no cartão
               </div>
             </div>
 
-            <div className={`text-base font-semibold ${stockState.tone}`}>
-              {stockState.label}
-            </div>
+            <div className={`text-base font-semibold ${stockState.tone}`}>{stockState.label}</div>
 
             <div className="flex flex-wrap gap-1.5">
               {product.ncm && <span className="badge-tech">NCM {product.ncm}</span>}
               {product.sku && <span className="badge-tech">SKU {product.sku}</span>}
-              <span className="text-[10px] uppercase tracking-wider bg-success-tint text-success border border-success/20 px-2 py-1 rounded font-medium">NF garantida</span>
-              <span className="text-[10px] uppercase tracking-wider bg-primary-tint text-primary border border-primary-border px-2 py-1 rounded font-medium">Frete rápido</span>
+              <span className="text-[10px] uppercase tracking-wider bg-success-tint text-success border border-success/20 px-2 py-1 rounded font-medium">
+                NF garantida
+              </span>
+              <span className="text-[10px] uppercase tracking-wider bg-primary-tint text-primary border border-primary-border px-2 py-1 rounded font-medium">
+                Frete rápido
+              </span>
               {product.tags.map((t) => (
-                <span key={t} className="text-[10px] uppercase tracking-wider bg-surface text-muted-foreground border border-border px-2 py-1 rounded">{t}</span>
+                <span
+                  key={t}
+                  className="text-[10px] uppercase tracking-wider bg-surface text-muted-foreground border border-border px-2 py-1 rounded"
+                >
+                  {t}
+                </span>
               ))}
             </div>
 
             {product.stock_qty > 0 && (
               <div className="flex items-center gap-2.5">
-                <label htmlFor="qty-select" className="text-sm text-muted-foreground">Qtd:</label>
+                <label htmlFor="qty-select" className="text-sm text-muted-foreground">
+                  Qtd:
+                </label>
                 <select
                   id="qty-select"
                   value={qty}
@@ -296,10 +363,14 @@ function ProductPage() {
                   className="bg-surface border border-border rounded-md px-3 py-1.5 text-sm font-medium cursor-pointer hover:border-accent focus:outline-none focus:ring-2 focus:ring-accent/40"
                 >
                   {Array.from({ length: maxQty }, (_, i) => (
-                    <option key={i + 1} value={i + 1}>{i + 1}</option>
+                    <option key={i + 1} value={i + 1}>
+                      {i + 1}
+                    </option>
                   ))}
                 </select>
-                <span className="text-xs text-muted-foreground">{product.stock_qty} disponíveis</span>
+                <span className="text-xs text-muted-foreground">
+                  {product.stock_qty} disponíveis
+                </span>
               </div>
             )}
 
@@ -310,10 +381,10 @@ function ProductPage() {
                 className="w-full h-11 rounded-pill bg-accent text-accent-foreground font-semibold text-sm shadow-soft hover:brightness-95 transition disabled:opacity-50 disabled:cursor-not-allowed inline-flex items-center justify-center gap-2"
               >
                 <ShoppingCart className="w-4 h-4" />
-                {product.stock_qty === 0 ? 'Esgotado' : 'Adicionar ao carrinho'}
+                {product.stock_qty === 0 ? "Esgotado" : "Adicionar ao carrinho"}
               </button>
               <button
-                onClick={() => addToCart('checkout')}
+                onClick={() => addToCart("checkout")}
                 disabled={product.stock_qty === 0}
                 className="w-full h-11 rounded-pill bg-[oklch(0.72_0.18_50)] text-white font-semibold text-sm shadow-soft hover:brightness-95 transition disabled:opacity-50 disabled:cursor-not-allowed inline-flex items-center justify-center gap-2"
               >
@@ -326,21 +397,30 @@ function ProductPage() {
               {(product as any).free_shipping_eligible ? (
                 <div className="flex items-start gap-2.5 text-xs">
                   <Truck className="w-4 h-4 text-success mt-0.5 flex-shrink-0" />
-                  <span className="text-muted-foreground"><strong className="text-foreground">Frete grátis</strong> em pedidos acima de R$ 199,00 (produto participante)</span>
+                  <span className="text-muted-foreground">
+                    <strong className="text-foreground">Frete grátis</strong> em pedidos acima de R$
+                    199,00 (produto participante)
+                  </span>
                 </div>
               ) : (
                 <div className="flex items-start gap-2.5 text-xs">
                   <Truck className="w-4 h-4 text-muted-foreground mt-0.5 flex-shrink-0" />
-                  <span className="text-muted-foreground">Este produto não participa da campanha de frete grátis.</span>
+                  <span className="text-muted-foreground">
+                    Este produto não participa da campanha de frete grátis.
+                  </span>
                 </div>
               )}
               <div className="flex items-start gap-2.5 text-xs">
                 <Shield className="w-4 h-4 text-primary mt-0.5 flex-shrink-0" />
-                <span className="text-muted-foreground"><strong className="text-foreground">NF garantida</strong> em todos os pedidos</span>
+                <span className="text-muted-foreground">
+                  <strong className="text-foreground">NF garantida</strong> em todos os pedidos
+                </span>
               </div>
               <div className="flex items-start gap-2.5 text-xs">
                 <Check className="w-4 h-4 text-success mt-0.5 flex-shrink-0" />
-                <span className="text-muted-foreground">Vendido e entregue por <strong className="text-foreground">Led Maricá</strong></span>
+                <span className="text-muted-foreground">
+                  Vendido e entregue por <strong className="text-foreground">Led Maricá</strong>
+                </span>
               </div>
             </div>
           </aside>

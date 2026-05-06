@@ -1,7 +1,7 @@
-import { createServerFn } from '@tanstack/react-start';
-import { z } from 'zod';
-import { requireAdmin } from '@/integrations/supabase/admin-middleware';
-import { supabaseAdmin } from '@/integrations/supabase/client.server';
+import { createServerFn } from "@tanstack/react-start";
+import { z } from "zod";
+import { requireAdmin } from "@/integrations/supabase/admin-middleware";
+import { supabaseAdmin } from "@/integrations/supabase/client.server";
 
 /**
  * Server function de agregações para o dashboard administrativo.
@@ -16,10 +16,10 @@ import { supabaseAdmin } from '@/integrations/supabase/client.server';
  *   - refunded/charged_back => reembolsado / chargeback
  */
 
-const PAID_STATUSES = ['approved', 'paid'] as const;
-const PENDING_STATUSES = ['pending', 'in_process', 'preference_created'] as const;
-const FAILED_STATUSES = ['rejected', 'failed', 'cancelled'] as const;
-const REFUND_STATUSES = ['refunded', 'charged_back'] as const;
+const PAID_STATUSES = ["approved", "paid"] as const;
+const PENDING_STATUSES = ["pending", "in_process", "preference_created"] as const;
+const FAILED_STATUSES = ["rejected", "failed", "cancelled"] as const;
+const REFUND_STATUSES = ["refunded", "charged_back"] as const;
 
 const InputSchema = z.object({
   start: z.string().datetime(),
@@ -83,7 +83,7 @@ function buildDayBuckets(startISO: string, endISO: string): string[] {
   return days;
 }
 
-export const getAdminDashboard = createServerFn({ method: 'POST' })
+export const getAdminDashboard = createServerFn({ method: "POST" })
   .middleware([requireAdmin])
   .inputValidator((input: unknown) => InputSchema.parse(input))
   .handler(async ({ data }): Promise<DashboardData> => {
@@ -93,12 +93,10 @@ export const getAdminDashboard = createServerFn({ method: 'POST' })
     // 1) Pedidos no período (created_at) — base para cards e gráficos
     // ============================================================
     const { data: orders, error: ordersError } = await supabaseAdmin
-      .from('orders')
-      .select(
-        'id, total, status, payment_status, created_at, paid_at, updated_at',
-      )
-      .gte('created_at', start)
-      .lte('created_at', end);
+      .from("orders")
+      .select("id, total, status, payment_status, created_at, paid_at, updated_at")
+      .gte("created_at", start)
+      .lte("created_at", end);
 
     if (ordersError) {
       throw new Response(`orders query failed: ${ordersError.message}`, { status: 500 });
@@ -162,9 +160,9 @@ export const getAdminDashboard = createServerFn({ method: 'POST' })
     const orderStatusCounts: Record<string, number> = {};
     const paymentStatusCounts: Record<string, number> = {};
     for (const o of allOrders) {
-      const s = (o.status ?? 'unknown') as string;
+      const s = (o.status ?? "unknown") as string;
       orderStatusCounts[s] = (orderStatusCounts[s] ?? 0) + 1;
-      const ps = (o.payment_status ?? 'unknown') as string;
+      const ps = (o.payment_status ?? "unknown") as string;
       paymentStatusCounts[ps] = (paymentStatusCounts[ps] ?? 0) + 1;
     }
     const orderStatus = Object.entries(orderStatusCounts).map(([status, count]) => ({
@@ -181,16 +179,16 @@ export const getAdminDashboard = createServerFn({ method: 'POST' })
     //    Considera APENAS pedidos pagos no período.
     // ============================================================
     const paidIds = paidOrders.map((o) => o.id);
-    let topProducts: DashboardData['topProducts'] = [];
-    let revenueByCategory: DashboardData['revenueByCategory'] = [];
+    let topProducts: DashboardData["topProducts"] = [];
+    let revenueByCategory: DashboardData["revenueByCategory"] = [];
     let productsSold = 0;
     let hasCategories = false;
 
     if (paidIds.length > 0) {
       const { data: items, error: itemsError } = await supabaseAdmin
-        .from('order_items')
-        .select('product_id, product_name, qty, total_price')
-        .in('order_id', paidIds);
+        .from("order_items")
+        .select("product_id, product_name, qty, total_price")
+        .in("order_id", paidIds);
 
       if (itemsError) {
         throw new Response(`order_items query failed: ${itemsError.message}`, { status: 500 });
@@ -198,11 +196,14 @@ export const getAdminDashboard = createServerFn({ method: 'POST' })
       const allItems = items ?? [];
 
       // top produtos
-      const prodMap = new Map<string, { name: string; qty: number; revenue: number; productId: string | null }>();
+      const prodMap = new Map<
+        string,
+        { name: string; qty: number; revenue: number; productId: string | null }
+      >();
       for (const it of allItems) {
         const key = it.product_id ?? `__name:${it.product_name}`;
         const cur = prodMap.get(key) ?? {
-          name: it.product_name ?? 'Produto removido',
+          name: it.product_name ?? "Produto removido",
           qty: 0,
           revenue: 0,
           productId: it.product_id ?? null,
@@ -217,14 +218,17 @@ export const getAdminDashboard = createServerFn({ method: 'POST' })
         .slice(0, 10);
 
       // receita por categoria
-      const productIds = Array.from(prodMap.keys()).filter((k) => !k.startsWith('__name:'));
+      const productIds = Array.from(prodMap.keys()).filter((k) => !k.startsWith("__name:"));
       if (productIds.length > 0) {
         const { data: products } = await supabaseAdmin
-          .from('products')
-          .select('id, category_id, categories:category_id(id, name)')
-          .in('id', productIds);
+          .from("products")
+          .select("id, category_id, categories:category_id(id, name)")
+          .in("id", productIds);
 
-        const catMap = new Map<string, { name: string; revenue: number; categoryId: string | null }>();
+        const catMap = new Map<
+          string,
+          { name: string; revenue: number; categoryId: string | null }
+        >();
         const productToCat = new Map<string, { id: string | null; name: string }>();
         for (const p of products ?? []) {
           const cat = (p as { categories: { id: string; name: string } | null }).categories;
@@ -232,13 +236,13 @@ export const getAdminDashboard = createServerFn({ method: 'POST' })
             hasCategories = true;
             productToCat.set(p.id, { id: cat.id, name: cat.name });
           } else {
-            productToCat.set(p.id, { id: null, name: 'Sem categoria' });
+            productToCat.set(p.id, { id: null, name: "Sem categoria" });
           }
         }
         for (const [pid, info] of prodMap) {
-          if (pid.startsWith('__name:')) continue;
-          const cat = productToCat.get(pid) ?? { id: null, name: 'Sem categoria' };
-          const key = cat.id ?? '__none';
+          if (pid.startsWith("__name:")) continue;
+          const cat = productToCat.get(pid) ?? { id: null, name: "Sem categoria" };
+          const key = cat.id ?? "__none";
           const cur = catMap.get(key) ?? { name: cat.name, revenue: 0, categoryId: cat.id };
           cur.revenue += info.revenue;
           catMap.set(key, cur);
@@ -251,31 +255,31 @@ export const getAdminDashboard = createServerFn({ method: 'POST' })
     // 5) E-mails transacionais (email_events)
     // ============================================================
     const { data: emailRows } = await supabaseAdmin
-      .from('email_events')
-      .select('status')
-      .gte('created_at', start)
-      .lte('created_at', end);
+      .from("email_events")
+      .select("status")
+      .gte("created_at", start)
+      .lte("created_at", end);
 
     const emailStats = { sent: 0, failed: 0, pending: 0, total: 0, failureRate: 0 };
     for (const e of emailRows ?? []) {
       emailStats.total += 1;
-      const s = String(e.status ?? '').toLowerCase();
-      if (s === 'sent' || s === 'delivered') emailStats.sent += 1;
-      else if (s === 'failed' || s === 'bounced' || s === 'complained' || s === 'dlq') emailStats.failed += 1;
+      const s = String(e.status ?? "").toLowerCase();
+      if (s === "sent" || s === "delivered") emailStats.sent += 1;
+      else if (s === "failed" || s === "bounced" || s === "complained" || s === "dlq")
+        emailStats.failed += 1;
       else emailStats.pending += 1;
     }
-    emailStats.failureRate =
-      emailStats.total > 0 ? emailStats.failed / emailStats.total : 0;
+    emailStats.failureRate = emailStats.total > 0 ? emailStats.failed / emailStats.total : 0;
 
     // ============================================================
     // 6) Webhooks Mercado Pago
     // ============================================================
     const { data: webhookRows } = await supabaseAdmin
-      .from('payment_webhook_events')
-      .select('processed, processing_error, created_at')
-      .gte('created_at', start)
-      .lte('created_at', end)
-      .order('created_at', { ascending: false });
+      .from("payment_webhook_events")
+      .select("processed, processing_error, created_at")
+      .gte("created_at", start)
+      .lte("created_at", end)
+      .order("created_at", { ascending: false });
 
     const webhookStats = {
       total: 0,

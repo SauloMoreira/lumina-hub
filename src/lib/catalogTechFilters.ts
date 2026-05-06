@@ -7,7 +7,7 @@
  * is_filterable=true.
  */
 
-export type TechFilterKey = 'power' | 'color_temperature' | 'voltage' | 'ip_rating';
+export type TechFilterKey = "power" | "color_temperature" | "voltage" | "ip_rating";
 
 export type TechRangeOption = {
   /** id curto que vai pra URL — ex.: "0-20" */
@@ -27,79 +27,79 @@ export type TechValueOption = {
 
 export type TechFilterDef =
   | {
-      key: 'power';
+      key: "power";
       label: string;
       hint?: string;
-      kind: 'range';
+      kind: "range";
       options: TechRangeOption[];
     }
   | {
-      key: Exclude<TechFilterKey, 'power'>;
+      key: Exclude<TechFilterKey, "power">;
       label: string;
       hint?: string;
-      kind: 'value';
+      kind: "value";
       options: TechValueOption[];
     };
 
 export const POWER_OPTIONS: TechRangeOption[] = [
-  { id: '0-20', label: 'Até 20W', min: 0, max: 20 },
-  { id: '21-50', label: '21W a 50W', min: 21, max: 50 },
-  { id: '51-100', label: '51W a 100W', min: 51, max: 100 },
-  { id: '101-9999', label: 'Acima de 100W', min: 101, max: 99999 },
+  { id: "0-20", label: "Até 20W", min: 0, max: 20 },
+  { id: "21-50", label: "21W a 50W", min: 21, max: 50 },
+  { id: "51-100", label: "51W a 100W", min: 51, max: 100 },
+  { id: "101-9999", label: "Acima de 100W", min: 101, max: 99999 },
 ];
 
 export const COLOR_TEMP_OPTIONS: TechValueOption[] = [
-  { id: '3000k', label: '3000K — Luz quente', values: ['3000'] },
-  { id: '4000k', label: '4000K — Luz neutra', values: ['4000'] },
-  { id: '6500k', label: '6500K — Luz fria', values: ['6500', '6000'] },
+  { id: "3000k", label: "3000K — Luz quente", values: ["3000"] },
+  { id: "4000k", label: "4000K — Luz neutra", values: ["4000"] },
+  { id: "6500k", label: "6500K — Luz fria", values: ["6500", "6000"] },
 ];
 
 export const VOLTAGE_OPTIONS: TechValueOption[] = [
-  { id: '127v', label: '127V', values: ['127V', '110V'] },
-  { id: '220v', label: '220V', values: ['220V', '240V'] },
-  { id: 'bivolt', label: 'Bivolt', values: ['Bivolt'] },
+  { id: "127v", label: "127V", values: ["127V", "110V"] },
+  { id: "220v", label: "220V", values: ["220V", "240V"] },
+  { id: "bivolt", label: "Bivolt", values: ["Bivolt"] },
 ];
 
 export const IP_OPTIONS: TechValueOption[] = [
-  { id: 'ip20', label: 'IP20 — Uso interno', values: ['IP20'] },
-  { id: 'ip44', label: 'IP44 — Proteção moderada', values: ['IP44'] },
-  { id: 'ip65', label: 'IP65 — Área externa', values: ['IP65'] },
-  { id: 'ip66', label: 'IP66 — Área externa reforçada', values: ['IP66'] },
+  { id: "ip20", label: "IP20 — Uso interno", values: ["IP20"] },
+  { id: "ip44", label: "IP44 — Proteção moderada", values: ["IP44"] },
+  { id: "ip65", label: "IP65 — Área externa", values: ["IP65"] },
+  { id: "ip66", label: "IP66 — Área externa reforçada", values: ["IP66"] },
 ];
 
 export const TECH_FILTERS: TechFilterDef[] = [
   {
-    key: 'power',
-    label: 'Potência',
-    hint: 'Filtra por faixa de watts.',
-    kind: 'range',
+    key: "power",
+    label: "Potência",
+    hint: "Filtra por faixa de watts.",
+    kind: "range",
     options: POWER_OPTIONS,
   },
   {
-    key: 'color_temperature',
-    label: 'Temperatura de cor',
-    hint: 'Cor da luz emitida.',
-    kind: 'value',
+    key: "color_temperature",
+    label: "Temperatura de cor",
+    hint: "Cor da luz emitida.",
+    kind: "value",
     options: COLOR_TEMP_OPTIONS,
   },
   {
-    key: 'voltage',
-    label: 'Voltagem',
-    hint: 'Tensão de operação.',
-    kind: 'value',
+    key: "voltage",
+    label: "Voltagem",
+    hint: "Tensão de operação.",
+    kind: "value",
     options: VOLTAGE_OPTIONS,
   },
   {
-    key: 'ip_rating',
-    label: 'Proteção IP',
-    hint: 'Resistência a poeira e água.',
-    kind: 'value',
+    key: "ip_rating",
+    label: "Proteção IP",
+    hint: "Resistência a poeira e água.",
+    kind: "value",
     options: IP_OPTIONS,
   },
 ];
 
 export type SelectedTechFilters = {
-  power?: string[];          // ids dos ranges selecionados
+  power?: string[]; // ids dos ranges selecionados
   color_temperature?: string[];
   voltage?: string[];
   ip_rating?: string[];
@@ -128,26 +128,24 @@ export function toAttrFilterPayload(sel: SelectedTechFilters): AttrFilterPayload
     const ranges = POWER_OPTIONS.filter((o) => powerIds.includes(o.id));
     if (ranges.length === 1) {
       const r = ranges[0];
-      out.push({ key: 'power', min: r.min, max: r.max });
+      out.push({ key: "power", min: r.min, max: r.max });
     } else if (ranges.length > 1) {
       // Envelope min/max do conjunto selecionado
       const min = Math.min(...ranges.map((r) => r.min ?? 0));
       const max = Math.max(...ranges.map((r) => r.max ?? 99999));
-      out.push({ key: 'power', min, max });
+      out.push({ key: "power", min, max });
     }
   }
 
   const valueGroups: Array<{ key: string; opts: TechValueOption[]; ids: string[] }> = [
-    { key: 'color_temperature', opts: COLOR_TEMP_OPTIONS, ids: sel.color_temperature ?? [] },
-    { key: 'voltage', opts: VOLTAGE_OPTIONS, ids: sel.voltage ?? [] },
-    { key: 'ip_rating', opts: IP_OPTIONS, ids: sel.ip_rating ?? [] },
+    { key: "color_temperature", opts: COLOR_TEMP_OPTIONS, ids: sel.color_temperature ?? [] },
+    { key: "voltage", opts: VOLTAGE_OPTIONS, ids: sel.voltage ?? [] },
+    { key: "ip_rating", opts: IP_OPTIONS, ids: sel.ip_rating ?? [] },
   ];
 
   for (const g of valueGroups) {
     if (g.ids.length === 0) continue;
-    const values = g.opts
-      .filter((o) => g.ids.includes(o.id))
-      .flatMap((o) => o.values);
+    const values = g.opts.filter((o) => g.ids.includes(o.id)).flatMap((o) => o.values);
     if (values.length > 0) out.push({ key: g.key, values });
   }
 
@@ -158,12 +156,12 @@ export function toAttrFilterPayload(sel: SelectedTechFilters): AttrFilterPayload
 export function parseFilterCsv(raw: string | undefined): string[] {
   if (!raw) return [];
   return raw
-    .split(',')
+    .split(",")
     .map((s) => s.trim().toLowerCase())
     .filter(Boolean)
     .slice(0, 10);
 }
 
 export function joinFilterCsv(ids: string[]): string | undefined {
-  return ids.length > 0 ? ids.join(',') : undefined;
+  return ids.length > 0 ? ids.join(",") : undefined;
 }

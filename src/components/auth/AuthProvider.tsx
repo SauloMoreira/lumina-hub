@@ -1,6 +1,6 @@
-import { createContext, useContext, useEffect, useState, type ReactNode } from 'react';
-import { supabase } from '@/integrations/supabase/client';
-import type { Session, User } from '@supabase/supabase-js';
+import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import type { Session, User } from "@supabase/supabase-js";
 
 interface AuthCtx {
   session: Session | null;
@@ -33,11 +33,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         return;
       }
       const { data, error } = await supabase
-        .from('profiles')
-        .select('role')
-        .eq('id', uid)
+        .from("profiles")
+        .select("role")
+        .eq("id", uid)
         .maybeSingle();
-      if (mounted) setIsAdmin(!error && data?.role === 'admin');
+      if (mounted) setIsAdmin(!error && data?.role === "admin");
     };
 
     const { data: sub } = supabase.auth.onAuthStateChange((_e, s) => {

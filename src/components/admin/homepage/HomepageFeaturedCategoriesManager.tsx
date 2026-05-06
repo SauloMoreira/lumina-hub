@@ -1,21 +1,21 @@
-import { useEffect, useMemo, useState } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { ArrowDown, ArrowUp, Loader2, Plus, Save, Trash2, AlertTriangle } from 'lucide-react';
-import { toast } from 'sonner';
+import { useEffect, useMemo, useState } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { ArrowDown, ArrowUp, Loader2, Plus, Save, Trash2, AlertTriangle } from "lucide-react";
+import { toast } from "sonner";
 
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-import { Switch } from '@/components/ui/switch';
-import { Card, CardContent } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { IconPicker } from '@/components/admin/IconPicker';
-import { supabase } from '@/integrations/supabase/client';
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Switch } from "@/components/ui/switch";
+import { Card, CardContent } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { IconPicker } from "@/components/admin/IconPicker";
+import { supabase } from "@/integrations/supabase/client";
 import {
   adminListHomepageFeaturedCategories,
   type HomepageFeaturedCategory,
-} from '@/lib/homepageBlocks';
+} from "@/lib/homepageBlocks";
 
 interface CategoryOption {
   id: string;
@@ -26,19 +26,19 @@ interface CategoryOption {
 
 export function HomepageFeaturedCategoriesManager() {
   const qc = useQueryClient();
-  const queryKey = ['admin-homepage-featured-categories'];
+  const queryKey = ["admin-homepage-featured-categories"];
   const { data, isLoading } = useQuery({
     queryKey,
     queryFn: adminListHomepageFeaturedCategories,
   });
 
   const { data: allCategories } = useQuery({
-    queryKey: ['admin-categories-list'],
+    queryKey: ["admin-categories-list"],
     queryFn: async () => {
       const { data, error } = await (supabase as any)
-        .from('categories')
-        .select('id, name, slug, active')
-        .order('name');
+        .from("categories")
+        .select("id, name, slug, active")
+        .order("name");
       if (error) throw error;
       return (data ?? []) as CategoryOption[];
     },
@@ -71,18 +71,18 @@ export function HomepageFeaturedCategoriesManager() {
     });
   };
 
-  const [adding, setAdding] = useState<string>('');
+  const [adding, setAdding] = useState<string>("");
   const addMut = useMutation({
     mutationFn: async (categoryId: string) => {
       const { data: row, error } = await (supabase as any)
-        .from('homepage_featured_categories')
+        .from("homepage_featured_categories")
         .insert({
           category_id: categoryId,
           sort_order: draft.length,
           is_active: true,
         })
         .select(
-          'id, category_id, custom_title, custom_description, custom_image_url, icon, sort_order, is_active, category:categories(id, name, slug, icon, active)',
+          "id, category_id, custom_title, custom_description, custom_image_url, icon, sort_order, is_active, category:categories(id, name, slug, icon, active)",
         )
         .single();
       if (error) throw error;
@@ -90,35 +90,35 @@ export function HomepageFeaturedCategoriesManager() {
     },
     onSuccess: (row) => {
       setDraft((p) => [...p, row]);
-      setAdding('');
+      setAdding("");
       qc.invalidateQueries({ queryKey });
-      qc.invalidateQueries({ queryKey: ['homepage-featured-categories'] });
-      toast.success('Categoria adicionada à home');
+      qc.invalidateQueries({ queryKey: ["homepage-featured-categories"] });
+      toast.success("Categoria adicionada à home");
     },
-    onError: (e: any) => toast.error(e?.message ?? 'Erro ao adicionar'),
+    onError: (e: any) => toast.error(e?.message ?? "Erro ao adicionar"),
   });
 
   const deleteMut = useMutation({
     mutationFn: async (id: string) => {
       const { error } = await (supabase as any)
-        .from('homepage_featured_categories')
+        .from("homepage_featured_categories")
         .delete()
-        .eq('id', id);
+        .eq("id", id);
       if (error) throw error;
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey });
-      qc.invalidateQueries({ queryKey: ['homepage-featured-categories'] });
-      toast.success('Categoria removida da home');
+      qc.invalidateQueries({ queryKey: ["homepage-featured-categories"] });
+      toast.success("Categoria removida da home");
     },
-    onError: (e: any) => toast.error(e?.message ?? 'Erro ao remover'),
+    onError: (e: any) => toast.error(e?.message ?? "Erro ao remover"),
   });
 
   const saveMut = useMutation({
     mutationFn: async () => {
       const updates = draft.map((c, i) =>
         (supabase as any)
-          .from('homepage_featured_categories')
+          .from("homepage_featured_categories")
           .update({
             custom_title: c.custom_title?.trim() || null,
             custom_description: c.custom_description?.trim() || null,
@@ -127,7 +127,7 @@ export function HomepageFeaturedCategoriesManager() {
             sort_order: i,
             is_active: c.is_active,
           })
-          .eq('id', c.id),
+          .eq("id", c.id),
       );
       const results = await Promise.all(updates);
       const firstErr = results.find((r: any) => r.error)?.error;
@@ -135,10 +135,10 @@ export function HomepageFeaturedCategoriesManager() {
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey });
-      qc.invalidateQueries({ queryKey: ['homepage-featured-categories'] });
-      toast.success('Categorias atualizadas');
+      qc.invalidateQueries({ queryKey: ["homepage-featured-categories"] });
+      toast.success("Categorias atualizadas");
     },
-    onError: (e: any) => toast.error(e?.message ?? 'Erro ao salvar'),
+    onError: (e: any) => toast.error(e?.message ?? "Erro ao salvar"),
   });
 
   if (isLoading) {
@@ -159,7 +159,11 @@ export function HomepageFeaturedCategoriesManager() {
           </p>
         </div>
         <Button size="sm" onClick={() => saveMut.mutate()} disabled={saveMut.isPending}>
-          {saveMut.isPending ? <Loader2 className="w-4 h-4 mr-1 animate-spin" /> : <Save className="w-4 h-4 mr-1" />}
+          {saveMut.isPending ? (
+            <Loader2 className="w-4 h-4 mr-1 animate-spin" />
+          ) : (
+            <Save className="w-4 h-4 mr-1" />
+          )}
           Salvar
         </Button>
       </div>
@@ -199,14 +203,18 @@ export function HomepageFeaturedCategoriesManager() {
         {draft.map((c, i) => {
           const stale = !c.category || c.category.active === false;
           return (
-            <Card key={c.id} className={c.is_active ? '' : 'opacity-60'}>
+            <Card key={c.id} className={c.is_active ? "" : "opacity-60"}>
               <CardContent className="p-4 space-y-3">
                 <div className="flex items-start justify-between gap-3">
                   <div className="flex items-center gap-2 flex-wrap">
                     <Badge variant="secondary" className="text-[10px] uppercase">
-                      {c.category?.name ?? 'Categoria removida'}
+                      {c.category?.name ?? "Categoria removida"}
                     </Badge>
-                    {!c.is_active && <Badge variant="outline" className="text-[10px]">Inativa</Badge>}
+                    {!c.is_active && (
+                      <Badge variant="outline" className="text-[10px]">
+                        Inativa
+                      </Badge>
+                    )}
                     {stale && (
                       <Badge variant="destructive" className="text-[10px] gap-1">
                         <AlertTriangle className="w-3 h-3" /> Categoria inativa/removida
@@ -214,21 +222,34 @@ export function HomepageFeaturedCategoriesManager() {
                     )}
                   </div>
                   <div className="flex items-center gap-1 shrink-0">
-                    <Button variant="ghost" size="icon" onClick={() => move(c.id, -1)} disabled={i === 0}>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => move(c.id, -1)}
+                      disabled={i === 0}
+                    >
                       <ArrowUp className="w-4 h-4" />
                     </Button>
-                    <Button variant="ghost" size="icon" onClick={() => move(c.id, 1)} disabled={i === draft.length - 1}>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => move(c.id, 1)}
+                      disabled={i === draft.length - 1}
+                    >
                       <ArrowDown className="w-4 h-4" />
                     </Button>
                     <div className="flex items-center gap-2 px-2">
                       <Label className="text-xs">Ativa</Label>
-                      <Switch checked={c.is_active} onCheckedChange={(v) => update(c.id, { is_active: v })} />
+                      <Switch
+                        checked={c.is_active}
+                        onCheckedChange={(v) => update(c.id, { is_active: v })}
+                      />
                     </div>
                     <Button
                       variant="ghost"
                       size="icon"
                       onClick={() => {
-                        if (!confirm('Remover esta categoria da home?')) return;
+                        if (!confirm("Remover esta categoria da home?")) return;
                         setDraft((p) => p.filter((x) => x.id !== c.id));
                         deleteMut.mutate(c.id);
                       }}
@@ -242,9 +263,9 @@ export function HomepageFeaturedCategoriesManager() {
                   <div className="space-y-1.5">
                     <Label className="text-xs">Título customizado (opcional)</Label>
                     <Input
-                      value={c.custom_title ?? ''}
+                      value={c.custom_title ?? ""}
                       onChange={(e) => update(c.id, { custom_title: e.target.value })}
-                      placeholder={c.category?.name ?? ''}
+                      placeholder={c.category?.name ?? ""}
                     />
                   </div>
                   <div className="space-y-1.5">
@@ -255,14 +276,14 @@ export function HomepageFeaturedCategoriesManager() {
                     <Label className="text-xs">Descrição customizada (opcional)</Label>
                     <Textarea
                       rows={2}
-                      value={c.custom_description ?? ''}
+                      value={c.custom_description ?? ""}
                       onChange={(e) => update(c.id, { custom_description: e.target.value })}
                     />
                   </div>
                   <div className="space-y-1.5 md:col-span-2">
                     <Label className="text-xs">URL de imagem (opcional)</Label>
                     <Input
-                      value={c.custom_image_url ?? ''}
+                      value={c.custom_image_url ?? ""}
                       onChange={(e) => update(c.id, { custom_image_url: e.target.value })}
                       placeholder="https://…"
                     />

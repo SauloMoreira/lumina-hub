@@ -1,8 +1,8 @@
-import { useEffect, useState } from 'react';
-import { Link } from '@tanstack/react-router';
-import { ShieldAlert, Loader2 } from 'lucide-react';
-import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/hooks/useAuth';
+import { useEffect, useState } from "react";
+import { Link } from "@tanstack/react-router";
+import { ShieldAlert, Loader2 } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
 
 /**
  * Wrapper de proteção do painel admin: se o usuário admin não tiver
@@ -18,13 +18,16 @@ export function RequireAdminMfa({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     let cancelled = false;
     async function check() {
-      if (!user) { setChecking(false); return; }
+      if (!user) {
+        setChecking(false);
+        return;
+      }
       try {
         const { data } = await supabase.auth.mfa.listFactors();
         const verified = [
           ...(data?.totp ?? []),
           ...((data as unknown as { phone?: Array<{ status: string }> })?.phone ?? []),
-        ].filter((f) => f.status === 'verified');
+        ].filter((f) => f.status === "verified");
         if (!cancelled) setHasMfa(verified.length > 0);
       } catch {
         if (!cancelled) setHasMfa(false);
@@ -33,7 +36,9 @@ export function RequireAdminMfa({ children }: { children: React.ReactNode }) {
       }
     }
     check();
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, [user]);
 
   if (authLoading || checking) {
@@ -55,8 +60,8 @@ export function RequireAdminMfa({ children }: { children: React.ReactNode }) {
                 MFA obrigatório para administradores
               </h2>
               <p className="text-sm text-muted-foreground mt-1">
-                Para acessar o painel administrativo você precisa ativar a
-                autenticação em dois fatores (TOTP).
+                Para acessar o painel administrativo você precisa ativar a autenticação em dois
+                fatores (TOTP).
               </p>
             </div>
           </div>

@@ -9,7 +9,7 @@
  *  - og:    1200x630 (Open Graph)
  */
 
-export type ImageVariant = 'full' | 'card' | 'thumb' | 'og';
+export type ImageVariant = "full" | "card" | "thumb" | "og";
 
 const SIZE_MAP: Record<ImageVariant, { width: number; height?: number; quality: number }> = {
   full: { width: 1200, quality: 82 },
@@ -22,19 +22,25 @@ const SIZE_MAP: Record<ImageVariant, { width: number; height?: number; quality: 
  * Recebe a URL pública original (Supabase Storage) e devolve a versão
  * transformada. Se a URL não for de Storage, devolve a original.
  */
-export function variantUrl(originalUrl: string | null | undefined, variant: ImageVariant): string | null {
+export function variantUrl(
+  originalUrl: string | null | undefined,
+  variant: ImageVariant,
+): string | null {
   if (!originalUrl) return null;
   // O endpoint público é /storage/v1/object/public/<bucket>/<path>
   // O endpoint de transformação é /storage/v1/render/image/public/<bucket>/<path>?width=&format=webp
-  const transformed = originalUrl.replace('/storage/v1/object/public/', '/storage/v1/render/image/public/');
+  const transformed = originalUrl.replace(
+    "/storage/v1/object/public/",
+    "/storage/v1/render/image/public/",
+  );
   if (transformed === originalUrl) return originalUrl; // não é storage
   const cfg = SIZE_MAP[variant];
   const params = new URLSearchParams();
-  params.set('width', String(cfg.width));
-  if (cfg.height) params.set('height', String(cfg.height));
-  params.set('quality', String(cfg.quality));
-  params.set('format', 'webp');
-  params.set('resize', 'cover');
+  params.set("width", String(cfg.width));
+  if (cfg.height) params.set("height", String(cfg.height));
+  params.set("quality", String(cfg.quality));
+  params.set("format", "webp");
+  params.set("resize", "cover");
   return `${transformed}?${params.toString()}`;
 }
 
@@ -55,31 +61,44 @@ export interface ProductImageRow {
   seo_filename: string | null;
 }
 
-export function pickUrl(img: Partial<ProductImageRow> | null | undefined, variant: ImageVariant): string | null {
+export function pickUrl(
+  img: Partial<ProductImageRow> | null | undefined,
+  variant: ImageVariant,
+): string | null {
   if (!img) return null;
   const stored = (() => {
     switch (variant) {
-      case 'full': return img.url_full;
-      case 'card': return img.url_card;
-      case 'thumb': return img.url_thumb;
-      case 'og': return img.url_og;
+      case "full":
+        return img.url_full;
+      case "card":
+        return img.url_card;
+      case "thumb":
+        return img.url_thumb;
+      case "og":
+        return img.url_og;
     }
   })();
   if (stored) return stored;
   return variantUrl(img.original_url ?? null, variant);
 }
 
-export type ProductImagePreviewRow = Pick<ProductImageRow, 'original_url' | 'url_card' | 'url_thumb' | 'is_primary' | 'sort_order'>;
+export type ProductImagePreviewRow = Pick<
+  ProductImageRow,
+  "original_url" | "url_card" | "url_thumb" | "is_primary" | "sort_order"
+>;
 
 /**
  * Garante que uma URL do Supabase Storage seja entregue via /render/image
  * (WebP + resize + cache CDN). Se já estiver no render endpoint ou não for
  * Supabase Storage, devolve como está.
  */
-function ensureOptimized(url: string | null | undefined, variant: ImageVariant = 'card'): string | null {
+function ensureOptimized(
+  url: string | null | undefined,
+  variant: ImageVariant = "card",
+): string | null {
   if (!url) return null;
-  if (url.includes('/storage/v1/render/image/')) return url;
-  if (!url.includes('/storage/v1/object/public/')) return url;
+  if (url.includes("/storage/v1/render/image/")) return url;
+  if (!url.includes("/storage/v1/object/public/")) return url;
   return variantUrl(url, variant);
 }
 
@@ -92,10 +111,10 @@ export function imageUrlsFromProductImages(
     return (a.sort_order ?? 0) - (b.sort_order ?? 0);
   });
   const urls = sorted
-    .map((img) => ensureOptimized(img.url_card ?? img.url_thumb ?? img.original_url, 'card'))
+    .map((img) => ensureOptimized(img.url_card ?? img.url_thumb ?? img.original_url, "card"))
     .filter((url): url is string => !!url);
   if (urls.length) return urls;
   return (fallback ?? [])
-    .map((u) => ensureOptimized(u, 'card'))
+    .map((u) => ensureOptimized(u, "card"))
     .filter((url): url is string => !!url);
 }

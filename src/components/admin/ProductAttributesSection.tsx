@@ -1,5 +1,5 @@
-import { useMemo, useState } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMemo, useState } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   Trash2,
   Loader2,
@@ -11,20 +11,20 @@ import {
   ArrowUp,
   ArrowDown,
   AlertTriangle,
-} from 'lucide-react';
-import { toast } from 'sonner';
-import { Input } from '@/components/ui/input';
-import { Button } from '@/components/ui/button';
-import { Switch } from '@/components/ui/switch';
-import { Label } from '@/components/ui/label';
-import { Badge } from '@/components/ui/badge';
+} from "lucide-react";
+import { toast } from "sonner";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
+import { Badge } from "@/components/ui/badge";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
+} from "@/components/ui/select";
 import {
   adminListProductAttributes,
   adminCreateProductAttribute,
@@ -34,21 +34,21 @@ import {
   adminSuggestProductAttributes,
   type ProductAttributeRow,
   type AttributeSuggestionResult,
-} from '@/server/productAttributes.functions';
+} from "@/server/productAttributes.functions";
 import {
   ATTRIBUTE_SUGGESTIONS,
   formatAttributeDisplay,
   getSuggestion,
   type AttributeSuggestion,
-} from '@/lib/productAttributes';
+} from "@/lib/productAttributes";
 
 type Props = { productId: string };
 
-const CUSTOM_KEY = '__custom__';
+const CUSTOM_KEY = "__custom__";
 
 export function ProductAttributesSection({ productId }: Props) {
   const qc = useQueryClient();
-  const queryKey = ['admin-product-attributes', productId];
+  const queryKey = ["admin-product-attributes", productId];
 
   const listQuery = useQuery({
     queryKey,
@@ -56,11 +56,11 @@ export function ProductAttributesSection({ productId }: Props) {
   });
 
   // ---- Form de novo atributo ----
-  const [selectedKey, setSelectedKey] = useState<string>('power');
-  const [customKey, setCustomKey] = useState('');
-  const [customLabel, setCustomLabel] = useState('');
-  const [value, setValue] = useState('');
-  const [unit, setUnit] = useState('');
+  const [selectedKey, setSelectedKey] = useState<string>("power");
+  const [customKey, setCustomKey] = useState("");
+  const [customLabel, setCustomLabel] = useState("");
+  const [value, setValue] = useState("");
+  const [unit, setUnit] = useState("");
 
   const isCustom = selectedKey === CUSTOM_KEY;
   const presetSuggestion: AttributeSuggestion | undefined = isCustom
@@ -68,15 +68,15 @@ export function ProductAttributesSection({ productId }: Props) {
     : getSuggestion(selectedKey);
 
   const formKey = isCustom ? customKey : selectedKey;
-  const formLabel = isCustom ? customLabel : presetSuggestion?.label ?? selectedKey;
-  const formUnit = isCustom ? unit : (unit || presetSuggestion?.unit || '');
+  const formLabel = isCustom ? customLabel : (presetSuggestion?.label ?? selectedKey);
+  const formUnit = isCustom ? unit : unit || presetSuggestion?.unit || "";
 
   function resetForm() {
-    setSelectedKey('power');
-    setCustomKey('');
-    setCustomLabel('');
-    setValue('');
-    setUnit('');
+    setSelectedKey("power");
+    setCustomKey("");
+    setCustomLabel("");
+    setValue("");
+    setUnit("");
   }
 
   const createMut = useMutation({
@@ -93,19 +93,19 @@ export function ProductAttributesSection({ productId }: Props) {
         },
       }),
     onSuccess: () => {
-      toast.success('Atributo adicionado');
+      toast.success("Atributo adicionado");
       qc.invalidateQueries({ queryKey });
       resetForm();
     },
     onError: (err: Error) => {
-      if (err.message === 'attribute_already_exists') {
-        toast.error('Este produto já tem um atributo com essa chave.');
-      } else if (err.message === 'invalid_value') {
-        toast.error('Valor inválido.');
-      } else if (err.message === 'invalid_label' || err.message === 'invalid_key') {
-        toast.error('Preencha rótulo e chave.');
+      if (err.message === "attribute_already_exists") {
+        toast.error("Este produto já tem um atributo com essa chave.");
+      } else if (err.message === "invalid_value") {
+        toast.error("Valor inválido.");
+      } else if (err.message === "invalid_label" || err.message === "invalid_key") {
+        toast.error("Preencha rótulo e chave.");
       } else {
-        toast.error('Não foi possível adicionar o atributo.');
+        toast.error("Não foi possível adicionar o atributo.");
       }
     },
   });
@@ -119,16 +119,16 @@ export function ProductAttributesSection({ productId }: Props) {
       isFilterable?: boolean;
     }) => adminUpdateProductAttribute({ data: vars }),
     onSuccess: () => qc.invalidateQueries({ queryKey }),
-    onError: () => toast.error('Não foi possível atualizar o atributo.'),
+    onError: () => toast.error("Não foi possível atualizar o atributo."),
   });
 
   const deleteMut = useMutation({
     mutationFn: (id: string) => adminDeleteProductAttribute({ data: { id } }),
     onSuccess: () => {
-      toast.success('Atributo removido');
+      toast.success("Atributo removido");
       qc.invalidateQueries({ queryKey });
     },
-    onError: () => toast.error('Não foi possível remover.'),
+    onError: () => toast.error("Não foi possível remover."),
   });
 
   const reorderMut = useMutation({
@@ -151,10 +151,10 @@ export function ProductAttributesSection({ productId }: Props) {
       });
       setSuggestSelection(initial);
       if (data.length === 0) {
-        toast.info('Nenhum atributo técnico foi identificado automaticamente.');
+        toast.info("Nenhum atributo técnico foi identificado automaticamente.");
       }
     },
-    onError: () => toast.error('Não foi possível gerar sugestões.'),
+    onError: () => toast.error("Não foi possível gerar sugestões."),
   });
 
   const acceptSuggestionMut = useMutation({
@@ -172,12 +172,14 @@ export function ProductAttributesSection({ productId }: Props) {
       }),
     onSuccess: (_data, vars) => {
       toast.success(`${vars.label} adicionado`);
-      setSuggestions((prev) => (prev ? prev.map((p) => (p.key === vars.key ? { ...p, alreadyExists: true } : p)) : prev));
+      setSuggestions((prev) =>
+        prev ? prev.map((p) => (p.key === vars.key ? { ...p, alreadyExists: true } : p)) : prev,
+      );
       qc.invalidateQueries({ queryKey });
     },
     onError: (err: Error) => {
-      if (err.message === 'attribute_already_exists') toast.info('Já existe esse atributo.');
-      else toast.error('Não foi possível salvar a sugestão.');
+      if (err.message === "attribute_already_exists") toast.info("Já existe esse atributo.");
+      else toast.error("Não foi possível salvar a sugestão.");
     },
   });
 
@@ -197,8 +199,8 @@ export function ProductAttributesSection({ productId }: Props) {
         <div>
           <h3 className="text-base font-semibold">Atributos técnicos</h3>
           <p className="text-xs text-muted-foreground mt-1 max-w-prose">
-            Características como potência, voltagem, temperatura de cor e proteção IP.
-            Aparecem na ficha técnica do produto e ajudam o cliente a comparar.
+            Características como potência, voltagem, temperatura de cor e proteção IP. Aparecem na
+            ficha técnica do produto e ajudam o cliente a comparar.
           </p>
         </div>
         <Button
@@ -221,7 +223,8 @@ export function ProductAttributesSection({ productId }: Props) {
       {suggestions && suggestions.length > 0 && (
         <div className="rounded-md border border-dashed bg-muted/30 p-3 space-y-2">
           <p className="text-xs text-muted-foreground">
-            O sistema identificou os atributos abaixo a partir do nome e descrição. Revise antes de salvar.
+            O sistema identificou os atributos abaixo a partir do nome e descrição. Revise antes de
+            salvar.
           </p>
           <ul className="space-y-2">
             {suggestions.map((s) => {
@@ -244,7 +247,7 @@ export function ProductAttributesSection({ productId }: Props) {
                       </SelectTrigger>
                       <SelectContent>
                         {s.conflict!.map((c) => (
-                          <SelectItem key={c} value={c.replace(/[A-Za-z]+$/, '')}>
+                          <SelectItem key={c} value={c.replace(/[A-Za-z]+$/, "")}>
                             {c}
                           </SelectItem>
                         ))}
@@ -315,7 +318,9 @@ export function ProductAttributesSection({ productId }: Props) {
             </div>
           ) : (
             <div className="space-y-1.5">
-              <Label className="text-xs text-muted-foreground">{presetSuggestion?.description ?? ' '}</Label>
+              <Label className="text-xs text-muted-foreground">
+                {presetSuggestion?.description ?? " "}
+              </Label>
               <div className="text-xs text-muted-foreground italic h-9 flex items-center">
                 Chave: <code className="ml-1">{selectedKey}</code>
               </div>
@@ -342,7 +347,7 @@ export function ProductAttributesSection({ productId }: Props) {
             <Input
               value={value}
               onChange={(e) => setValue(e.target.value)}
-              placeholder={presetSuggestion?.placeholder ?? 'Valor'}
+              placeholder={presetSuggestion?.placeholder ?? "Valor"}
             />
           </div>
           <div className="space-y-1.5">
@@ -350,7 +355,7 @@ export function ProductAttributesSection({ productId }: Props) {
             <Input
               value={unit}
               onChange={(e) => setUnit(e.target.value)}
-              placeholder={presetSuggestion?.unit ?? ''}
+              placeholder={presetSuggestion?.unit ?? ""}
             />
           </div>
         </div>
@@ -440,7 +445,7 @@ function AttributeRow({
 }: RowProps) {
   const [editing, setEditing] = useState(false);
   const [val, setVal] = useState(row.attribute_value);
-  const [unit, setUnit] = useState(row.attribute_unit ?? '');
+  const [unit, setUnit] = useState(row.attribute_unit ?? "");
 
   const display = useMemo(
     () => formatAttributeDisplay(row.attribute_value, row.attribute_unit),
@@ -499,11 +504,7 @@ function AttributeRow({
                 className="sm:col-span-2"
                 placeholder="Valor"
               />
-              <Input
-                value={unit}
-                onChange={(e) => setUnit(e.target.value)}
-                placeholder="Unidade"
-              />
+              <Input value={unit} onChange={(e) => setUnit(e.target.value)} placeholder="Unidade" />
             </div>
           )}
         </div>
@@ -530,7 +531,7 @@ function AttributeRow({
                 variant="ghost"
                 onClick={() => {
                   setVal(row.attribute_value);
-                  setUnit(row.attribute_unit ?? '');
+                  setUnit(row.attribute_unit ?? "");
                   setEditing(false);
                 }}
               >

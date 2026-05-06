@@ -1,19 +1,19 @@
-import type { LucideIcon } from 'lucide-react';
+import type { LucideIcon } from "lucide-react";
 
 interface Props {
   icon: LucideIcon;
   label: string;
   value: string;
   hint?: string;
-  accent?: 'primary' | 'success' | 'warn' | 'danger';
+  accent?: "primary" | "success" | "warn" | "danger";
   loading?: boolean;
 }
 
-const accentClass: Record<NonNullable<Props['accent']>, string> = {
-  primary: 'text-primary',
-  success: 'text-emerald-600 dark:text-emerald-400',
-  warn: 'text-amber-600 dark:text-amber-400',
-  danger: 'text-destructive',
+const accentClass: Record<NonNullable<Props["accent"]>, string> = {
+  primary: "text-primary",
+  success: "text-emerald-600 dark:text-emerald-400",
+  warn: "text-amber-600 dark:text-amber-400",
+  danger: "text-destructive",
 };
 
 export function DashboardMetricCard({ icon: Icon, label, value, hint, accent, loading }: Props) {
@@ -28,9 +28,9 @@ export function DashboardMetricCard({ icon: Icon, label, value, hint, accent, lo
       ) : (
         <p
           className={[
-            'font-display font-bold text-2xl tracking-tight leading-none',
-            accent ? accentClass[accent] : '',
-          ].join(' ')}
+            "font-display font-bold text-2xl tracking-tight leading-none",
+            accent ? accentClass[accent] : "",
+          ].join(" ")}
         >
           {value}
         </p>

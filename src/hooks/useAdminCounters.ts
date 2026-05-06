@@ -1,7 +1,11 @@
-import { useQuery } from '@tanstack/react-query';
-import { getAdminOperations, type OperationsCard, type OperationsAlert } from '@/server/operations.functions';
+import { useQuery } from "@tanstack/react-query";
+import {
+  getAdminOperations,
+  type OperationsCard,
+  type OperationsAlert,
+} from "@/server/operations.functions";
 
-export type CounterSeverity = 'danger' | 'warn' | 'info';
+export type CounterSeverity = "danger" | "warn" | "info";
 
 export type CounterEntry = {
   qty: number;
@@ -15,7 +19,7 @@ export type CounterEntry = {
  */
 export function useAdminCounters() {
   const query = useQuery({
-    queryKey: ['admin-operations'],
+    queryKey: ["admin-operations"],
     queryFn: () => getAdminOperations(),
     staleTime: 60_000,
     refetchOnWindowFocus: false,
@@ -29,8 +33,7 @@ export function useAdminCounters() {
   for (const c of cards) {
     map[c.id] = {
       qty: c.qty,
-      severity:
-        c.status === 'danger' ? 'danger' : c.status === 'warn' ? 'warn' : 'info',
+      severity: c.status === "danger" ? "danger" : c.status === "warn" ? "warn" : "info",
     };
   }
 

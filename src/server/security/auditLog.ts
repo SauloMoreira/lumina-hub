@@ -1,38 +1,38 @@
-import { getRequest, getRequestHeader } from '@tanstack/react-start/server';
-import { supabaseAdmin } from '@/integrations/supabase/client.server';
-import { getClientIdentifier } from './rateLimit';
+import { getRequest, getRequestHeader } from "@tanstack/react-start/server";
+import { supabaseAdmin } from "@/integrations/supabase/client.server";
+import { getClientIdentifier } from "./rateLimit";
 
 /**
  * Chaves cujo valor deve ser totalmente substituído por "***" antes de gravar
  * em before/after. Comparação case-insensitive e por substring.
  */
 const SENSITIVE_KEY_PATTERNS = [
-  'password',
-  'senha',
-  'token',
-  'secret',
-  'apikey',
-  'api_key',
-  'access_key',
-  'private_key',
-  'service_role',
-  'authorization',
-  'cookie',
-  'session',
-  'card_number',
-  'cvv',
-  'cvc',
-  'security_code',
+  "password",
+  "senha",
+  "token",
+  "secret",
+  "apikey",
+  "api_key",
+  "access_key",
+  "private_key",
+  "service_role",
+  "authorization",
+  "cookie",
+  "session",
+  "card_number",
+  "cvv",
+  "cvc",
+  "security_code",
 ];
 
 /**
  * Chaves que devem ser mascaradas parcialmente (mostra apenas alguns dígitos).
  */
-const PARTIAL_MASK_KEYS = ['cpf', 'cnpj', 'rg'];
+const PARTIAL_MASK_KEYS = ["cpf", "cnpj", "rg"];
 
 function maskPartial(value: string): string {
-  const digits = value.replace(/\D/g, '');
-  if (digits.length <= 4) return '***';
+  const digits = value.replace(/\D/g, "");
+  if (digits.length <= 4) return "***";
   return `***${digits.slice(-4)}`;
 }
 
@@ -51,15 +51,15 @@ function isPartialMaskKey(key: string): boolean {
  * mascarando chaves sensíveis. Limite de profundidade para evitar stack overflow.
  */
 function sanitize(value: unknown, depth = 0): unknown {
-  if (depth > 8) return '[max-depth]';
+  if (depth > 8) return "[max-depth]";
   if (value === null || value === undefined) return value;
   if (Array.isArray(value)) return value.map((v) => sanitize(v, depth + 1));
-  if (typeof value === 'object') {
+  if (typeof value === "object") {
     const out: Record<string, unknown> = {};
     for (const [k, v] of Object.entries(value as Record<string, unknown>)) {
       if (isSensitiveKey(k)) {
-        out[k] = '***';
-      } else if (isPartialMaskKey(k) && typeof v === 'string') {
+        out[k] = "***";
+      } else if (isPartialMaskKey(k) && typeof v === "string") {
         out[k] = maskPartial(v);
       } else {
         out[k] = sanitize(v, depth + 1);
@@ -89,14 +89,14 @@ export async function logAdminAction(params: {
 }): Promise<void> {
   let userAgent: string | null = null;
   try {
-    userAgent = getRequestHeader('user-agent') ?? null;
+    userAgent = getRequestHeader("user-agent") ?? null;
   } catch {
     // Fora do contexto de request (ex: cron) — ignora.
   }
   let ip: string | null = null;
   try {
     ip = getClientIdentifier();
-    if (ip === 'unknown') ip = null;
+    if (ip === "unknown") ip = null;
   } catch {
     ip = null;
   }
@@ -105,9 +105,9 @@ export async function logAdminAction(params: {
   if (!adminEmail) {
     try {
       const { data } = await supabaseAdmin
-        .from('profiles')
-        .select('email')
-        .eq('id', params.adminId)
+        .from("profiles")
+        .select("email")
+        .eq("id", params.adminId)
         .maybeSingle();
       adminEmail = data?.email ?? null;
     } catch {
@@ -119,7 +119,7 @@ export async function logAdminAction(params: {
   const safeAfter = params.after === undefined ? null : sanitize(params.after);
 
   try {
-    await supabaseAdmin.rpc('log_admin_action', {
+    await supabaseAdmin.rpc("log_admin_action", {
       _admin_id: params.adminId,
       _admin_email: adminEmail,
       _action: params.action,
@@ -133,13 +133,12 @@ export async function logAdminAction(params: {
     } as never);
   } catch (err) {
     // Auditoria nunca deve quebrar a operação principal.
-    console.error('[auditLog] failed to log admin action:', err);
+    console.error("[auditLog] failed to log admin action:", err);
   }
 
-  if (process.env.NODE_ENV !== 'production') {
-    // eslint-disable-next-line no-console
+  if (process.env.NODE_ENV !== "production") {
     console.log(
-      `[admin-audit] ${params.action} ${params.resourceType}${params.resourceId ? `:${params.resourceId}` : ''} by ${adminEmail ?? params.adminId}`,
+      `[admin-audit] ${params.action} ${params.resourceType}${params.resourceId ? `:${params.resourceId}` : ""} by ${adminEmail ?? params.adminId}`,
     );
   }
 

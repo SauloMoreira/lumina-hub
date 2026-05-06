@@ -1,6 +1,6 @@
-import { createServerFn } from '@tanstack/react-start';
-import { z } from 'zod';
-import { requireAdmin } from '@/integrations/supabase/admin-middleware';
+import { createServerFn } from "@tanstack/react-start";
+import { z } from "zod";
+import { requireAdmin } from "@/integrations/supabase/admin-middleware";
 
 const InputSchema = z.object({
   productName: z.string().min(1).max(200),
@@ -17,7 +17,7 @@ const ResultSchema = z.object({
     .string()
     .min(3)
     .max(120)
-    .regex(/^[a-z0-9-]+(\.(webp|jpg|png))?$/i, 'filename inválido'),
+    .regex(/^[a-z0-9-]+(\.(webp|jpg|png))?$/i, "filename inválido"),
 });
 
 const SYSTEM_PROMPT = `Você é especialista em SEO de imagens para e-commerce brasileiro de material elétrico e iluminação LED da Led Maricá (Maricá/RJ).
@@ -28,13 +28,13 @@ Para cada imagem de produto, gere:
 - filename: nome de arquivo SEO em kebab-case (somente letras minúsculas, números e hífen), com extensão .webp.
 Regras: português brasileiro, sem aspas, sem emojis, sem pontuação no filename além de hífens.`;
 
-export const generateImageSeo = createServerFn({ method: 'POST' })
+export const generateImageSeo = createServerFn({ method: "POST" })
   .middleware([requireAdmin])
   .inputValidator((raw: unknown) => InputSchema.parse(raw))
   .handler(async ({ data }) => {
     try {
       const apiKey = process.env.LOVABLE_API_KEY;
-      if (!apiKey) return { ok: false as const, error: 'LOVABLE_API_KEY não configurada' };
+      if (!apiKey) return { ok: false as const, error: "LOVABLE_API_KEY não configurada" };
 
       const userPrompt = [
         `Produto: ${data.productName}`,
@@ -43,46 +43,50 @@ export const generateImageSeo = createServerFn({ method: 'POST' })
         data.index != null ? `Imagem nº ${data.index + 1} do produto` : null,
       ]
         .filter(Boolean)
-        .join('\n');
+        .join("\n");
 
-      const res = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
-        method: 'POST',
-        headers: { Authorization: `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
+      const res = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+        method: "POST",
+        headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
         body: JSON.stringify({
-          model: 'google/gemini-3-flash-preview',
+          model: "google/gemini-3-flash-preview",
           messages: [
-            { role: 'system', content: SYSTEM_PROMPT },
-            { role: 'user', content: userPrompt },
+            { role: "system", content: SYSTEM_PROMPT },
+            { role: "user", content: userPrompt },
           ],
           tools: [
             {
-              type: 'function',
+              type: "function",
               function: {
-                name: 'set_image_seo',
-                description: 'Define metadados SEO da imagem do produto.',
+                name: "set_image_seo",
+                description: "Define metadados SEO da imagem do produto.",
                 parameters: {
-                  type: 'object',
+                  type: "object",
                   properties: {
-                    alt: { type: 'string' },
-                    title: { type: 'string' },
-                    caption: { type: 'string' },
-                    filename: { type: 'string' },
+                    alt: { type: "string" },
+                    title: { type: "string" },
+                    caption: { type: "string" },
+                    filename: { type: "string" },
                   },
-                  required: ['alt', 'title', 'caption', 'filename'],
+                  required: ["alt", "title", "caption", "filename"],
                   additionalProperties: false,
                 },
               },
             },
           ],
-          tool_choice: { type: 'function', function: { name: 'set_image_seo' } },
+          tool_choice: { type: "function", function: { name: "set_image_seo" } },
         }),
       });
 
-      if (res.status === 429) return { ok: false as const, error: 'Limite de requisições atingido. Tente novamente em instantes.' };
-      if (res.status === 402) return { ok: false as const, error: 'Créditos da IA esgotados.' };
+      if (res.status === 429)
+        return {
+          ok: false as const,
+          error: "Limite de requisições atingido. Tente novamente em instantes.",
+        };
+      if (res.status === 402) return { ok: false as const, error: "Créditos da IA esgotados." };
       if (!res.ok) {
         const txt = await res.text();
-        console.error('AI gateway error', res.status, txt);
+        console.error("AI gateway error", res.status, txt);
         return { ok: false as const, error: `Erro do provedor de IA (${res.status})` };
       }
 
@@ -90,14 +94,18 @@ export const generateImageSeo = createServerFn({ method: 'POST' })
         choices?: { message?: { tool_calls?: { function?: { arguments?: unknown } }[] } }[];
       };
       const argsRaw = json.choices?.[0]?.message?.tool_calls?.[0]?.function?.arguments;
-      if (!argsRaw) return { ok: false as const, error: 'Resposta da IA sem dados estruturados' };
+      if (!argsRaw) return { ok: false as const, error: "Resposta da IA sem dados estruturados" };
 
-      const parsed = ResultSchema.parse(typeof argsRaw === 'string' ? JSON.parse(argsRaw) : argsRaw);
-      const filename = /\.(webp|jpg|png)$/i.test(parsed.filename) ? parsed.filename : `${parsed.filename}.webp`;
+      const parsed = ResultSchema.parse(
+        typeof argsRaw === "string" ? JSON.parse(argsRaw) : argsRaw,
+      );
+      const filename = /\.(webp|jpg|png)$/i.test(parsed.filename)
+        ? parsed.filename
+        : `${parsed.filename}.webp`;
 
       return { ok: true as const, ...parsed, filename };
     } catch (e) {
-      console.error('generateImageSeo error', e);
-      return { ok: false as const, error: e instanceof Error ? e.message : 'Erro desconhecido' };
+      console.error("generateImageSeo error", e);
+      return { ok: false as const, error: e instanceof Error ? e.message : "Erro desconhecido" };
     }
   });

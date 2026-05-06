@@ -1,4 +1,4 @@
-import { useCookieStore } from '@/stores/cookieStore';
+import { useCookieStore } from "@/stores/cookieStore";
 
 declare global {
   interface Window {
@@ -12,56 +12,76 @@ declare global {
 }
 
 const META_EVENT_MAP: Record<string, string> = {
-  view_product: 'ViewContent',
-  add_to_cart: 'AddToCart',
-  begin_checkout: 'InitiateCheckout',
-  purchase: 'Purchase',
-  search: 'Search',
-  lead_captured: 'Lead',
+  view_product: "ViewContent",
+  add_to_cart: "AddToCart",
+  begin_checkout: "InitiateCheckout",
+  purchase: "Purchase",
+  search: "Search",
+  lead_captured: "Lead",
 };
 
 const TIKTOK_EVENT_MAP: Record<string, string> = {
-  view_product: 'ViewContent',
-  add_to_cart: 'AddToCart',
-  begin_checkout: 'InitiateCheckout',
-  purchase: 'CompletePayment',
-  search: 'Search',
-  lead_captured: 'SubmitForm',
+  view_product: "ViewContent",
+  add_to_cart: "AddToCart",
+  begin_checkout: "InitiateCheckout",
+  purchase: "CompletePayment",
+  search: "Search",
+  lead_captured: "SubmitForm",
 };
 
 export function trackEvent(event: string, data?: Record<string, any>) {
-  if (typeof window === 'undefined') return;
+  if (typeof window === "undefined") return;
   const { preferences, consented } = useCookieStore.getState();
   if (!consented) return;
 
   // dataLayer (GTM) — analytics
   if (preferences.analytics && Array.isArray(window.dataLayer)) {
-    try { window.dataLayer.push({ event, ...data }); } catch { /* noop */ }
+    try {
+      window.dataLayer.push({ event, ...data });
+    } catch {
+      /* noop */
+    }
   }
 
   // GA4
-  if (preferences.analytics && typeof window.gtag === 'function') {
-    try { window.gtag('event', event, data); } catch { /* noop */ }
+  if (preferences.analytics && typeof window.gtag === "function") {
+    try {
+      window.gtag("event", event, data);
+    } catch {
+      /* noop */
+    }
   }
 
   // Clarity (custom event)
-  if (preferences.analytics && typeof window.clarity === 'function') {
-    try { window.clarity('event', event); } catch { /* noop */ }
+  if (preferences.analytics && typeof window.clarity === "function") {
+    try {
+      window.clarity("event", event);
+    } catch {
+      /* noop */
+    }
   }
 
   // Meta Pixel
-  if (preferences.marketing && typeof window.fbq === 'function') {
+  if (preferences.marketing && typeof window.fbq === "function") {
     const mapped = META_EVENT_MAP[event];
     if (mapped) {
-      try { window.fbq('track', mapped, data); } catch { /* noop */ }
+      try {
+        window.fbq("track", mapped, data);
+      } catch {
+        /* noop */
+      }
     }
   }
 
   // TikTok Pixel
-  if (preferences.marketing && window.ttq && typeof window.ttq.track === 'function') {
+  if (preferences.marketing && window.ttq && typeof window.ttq.track === "function") {
     const mapped = TIKTOK_EVENT_MAP[event];
     if (mapped) {
-      try { window.ttq.track(mapped, data); } catch { /* noop */ }
+      try {
+        window.ttq.track(mapped, data);
+      } catch {
+        /* noop */
+      }
     }
   }
 }
@@ -73,46 +93,50 @@ export function trackViewProduct(product: {
   sale_price?: number | null;
   category_id?: string | null;
 }) {
-  trackEvent('view_product', {
-    content_type: 'product',
+  trackEvent("view_product", {
+    content_type: "product",
     content_ids: [product.id],
     content_name: product.name,
     content_category: product.category_id ?? undefined,
     value: product.sale_price ?? product.price,
-    currency: 'BRL',
+    currency: "BRL",
   });
 }
 
 export function trackAddToCart(
   product: { id: string; name: string; price: number; sale_price?: number | null },
-  qty: number
+  qty: number,
 ) {
-  trackEvent('add_to_cart', {
+  trackEvent("add_to_cart", {
     content_ids: [product.id],
     content_name: product.name,
     value: (product.sale_price ?? product.price) * qty,
-    currency: 'BRL',
+    currency: "BRL",
     num_items: qty,
   });
 }
 
 export function trackBeginCheckout(value: number, numItems: number) {
-  trackEvent('begin_checkout', { value, currency: 'BRL', num_items: numItems });
+  trackEvent("begin_checkout", { value, currency: "BRL", num_items: numItems });
 }
 
-export function trackPurchase(order: { order_number?: number | string; total: number; items?: unknown[] }) {
-  trackEvent('purchase', {
+export function trackPurchase(order: {
+  order_number?: number | string;
+  total: number;
+  items?: unknown[];
+}) {
+  trackEvent("purchase", {
     transaction_id: order.order_number,
     value: order.total,
-    currency: 'BRL',
+    currency: "BRL",
     num_items: order.items?.length,
   });
 }
 
 export function trackSearch(query: string) {
-  trackEvent('search', { search_string: query });
+  trackEvent("search", { search_string: query });
 }
 
 export function trackLeadCaptured(origin: string) {
-  trackEvent('lead_captured', { lead_origin: origin });
+  trackEvent("lead_captured", { lead_origin: origin });
 }

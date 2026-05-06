@@ -1,9 +1,9 @@
-import { createServerFn } from '@tanstack/react-start';
-import { z } from 'zod';
-import { requireAdmin } from '@/integrations/supabase/admin-middleware';
+import { createServerFn } from "@tanstack/react-start";
+import { z } from "zod";
+import { requireAdmin } from "@/integrations/supabase/admin-middleware";
 
 async function getSupabaseAdmin() {
-  return (await import('@/integrations/supabase/client.server')).supabaseAdmin;
+  return (await import("@/integrations/supabase/client.server")).supabaseAdmin;
 }
 
 // ============================================================
@@ -11,15 +11,15 @@ async function getSupabaseAdmin() {
 // ============================================================
 
 export type ReportPreset =
-  | 'today'
-  | 'yesterday'
-  | 'last_7_days'
-  | 'last_30_days'
-  | 'this_month'
-  | 'last_month'
-  | 'custom';
+  | "today"
+  | "yesterday"
+  | "last_7_days"
+  | "last_30_days"
+  | "this_month"
+  | "last_month"
+  | "custom";
 
-export type OrderTypeFilter = 'all' | 'b2c' | 'b2b';
+export type OrderTypeFilter = "all" | "b2c" | "b2b";
 
 export type ReportFilters = {
   preset: ReportPreset;
@@ -72,7 +72,7 @@ export type SalesReportRow = {
   payment_status: string;
   payment_method: string | null;
   delivery_method: string;
-  order_type: 'b2c' | 'b2b';
+  order_type: "b2c" | "b2b";
   customer_name: string;
   company_name: string | null;
   subtotal: number;
@@ -102,9 +102,9 @@ export type SalesReportSummary = {
 // Helpers
 // ============================================================
 
-const PAID = ['approved', 'paid'];
-const PENDING = ['pending', 'in_process', 'preference_created'];
-const CANCELLED = ['rejected', 'failed', 'cancelled'];
+const PAID = ["approved", "paid"];
+const PENDING = ["pending", "in_process", "preference_created"];
+const CANCELLED = ["rejected", "failed", "cancelled"];
 
 function startOfDay(d: Date) {
   const x = new Date(d);
@@ -121,31 +121,34 @@ function endOfDay(d: Date) {
 function resolveRange(filters: ReportFilters): { from: Date; to: Date } {
   const now = new Date();
   switch (filters.preset) {
-    case 'today':
+    case "today":
       return { from: startOfDay(now), to: endOfDay(now) };
-    case 'yesterday': {
+    case "yesterday": {
       const y = new Date(now);
       y.setDate(now.getDate() - 1);
       return { from: startOfDay(y), to: endOfDay(y) };
     }
-    case 'last_7_days': {
+    case "last_7_days": {
       const f = new Date(now);
       f.setDate(now.getDate() - 6);
       return { from: startOfDay(f), to: endOfDay(now) };
     }
-    case 'last_30_days': {
+    case "last_30_days": {
       const f = new Date(now);
       f.setDate(now.getDate() - 29);
       return { from: startOfDay(f), to: endOfDay(now) };
     }
-    case 'this_month':
-      return { from: startOfDay(new Date(now.getFullYear(), now.getMonth(), 1)), to: endOfDay(now) };
-    case 'last_month': {
+    case "this_month":
+      return {
+        from: startOfDay(new Date(now.getFullYear(), now.getMonth(), 1)),
+        to: endOfDay(now),
+      };
+    case "last_month": {
       const f = new Date(now.getFullYear(), now.getMonth() - 1, 1);
       const t = new Date(now.getFullYear(), now.getMonth(), 0);
       return { from: startOfDay(f), to: endOfDay(t) };
     }
-    case 'custom': {
+    case "custom": {
       const from = filters.start ? new Date(filters.start) : startOfDay(now);
       const to = filters.end ? new Date(filters.end) : endOfDay(now);
       return { from: startOfDay(from), to: endOfDay(to) };
@@ -166,23 +169,23 @@ function pctDelta(curr: number, prev: number): number | null {
 }
 
 function paymentMethodLabel(key: string | null): string {
-  if (!key) return 'Não informado';
+  if (!key) return "Não informado";
   const map: Record<string, string> = {
-    pix: 'Pix',
-    credit_card: 'Cartão de crédito',
-    debit_card: 'Cartão de débito',
-    bolbradesco: 'Boleto',
-    boleto: 'Boleto',
-    account_money: 'Saldo Mercado Pago',
+    pix: "Pix",
+    credit_card: "Cartão de crédito",
+    debit_card: "Cartão de débito",
+    bolbradesco: "Boleto",
+    boleto: "Boleto",
+    account_money: "Saldo Mercado Pago",
   };
   return map[key.toLowerCase()] ?? key;
 }
 
 function deliveryMethodLabel(key: string): string {
   const map: Record<string, string> = {
-    delivery: 'Entrega',
-    local_delivery: 'Entrega local',
-    pickup: 'Retirada na loja',
+    delivery: "Entrega",
+    local_delivery: "Entrega local",
+    pickup: "Retirada na loja",
   };
   return map[key] ?? key;
 }
@@ -198,7 +201,7 @@ type OrderRow = {
   payment_status: string | null;
   payment_method: string | null;
   delivery_method: string | null;
-  order_type: 'b2c' | 'b2b' | string;
+  order_type: "b2c" | "b2b" | string;
   subtotal: number | string | null;
   discount: number | string | null;
   shipping_cost: number | string | null;
@@ -224,22 +227,22 @@ async function fetchOrders(
 ): Promise<OrderRow[]> {
   const supabaseAdmin = await getSupabaseAdmin();
   let q = supabaseAdmin
-    .from('orders')
+    .from("orders")
     .select(
-      'id, order_number, status, payment_status, payment_method, delivery_method, order_type, ' +
-        'subtotal, discount, shipping_cost, total, b2b_discount_total, coupon_code, ' +
-        'mp_fee_amount, estimated_fee_amount, mp_net_amount, estimated_net_amount, payment_fee_source, ' +
-        'company_name, company_cnpj, address_snapshot, created_at, paid_at, invoice_status',
+      "id, order_number, status, payment_status, payment_method, delivery_method, order_type, " +
+        "subtotal, discount, shipping_cost, total, b2b_discount_total, coupon_code, " +
+        "mp_fee_amount, estimated_fee_amount, mp_net_amount, estimated_net_amount, payment_fee_source, " +
+        "company_name, company_cnpj, address_snapshot, created_at, paid_at, invoice_status",
     )
-    .gte('created_at', range.from.toISOString())
-    .lte('created_at', range.to.toISOString())
-    .order('created_at', { ascending: false });
+    .gte("created_at", range.from.toISOString())
+    .lte("created_at", range.to.toISOString())
+    .order("created_at", { ascending: false });
 
-  if (filters.orderType !== 'all') q = q.eq('order_type', filters.orderType);
-  if (filters.paymentStatus) q = q.eq('payment_status', filters.paymentStatus);
-  if (filters.paymentMethod) q = q.eq('payment_method', filters.paymentMethod);
-  if (filters.deliveryMethod) q = q.eq('delivery_method', filters.deliveryMethod);
-  if (filters.status) q = q.eq('status', filters.status);
+  if (filters.orderType !== "all") q = q.eq("order_type", filters.orderType);
+  if (filters.paymentStatus) q = q.eq("payment_status", filters.paymentStatus);
+  if (filters.paymentMethod) q = q.eq("payment_method", filters.paymentMethod);
+  if (filters.deliveryMethod) q = q.eq("delivery_method", filters.deliveryMethod);
+  if (filters.status) q = q.eq("status", filters.status);
 
   const { data, error } = await q;
   if (error) throw new Response(`orders query failed: ${error.message}`, { status: 500 });
@@ -272,17 +275,25 @@ function feeOf(o: {
 // ============================================================
 
 const FiltersSchema = z.object({
-  preset: z.enum(['today', 'yesterday', 'last_7_days', 'last_30_days', 'this_month', 'last_month', 'custom']),
+  preset: z.enum([
+    "today",
+    "yesterday",
+    "last_7_days",
+    "last_30_days",
+    "this_month",
+    "last_month",
+    "custom",
+  ]),
   start: z.string().optional(),
   end: z.string().optional(),
-  orderType: z.enum(['all', 'b2c', 'b2b']).default('all'),
+  orderType: z.enum(["all", "b2c", "b2b"]).default("all"),
   paymentStatus: z.string().nullable().optional(),
   paymentMethod: z.string().nullable().optional(),
   deliveryMethod: z.string().nullable().optional(),
   status: z.string().nullable().optional(),
 });
 
-export const getFinanceReportCards = createServerFn({ method: 'POST' })
+export const getFinanceReportCards = createServerFn({ method: "POST" })
   .middleware([requireAdmin])
   .inputValidator((input: unknown) => FiltersSchema.parse(input))
   .handler(async ({ data: filters }): Promise<FinanceReportCards> => {
@@ -296,9 +307,9 @@ export const getFinanceReportCards = createServerFn({ method: 'POST' })
       fetchOrders(filters, prev),
     ]);
 
-    const paid = orders.filter((o) => PAID.includes(o.payment_status ?? ''));
-    const pending = orders.filter((o) => PENDING.includes(o.payment_status ?? ''));
-    const cancelled = orders.filter((o) => CANCELLED.includes(o.payment_status ?? ''));
+    const paid = orders.filter((o) => PAID.includes(o.payment_status ?? ""));
+    const pending = orders.filter((o) => PENDING.includes(o.payment_status ?? ""));
+    const cancelled = orders.filter((o) => CANCELLED.includes(o.payment_status ?? ""));
 
     const grossRevenue = paid.reduce((s, o) => s + Number(o.total ?? 0), 0);
     const totalMpFees = paid.reduce((s, o) => s + feeOf(o), 0);
@@ -313,7 +324,7 @@ export const getFinanceReportCards = createServerFn({ method: 'POST' })
     const shippingCharged = paid.reduce((s, o) => s + Number(o.shipping_cost ?? 0), 0);
 
     const hasEstimatedFees = paid.some(
-      (o) => o.payment_fee_source === 'estimated' || o.payment_fee_source === 'unknown',
+      (o) => o.payment_fee_source === "estimated" || o.payment_fee_source === "unknown",
     );
 
     // COGS via order_items snapshot (apenas pedidos pagos)
@@ -322,9 +333,9 @@ export const getFinanceReportCards = createServerFn({ method: 'POST' })
     if (paid.length > 0) {
       const ids = paid.map((o) => o.id);
       const { data: items } = await supabaseAdmin
-        .from('order_items')
-        .select('order_id, qty, unit_cost, total_cost')
-        .in('order_id', ids);
+        .from("order_items")
+        .select("order_id, qty, unit_cost, total_cost")
+        .in("order_id", ids);
       for (const it of items ?? []) {
         if (it.unit_cost == null) {
           itemsWithoutCost += 1;
@@ -339,7 +350,7 @@ export const getFinanceReportCards = createServerFn({ method: 'POST' })
       grossRevenue > 0 ? (estimatedGrossProfit / grossRevenue) * 100 : 0;
 
     // Período anterior: comparativos simples
-    const prevPaid = prevOrders.filter((o) => PAID.includes(o.payment_status ?? ''));
+    const prevPaid = prevOrders.filter((o) => PAID.includes(o.payment_status ?? ""));
     const prevGross = prevPaid.reduce((s, o) => s + Number(o.total ?? 0), 0);
     const prevNet = prevPaid.reduce((s, o) => s + netOf(o), 0);
     const prevAvg = prevPaid.length > 0 ? prevGross / prevPaid.length : 0;
@@ -348,9 +359,9 @@ export const getFinanceReportCards = createServerFn({ method: 'POST' })
     if (prevPaid.length > 0) {
       const ids = prevPaid.map((o) => o.id);
       const { data: items } = await supabaseAdmin
-        .from('order_items')
-        .select('order_id, qty, unit_cost, total_cost')
-        .in('order_id', ids);
+        .from("order_items")
+        .select("order_id, qty, unit_cost, total_cost")
+        .in("order_id", ids);
       for (const it of items ?? []) {
         if (it.unit_cost == null) continue;
         prevCogs += Number(it.total_cost ?? Number(it.unit_cost) * Number(it.qty ?? 0));
@@ -360,10 +371,10 @@ export const getFinanceReportCards = createServerFn({ method: 'POST' })
 
     // Notas fiscais pendentes (geral, não filtrado por período — operacional)
     const { count: invoicePending } = await supabaseAdmin
-      .from('orders')
-      .select('id', { head: true, count: 'exact' })
-      .in('payment_status', PAID)
-      .in('invoice_status', ['pendente', 'pending']);
+      .from("orders")
+      .select("id", { head: true, count: "exact" })
+      .in("payment_status", PAID)
+      .in("invoice_status", ["pendente", "pending"]);
 
     return {
       rangeFrom: range.from.toISOString(),
@@ -413,16 +424,16 @@ export type SalesReportResult = {
   pageSize: number;
 };
 
-export const getSalesReport = createServerFn({ method: 'POST' })
+export const getSalesReport = createServerFn({ method: "POST" })
   .middleware([requireAdmin])
   .inputValidator((input: unknown) => SalesInputSchema.parse(input))
   .handler(async ({ data }): Promise<SalesReportResult> => {
     const range = resolveRange(data);
     const all = await fetchOrders(data, range);
 
-    const paid = all.filter((o) => PAID.includes(o.payment_status ?? ''));
-    const pending = all.filter((o) => PENDING.includes(o.payment_status ?? ''));
-    const cancelled = all.filter((o) => CANCELLED.includes(o.payment_status ?? ''));
+    const paid = all.filter((o) => PAID.includes(o.payment_status ?? ""));
+    const pending = all.filter((o) => PENDING.includes(o.payment_status ?? ""));
+    const cancelled = all.filter((o) => CANCELLED.includes(o.payment_status ?? ""));
 
     const grossRevenue = paid.reduce((s, o) => s + Number(o.total ?? 0), 0);
     const estimatedNetRevenue = paid.reduce((s, o) => s + netOf(o), 0);
@@ -436,19 +447,19 @@ export const getSalesReport = createServerFn({ method: 'POST' })
       b2bTotal = 0;
 
     for (const o of paid) {
-      const pm = o.payment_method ?? 'unknown';
+      const pm = o.payment_method ?? "unknown";
       const cur = byPaymentMap.get(pm) ?? { count: 0, total: 0 };
       cur.count += 1;
       cur.total += Number(o.total ?? 0);
       byPaymentMap.set(pm, cur);
 
-      const dm = o.delivery_method ?? 'delivery';
+      const dm = o.delivery_method ?? "delivery";
       const curd = byDeliveryMap.get(dm) ?? { count: 0, total: 0 };
       curd.count += 1;
       curd.total += Number(o.total ?? 0);
       byDeliveryMap.set(dm, curd);
 
-      if (o.order_type === 'b2b') {
+      if (o.order_type === "b2b") {
         b2bCount += 1;
         b2bTotal += Number(o.total ?? 0);
       } else {
@@ -483,18 +494,17 @@ export const getSalesReport = createServerFn({ method: 'POST' })
 
     const rows: SalesReportRow[] = slice.map((o) => {
       const snap = (o.address_snapshot ?? null) as { recipient?: string; name?: string } | null;
-      const customerName =
-        snap?.recipient ?? snap?.name ?? o.company_name ?? 'Cliente';
+      const customerName = snap?.recipient ?? snap?.name ?? o.company_name ?? "Cliente";
       return {
         id: o.id,
         order_number: Number(o.order_number ?? 0),
         created_at: o.created_at as string,
         paid_at: (o.paid_at as string | null) ?? null,
         status: o.status as string,
-        payment_status: (o.payment_status as string) ?? 'unknown',
+        payment_status: (o.payment_status as string) ?? "unknown",
         payment_method: (o.payment_method as string | null) ?? null,
-        delivery_method: (o.delivery_method as string) ?? 'delivery',
-        order_type: (o.order_type as 'b2c' | 'b2b') ?? 'b2c',
+        delivery_method: (o.delivery_method as string) ?? "delivery",
+        order_type: (o.order_type as "b2c" | "b2b") ?? "b2c",
         customer_name: customerName,
         company_name: (o.company_name as string | null) ?? null,
         subtotal: Number(o.subtotal ?? 0),
@@ -504,7 +514,7 @@ export const getSalesReport = createServerFn({ method: 'POST' })
         mp_fee_amount: o.mp_fee_amount != null ? Number(o.mp_fee_amount) : null,
         estimated_fee_amount:
           o.estimated_fee_amount != null ? Number(o.estimated_fee_amount) : null,
-        payment_fee_source: (o.payment_fee_source as string) ?? 'unknown',
+        payment_fee_source: (o.payment_fee_source as string) ?? "unknown",
         net_amount: netOf(o),
       };
     });
@@ -525,26 +535,26 @@ export const getSalesReport = createServerFn({ method: 'POST' })
 // ============================================================
 
 function maskCnpj(v: string | null | undefined): string {
-  if (!v) return '';
-  const d = v.replace(/\D/g, '');
+  if (!v) return "";
+  const d = v.replace(/\D/g, "");
   if (d.length !== 14) return v;
   return `${d.slice(0, 2)}.***.***/${d.slice(8, 12)}-**`;
 }
 
 function csvEscape(s: unknown): string {
-  if (s == null) return '';
+  if (s == null) return "";
   const v = String(s);
-  if (v.includes(';') || v.includes('"') || v.includes('\n')) {
+  if (v.includes(";") || v.includes('"') || v.includes("\n")) {
     return `"${v.replace(/"/g, '""')}"`;
   }
   return v;
 }
 
 function fmtMoney(n: number) {
-  return n.toFixed(2).replace('.', ',');
+  return n.toFixed(2).replace(".", ",");
 }
 
-export const exportSalesReportCsv = createServerFn({ method: 'POST' })
+export const exportSalesReportCsv = createServerFn({ method: "POST" })
   .middleware([requireAdmin])
   .inputValidator((input: unknown) => FiltersSchema.parse(input))
   .handler(async ({ data: filters }): Promise<{ filename: string; content: string }> => {
@@ -553,54 +563,54 @@ export const exportSalesReportCsv = createServerFn({ method: 'POST' })
     const limited = all.slice(0, 5000);
 
     const headers = [
-      'Data',
-      'Pedido',
-      'Cliente',
-      'Empresa (CNPJ)',
-      'Tipo',
-      'Status pedido',
-      'Status pagamento',
-      'Método pagamento',
-      'Entrega',
-      'Subtotal',
-      'Desconto',
-      'Frete',
-      'Total',
-      'Taxa MP',
-      'Origem da taxa',
-      'Líquido estimado',
+      "Data",
+      "Pedido",
+      "Cliente",
+      "Empresa (CNPJ)",
+      "Tipo",
+      "Status pedido",
+      "Status pagamento",
+      "Método pagamento",
+      "Entrega",
+      "Subtotal",
+      "Desconto",
+      "Frete",
+      "Total",
+      "Taxa MP",
+      "Origem da taxa",
+      "Líquido estimado",
     ];
 
-    const lines: string[] = [headers.join(';')];
+    const lines: string[] = [headers.join(";")];
 
     for (const o of limited) {
       const snap = (o.address_snapshot ?? null) as { recipient?: string; name?: string } | null;
-      const customerName = snap?.recipient ?? snap?.name ?? o.company_name ?? 'Cliente';
+      const customerName = snap?.recipient ?? snap?.name ?? o.company_name ?? "Cliente";
       const fee = feeOf(o);
       const net = netOf(o);
       lines.push(
         [
-          new Date(o.created_at as string).toLocaleString('pt-BR'),
+          new Date(o.created_at as string).toLocaleString("pt-BR"),
           `#${o.order_number}`,
           customerName,
           o.company_name
-            ? `${o.company_name} (${maskCnpj((o as unknown as { company_cnpj?: string }).company_cnpj ?? '')})`
-            : '',
-          o.order_type === 'b2b' ? 'B2B' : 'B2C',
+            ? `${o.company_name} (${maskCnpj((o as unknown as { company_cnpj?: string }).company_cnpj ?? "")})`
+            : "",
+          o.order_type === "b2b" ? "B2B" : "B2C",
           o.status,
           o.payment_status,
           paymentMethodLabel((o.payment_method as string | null) ?? null),
-          deliveryMethodLabel((o.delivery_method as string) ?? 'delivery'),
+          deliveryMethodLabel((o.delivery_method as string) ?? "delivery"),
           fmtMoney(Number(o.subtotal ?? 0)),
           fmtMoney(Number(o.discount ?? 0)),
           fmtMoney(Number(o.shipping_cost ?? 0)),
           fmtMoney(Number(o.total ?? 0)),
           fmtMoney(fee),
-          o.payment_fee_source ?? 'unknown',
+          o.payment_fee_source ?? "unknown",
           fmtMoney(net),
         ]
           .map(csvEscape)
-          .join(';'),
+          .join(";"),
       );
     }
 
@@ -608,5 +618,5 @@ export const exportSalesReportCsv = createServerFn({ method: 'POST' })
       .toISOString()
       .slice(0, 10)}.csv`;
 
-    return { filename, content: '\ufeff' + lines.join('\n') };
+    return { filename, content: "\ufeff" + lines.join("\n") };
   });

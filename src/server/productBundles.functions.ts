@@ -1,14 +1,10 @@
-import { createServerFn } from '@tanstack/react-start';
-import { z } from 'zod';
+import { createServerFn } from "@tanstack/react-start";
+import { z } from "zod";
 
 // ----------------------------------------------------------------------------
 // Tipos compartilhados
 // ----------------------------------------------------------------------------
-export type BundleAvailability =
-  | 'available'
-  | 'partial'
-  | 'unavailable'
-  | 'needs_review';
+export type BundleAvailability = "available" | "partial" | "unavailable" | "needs_review";
 
 export type BundleItemPublic = {
   id: string;
@@ -33,10 +29,10 @@ export type BundleItemPublic = {
     b2b_min_qty: number | null;
   };
   // Status calculado por item
-  status: 'ok' | 'inactive' | 'no_price' | 'no_stock';
+  status: "ok" | "inactive" | "no_price" | "no_stock";
 };
 
-export type BundleDiscountType = 'none' | 'fixed_amount' | 'percentage';
+export type BundleDiscountType = "none" | "fixed_amount" | "percentage";
 
 export type BundlePublic = {
   id: string;
@@ -77,11 +73,11 @@ export type BundleAdminRow = {
 // Helpers
 // ----------------------------------------------------------------------------
 async function getOptionalUserId(): Promise<string | null> {
-  const { supabaseAdmin } = await import('@/integrations/supabase/client.server');
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   try {
-    const { getRequestHeader } = await import('@tanstack/react-start/server');
-    const auth = getRequestHeader('Authorization') || getRequestHeader('authorization');
-    if (auth && auth.toLowerCase().startsWith('bearer ')) {
+    const { getRequestHeader } = await import("@tanstack/react-start/server");
+    const auth = getRequestHeader("Authorization") || getRequestHeader("authorization");
+    if (auth && auth.toLowerCase().startsWith("bearer ")) {
       const token = auth.slice(7).trim();
       const { data: userRes } = await supabaseAdmin.auth.getUser(token);
       return userRes.user?.id ?? null;
@@ -94,15 +90,15 @@ async function getOptionalUserId(): Promise<string | null> {
 
 async function requireAdmin(): Promise<string> {
   const userId = await getOptionalUserId();
-  if (!userId) throw new Error('not_authenticated');
-  const { supabaseAdmin } = await import('@/integrations/supabase/client.server');
+  if (!userId) throw new Error("not_authenticated");
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   const { data, error } = await supabaseAdmin
-    .from('profiles')
-    .select('role')
-    .eq('id', userId)
+    .from("profiles")
+    .select("role")
+    .eq("id", userId)
     .maybeSingle();
   if (error) throw error;
-  if (!data || data.role !== 'admin') throw new Error('not_authorized');
+  if (!data || data.role !== "admin") throw new Error("not_authorized");
   return userId;
 }
 
@@ -110,32 +106,28 @@ function classifyItem(p: {
   active: boolean;
   final_price: number;
   stock_qty: number;
-}): BundleItemPublic['status'] {
-  if (!p.active) return 'inactive';
-  if (!(p.final_price > 0)) return 'no_price';
-  if (p.stock_qty <= 0) return 'no_stock';
-  return 'ok';
+}): BundleItemPublic["status"] {
+  if (!p.active) return "inactive";
+  if (!(p.final_price > 0)) return "no_price";
+  if (p.stock_qty <= 0) return "no_stock";
+  return "ok";
 }
 
 function calcAvailability(items: BundleItemPublic[]): BundleAvailability {
-  if (items.length === 0) return 'needs_review';
+  if (items.length === 0) return "needs_review";
   const required = items.filter((i) => i.is_required);
   const reqUnavailable = required.filter(
-    (i) => i.product.stock_qty < i.quantity || i.status === 'no_stock'
+    (i) => i.product.stock_qty < i.quantity || i.status === "no_stock",
   );
-  const reqBroken = required.some(
-    (i) => i.status === 'inactive' || i.status === 'no_price'
-  );
-  if (reqBroken) return 'unavailable';
+  const reqBroken = required.some((i) => i.status === "inactive" || i.status === "no_price");
+  if (reqBroken) return "unavailable";
   if (reqUnavailable.length === required.length && required.length > 0) {
-    return 'unavailable';
+    return "unavailable";
   }
-  if (reqUnavailable.length > 0) return 'partial';
+  if (reqUnavailable.length > 0) return "partial";
   // Algum opcional indisponível?
-  const someoneShort = items.some(
-    (i) => i.product.stock_qty < i.quantity || i.status !== 'ok'
-  );
-  return someoneShort ? 'partial' : 'available';
+  const someoneShort = items.some((i) => i.product.stock_qty < i.quantity || i.status !== "ok");
+  return someoneShort ? "partial" : "available";
 }
 
 async function loadBundlesWithItems(filter: {
@@ -145,11 +137,9 @@ async function loadBundlesWithItems(filter: {
   featuredFirst?: boolean;
   limit?: number;
 }): Promise<BundlePublic[]> {
-  const { supabaseAdmin } = await import('@/integrations/supabase/client.server');
-  let q = supabaseAdmin
-    .from('product_bundles')
-    .select(
-      `id, slug, name, description, image_url, is_active, is_featured,
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  let q = supabaseAdmin.from("product_bundles").select(
+    `id, slug, name, description, image_url, is_active, is_featured,
        start_date, end_date, discount_type, discount_value, updated_at,
        items:product_bundle_items (
          id, product_id, quantity, sort_order, is_required,
@@ -158,20 +148,20 @@ async function loadBundlesWithItems(filter: {
            price, sale_price, stock_qty, free_shipping_eligible,
            b2b_enabled, b2b_min_qty
          )
-       )`
-    );
+       )`,
+  );
 
-  if (filter.bundleIds?.length) q = q.in('id', filter.bundleIds);
-  if (filter.slug) q = q.eq('slug', filter.slug);
+  if (filter.bundleIds?.length) q = q.in("id", filter.bundleIds);
+  if (filter.slug) q = q.eq("slug", filter.slug);
   if (filter.onlyActive) {
     const nowIso = new Date().toISOString();
     q = q
-      .eq('is_active', true)
+      .eq("is_active", true)
       .or(`start_date.is.null,start_date.lte.${nowIso}`)
       .or(`end_date.is.null,end_date.gte.${nowIso}`);
   }
-  if (filter.featuredFirst) q = q.order('is_featured', { ascending: false });
-  q = q.order('updated_at', { ascending: false });
+  if (filter.featuredFirst) q = q.order("is_featured", { ascending: false });
+  q = q.order("updated_at", { ascending: false });
   if (filter.limit) q = q.limit(filter.limit);
 
   const { data, error } = await q;
@@ -187,16 +177,13 @@ async function loadBundlesWithItems(filter: {
         const retail = Number(p.price ?? 0);
         const sale = p.sale_price != null ? Number(p.sale_price) : null;
         const finalPrice = sale != null && sale > 0 ? sale : retail;
-        const productInfo: BundleItemPublic['product'] = {
+        const productInfo: BundleItemPublic["product"] = {
           id: p.id,
           name: p.name,
           slug: p.slug,
           sku: p.sku ?? null,
           brand: p.brand ?? null,
-          image:
-            Array.isArray(p.images) && p.images.length > 0
-              ? (p.images[0] as string)
-              : null,
+          image: Array.isArray(p.images) && p.images.length > 0 ? (p.images[0] as string) : null,
           active: !!p.active,
           retail_price: retail,
           sale_price: sale,
@@ -219,10 +206,7 @@ async function loadBundlesWithItems(filter: {
       .filter((x): x is BundleItemPublic => x !== null)
       .sort((a, b) => a.sort_order - b.sort_order);
 
-    const subtotal = items.reduce(
-      (acc, it) => acc + it.product.final_price * it.quantity,
-      0
-    );
+    const subtotal = items.reduce((acc, it) => acc + it.product.final_price * it.quantity, 0);
     const totalUnits = items.reduce((acc, it) => acc + it.quantity, 0);
 
     return {
@@ -235,7 +219,7 @@ async function loadBundlesWithItems(filter: {
       is_featured: !!b.is_featured,
       start_date: b.start_date,
       end_date: b.end_date,
-      discount_type: (b.discount_type ?? 'none') as BundleDiscountType,
+      discount_type: (b.discount_type ?? "none") as BundleDiscountType,
       discount_value: Number(b.discount_value ?? 0),
       items,
       subtotal,
@@ -254,7 +238,7 @@ const ListPublicInput = z.object({
   featuredOnly: z.boolean().optional(),
 });
 
-export const listPublicBundles = createServerFn({ method: 'POST' })
+export const listPublicBundles = createServerFn({ method: "POST" })
   .inputValidator((i: unknown) => ListPublicInput.parse(i ?? {}))
   .handler(async ({ data }) => {
     const bundles = await loadBundlesWithItems({
@@ -272,7 +256,7 @@ export const listPublicBundles = createServerFn({ method: 'POST' })
 // ----------------------------------------------------------------------------
 const GetBySlugInput = z.object({ slug: z.string().trim().min(1).max(160) });
 
-export const getPublicBundleBySlug = createServerFn({ method: 'POST' })
+export const getPublicBundleBySlug = createServerFn({ method: "POST" })
   .inputValidator((i: unknown) => GetBySlugInput.parse(i))
   .handler(async ({ data }) => {
     const bundles = await loadBundlesWithItems({
@@ -291,18 +275,18 @@ const ListByProductInput = z.object({
   limit: z.number().int().min(1).max(12).optional(),
 });
 
-export const listPublicBundlesByProduct = createServerFn({ method: 'POST' })
+export const listPublicBundlesByProduct = createServerFn({ method: "POST" })
   .inputValidator((i: unknown) => ListByProductInput.parse(i))
   .handler(async ({ data }) => {
-    const { supabaseAdmin } = await import('@/integrations/supabase/client.server');
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     // 1. Busca os bundle_ids que contêm este produto
     const { data: links, error } = await supabaseAdmin
-      .from('product_bundle_items')
-      .select('bundle_id')
-      .eq('product_id', data.productId);
+      .from("product_bundle_items")
+      .select("bundle_id")
+      .eq("product_id", data.productId);
     if (error) throw error;
     const bundleIds = Array.from(
-      new Set(((links ?? []) as Array<{ bundle_id: string }>).map((l) => l.bundle_id))
+      new Set(((links ?? []) as Array<{ bundle_id: string }>).map((l) => l.bundle_id)),
     );
     if (bundleIds.length === 0) return [];
 
@@ -320,7 +304,7 @@ export const listPublicBundlesByProduct = createServerFn({ method: 'POST' })
       if (!b.slug) return false;
       if (b.items.length === 0) return false;
       const broken = b.items.some(
-        (it) => it.is_required && (it.status === 'inactive' || it.status === 'no_price')
+        (it) => it.is_required && (it.status === "inactive" || it.status === "no_price"),
       );
       if (broken) return false;
       return true;
@@ -332,18 +316,18 @@ export const listPublicBundlesByProduct = createServerFn({ method: 'POST' })
 // ----------------------------------------------------------------------------
 // ADMIN: lista combos
 // ----------------------------------------------------------------------------
-export const adminListBundles = createServerFn({ method: 'POST' })
+export const adminListBundles = createServerFn({ method: "POST" })
   .inputValidator(() => ({}))
   .handler(async () => {
     await requireAdmin();
-    const { supabaseAdmin } = await import('@/integrations/supabase/client.server');
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data, error } = await supabaseAdmin
-      .from('product_bundles')
+      .from("product_bundles")
       .select(
         `id, slug, name, is_active, is_featured, image_url, start_date, end_date, updated_at,
-         items:product_bundle_items(id)`
+         items:product_bundle_items(id)`,
       )
-      .order('updated_at', { ascending: false });
+      .order("updated_at", { ascending: false });
     if (error) throw error;
     return ((data ?? []) as Array<Record<string, any>>).map<BundleAdminRow>((b) => ({
       id: b.id,
@@ -364,7 +348,7 @@ export const adminListBundles = createServerFn({ method: 'POST' })
 // ----------------------------------------------------------------------------
 const AdminGetInput = z.object({ id: z.string().uuid() });
 
-export const adminGetBundle = createServerFn({ method: 'POST' })
+export const adminGetBundle = createServerFn({ method: "POST" })
   .inputValidator((i: unknown) => AdminGetInput.parse(i))
   .handler(async ({ data }) => {
     await requireAdmin();
@@ -377,20 +361,20 @@ export const adminGetBundle = createServerFn({ method: 'POST' })
 // ----------------------------------------------------------------------------
 const slugRegex = /^[a-z0-9-]+$/;
 
-const DiscountTypeEnum = z.enum(['none', 'fixed_amount', 'percentage']);
+const DiscountTypeEnum = z.enum(["none", "fixed_amount", "percentage"]);
 
 function validateDiscount(input: { discountType?: BundleDiscountType; discountValue?: number }) {
-  const t = input.discountType ?? 'none';
+  const t = input.discountType ?? "none";
   const v = Number(input.discountValue ?? 0);
-  if (t === 'none') return { discount_type: 'none' as const, discount_value: 0 };
+  if (t === "none") return { discount_type: "none" as const, discount_value: 0 };
   if (!Number.isFinite(v) || v <= 0) {
-    throw new Error('bundle_discount_value_invalid');
+    throw new Error("bundle_discount_value_invalid");
   }
-  if (t === 'percentage' && v > BUNDLE_PERCENT_LIMIT) {
-    throw new Error('bundle_discount_percent_over_limit');
+  if (t === "percentage" && v > BUNDLE_PERCENT_LIMIT) {
+    throw new Error("bundle_discount_percent_over_limit");
   }
-  if (t === 'fixed_amount' && v > 100000) {
-    throw new Error('bundle_discount_value_invalid');
+  if (t === "fixed_amount" && v > 100000) {
+    throw new Error("bundle_discount_value_invalid");
   }
   return { discount_type: t, discount_value: Math.round(v * 100) / 100 };
 }
@@ -412,25 +396,25 @@ const AdminCreateInput = z.object({
 function slugify(s: string) {
   return s
     .toLowerCase()
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-+|-+$/g, '')
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "")
     .slice(0, 80);
 }
 
-export const adminCreateBundle = createServerFn({ method: 'POST' })
+export const adminCreateBundle = createServerFn({ method: "POST" })
   .inputValidator((i: unknown) => AdminCreateInput.parse(i))
   .handler(async ({ data }) => {
     await requireAdmin();
-    const { supabaseAdmin } = await import('@/integrations/supabase/client.server');
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const slug = data.slug || slugify(data.name);
     const disc = validateDiscount({
       discountType: data.discountType,
       discountValue: data.discountValue,
     });
     const { data: row, error } = await supabaseAdmin
-      .from('product_bundles')
+      .from("product_bundles")
       .insert({
         name: data.name,
         slug,
@@ -444,10 +428,10 @@ export const adminCreateBundle = createServerFn({ method: 'POST' })
         discount_type: disc.discount_type,
         discount_value: disc.discount_value,
       })
-      .select('id')
+      .select("id")
       .single();
     if (error) {
-      if ((error as any).code === '23505') throw new Error('slug_already_exists');
+      if ((error as any).code === "23505") throw new Error("slug_already_exists");
       throw error;
     }
     return { id: row!.id as string };
@@ -471,11 +455,11 @@ const AdminUpdateInput = z.object({
   discountValue: z.number().min(0).max(100000).optional(),
 });
 
-export const adminUpdateBundle = createServerFn({ method: 'POST' })
+export const adminUpdateBundle = createServerFn({ method: "POST" })
   .inputValidator((i: unknown) => AdminUpdateInput.parse(i))
   .handler(async ({ data }) => {
     await requireAdmin();
-    const { supabaseAdmin } = await import('@/integrations/supabase/client.server');
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     type BundlePatch = {
       name?: string;
       slug?: string;
@@ -512,19 +496,16 @@ export const adminUpdateBundle = createServerFn({ method: 'POST' })
     if (data.isActive === true) {
       const detail = await loadBundlesWithItems({ bundleIds: [data.id], limit: 1 });
       const b = detail[0];
-      if (!b || b.items.length === 0) throw new Error('bundle_has_no_items');
+      if (!b || b.items.length === 0) throw new Error("bundle_has_no_items");
       const broken = b.items.filter(
-        (it) => it.is_required && (it.status === 'inactive' || it.status === 'no_price')
+        (it) => it.is_required && (it.status === "inactive" || it.status === "no_price"),
       );
-      if (broken.length > 0) throw new Error('bundle_has_broken_items');
+      if (broken.length > 0) throw new Error("bundle_has_broken_items");
     }
 
-    const { error } = await supabaseAdmin
-      .from('product_bundles')
-      .update(patch)
-      .eq('id', data.id);
+    const { error } = await supabaseAdmin.from("product_bundles").update(patch).eq("id", data.id);
     if (error) {
-      if ((error as any).code === '23505') throw new Error('slug_already_exists');
+      if ((error as any).code === "23505") throw new Error("slug_already_exists");
       throw error;
     }
     return { ok: true };
@@ -535,15 +516,12 @@ export const adminUpdateBundle = createServerFn({ method: 'POST' })
 // ----------------------------------------------------------------------------
 const AdminDeleteInput = z.object({ id: z.string().uuid() });
 
-export const adminDeleteBundle = createServerFn({ method: 'POST' })
+export const adminDeleteBundle = createServerFn({ method: "POST" })
   .inputValidator((i: unknown) => AdminDeleteInput.parse(i))
   .handler(async ({ data }) => {
     await requireAdmin();
-    const { supabaseAdmin } = await import('@/integrations/supabase/client.server');
-    const { error } = await supabaseAdmin
-      .from('product_bundles')
-      .delete()
-      .eq('id', data.id);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { error } = await supabaseAdmin.from("product_bundles").delete().eq("id", data.id);
     if (error) throw error;
     return { ok: true };
   });
@@ -559,29 +537,29 @@ const AdminAddItemInput = z.object({
   isRequired: z.boolean().optional(),
 });
 
-export const adminAddBundleItem = createServerFn({ method: 'POST' })
+export const adminAddBundleItem = createServerFn({ method: "POST" })
   .inputValidator((i: unknown) => AdminAddItemInput.parse(i))
   .handler(async ({ data }) => {
     await requireAdmin();
-    const { supabaseAdmin } = await import('@/integrations/supabase/client.server');
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     // Tenta upsert: se já existir, soma quantidade
     const { data: existing } = await supabaseAdmin
-      .from('product_bundle_items')
-      .select('id, quantity')
-      .eq('bundle_id', data.bundleId)
-      .eq('product_id', data.productId)
+      .from("product_bundle_items")
+      .select("id, quantity")
+      .eq("bundle_id", data.bundleId)
+      .eq("product_id", data.productId)
       .maybeSingle();
 
     if (existing) {
       const { error } = await supabaseAdmin
-        .from('product_bundle_items')
+        .from("product_bundle_items")
         .update({ quantity: existing.quantity + data.quantity })
-        .eq('id', existing.id);
+        .eq("id", existing.id);
       if (error) throw error;
       return { ok: true, merged: true };
     }
 
-    const { error } = await supabaseAdmin.from('product_bundle_items').insert({
+    const { error } = await supabaseAdmin.from("product_bundle_items").insert({
       bundle_id: data.bundleId,
       product_id: data.productId,
       quantity: data.quantity,
@@ -599,7 +577,7 @@ const AdminUpdateItemInput = z.object({
   isRequired: z.boolean().optional(),
 });
 
-export const adminUpdateBundleItem = createServerFn({ method: 'POST' })
+export const adminUpdateBundleItem = createServerFn({ method: "POST" })
   .inputValidator((i: unknown) => AdminUpdateItemInput.parse(i))
   .handler(async ({ data }) => {
     await requireAdmin();
@@ -609,26 +587,23 @@ export const adminUpdateBundleItem = createServerFn({ method: 'POST' })
     if (data.sortOrder !== undefined) patch.sort_order = data.sortOrder;
     if (data.isRequired !== undefined) patch.is_required = data.isRequired;
     if (Object.keys(patch).length === 0) return { ok: true };
-    const { supabaseAdmin } = await import('@/integrations/supabase/client.server');
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { error } = await supabaseAdmin
-      .from('product_bundle_items')
+      .from("product_bundle_items")
       .update(patch)
-      .eq('id', data.id);
+      .eq("id", data.id);
     if (error) throw error;
     return { ok: true };
   });
 
 const AdminRemoveItemInput = z.object({ id: z.string().uuid() });
 
-export const adminRemoveBundleItem = createServerFn({ method: 'POST' })
+export const adminRemoveBundleItem = createServerFn({ method: "POST" })
   .inputValidator((i: unknown) => AdminRemoveItemInput.parse(i))
   .handler(async ({ data }) => {
     await requireAdmin();
-    const { supabaseAdmin } = await import('@/integrations/supabase/client.server');
-    const { error } = await supabaseAdmin
-      .from('product_bundle_items')
-      .delete()
-      .eq('id', data.id);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { error } = await supabaseAdmin.from("product_bundle_items").delete().eq("id", data.id);
     if (error) throw error;
     return { ok: true };
   });
@@ -641,18 +616,18 @@ const AdminSearchInput = z.object({
   limit: z.number().int().min(1).max(20).optional(),
 });
 
-export const adminSearchProductsForBundle = createServerFn({ method: 'POST' })
+export const adminSearchProductsForBundle = createServerFn({ method: "POST" })
   .inputValidator((i: unknown) => AdminSearchInput.parse(i))
   .handler(async ({ data }) => {
     await requireAdmin();
-    const { supabaseAdmin } = await import('@/integrations/supabase/client.server');
-    const term = `%${data.query.replace(/[%_]/g, '\\$&')}%`;
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const term = `%${data.query.replace(/[%_]/g, "\\$&")}%`;
     const { data: rows, error } = await supabaseAdmin
-      .from('products')
-      .select('id, name, slug, sku, brand, active, images, price, sale_price, stock_qty')
+      .from("products")
+      .select("id, name, slug, sku, brand, active, images, price, sale_price, stock_qty")
       .or(`name.ilike.${term},sku.ilike.${term},gtin_ean.ilike.${term}`)
-      .order('active', { ascending: false })
-      .order('name', { ascending: true })
+      .order("active", { ascending: false })
+      .order("name", { ascending: true })
       .limit(data.limit ?? 10);
     if (error) throw error;
     return ((rows ?? []) as Array<Record<string, any>>).map((r) => ({
@@ -662,8 +637,7 @@ export const adminSearchProductsForBundle = createServerFn({ method: 'POST' })
       sku: (r.sku as string | null) ?? null,
       brand: (r.brand as string | null) ?? null,
       active: !!r.active,
-      image:
-        Array.isArray(r.images) && r.images.length > 0 ? (r.images[0] as string) : null,
+      image: Array.isArray(r.images) && r.images.length > 0 ? (r.images[0] as string) : null,
       price: Number(r.price ?? 0),
       sale_price: r.sale_price != null ? Number(r.sale_price) : null,
       stock_qty: Number(r.stock_qty ?? 0),

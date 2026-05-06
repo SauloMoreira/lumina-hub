@@ -1,6 +1,6 @@
-import { createFileRoute, Link } from '@tanstack/react-router';
-import { useMemo, useState } from 'react';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { createFileRoute, Link } from "@tanstack/react-router";
+import { useMemo, useState } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   ArrowLeft,
   AlertTriangle,
@@ -14,11 +14,11 @@ import {
   CircleAlert,
   Settings,
   ChevronDown,
-} from 'lucide-react';
-import { toast } from 'sonner';
-import { AdminLayout } from '@/components/admin/AdminLayout';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
+} from "lucide-react";
+import { toast } from "sonner";
+import { AdminLayout } from "@/components/admin/AdminLayout";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import {
   getStockReport,
   exportStockCsv,
@@ -28,68 +28,68 @@ import {
   type StockReportRow,
   type StockSettings,
   type StockStatus,
-} from '@/server/stockOps.functions';
+} from "@/server/stockOps.functions";
 
-export const Route = createFileRoute('/admin/produtos/estoque')({ component: StockPage });
+export const Route = createFileRoute("/admin/produtos/estoque")({ component: StockPage });
 
 type Filter =
-  | 'all'
-  | 'low'
-  | 'zero'
-  | 'inactive'
-  | 'high_movement'
-  | 'no_param'
-  | 'allow_oos'
-  | 'block_oos'
-  | 'healthy';
+  | "all"
+  | "low"
+  | "zero"
+  | "inactive"
+  | "high_movement"
+  | "no_param"
+  | "allow_oos"
+  | "block_oos"
+  | "healthy";
 
 const FILTERS: Array<{ id: Filter; label: string }> = [
-  { id: 'all', label: 'Todos' },
-  { id: 'low', label: 'Estoque baixo' },
-  { id: 'zero', label: 'Estoque zerado' },
-  { id: 'inactive', label: 'Produto parado' },
-  { id: 'high_movement', label: 'Alto giro' },
-  { id: 'healthy', label: 'Saudável' },
-  { id: 'no_param', label: 'Sem mínimo configurado' },
-  { id: 'allow_oos', label: 'Permite venda sem estoque' },
-  { id: 'block_oos', label: 'Não permite venda sem estoque' },
+  { id: "all", label: "Todos" },
+  { id: "low", label: "Estoque baixo" },
+  { id: "zero", label: "Estoque zerado" },
+  { id: "inactive", label: "Produto parado" },
+  { id: "high_movement", label: "Alto giro" },
+  { id: "healthy", label: "Saudável" },
+  { id: "no_param", label: "Sem mínimo configurado" },
+  { id: "allow_oos", label: "Permite venda sem estoque" },
+  { id: "block_oos", label: "Não permite venda sem estoque" },
 ];
 
 function statusBadge(status: StockStatus) {
   switch (status) {
-    case 'healthy':
-      return { label: 'Saudável', cls: 'bg-emerald-100 text-emerald-700' };
-    case 'low':
-      return { label: 'Baixo', cls: 'bg-amber-100 text-amber-800' };
-    case 'zero':
-      return { label: 'Zerado', cls: 'bg-red-100 text-red-700' };
-    case 'inactive':
-      return { label: 'Parado', cls: 'bg-slate-200 text-slate-700' };
-    case 'high_movement':
-      return { label: 'Alto giro', cls: 'bg-blue-100 text-blue-700' };
-    case 'no_param':
-      return { label: 'Sem parâmetro', cls: 'bg-muted text-muted-foreground' };
+    case "healthy":
+      return { label: "Saudável", cls: "bg-emerald-100 text-emerald-700" };
+    case "low":
+      return { label: "Baixo", cls: "bg-amber-100 text-amber-800" };
+    case "zero":
+      return { label: "Zerado", cls: "bg-red-100 text-red-700" };
+    case "inactive":
+      return { label: "Parado", cls: "bg-slate-200 text-slate-700" };
+    case "high_movement":
+      return { label: "Alto giro", cls: "bg-blue-100 text-blue-700" };
+    case "no_param":
+      return { label: "Sem parâmetro", cls: "bg-muted text-muted-foreground" };
   }
 }
 
 function fmtDate(iso: string | null): string {
-  if (!iso) return '—';
-  return new Date(iso).toLocaleDateString('pt-BR');
+  if (!iso) return "—";
+  return new Date(iso).toLocaleDateString("pt-BR");
 }
 
 function StockPage() {
   const qc = useQueryClient();
-  const [filter, setFilter] = useState<Filter>('all');
-  const [q, setQ] = useState('');
+  const [filter, setFilter] = useState<Filter>("all");
+  const [q, setQ] = useState("");
   const [showSettings, setShowSettings] = useState(false);
 
   const reportQ = useQuery({
-    queryKey: ['admin-stock-report'],
+    queryKey: ["admin-stock-report"],
     queryFn: () => getStockReport(),
     staleTime: 30_000,
   });
   const settingsQ = useQuery({
-    queryKey: ['admin-stock-settings'],
+    queryKey: ["admin-stock-settings"],
     queryFn: () => getStockSettings(),
     staleTime: 60_000,
   });
@@ -106,14 +106,14 @@ function StockPage() {
       healthy = 0,
       highLow = 0;
     for (const r of rows) {
-      if (r.status === 'low') low++;
-      if (r.status === 'zero') zero++;
-      if (r.status === 'inactive') inactive++;
-      if (r.status === 'high_movement') high++;
-      if (r.status === 'healthy') healthy++;
+      if (r.status === "low") low++;
+      if (r.status === "zero") zero++;
+      if (r.status === "inactive") inactive++;
+      if (r.status === "high_movement") high++;
+      if (r.status === "healthy") healthy++;
       if (r.stock_min_alert === null) noParam++;
       if (
-        r.status === 'high_movement' &&
+        r.status === "high_movement" &&
         settings &&
         r.stock_qty <= (r.stock_min_alert ?? settings.default_min_stock)
       )
@@ -125,22 +125,38 @@ function StockPage() {
   const filtered = useMemo(() => {
     let arr = rows;
     switch (filter) {
-      case 'low': arr = arr.filter((r) => r.status === 'low'); break;
-      case 'zero': arr = arr.filter((r) => r.status === 'zero'); break;
-      case 'inactive': arr = arr.filter((r) => r.status === 'inactive'); break;
-      case 'high_movement': arr = arr.filter((r) => r.status === 'high_movement'); break;
-      case 'healthy': arr = arr.filter((r) => r.status === 'healthy'); break;
-      case 'no_param': arr = arr.filter((r) => r.stock_min_alert === null); break;
-      case 'allow_oos': arr = arr.filter((r) => r.allow_out_of_stock_sales); break;
-      case 'block_oos': arr = arr.filter((r) => !r.allow_out_of_stock_sales); break;
+      case "low":
+        arr = arr.filter((r) => r.status === "low");
+        break;
+      case "zero":
+        arr = arr.filter((r) => r.status === "zero");
+        break;
+      case "inactive":
+        arr = arr.filter((r) => r.status === "inactive");
+        break;
+      case "high_movement":
+        arr = arr.filter((r) => r.status === "high_movement");
+        break;
+      case "healthy":
+        arr = arr.filter((r) => r.status === "healthy");
+        break;
+      case "no_param":
+        arr = arr.filter((r) => r.stock_min_alert === null);
+        break;
+      case "allow_oos":
+        arr = arr.filter((r) => r.allow_out_of_stock_sales);
+        break;
+      case "block_oos":
+        arr = arr.filter((r) => !r.allow_out_of_stock_sales);
+        break;
     }
     const term = q.trim().toLowerCase();
     if (term) {
       arr = arr.filter(
         (r) =>
           r.name.toLowerCase().includes(term) ||
-          (r.sku ?? '').toLowerCase().includes(term) ||
-          (r.category_name ?? '').toLowerCase().includes(term),
+          (r.sku ?? "").toLowerCase().includes(term) ||
+          (r.category_name ?? "").toLowerCase().includes(term),
       );
     }
     // ordem útil: zerado e baixo primeiro
@@ -160,22 +176,22 @@ function StockPage() {
   const handleExport = async () => {
     try {
       const res = await exportStockCsv();
-      const blob = new Blob([res.content], { type: 'text/csv;charset=utf-8;' });
+      const blob = new Blob([res.content], { type: "text/csv;charset=utf-8;" });
       const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
+      const a = document.createElement("a");
       a.href = url;
       a.download = res.filename;
       a.click();
       URL.revokeObjectURL(url);
     } catch (e: any) {
-      toast.error(e?.message ?? 'Falha ao exportar CSV.');
+      toast.error(e?.message ?? "Falha ao exportar CSV.");
     }
   };
 
   const refresh = async () => {
-    qc.invalidateQueries({ queryKey: ['admin-operations'] });
+    qc.invalidateQueries({ queryKey: ["admin-operations"] });
     await reportQ.refetch();
-    toast.success('Relatório de estoque atualizado.');
+    toast.success("Relatório de estoque atualizado.");
   };
 
   return (
@@ -184,7 +200,7 @@ function StockPage() {
       action={
         <div className="flex items-center gap-2">
           <Button variant="outline" size="sm" onClick={refresh} disabled={reportQ.isFetching}>
-            <RefreshCw className={`w-4 h-4 mr-1 ${reportQ.isFetching ? 'animate-spin' : ''}`} />
+            <RefreshCw className={`w-4 h-4 mr-1 ${reportQ.isFetching ? "animate-spin" : ""}`} />
             Atualizar
           </Button>
           <Button variant="outline" size="sm" onClick={handleExport}>
@@ -193,7 +209,7 @@ function StockPage() {
           <Button variant="outline" size="sm" onClick={() => setShowSettings((v) => !v)}>
             <Settings className="w-4 h-4 mr-1" /> Configurações
           </Button>
-          <Link to={'/admin/produtos' as any}>
+          <Link to={"/admin/produtos" as any}>
             <Button variant="ghost" size="sm">
               <ArrowLeft className="w-4 h-4 mr-1" /> Produtos
             </Button>
@@ -226,9 +242,9 @@ function StockPage() {
           settings={settings}
           onClose={() => setShowSettings(false)}
           onSaved={() => {
-            qc.invalidateQueries({ queryKey: ['admin-stock-settings'] });
-            qc.invalidateQueries({ queryKey: ['admin-stock-report'] });
-            qc.invalidateQueries({ queryKey: ['admin-operations'] });
+            qc.invalidateQueries({ queryKey: ["admin-stock-settings"] });
+            qc.invalidateQueries({ queryKey: ["admin-stock-report"] });
+            qc.invalidateQueries({ queryKey: ["admin-operations"] });
           }}
         />
       )}
@@ -241,8 +257,8 @@ function StockPage() {
             onClick={() => setFilter(f.id)}
             className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-colors ${
               filter === f.id
-                ? 'bg-primary text-primary-foreground border-primary'
-                : 'bg-card text-muted-foreground border-border hover:bg-muted'
+                ? "bg-primary text-primary-foreground border-primary"
+                : "bg-card text-muted-foreground border-border hover:bg-muted"
             }`}
           >
             {f.label}
@@ -271,7 +287,9 @@ function StockPage() {
                 <th className="text-left px-3 py-2">Categoria</th>
                 <th className="text-right px-3 py-2">Estoque</th>
                 <th className="text-right px-3 py-2">Mín.</th>
-                <th className="text-right px-3 py-2">Vendidos {settings?.sales_window_days ?? 30}d</th>
+                <th className="text-right px-3 py-2">
+                  Vendidos {settings?.sales_window_days ?? 30}d
+                </th>
                 <th className="text-left px-3 py-2">Última venda</th>
                 <th className="text-left px-3 py-2">Status</th>
                 <th className="text-left px-3 py-2">Sem estoque</th>
@@ -292,7 +310,9 @@ function StockPage() {
                   </td>
                 </tr>
               ) : (
-                filtered.map((r) => <Row key={r.product_id} row={r} onAdjusted={() => reportQ.refetch()} />)
+                filtered.map((r) => (
+                  <Row key={r.product_id} row={r} onAdjusted={() => reportQ.refetch()} />
+                ))
               )}
             </tbody>
           </table>
@@ -316,14 +336,14 @@ function Card({
   icon: typeof Package;
   title: string;
   qty: number;
-  tone: 'ok' | 'warn' | 'danger' | 'info' | 'muted';
+  tone: "ok" | "warn" | "danger" | "info" | "muted";
 }) {
   const tones: Record<typeof tone, string> = {
-    ok: 'border-emerald-200 bg-emerald-50 text-emerald-800',
-    warn: 'border-amber-200 bg-amber-50 text-amber-900',
-    danger: 'border-red-200 bg-red-50 text-red-800',
-    info: 'border-blue-200 bg-blue-50 text-blue-800',
-    muted: 'border-border bg-card text-foreground',
+    ok: "border-emerald-200 bg-emerald-50 text-emerald-800",
+    warn: "border-amber-200 bg-amber-50 text-amber-900",
+    danger: "border-red-200 bg-red-50 text-red-800",
+    info: "border-blue-200 bg-blue-50 text-blue-800",
+    muted: "border-border bg-card text-foreground",
   } as const;
   return (
     <div className={`rounded-lg border p-3 ${tones[tone]}`}>
@@ -344,17 +364,17 @@ function Row({ row, onAdjusted }: { row: StockReportRow; onAdjusted: () => void 
   const submit = async () => {
     const n = Number(val);
     if (!Number.isFinite(n) || n < 0) {
-      toast.error('Informe uma quantidade válida.');
+      toast.error("Informe uma quantidade válida.");
       return;
     }
     setSaving(true);
     try {
       await adjustProductStock({ data: { product_id: row.product_id, new_stock_qty: n } });
-      toast.success('Estoque ajustado.');
+      toast.success("Estoque ajustado.");
       setOpen(false);
       onAdjusted();
     } catch (e: any) {
-      toast.error(e?.message ?? 'Falha ao ajustar estoque.');
+      toast.error(e?.message ?? "Falha ao ajustar estoque.");
     } finally {
       setSaving(false);
     }
@@ -363,11 +383,13 @@ function Row({ row, onAdjusted }: { row: StockReportRow; onAdjusted: () => void 
   return (
     <>
       <tr className="border-t border-border hover:bg-muted/30">
-        <td className="px-3 py-2 max-w-[260px] truncate" title={row.name}>{row.name}</td>
-        <td className="px-3 py-2 text-muted-foreground">{row.sku ?? '—'}</td>
-        <td className="px-3 py-2 text-muted-foreground">{row.category_name ?? '—'}</td>
+        <td className="px-3 py-2 max-w-[260px] truncate" title={row.name}>
+          {row.name}
+        </td>
+        <td className="px-3 py-2 text-muted-foreground">{row.sku ?? "—"}</td>
+        <td className="px-3 py-2 text-muted-foreground">{row.category_name ?? "—"}</td>
         <td className="px-3 py-2 text-right font-medium">{row.stock_qty}</td>
-        <td className="px-3 py-2 text-right text-muted-foreground">{row.stock_min_alert ?? '—'}</td>
+        <td className="px-3 py-2 text-right text-muted-foreground">{row.stock_min_alert ?? "—"}</td>
         <td className="px-3 py-2 text-right">{row.qty_sold_window}</td>
         <td className="px-3 py-2 text-muted-foreground">
           {fmtDate(row.last_sold_at)}
@@ -391,7 +413,7 @@ function Row({ row, onAdjusted }: { row: StockReportRow; onAdjusted: () => void 
           <Button size="sm" variant="outline" onClick={() => setOpen((v) => !v)}>
             Ajustar
           </Button>
-          <Link to={'/admin/produtos/$id' as any} params={{ id: row.product_id } as any}>
+          <Link to={"/admin/produtos/$id" as any} params={{ id: row.product_id } as any}>
             <Button size="sm" variant="ghost">
               Editar
             </Button>
@@ -453,11 +475,11 @@ function SettingsPanel({
     setSaving(true);
     try {
       await updateStockSettings({ data: form });
-      toast.success('Configurações de estoque salvas.');
+      toast.success("Configurações de estoque salvas.");
       onSaved();
       onClose();
     } catch (e: any) {
-      toast.error(e?.message ?? 'Falha ao salvar.');
+      toast.error(e?.message ?? "Falha ao salvar.");
     } finally {
       setSaving(false);
     }
@@ -519,7 +541,7 @@ function SettingsPanel({
           Cancelar
         </Button>
         <Button size="sm" onClick={submit} disabled={saving}>
-          {saving ? 'Salvando…' : 'Salvar'}
+          {saving ? "Salvando…" : "Salvar"}
         </Button>
       </div>
     </div>

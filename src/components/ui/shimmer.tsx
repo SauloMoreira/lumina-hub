@@ -1,4 +1,4 @@
-import { cn } from '@/lib/utils';
+import { cn } from "@/lib/utils";
 
 interface ShimmerProps {
   w?: string | number;
@@ -7,14 +7,14 @@ interface ShimmerProps {
   className?: string;
 }
 
-export function Shimmer({ w = '100%', h = 16, r = 8, className }: ShimmerProps) {
+export function Shimmer({ w = "100%", h = 16, r = 8, className }: ShimmerProps) {
   return (
     <div
-      className={cn('shimmer-block', className)}
+      className={cn("shimmer-block", className)}
       style={{
-        width: typeof w === 'number' ? `${w}px` : w,
-        height: typeof h === 'number' ? `${h}px` : h,
-        borderRadius: typeof r === 'number' ? `${r}px` : r,
+        width: typeof w === "number" ? `${w}px` : w,
+        height: typeof h === "number" ? `${h}px` : h,
+        borderRadius: typeof r === "number" ? `${r}px` : r,
       }}
     />
   );
@@ -34,7 +34,7 @@ export function ProductCardSkeleton() {
 }
 
 export function TableRowSkeleton({ cols = 5 }: { cols?: number }) {
-  const widths = ['20%', '30%', '15%', '20%', '15%'];
+  const widths = ["20%", "30%", "15%", "20%", "15%"];
   return (
     <tr className="border-t border-border">
       {Array.from({ length: cols }).map((_, i) => (

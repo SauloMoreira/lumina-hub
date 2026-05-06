@@ -1,8 +1,8 @@
-import type { DashboardData } from '@/server/dashboard.functions';
-import { fmtBRL, fmtInt } from './format';
-import { EmptyChart } from './EmptyChart';
+import type { DashboardData } from "@/server/dashboard.functions";
+import { fmtBRL, fmtInt } from "./format";
+import { EmptyChart } from "./EmptyChart";
 
-export function TopProductsChart({ data }: { data: DashboardData['topProducts'] }) {
+export function TopProductsChart({ data }: { data: DashboardData["topProducts"] }) {
   if (data.length === 0) {
     return <EmptyChart message="Ainda não há produtos vendidos neste período." />;
   }

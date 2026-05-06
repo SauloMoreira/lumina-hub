@@ -1,9 +1,9 @@
-import { createServerFn } from '@tanstack/react-start';
-import { z } from 'zod';
-import { requireAdmin } from '@/integrations/supabase/admin-middleware';
+import { createServerFn } from "@tanstack/react-start";
+import { z } from "zod";
+import { requireAdmin } from "@/integrations/supabase/admin-middleware";
 
 async function getSupabaseAdmin() {
-  return (await import('@/integrations/supabase/client.server')).supabaseAdmin;
+  return (await import("@/integrations/supabase/client.server")).supabaseAdmin;
 }
 
 // ============================================================
@@ -11,40 +11,40 @@ async function getSupabaseAdmin() {
 // ============================================================
 
 export type MarginPreset =
-  | 'today'
-  | 'yesterday'
-  | 'last_7_days'
-  | 'last_30_days'
-  | 'this_month'
-  | 'last_month'
-  | 'custom';
+  | "today"
+  | "yesterday"
+  | "last_7_days"
+  | "last_30_days"
+  | "this_month"
+  | "last_month"
+  | "custom";
 
 export type MarginFilters = {
   preset: MarginPreset;
   start?: string;
   end?: string;
-  orderType: 'all' | 'b2c' | 'b2b';
+  orderType: "all" | "b2c" | "b2b";
   paymentStatus?: string | null;
   paymentMethod?: string | null;
   deliveryMethod?: string | null;
   status?: string | null;
 };
 
-const PAID = ['approved', 'paid'];
+const PAID = ["approved", "paid"];
 
 const FiltersSchema = z.object({
   preset: z.enum([
-    'today',
-    'yesterday',
-    'last_7_days',
-    'last_30_days',
-    'this_month',
-    'last_month',
-    'custom',
+    "today",
+    "yesterday",
+    "last_7_days",
+    "last_30_days",
+    "this_month",
+    "last_month",
+    "custom",
   ]),
   start: z.string().optional(),
   end: z.string().optional(),
-  orderType: z.enum(['all', 'b2c', 'b2b']).default('all'),
+  orderType: z.enum(["all", "b2c", "b2b"]).default("all"),
   paymentStatus: z.string().nullable().optional(),
   paymentMethod: z.string().nullable().optional(),
   deliveryMethod: z.string().nullable().optional(),
@@ -64,34 +64,34 @@ function endOfDay(d: Date) {
 function resolveRange(filters: MarginFilters): { from: Date; to: Date } {
   const now = new Date();
   switch (filters.preset) {
-    case 'today':
+    case "today":
       return { from: startOfDay(now), to: endOfDay(now) };
-    case 'yesterday': {
+    case "yesterday": {
       const y = new Date(now);
       y.setDate(now.getDate() - 1);
       return { from: startOfDay(y), to: endOfDay(y) };
     }
-    case 'last_7_days': {
+    case "last_7_days": {
       const f = new Date(now);
       f.setDate(now.getDate() - 6);
       return { from: startOfDay(f), to: endOfDay(now) };
     }
-    case 'last_30_days': {
+    case "last_30_days": {
       const f = new Date(now);
       f.setDate(now.getDate() - 29);
       return { from: startOfDay(f), to: endOfDay(now) };
     }
-    case 'this_month':
+    case "this_month":
       return {
         from: startOfDay(new Date(now.getFullYear(), now.getMonth(), 1)),
         to: endOfDay(now),
       };
-    case 'last_month': {
+    case "last_month": {
       const f = new Date(now.getFullYear(), now.getMonth() - 1, 1);
       const t = new Date(now.getFullYear(), now.getMonth(), 0);
       return { from: startOfDay(f), to: endOfDay(t) };
     }
-    case 'custom': {
+    case "custom": {
       const from = filters.start ? new Date(filters.start) : startOfDay(now);
       const to = filters.end ? new Date(filters.end) : endOfDay(now);
       return { from: startOfDay(from), to: endOfDay(to) };
@@ -103,8 +103,8 @@ function resolveRange(filters: MarginFilters): { from: Date; to: Date } {
 // Tipos públicos
 // ============================================================
 
-export type MarginStatus = 'good' | 'warning' | 'critical' | 'incomplete';
-export type CalcStatus = 'real' | 'estimated' | 'incomplete';
+export type MarginStatus = "good" | "warning" | "critical" | "incomplete";
+export type CalcStatus = "real" | "estimated" | "incomplete";
 
 export type MarginCards = {
   rangeFrom: string;
@@ -129,7 +129,7 @@ export type MarginOrderRow = {
   created_at: string;
   customer_name: string;
   company_name: string | null;
-  order_type: 'b2c' | 'b2b';
+  order_type: "b2c" | "b2b";
   revenue: number;
   b2b_discount_total: number;
   coupon_discount: number;
@@ -219,28 +219,31 @@ async function fetchPaidOrders(
 ): Promise<OrderRow[]> {
   const supabaseAdmin = await getSupabaseAdmin();
   let q = supabaseAdmin
-    .from('orders')
+    .from("orders")
     .select(
-      'id, order_number, status, payment_status, payment_method, delivery_method, order_type, ' +
-        'total, discount, b2b_discount_total, coupon_code, mp_fee_amount, estimated_fee_amount, ' +
-        'payment_fee_source, company_name, address_snapshot, created_at',
+      "id, order_number, status, payment_status, payment_method, delivery_method, order_type, " +
+        "total, discount, b2b_discount_total, coupon_code, mp_fee_amount, estimated_fee_amount, " +
+        "payment_fee_source, company_name, address_snapshot, created_at",
     )
-    .gte('created_at', range.from.toISOString())
-    .lte('created_at', range.to.toISOString())
-    .in('payment_status', PAID)
-    .order('created_at', { ascending: false });
+    .gte("created_at", range.from.toISOString())
+    .lte("created_at", range.to.toISOString())
+    .in("payment_status", PAID)
+    .order("created_at", { ascending: false });
 
-  if (filters.orderType !== 'all') q = q.eq('order_type', filters.orderType);
-  if (filters.paymentMethod) q = q.eq('payment_method', filters.paymentMethod);
-  if (filters.deliveryMethod) q = q.eq('delivery_method', filters.deliveryMethod);
-  if (filters.status) q = q.eq('status', filters.status);
+  if (filters.orderType !== "all") q = q.eq("order_type", filters.orderType);
+  if (filters.paymentMethod) q = q.eq("payment_method", filters.paymentMethod);
+  if (filters.deliveryMethod) q = q.eq("delivery_method", filters.deliveryMethod);
+  if (filters.status) q = q.eq("status", filters.status);
 
   const { data, error } = await q;
   if (error) throw new Response(`orders query failed: ${error.message}`, { status: 500 });
   return (data ?? []) as unknown as OrderRow[];
 }
 
-function feeOf(o: { mp_fee_amount: number | string | null; estimated_fee_amount: number | string | null }): number {
+function feeOf(o: {
+  mp_fee_amount: number | string | null;
+  estimated_fee_amount: number | string | null;
+}): number {
   return Number(o.mp_fee_amount ?? o.estimated_fee_amount ?? 0);
 }
 
@@ -249,28 +252,25 @@ function computeMarginStatus(
   hasIncomplete: boolean,
   minMargin: number,
 ): MarginStatus {
-  if (hasIncomplete) return 'incomplete';
-  if (marginPercent < 0 || marginPercent < minMargin) return 'critical';
-  if (marginPercent < minMargin + 5) return 'warning';
-  return 'good';
+  if (hasIncomplete) return "incomplete";
+  if (marginPercent < 0 || marginPercent < minMargin) return "critical";
+  if (marginPercent < minMargin + 5) return "warning";
+  return "good";
 }
 
-function computeCalcStatus(
-  hasIncompleteCost: boolean,
-  feeSource: string | null,
-): CalcStatus {
-  if (hasIncompleteCost) return 'incomplete';
-  if (feeSource === 'estimated' || feeSource === 'unknown' || !feeSource) {
-    return 'estimated';
+function computeCalcStatus(hasIncompleteCost: boolean, feeSource: string | null): CalcStatus {
+  if (hasIncompleteCost) return "incomplete";
+  if (feeSource === "estimated" || feeSource === "unknown" || !feeSource) {
+    return "estimated";
   }
-  return 'real';
+  return "real";
 }
 
 async function getDefaultMinMargin(): Promise<number> {
   const supabaseAdmin = await getSupabaseAdmin();
   const { data } = await supabaseAdmin
-    .from('finance_settings')
-    .select('default_min_margin_percent')
+    .from("finance_settings")
+    .select("default_min_margin_percent")
     .limit(1)
     .maybeSingle();
   return Number(data?.default_min_margin_percent ?? 25);
@@ -280,7 +280,7 @@ async function getDefaultMinMargin(): Promise<number> {
 // CARDS DE MARGEM
 // ============================================================
 
-export const getMarginCards = createServerFn({ method: 'POST' })
+export const getMarginCards = createServerFn({ method: "POST" })
   .middleware([requireAdmin])
   .inputValidator((input: unknown) => FiltersSchema.parse(input))
   .handler(async ({ data: filters }): Promise<MarginCards> => {
@@ -296,7 +296,11 @@ export const getMarginCards = createServerFn({ method: 'POST' })
     for (const o of orders) {
       revenue += Number(o.total ?? 0);
       estimatedFees += feeOf(o);
-      if (o.payment_fee_source === 'estimated' || o.payment_fee_source === 'unknown' || !o.payment_fee_source) {
+      if (
+        o.payment_fee_source === "estimated" ||
+        o.payment_fee_source === "unknown" ||
+        !o.payment_fee_source
+      ) {
         hasEstimatedFees = true;
       }
     }
@@ -311,9 +315,9 @@ export const getMarginCards = createServerFn({ method: 'POST' })
     if (orders.length > 0) {
       const ids = orders.map((o) => o.id);
       const { data: items } = await supabaseAdmin
-        .from('order_items')
-        .select('order_id, product_id, qty, unit_cost, total_cost, applied_unit_price, unit_price')
-        .in('order_id', ids);
+        .from("order_items")
+        .select("order_id, product_id, qty, unit_cost, total_cost, applied_unit_price, unit_price")
+        .in("order_id", ids);
       for (const it of items ?? []) {
         const oid = it.order_id as string;
         const itemRevenue =
@@ -377,10 +381,10 @@ export const getMarginCards = createServerFn({ method: 'POST' })
 const MarginOrdersInput = FiltersSchema.extend({
   page: z.number().int().min(1).default(1),
   pageSize: z.number().int().min(1).max(200).default(50),
-  marginStatus: z.enum(['all', 'good', 'warning', 'critical', 'incomplete']).default('all'),
+  marginStatus: z.enum(["all", "good", "warning", "critical", "incomplete"]).default("all"),
 });
 
-export const getMarginByOrder = createServerFn({ method: 'POST' })
+export const getMarginByOrder = createServerFn({ method: "POST" })
   .middleware([requireAdmin])
   .inputValidator((input: unknown) => MarginOrdersInput.parse(input))
   .handler(async ({ data }): Promise<MarginOrderResult> => {
@@ -393,9 +397,9 @@ export const getMarginByOrder = createServerFn({ method: 'POST' })
     if (orders.length > 0) {
       const ids = orders.map((o) => o.id);
       const { data: items } = await supabaseAdmin
-        .from('order_items')
-        .select('order_id, qty, unit_cost, total_cost')
-        .in('order_id', ids);
+        .from("order_items")
+        .select("order_id, qty, unit_cost, total_cost")
+        .in("order_id", ids);
       for (const it of items ?? []) {
         const oid = it.order_id as string;
         const cur = orderCogs.get(oid) ?? { cost: 0, missing: 0 };
@@ -410,7 +414,7 @@ export const getMarginByOrder = createServerFn({ method: 'POST' })
 
     const allRows: MarginOrderRow[] = orders.map((o) => {
       const snap = (o.address_snapshot ?? null) as { recipient?: string; name?: string } | null;
-      const customerName = snap?.recipient ?? snap?.name ?? o.company_name ?? 'Cliente';
+      const customerName = snap?.recipient ?? snap?.name ?? o.company_name ?? "Cliente";
       const revenue = Number(o.total ?? 0);
       const fee = feeOf(o);
       const ocogs = orderCogs.get(o.id) ?? { cost: 0, missing: 0 };
@@ -423,12 +427,12 @@ export const getMarginByOrder = createServerFn({ method: 'POST' })
         created_at: o.created_at,
         customer_name: customerName,
         company_name: o.company_name,
-        order_type: (o.order_type as 'b2c' | 'b2b') ?? 'b2c',
+        order_type: (o.order_type as "b2c" | "b2b") ?? "b2c",
         revenue,
         b2b_discount_total: Number(o.b2b_discount_total ?? 0),
         coupon_discount: o.coupon_code ? Number(o.discount ?? 0) : 0,
         fee,
-        fee_source: o.payment_fee_source ?? 'unknown',
+        fee_source: o.payment_fee_source ?? "unknown",
         cogs: ocogs.cost,
         profit,
         margin_percent: marginPercent,
@@ -439,7 +443,7 @@ export const getMarginByOrder = createServerFn({ method: 'POST' })
     });
 
     const filtered =
-      data.marginStatus === 'all'
+      data.marginStatus === "all"
         ? allRows
         : allRows.filter((r) => r.margin_status === data.marginStatus);
 
@@ -461,7 +465,7 @@ export const getMarginByOrder = createServerFn({ method: 'POST' })
 // PRODUTOS
 // ============================================================
 
-export const getProductsReport = createServerFn({ method: 'POST' })
+export const getProductsReport = createServerFn({ method: "POST" })
   .middleware([requireAdmin])
   .inputValidator((input: unknown) => FiltersSchema.parse(input))
   .handler(async ({ data }): Promise<ProductsReportResult> => {
@@ -487,18 +491,18 @@ export const getProductsReport = createServerFn({ method: 'POST' })
     if (orders.length > 0) {
       const ids = orders.map((o) => o.id);
       const { data: items } = await supabaseAdmin
-        .from('order_items')
+        .from("order_items")
         .select(
-          'order_id, product_id, product_name, product_sku, qty, unit_cost, total_cost, applied_unit_price, retail_unit_price, unit_price, b2b_discount_unit',
+          "order_id, product_id, product_name, product_sku, qty, unit_cost, total_cost, applied_unit_price, retail_unit_price, unit_price, b2b_discount_unit",
         )
-        .in('order_id', ids);
+        .in("order_id", ids);
       for (const it of items ?? []) {
         const pid = (it.product_id as string | null) ?? `unknown-${it.product_name}`;
         const cur =
           agg.get(pid) ??
           ({
             product_id: pid,
-            product_name: (it.product_name as string) ?? 'Produto',
+            product_name: (it.product_name as string) ?? "Produto",
             sku: (it.product_sku as string | null) ?? null,
             qty_sold: 0,
             revenue: 0,
@@ -526,16 +530,13 @@ export const getProductsReport = createServerFn({ method: 'POST' })
     }
 
     // Buscar categorias e estoque atual
-    const productIds = Array.from(agg.keys()).filter((id) => !id.startsWith('unknown-'));
-    const productMeta = new Map<
-      string,
-      { stock_qty: number | null; category: string | null }
-    >();
+    const productIds = Array.from(agg.keys()).filter((id) => !id.startsWith("unknown-"));
+    const productMeta = new Map<string, { stock_qty: number | null; category: string | null }>();
     if (productIds.length > 0) {
       const { data: products } = await supabaseAdmin
-        .from('products')
-        .select('id, stock_qty, category_id')
-        .in('id', productIds);
+        .from("products")
+        .select("id, stock_qty, category_id")
+        .in("id", productIds);
       const catIds = new Set<string>();
       for (const p of products ?? []) {
         if (p.category_id) catIds.add(p.category_id as string);
@@ -543,9 +544,9 @@ export const getProductsReport = createServerFn({ method: 'POST' })
       const catMap = new Map<string, string>();
       if (catIds.size > 0) {
         const { data: cats } = await supabaseAdmin
-          .from('categories')
-          .select('id, name')
-          .in('id', Array.from(catIds));
+          .from("categories")
+          .select("id, name")
+          .in("id", Array.from(catIds));
         for (const c of cats ?? []) catMap.set(c.id as string, c.name as string);
       }
       for (const p of products ?? []) {
@@ -562,8 +563,7 @@ export const getProductsReport = createServerFn({ method: 'POST' })
       const profit = hasCost ? a.revenue - a.total_cost : 0;
       const marginPercent = hasCost && a.revenue > 0 ? (profit / a.revenue) * 100 : 0;
       const avgPrice = a.total_qty_for_avg > 0 ? a.sum_unit_price / a.total_qty_for_avg : 0;
-      const avgDiscount =
-        a.total_qty_for_avg > 0 ? a.sum_discount_unit / a.total_qty_for_avg : 0;
+      const avgDiscount = a.total_qty_for_avg > 0 ? a.sum_discount_unit / a.total_qty_for_avg : 0;
       return {
         product_id: a.product_id,
         product_name: a.product_name,
@@ -589,13 +589,11 @@ export const getProductsReport = createServerFn({ method: 'POST' })
       cogs: rows.reduce((s, r) => s + r.total_cost, 0),
       profit: rows.reduce((s, r) => s + r.profit, 0),
       productsWithoutCost: rows.filter((r) => !r.has_cost).length,
-      productsCritical: rows.filter((r) => r.margin_status === 'critical').length,
+      productsCritical: rows.filter((r) => r.margin_status === "critical").length,
     };
 
     const sortedByRevenue = [...rows].sort((a, b) => b.revenue - a.revenue);
-    const sortedByProfit = [...rows]
-      .filter((r) => r.has_cost)
-      .sort((a, b) => b.profit - a.profit);
+    const sortedByProfit = [...rows].filter((r) => r.has_cost).sort((a, b) => b.profit - a.profit);
     const sortedByQty = [...rows].sort((a, b) => b.qty_sold - a.qty_sold);
 
     return {
@@ -606,7 +604,7 @@ export const getProductsReport = createServerFn({ method: 'POST' })
       topByRevenue: sortedByRevenue.slice(0, 5),
       topByProfit: sortedByProfit.slice(0, 5),
       topByQty: sortedByQty.slice(0, 5),
-      critical: rows.filter((r) => r.margin_status === 'critical').slice(0, 10),
+      critical: rows.filter((r) => r.margin_status === "critical").slice(0, 10),
       withoutCost: rows.filter((r) => !r.has_cost).slice(0, 10),
     };
   });
@@ -616,33 +614,33 @@ export const getProductsReport = createServerFn({ method: 'POST' })
 // ============================================================
 
 function csvEscape(s: unknown): string {
-  if (s == null) return '';
+  if (s == null) return "";
   const v = String(s);
-  if (v.includes(';') || v.includes('"') || v.includes('\n')) {
+  if (v.includes(";") || v.includes('"') || v.includes("\n")) {
     return `"${v.replace(/"/g, '""')}"`;
   }
   return v;
 }
 function fmtMoney(n: number) {
-  return n.toFixed(2).replace('.', ',');
+  return n.toFixed(2).replace(".", ",");
 }
 function fmtPct(n: number) {
-  return n.toFixed(2).replace('.', ',');
+  return n.toFixed(2).replace(".", ",");
 }
 
 const marginStatusLabel: Record<MarginStatus, string> = {
-  good: 'Boa',
-  warning: 'Atenção',
-  critical: 'Crítica',
-  incomplete: 'Incompleta',
+  good: "Boa",
+  warning: "Atenção",
+  critical: "Crítica",
+  incomplete: "Incompleta",
 };
 const calcStatusLabel: Record<CalcStatus, string> = {
-  real: 'Real',
-  estimated: 'Estimado',
-  incomplete: 'Incompleto',
+  real: "Real",
+  estimated: "Estimado",
+  incomplete: "Incompleto",
 };
 
-export const exportMarginByOrderCsv = createServerFn({ method: 'POST' })
+export const exportMarginByOrderCsv = createServerFn({ method: "POST" })
   .middleware([requireAdmin])
   .inputValidator((input: unknown) => FiltersSchema.parse(input))
   .handler(async ({ data: filters }): Promise<{ filename: string; content: string }> => {
@@ -655,9 +653,9 @@ export const exportMarginByOrderCsv = createServerFn({ method: 'POST' })
     if (orders.length > 0) {
       const ids = orders.map((o) => o.id);
       const { data: items } = await supabaseAdmin
-        .from('order_items')
-        .select('order_id, qty, unit_cost, total_cost')
-        .in('order_id', ids);
+        .from("order_items")
+        .select("order_id, qty, unit_cost, total_cost")
+        .in("order_id", ids);
       for (const it of items ?? []) {
         const oid = it.order_id as string;
         const cur = orderCogs.get(oid) ?? { cost: 0, missing: 0 };
@@ -668,26 +666,26 @@ export const exportMarginByOrderCsv = createServerFn({ method: 'POST' })
     }
 
     const headers = [
-      'Data',
-      'Pedido',
-      'Cliente',
-      'Tipo',
-      'Receita',
-      'Desconto B2B',
-      'Desconto cupom',
-      'Taxa Mercado Pago',
-      'Origem da taxa',
-      'Custo dos itens',
-      'Lucro estimado',
-      'Margem %',
-      'Status da margem',
-      'Status do cálculo',
+      "Data",
+      "Pedido",
+      "Cliente",
+      "Tipo",
+      "Receita",
+      "Desconto B2B",
+      "Desconto cupom",
+      "Taxa Mercado Pago",
+      "Origem da taxa",
+      "Custo dos itens",
+      "Lucro estimado",
+      "Margem %",
+      "Status da margem",
+      "Status do cálculo",
     ];
-    const lines: string[] = [headers.join(';')];
+    const lines: string[] = [headers.join(";")];
 
     for (const o of orders.slice(0, 5000)) {
       const snap = (o.address_snapshot ?? null) as { recipient?: string; name?: string } | null;
-      const name = snap?.recipient ?? snap?.name ?? o.company_name ?? 'Cliente';
+      const name = snap?.recipient ?? snap?.name ?? o.company_name ?? "Cliente";
       const revenue = Number(o.total ?? 0);
       const fee = feeOf(o);
       const ocogs = orderCogs.get(o.id) ?? { cost: 0, missing: 0 };
@@ -699,37 +697,37 @@ export const exportMarginByOrderCsv = createServerFn({ method: 'POST' })
 
       lines.push(
         [
-          new Date(o.created_at).toLocaleString('pt-BR'),
+          new Date(o.created_at).toLocaleString("pt-BR"),
           `#${o.order_number}`,
           name,
-          o.order_type === 'b2b' ? 'B2B' : 'B2C',
+          o.order_type === "b2b" ? "B2B" : "B2C",
           fmtMoney(revenue),
           fmtMoney(Number(o.b2b_discount_total ?? 0)),
           fmtMoney(o.coupon_code ? Number(o.discount ?? 0) : 0),
           fmtMoney(fee),
-          o.payment_fee_source ?? 'unknown',
+          o.payment_fee_source ?? "unknown",
           fmtMoney(ocogs.cost),
-          incomplete ? '' : fmtMoney(profit),
-          incomplete ? '' : fmtPct(marginPercent),
+          incomplete ? "" : fmtMoney(profit),
+          incomplete ? "" : fmtPct(marginPercent),
           marginStatusLabel[marginStatus],
           calcStatusLabel[calcStatus],
         ]
           .map(csvEscape)
-          .join(';'),
+          .join(";"),
       );
     }
 
     const filename = `margem_pedidos_${range.from.toISOString().slice(0, 10)}_${range.to
       .toISOString()
       .slice(0, 10)}.csv`;
-    return { filename, content: '\ufeff' + lines.join('\n') };
+    return { filename, content: "\ufeff" + lines.join("\n") };
   });
 
 // ============================================================
 // CSV — Produtos
 // ============================================================
 
-export const exportProductsReportCsv = createServerFn({ method: 'POST' })
+export const exportProductsReportCsv = createServerFn({ method: "POST" })
   .middleware([requireAdmin])
   .inputValidator((input: unknown) => FiltersSchema.parse(input))
   .handler(async ({ data: filters }): Promise<{ filename: string; content: string }> => {
@@ -757,18 +755,18 @@ export const exportProductsReportCsv = createServerFn({ method: 'POST' })
       if (orders.length > 0) {
         const ids = orders.map((o) => o.id);
         const { data: items } = await supabaseAdmin
-          .from('order_items')
+          .from("order_items")
           .select(
-            'order_id, product_id, product_name, product_sku, qty, unit_cost, total_cost, applied_unit_price, retail_unit_price, unit_price',
+            "order_id, product_id, product_name, product_sku, qty, unit_cost, total_cost, applied_unit_price, retail_unit_price, unit_price",
           )
-          .in('order_id', ids);
+          .in("order_id", ids);
         for (const it of items ?? []) {
           const pid = (it.product_id as string | null) ?? `unknown-${it.product_name}`;
           const cur =
             agg.get(pid) ??
             ({
               product_id: pid,
-              product_name: (it.product_name as string) ?? 'Produto',
+              product_name: (it.product_name as string) ?? "Produto",
               sku: (it.product_sku as string | null) ?? null,
               qty_sold: 0,
               revenue: 0,
@@ -791,21 +789,21 @@ export const exportProductsReportCsv = createServerFn({ method: 'POST' })
           agg.set(pid, cur);
         }
       }
-      const productIds = Array.from(agg.keys()).filter((id) => !id.startsWith('unknown-'));
+      const productIds = Array.from(agg.keys()).filter((id) => !id.startsWith("unknown-"));
       const meta = new Map<string, { stock_qty: number | null; category: string | null }>();
       if (productIds.length > 0) {
         const { data: products } = await supabaseAdmin
-          .from('products')
-          .select('id, stock_qty, category_id')
-          .in('id', productIds);
+          .from("products")
+          .select("id, stock_qty, category_id")
+          .in("id", productIds);
         const catIds = new Set<string>();
         for (const p of products ?? []) if (p.category_id) catIds.add(p.category_id as string);
         const catMap = new Map<string, string>();
         if (catIds.size > 0) {
           const { data: cats } = await supabaseAdmin
-            .from('categories')
-            .select('id, name')
-            .in('id', Array.from(catIds));
+            .from("categories")
+            .select("id, name")
+            .in("id", Array.from(catIds));
           for (const c of cats ?? []) catMap.set(c.id as string, c.name as string);
         }
         for (const p of products ?? []) {
@@ -819,21 +817,21 @@ export const exportProductsReportCsv = createServerFn({ method: 'POST' })
     })();
 
     const headers = [
-      'Produto',
-      'SKU',
-      'Categoria',
-      'Quantidade vendida',
-      'Receita',
-      'Custo total',
-      'Lucro estimado',
-      'Margem %',
-      'Preço médio',
-      'Desconto médio',
-      'Estoque atual',
-      'Status da margem',
-      'Possui custo',
+      "Produto",
+      "SKU",
+      "Categoria",
+      "Quantidade vendida",
+      "Receita",
+      "Custo total",
+      "Lucro estimado",
+      "Margem %",
+      "Preço médio",
+      "Desconto médio",
+      "Estoque atual",
+      "Status da margem",
+      "Possui custo",
     ];
-    const lines: string[] = [headers.join(';')];
+    const lines: string[] = [headers.join(";")];
 
     for (const a of Array.from(result.agg.values())
       .sort((x, y) => y.revenue - x.revenue)
@@ -843,33 +841,32 @@ export const exportProductsReportCsv = createServerFn({ method: 'POST' })
       const profit = hasCost ? a.revenue - a.total_cost : 0;
       const marginPercent = hasCost && a.revenue > 0 ? (profit / a.revenue) * 100 : 0;
       const avgPrice = a.total_qty_for_avg > 0 ? a.sum_unit_price / a.total_qty_for_avg : 0;
-      const avgDiscount =
-        a.total_qty_for_avg > 0 ? a.sum_discount_unit / a.total_qty_for_avg : 0;
+      const avgDiscount = a.total_qty_for_avg > 0 ? a.sum_discount_unit / a.total_qty_for_avg : 0;
       const status = computeMarginStatus(marginPercent, !hasCost, result.minMargin);
 
       lines.push(
         [
           a.product_name,
-          a.sku ?? '',
-          m?.category ?? '',
+          a.sku ?? "",
+          m?.category ?? "",
           a.qty_sold,
           fmtMoney(a.revenue),
-          hasCost ? fmtMoney(a.total_cost) : '',
-          hasCost ? fmtMoney(profit) : '',
-          hasCost ? fmtPct(marginPercent) : '',
+          hasCost ? fmtMoney(a.total_cost) : "",
+          hasCost ? fmtMoney(profit) : "",
+          hasCost ? fmtPct(marginPercent) : "",
           fmtMoney(avgPrice),
           fmtMoney(avgDiscount),
-          m?.stock_qty ?? '',
+          m?.stock_qty ?? "",
           marginStatusLabel[status],
-          hasCost ? 'Sim' : 'Não',
+          hasCost ? "Sim" : "Não",
         ]
           .map(csvEscape)
-          .join(';'),
+          .join(";"),
       );
     }
 
     const filename = `produtos_${result.range.from.toISOString().slice(0, 10)}_${result.range.to
       .toISOString()
       .slice(0, 10)}.csv`;
-    return { filename, content: '\ufeff' + lines.join('\n') };
+    return { filename, content: "\ufeff" + lines.join("\n") };
   });

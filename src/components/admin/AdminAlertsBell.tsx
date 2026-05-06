@@ -1,15 +1,15 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
-import { Link } from '@tanstack/react-router';
-import { Bell, ArrowRight, CheckCircle2, AlertCircle, EyeOff, X } from 'lucide-react';
-import { cn } from '@/lib/utils';
-import { useAdminCounters, type OperationsAlert } from '@/hooks/useAdminCounters';
+import { useEffect, useMemo, useRef, useState } from "react";
+import { Link } from "@tanstack/react-router";
+import { Bell, ArrowRight, CheckCircle2, AlertCircle, EyeOff, X } from "lucide-react";
+import { cn } from "@/lib/utils";
+import { useAdminCounters, type OperationsAlert } from "@/hooks/useAdminCounters";
 
-const HIDE_STORAGE_KEY = 'admin.alerts.hidden';
+const HIDE_STORAGE_KEY = "admin.alerts.hidden";
 
 type HideMap = Record<string, number>; // alertId -> expires timestamp
 
 function loadHidden(): HideMap {
-  if (typeof window === 'undefined') return {};
+  if (typeof window === "undefined") return {};
   try {
     const raw = localStorage.getItem(HIDE_STORAGE_KEY);
     if (!raw) return {};
@@ -32,16 +32,16 @@ function saveHidden(map: HideMap) {
   } catch {}
 }
 
-const SEVERITY_DOT: Record<OperationsAlert['severity'], string> = {
-  high: 'bg-destructive',
-  medium: 'bg-amber-500',
-  low: 'bg-muted-foreground/40',
+const SEVERITY_DOT: Record<OperationsAlert["severity"], string> = {
+  high: "bg-destructive",
+  medium: "bg-amber-500",
+  low: "bg-muted-foreground/40",
 };
 
-const SEVERITY_LABEL: Record<OperationsAlert['severity'], string> = {
-  high: 'Alta',
-  medium: 'Média',
-  low: 'Baixa',
+const SEVERITY_LABEL: Record<OperationsAlert["severity"], string> = {
+  high: "Alta",
+  medium: "Média",
+  low: "Baixa",
 };
 
 export function AdminAlertsBell() {
@@ -56,22 +56,19 @@ export function AdminAlertsBell() {
     const onDoc = (e: MouseEvent) => {
       if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
     };
-    document.addEventListener('mousedown', onDoc);
-    return () => document.removeEventListener('mousedown', onDoc);
+    document.addEventListener("mousedown", onDoc);
+    return () => document.removeEventListener("mousedown", onDoc);
   }, [open]);
 
   const visible = useMemo(() => {
     const now = Date.now();
     return alerts
       .filter((a) => !hidden[a.id] || hidden[a.id] <= now)
-      .sort(
-        (a, b) =>
-          severityWeight(b.severity) - severityWeight(a.severity),
-      );
+      .sort((a, b) => severityWeight(b.severity) - severityWeight(a.severity));
   }, [alerts, hidden]);
 
   const total = visible.length;
-  const highest = visible[0]?.severity ?? 'low';
+  const highest = visible[0]?.severity ?? "low";
 
   const hide = (id: string, days: number) => {
     const next = { ...hidden, [id]: Date.now() + days * 24 * 3600 * 1000 };
@@ -91,15 +88,15 @@ export function AdminAlertsBell() {
         {total > 0 && (
           <span
             className={cn(
-              'absolute -top-1 -right-1 inline-flex items-center justify-center min-w-[18px] h-[18px] px-1 text-[10px] font-semibold rounded-full leading-none text-white',
-              highest === 'high'
-                ? 'bg-destructive'
-                : highest === 'medium'
-                  ? 'bg-amber-500'
-                  : 'bg-muted-foreground',
+              "absolute -top-1 -right-1 inline-flex items-center justify-center min-w-[18px] h-[18px] px-1 text-[10px] font-semibold rounded-full leading-none text-white",
+              highest === "high"
+                ? "bg-destructive"
+                : highest === "medium"
+                  ? "bg-amber-500"
+                  : "bg-muted-foreground",
             )}
           >
-            {total > 99 ? '99+' : total}
+            {total > 99 ? "99+" : total}
           </span>
         )}
       </button>
@@ -110,7 +107,9 @@ export function AdminAlertsBell() {
             <div>
               <h3 className="font-display font-semibold text-sm">Alertas</h3>
               <p className="text-[11px] text-muted-foreground">
-                {total === 0 ? 'Nenhum alerta ativo' : `${total} alerta${total > 1 ? 's' : ''} ativo${total > 1 ? 's' : ''}`}
+                {total === 0
+                  ? "Nenhum alerta ativo"
+                  : `${total} alerta${total > 1 ? "s" : ""} ativo${total > 1 ? "s" : ""}`}
               </p>
             </div>
             <button
@@ -137,7 +136,10 @@ export function AdminAlertsBell() {
                   <li key={a.id} className="p-3 hover:bg-muted/40 transition-colors">
                     <div className="flex items-start gap-2.5">
                       <span
-                        className={cn('w-2 h-2 rounded-full mt-1.5 shrink-0', SEVERITY_DOT[a.severity])}
+                        className={cn(
+                          "w-2 h-2 rounded-full mt-1.5 shrink-0",
+                          SEVERITY_DOT[a.severity],
+                        )}
                         title={SEVERITY_LABEL[a.severity]}
                       />
                       <div className="flex-1 min-w-0">
@@ -156,7 +158,7 @@ export function AdminAlertsBell() {
                               <ArrowRight className="w-3 h-3" />
                             </Link>
                           )}
-                          {a.severity !== 'high' && (
+                          {a.severity !== "high" && (
                             <HideMenu onHide={(days) => hide(a.id, days)} />
                           )}
                         </div>
@@ -170,7 +172,7 @@ export function AdminAlertsBell() {
 
           <div className="px-4 py-2 border-t border-border bg-muted/30">
             <Link
-              to={'/admin/painel-do-dia' as any}
+              to={"/admin/painel-do-dia" as any}
               onClick={() => setOpen(false)}
               className="text-[11px] text-primary hover:underline inline-flex items-center gap-1"
             >
@@ -200,9 +202,9 @@ function HideMenu({ onHide }: { onHide: (days: number) => void }) {
       {open && (
         <div className="absolute left-0 mt-1 bg-popover border border-border rounded-md shadow-md z-10 min-w-[120px]">
           {[
-            { d: 1, l: 'Por 1 dia' },
-            { d: 7, l: 'Por 7 dias' },
-            { d: 30, l: 'Por 30 dias' },
+            { d: 1, l: "Por 1 dia" },
+            { d: 7, l: "Por 7 dias" },
+            { d: 30, l: "Por 30 dias" },
           ].map((opt) => (
             <button
               key={opt.d}
@@ -221,6 +223,6 @@ function HideMenu({ onHide }: { onHide: (days: number) => void }) {
   );
 }
 
-function severityWeight(s: OperationsAlert['severity']) {
-  return s === 'high' ? 3 : s === 'medium' ? 2 : 1;
+function severityWeight(s: OperationsAlert["severity"]) {
+  return s === "high" ? 3 : s === "medium" ? 2 : 1;
 }

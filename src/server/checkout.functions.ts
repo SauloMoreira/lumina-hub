@@ -1,25 +1,25 @@
-import { createServerFn } from '@tanstack/react-start';
-import { z } from 'zod';
-import { requireSupabaseAuth } from '@/integrations/supabase/auth-middleware';
+import { createServerFn } from "@tanstack/react-start";
+import { z } from "zod";
+import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
 // ============================================================
 // ViaCEP — público, sem token
 // ============================================================
-export const lookupCep = createServerFn({ method: 'POST' })
+export const lookupCep = createServerFn({ method: "POST" })
   .inputValidator((input: unknown) =>
     z
       .object({
         cep: z
           .string()
-          .transform((v) => v.replace(/\D/g, ''))
-          .pipe(z.string().regex(/^\d{8}$/, 'CEP deve ter 8 dígitos')),
+          .transform((v) => v.replace(/\D/g, ""))
+          .pipe(z.string().regex(/^\d{8}$/, "CEP deve ter 8 dígitos")),
       })
-      .parse(input)
+      .parse(input),
   )
   .handler(async ({ data }) => {
     try {
       const r = await fetch(`https://viacep.com.br/ws/${data.cep}/json/`);
-      if (!r.ok) return { ok: false as const, error: 'CEP não encontrado' };
+      if (!r.ok) return { ok: false as const, error: "CEP não encontrado" };
       const j = (await r.json()) as {
         erro?: boolean;
         logradouro?: string;
@@ -27,16 +27,16 @@ export const lookupCep = createServerFn({ method: 'POST' })
         localidade?: string;
         uf?: string;
       };
-      if (j.erro) return { ok: false as const, error: 'CEP não encontrado' };
+      if (j.erro) return { ok: false as const, error: "CEP não encontrado" };
       return {
         ok: true as const,
-        street: j.logradouro ?? '',
-        neighborhood: j.bairro ?? '',
-        city: j.localidade ?? '',
-        state: j.uf ?? '',
+        street: j.logradouro ?? "",
+        neighborhood: j.bairro ?? "",
+        city: j.localidade ?? "",
+        state: j.uf ?? "",
       };
     } catch {
-      return { ok: false as const, error: 'Erro ao consultar CEP' };
+      return { ok: false as const, error: "Erro ao consultar CEP" };
     }
   });
 
@@ -45,30 +45,33 @@ export const lookupCep = createServerFn({ method: 'POST' })
 // Retornado para o front mostrar/ocultar opção e exibir mensagens.
 // O valor final é SEMPRE recalculado no servidor em createOrder.
 // ============================================================
-export const lookupLocalDeliveryZone = createServerFn({ method: 'POST' })
+export const lookupLocalDeliveryZone = createServerFn({ method: "POST" })
   .inputValidator((input: unknown) =>
     z
       .object({
-        city: z.string().max(120).optional().default(''),
-        state: z.string().max(2).optional().default(''),
-        neighborhood: z.string().max(120).optional().default(''),
+        city: z.string().max(120).optional().default(""),
+        state: z.string().max(2).optional().default(""),
+        neighborhood: z.string().max(120).optional().default(""),
       })
-      .parse(input)
+      .parse(input),
   )
   .handler(async ({ data }) => {
-    const { supabaseAdmin } = await import('@/integrations/supabase/client.server');
-    const state = (data.state || '').toUpperCase();
-    if (state !== 'RJ' || !data.city || !data.neighborhood) {
-      return { ok: false as const, reason: 'out_of_area' as const };
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const state = (data.state || "").toUpperCase();
+    if (state !== "RJ" || !data.city || !data.neighborhood) {
+      return { ok: false as const, reason: "out_of_area" as const };
     }
-    const { data: rows, error } = await supabaseAdmin.rpc('lookup_local_delivery_zone' as never, {
-      _city: data.city,
-      _state: state,
-      _neighborhood: data.neighborhood,
-    } as never);
+    const { data: rows, error } = await supabaseAdmin.rpc(
+      "lookup_local_delivery_zone" as never,
+      {
+        _city: data.city,
+        _state: state,
+        _neighborhood: data.neighborhood,
+      } as never,
+    );
     if (error) {
-      console.error('[lookupLocalDeliveryZone] rpc err', error);
-      return { ok: false as const, reason: 'error' as const };
+      console.error("[lookupLocalDeliveryZone] rpc err", error);
+      return { ok: false as const, reason: "error" as const };
     }
     const row = (Array.isArray(rows) ? rows[0] : rows) as
       | {
@@ -83,12 +86,22 @@ export const lookupLocalDeliveryZone = createServerFn({ method: 'POST' })
         }
       | null
       | undefined;
-    if (!row) return { ok: false as const, reason: 'not_configured' as const };
+    if (!row) return { ok: false as const, reason: "not_configured" as const };
     if (!row.is_active) {
-      return { ok: false as const, reason: 'inactive' as const, displayName: row.display_name, district: row.district };
+      return {
+        ok: false as const,
+        reason: "inactive" as const,
+        displayName: row.display_name,
+        district: row.district,
+      };
     }
     if (!row.has_price || row.shipping_price === null) {
-      return { ok: false as const, reason: 'no_price' as const, displayName: row.display_name, district: row.district };
+      return {
+        ok: false as const,
+        reason: "no_price" as const,
+        displayName: row.display_name,
+        district: row.district,
+      };
     }
     return {
       ok: true as const,
@@ -105,22 +118,22 @@ export const lookupLocalDeliveryZone = createServerFn({ method: 'POST' })
 // Cálculo de frete — STUB local
 // TODO: substituir pela chamada real ao Melhor Envio quando token disponível
 // ============================================================
-export const calculateShipping = createServerFn({ method: 'POST' })
+export const calculateShipping = createServerFn({ method: "POST" })
   .inputValidator((input: unknown) =>
     z
       .object({
-        zipCode: z.string().transform((v) => v.replace(/\D/g, '')),
+        zipCode: z.string().transform((v) => v.replace(/\D/g, "")),
         subtotal: z.number().min(0),
         weightKg: z.number().min(0).default(1),
         // Subtotal somado APENAS dos itens marcados como elegíveis a frete grátis.
         // Se omitido (compatibilidade), assume 0 — não libera frete grátis.
         eligibleSubtotal: z.number().min(0).optional(),
       })
-      .parse(input)
+      .parse(input),
   )
   .handler(async ({ data }) => {
     if (!/^\d{8}$/.test(data.zipCode)) {
-      return { services: [], estimated: true as const, error: 'CEP deve ter 8 dígitos' };
+      return { services: [], estimated: true as const, error: "CEP deve ter 8 dígitos" };
     }
 
     // Estimativa local por região (DDD do CEP)
@@ -159,16 +172,16 @@ export const calculateShipping = createServerFn({ method: 'POST' })
     const weightFactor = Math.max(1, data.weightKg);
     const services = [
       {
-        id: 'pac',
-        name: 'PAC',
-        carrier: 'Correios',
+        id: "pac",
+        name: "PAC",
+        carrier: "Correios",
         price: Number((basePac * weightFactor).toFixed(2)),
         days: daysPac,
       },
       {
-        id: 'sedex',
-        name: 'SEDEX',
-        carrier: 'Correios',
+        id: "sedex",
+        name: "SEDEX",
+        carrier: "Correios",
         price: Number((baseSedex * weightFactor).toFixed(2)),
         days: daysSedex,
       },
@@ -178,9 +191,9 @@ export const calculateShipping = createServerFn({ method: 'POST' })
     const eligibleSubtotal = data.eligibleSubtotal ?? 0;
     if (prefix >= 24 && prefix <= 25 && eligibleSubtotal >= 199) {
       services.unshift({
-        id: 'local',
-        name: 'Entrega local Maricá',
-        carrier: 'Led Maricá',
+        id: "local",
+        name: "Entrega local Maricá",
+        carrier: "Led Maricá",
         price: 0,
         days: 1,
       });
@@ -192,24 +205,29 @@ export const calculateShipping = createServerFn({ method: 'POST' })
 // ============================================================
 // Aplicar cupom
 // ============================================================
-export const applyCoupon = createServerFn({ method: 'POST' })
+export const applyCoupon = createServerFn({ method: "POST" })
   .inputValidator((input: unknown) =>
-    z.object({ code: z.string().min(1).max(40), subtotal: z.number().min(0) }).parse(input)
+    z.object({ code: z.string().min(1).max(40), subtotal: z.number().min(0) }).parse(input),
   )
   .handler(async ({ data }) => {
-    const { supabaseAdmin } = await import('@/integrations/supabase/client.server');
-    const { data: rows, error } = await supabaseAdmin.rpc('apply_coupon' as never, {
-      _code: data.code,
-      _subtotal: data.subtotal,
-    } as never);
-    if (error) return { valid: false, discount: 0, message: 'Erro ao validar cupom' };
-    const row = (Array.isArray(rows) ? rows[0] : rows) as
-      | { valid: boolean; discount: number; message: string }
-      | null;
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: rows, error } = await supabaseAdmin.rpc(
+      "apply_coupon" as never,
+      {
+        _code: data.code,
+        _subtotal: data.subtotal,
+      } as never,
+    );
+    if (error) return { valid: false, discount: 0, message: "Erro ao validar cupom" };
+    const row = (Array.isArray(rows) ? rows[0] : rows) as {
+      valid: boolean;
+      discount: number;
+      message: string;
+    } | null;
     return {
       valid: Boolean(row?.valid),
       discount: Number(row?.discount ?? 0),
-      message: String(row?.message ?? ''),
+      message: String(row?.message ?? ""),
     };
   });
 
@@ -226,10 +244,10 @@ const CreateOrderInput = z.object({
         image: z.string().nullable().optional(),
         unitPrice: z.number().min(0),
         qty: z.number().int().min(1),
-      })
+      }),
     )
     .min(1),
-  deliveryMethod: z.enum(['delivery', 'pickup', 'local_delivery']).default('delivery'),
+  deliveryMethod: z.enum(["delivery", "pickup", "local_delivery"]).default("delivery"),
   shipping: z
     .object({
       carrier: z.string(),
@@ -245,8 +263,13 @@ const CreateOrderInput = z.object({
       recipient: z.string().min(1),
       zipCode: z
         .string()
-        .transform((v) => v.replace(/\D/g, ''))
-        .pipe(z.string().regex(/^\d{8}$/, 'CEP deve ter 8 dígitos').or(z.literal(''))),
+        .transform((v) => v.replace(/\D/g, ""))
+        .pipe(
+          z
+            .string()
+            .regex(/^\d{8}$/, "CEP deve ter 8 dígitos")
+            .or(z.literal("")),
+        ),
       street: z.string().optional().nullable(),
       number: z.string().optional().nullable(),
       complement: z.string().optional().nullable(),
@@ -275,7 +298,7 @@ const CreateOrderInput = z.object({
     .optional(),
 });
 
-export const createOrder = createServerFn({ method: 'POST' })
+export const createOrder = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: unknown) => CreateOrderInput.parse(input))
   .handler(async ({ data, context }) => {
@@ -287,7 +310,7 @@ export const createOrder = createServerFn({ method: 'POST' })
     // Usa a engine `validate_b2b_pricing` para definir, item a item,
     // se aplica preço empresa ou varejo (mín/múltiplo/validade/empresa aprovada).
     // ========================================================
-    const { computeB2bPricing } = await import('@/server/b2bPricing.server');
+    const { computeB2bPricing } = await import("@/server/b2bPricing.server");
     const pricing = await computeB2bPricing({
       userId,
       items: data.items.map((i) => ({ productId: i.productId, qty: i.qty })),
@@ -299,9 +322,9 @@ export const createOrder = createServerFn({ method: 'POST' })
     // Carrega nomes/skus/imagens atuais para snapshot consistente
     const productIds = Array.from(new Set(data.items.map((i) => i.productId)));
     const { data: prodMeta } = await supabase
-      .from('products')
-      .select('id, name, sku, images, cost_price')
-      .in('id', productIds);
+      .from("products")
+      .select("id, name, sku, images, cost_price")
+      .in("id", productIds);
     const metaMap = new Map((prodMeta ?? []).map((p) => [p.id, p]));
 
     // Verifica disponibilidade + estoque por item priceado
@@ -314,7 +337,7 @@ export const createOrder = createServerFn({ method: 'POST' })
       retailUnitPrice: number;
       b2bUnitPrice: number | null;
       appliedUnitPrice: number;
-      pricingSource: 'retail' | 'b2b';
+      pricingSource: "retail" | "b2b";
       b2bDiscountUnit: number;
       b2bDiscountTotal: number;
       b2bMinQuantity: number | null;
@@ -324,7 +347,10 @@ export const createOrder = createServerFn({ method: 'POST' })
     const lines: LineComputed[] = [];
     for (const it of pricing.items) {
       if (!it.available) {
-        return { ok: false as const, error: `Produto indisponível foi removido do catálogo. Atualize o carrinho.` };
+        return {
+          ok: false as const,
+          error: `Produto indisponível foi removido do catálogo. Atualize o carrinho.`,
+        };
       }
       if ((it.stock_qty ?? 0) < it.qty) {
         return {
@@ -340,18 +366,18 @@ export const createOrder = createServerFn({ method: 'POST' })
       const hint = clientHints.get(it.product_id);
       lines.push({
         productId: it.product_id,
-        name: it.name ?? meta?.name ?? '',
+        name: it.name ?? meta?.name ?? "",
         sku: meta?.sku ?? hint?.sku ?? null,
-        image: hint?.image ?? (meta?.images?.[0] ?? null),
+        image: hint?.image ?? meta?.images?.[0] ?? null,
         qty: it.qty,
         retailUnitPrice: Number(it.retail_unit_price ?? 0),
         b2bUnitPrice: it.b2b_unit_price != null ? Number(it.b2b_unit_price) : null,
         appliedUnitPrice: Number(it.applied_unit_price ?? it.retail_unit_price ?? 0),
-        pricingSource: (it.pricing_source ?? 'retail') as 'retail' | 'b2b',
+        pricingSource: (it.pricing_source ?? "retail") as "retail" | "b2b",
         b2bDiscountUnit: Number(it.b2b_discount_unit ?? 0),
         b2bDiscountTotal: Number(it.b2b_discount_total ?? 0),
         b2bMinQuantity: it.b2b_min_quantity ?? null,
-        b2bRuleApplied: it.reason ?? 'retail',
+        b2bRuleApplied: it.reason ?? "retail",
         unitCost: meta?.cost_price != null ? Number(meta.cost_price) : null,
       });
     }
@@ -366,26 +392,33 @@ export const createOrder = createServerFn({ method: 'POST' })
     if (data.couponCode) {
       let couponAllowed = true;
       if (isB2bOrder) {
-        const { supabaseAdmin } = await import('@/integrations/supabase/client.server');
+        const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
         const { data: settings } = await supabaseAdmin
-          .from('b2b_settings')
-          .select('allow_coupon_in_b2b')
-          .order('created_at', { ascending: true })
+          .from("b2b_settings")
+          .select("allow_coupon_in_b2b")
+          .order("created_at", { ascending: true })
           .limit(1)
           .maybeSingle();
-        couponAllowed = Boolean((settings as { allow_coupon_in_b2b?: boolean } | null)?.allow_coupon_in_b2b);
+        couponAllowed = Boolean(
+          (settings as { allow_coupon_in_b2b?: boolean } | null)?.allow_coupon_in_b2b,
+        );
       }
       if (!couponAllowed) {
         return {
           ok: false as const,
-          error: 'Cupons promocionais não são acumulativos com condições B2B neste pedido.',
+          error: "Cupons promocionais não são acumulativos com condições B2B neste pedido.",
         };
       }
-      const { data: rows } = await supabase.rpc('apply_coupon' as never, {
-        _code: data.couponCode,
-        _subtotal: subtotal,
-      } as never);
-      const row = Array.isArray(rows) ? (rows as Array<{ valid: boolean; discount: number }>)[0] : (rows as { valid: boolean; discount: number } | null);
+      const { data: rows } = await supabase.rpc(
+        "apply_coupon" as never,
+        {
+          _code: data.couponCode,
+          _subtotal: subtotal,
+        } as never,
+      );
+      const row = Array.isArray(rows)
+        ? (rows as Array<{ valid: boolean; discount: number }>)[0]
+        : (rows as { valid: boolean; discount: number } | null);
       if (row?.valid) discount = Number(row.discount);
     }
 
@@ -395,7 +428,7 @@ export const createOrder = createServerFn({ method: 'POST' })
     // allow_bundle_discount_with_coupon=false, o helper retorna 0
     // e marca todos os combos como blocked_by_coupon.
     // ========================================================
-    const { computeBundleApplication } = await import('@/server/cartBundleApply.server');
+    const { computeBundleApplication } = await import("@/server/cartBundleApply.server");
     const bundleApp = await computeBundleApplication({
       userId,
       items: data.items.map((i) => ({ productId: i.productId, qty: i.qty })),
@@ -403,20 +436,26 @@ export const createOrder = createServerFn({ method: 'POST' })
     });
     const bundleDiscountTotal = bundleApp.bundle_discount_total;
     const hasBundleDiscount = bundleDiscountTotal > 0;
-    const isPickup = data.deliveryMethod === 'pickup';
-    const isLocal = data.deliveryMethod === 'local_delivery';
+    const isPickup = data.deliveryMethod === "pickup";
+    const isLocal = data.deliveryMethod === "local_delivery";
 
     // Validações específicas por método
     if (isPickup) {
       if (!data.address?.recipient) {
-        return { ok: false as const, error: 'Informe o nome para retirada.' };
+        return { ok: false as const, error: "Informe o nome para retirada." };
       }
     } else {
-      if (!data.address?.street || !data.address?.number || !data.address?.city || !data.address?.state || !data.address?.zipCode) {
-        return { ok: false as const, error: 'Endereço de entrega incompleto.' };
+      if (
+        !data.address?.street ||
+        !data.address?.number ||
+        !data.address?.city ||
+        !data.address?.state ||
+        !data.address?.zipCode
+      ) {
+        return { ok: false as const, error: "Endereço de entrega incompleto." };
       }
       if (!isLocal && !data.shipping) {
-        return { ok: false as const, error: 'Selecione uma opção de frete.' };
+        return { ok: false as const, error: "Selecione uma opção de frete." };
       }
     }
 
@@ -429,23 +468,43 @@ export const createOrder = createServerFn({ method: 'POST' })
       eta: string | null;
     } | null = null;
     if (isLocal) {
-      const { supabaseAdmin } = await import('@/integrations/supabase/client.server');
-      const { data: rows, error: rpcErr } = await supabaseAdmin.rpc('lookup_local_delivery_zone' as never, {
-        _city: data.address?.city ?? '',
-        _state: (data.address?.state ?? '').toUpperCase(),
-        _neighborhood: data.address?.neighborhood ?? '',
-      } as never);
+      const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+      const { data: rows, error: rpcErr } = await supabaseAdmin.rpc(
+        "lookup_local_delivery_zone" as never,
+        {
+          _city: data.address?.city ?? "",
+          _state: (data.address?.state ?? "").toUpperCase(),
+          _neighborhood: data.address?.neighborhood ?? "",
+        } as never,
+      );
       if (rpcErr) {
-        console.error('[createOrder] lookup zone err', rpcErr);
-        return { ok: false as const, error: 'Não foi possível validar a zona de frete local.' };
+        console.error("[createOrder] lookup zone err", rpcErr);
+        return { ok: false as const, error: "Não foi possível validar a zona de frete local." };
       }
-      const z = (Array.isArray(rows) ? rows[0] : rows) as
-        | { zone_id: string; display_name: string; district: string; shipping_price: number | null; estimated_delivery_time: string | null; is_active: boolean; has_price: boolean }
-        | null;
-      if (!z) return { ok: false as const, error: 'Bairro/localidade não atendido pelo frete local de Maricá.' };
-      if (!z.is_active) return { ok: false as const, error: `Frete local indisponível para ${z.display_name} no momento.` };
+      const z = (Array.isArray(rows) ? rows[0] : rows) as {
+        zone_id: string;
+        display_name: string;
+        district: string;
+        shipping_price: number | null;
+        estimated_delivery_time: string | null;
+        is_active: boolean;
+        has_price: boolean;
+      } | null;
+      if (!z)
+        return {
+          ok: false as const,
+          error: "Bairro/localidade não atendido pelo frete local de Maricá.",
+        };
+      if (!z.is_active)
+        return {
+          ok: false as const,
+          error: `Frete local indisponível para ${z.display_name} no momento.`,
+        };
       if (!z.has_price || z.shipping_price === null) {
-        return { ok: false as const, error: `Ainda não há valor de frete local configurado para ${z.display_name}.` };
+        return {
+          ok: false as const,
+          error: `Ainda não há valor de frete local configurado para ${z.display_name}.`,
+        };
       }
       localZoneInfo = {
         zoneId: z.zone_id,
@@ -459,18 +518,18 @@ export const createOrder = createServerFn({ method: 'POST' })
     const shippingCost = isPickup
       ? 0
       : isLocal
-      ? localZoneInfo!.price
-      : Number(data.shipping?.cost ?? 0);
+        ? localZoneInfo!.price
+        : Number(data.shipping?.cost ?? 0);
     const shippingCarrier = isPickup
-      ? 'Retirada na loja'
+      ? "Retirada na loja"
       : isLocal
-      ? 'Frete Local Maricá/RJ'
-      : data.shipping?.carrier ?? null;
+        ? "Frete Local Maricá/RJ"
+        : (data.shipping?.carrier ?? null);
     const shippingService = isPickup
-      ? 'Retirada na loja'
+      ? "Retirada na loja"
       : isLocal
-      ? `Frete Local Maricá/RJ — ${localZoneInfo!.displayName}`
-      : data.shipping?.service ?? null;
+        ? `Frete Local Maricá/RJ — ${localZoneInfo!.displayName}`
+        : (data.shipping?.service ?? null);
     const total = Math.max(0, subtotal - discount - bundleDiscountTotal + shippingCost);
 
     // Snapshot dos dados de retirada (loja) — em pickup
@@ -482,11 +541,11 @@ export const createOrder = createServerFn({ method: 'POST' })
       pickup_status: string | null;
     } | null = null;
     if (isPickup) {
-      const { supabaseAdmin } = await import('@/integrations/supabase/client.server');
+      const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
       const { data: company } = await supabaseAdmin
-        .from('company_settings')
-        .select('pickup_store_name, pickup_address, pickup_phone, pickup_instructions, trade_name')
-        .order('created_at', { ascending: true })
+        .from("company_settings")
+        .select("pickup_store_name, pickup_address, pickup_phone, pickup_instructions, trade_name")
+        .order("created_at", { ascending: true })
         .limit(1)
         .maybeSingle();
       const c = (company ?? {}) as Record<string, string | null>;
@@ -495,15 +554,22 @@ export const createOrder = createServerFn({ method: 'POST' })
         pickup_store_address: c.pickup_address || null,
         pickup_store_phone: c.pickup_phone || null,
         pickup_instructions: c.pickup_instructions || null,
-        pickup_status: 'awaiting_release',
+        pickup_status: "awaiting_release",
       };
     }
 
     // Salvar endereço (opcional) — em entrega/local_delivery
     let addressId: string | null = null;
-    if (!isPickup && data.address?.saveAddress && data.address.street && data.address.number && data.address.city && data.address.state) {
+    if (
+      !isPickup &&
+      data.address?.saveAddress &&
+      data.address.street &&
+      data.address.number &&
+      data.address.city &&
+      data.address.state
+    ) {
       const { data: addr } = await supabase
-        .from('addresses')
+        .from("addresses")
         .insert({
           user_id: userId,
           recipient: data.address.recipient,
@@ -515,20 +581,20 @@ export const createOrder = createServerFn({ method: 'POST' })
           city: data.address.city,
           state: data.address.state,
         } as never)
-        .select('id')
+        .select("id")
         .single();
       addressId = addr?.id ?? null;
     }
 
     // Criar pedido
-    const deliveryMethodValue = isPickup ? 'pickup' : isLocal ? 'local_delivery' : 'delivery';
+    const deliveryMethodValue = isPickup ? "pickup" : isLocal ? "local_delivery" : "delivery";
     const { data: order, error: orderErr } = await supabase
-      .from('orders')
+      .from("orders")
       .insert({
         user_id: userId,
-        status: 'pending',
-        payment_status: 'pending',
-        payment_method: 'mercadopago',
+        status: "pending",
+        payment_status: "pending",
+        payment_method: "mercadopago",
         subtotal,
         discount,
         shipping_cost: shippingCost,
@@ -541,11 +607,13 @@ export const createOrder = createServerFn({ method: 'POST' })
         notes: data.notes ?? null,
         delivery_method: deliveryMethodValue,
         // === Campos B2B ===
-        order_type: isB2bOrder ? 'b2b' : 'b2c',
-        company_id: isB2bOrder ? pricing.company?.id ?? null : null,
-        company_name: isB2bOrder ? pricing.company?.trade_name ?? pricing.company?.legal_name ?? null : null,
-        company_cnpj: isB2bOrder ? pricing.company?.cnpj ?? null : null,
-        company_contact_name: isB2bOrder ? pricing.company?.contact_name ?? null : null,
+        order_type: isB2bOrder ? "b2b" : "b2c",
+        company_id: isB2bOrder ? (pricing.company?.id ?? null) : null,
+        company_name: isB2bOrder
+          ? (pricing.company?.trade_name ?? pricing.company?.legal_name ?? null)
+          : null,
+        company_cnpj: isB2bOrder ? (pricing.company?.cnpj ?? null) : null,
+        company_contact_name: isB2bOrder ? (pricing.company?.contact_name ?? null) : null,
         retail_subtotal: retailSubtotal,
         b2b_subtotal: subtotal,
         b2b_discount_total: b2bDiscountTotal,
@@ -572,15 +640,15 @@ export const createOrder = createServerFn({ method: 'POST' })
         origin_context: data.tracking?.origin_context ?? null,
         referrer_url: data.tracking?.referrer_url ?? null,
       } as never)
-      .select('id, order_number')
+      .select("id, order_number")
       .single();
 
     if (orderErr || !order) {
-      return { ok: false as const, error: orderErr?.message ?? 'Falha ao criar pedido' };
+      return { ok: false as const, error: orderErr?.message ?? "Falha ao criar pedido" };
     }
 
     // Criar itens (com memória da regra B2B aplicada)
-    const { error: itemsErr } = await supabase.from('order_items').insert(
+    const { error: itemsErr } = await supabase.from("order_items").insert(
       lines.map((i) => {
         const totalPrice = i.appliedUnitPrice * i.qty;
         const hasCost = i.unitCost != null;
@@ -613,7 +681,7 @@ export const createOrder = createServerFn({ method: 'POST' })
           total_cost: totalCost,
           gross_margin_amount: grossMarginAmount,
           gross_margin_percent: grossMarginPercent,
-          cost_source: hasCost ? 'product' : 'none',
+          cost_source: hasCost ? "product" : "none",
           // === Onda 9E.4b: desconto de combo (rateado) ===
           // applied_unit_price NÃO é alterado — desconto fica em campo separado.
           bundle_id: bundleAlloc?.bundle_id ?? null,
@@ -623,7 +691,7 @@ export const createOrder = createServerFn({ method: 'POST' })
           bundle_discount_eligible: bundleAlloc?.bundle_discount_eligible ?? false,
           bundle_block_reason: bundleAlloc?.block_reason ?? null,
         };
-      })
+      }),
     );
 
     if (itemsErr) {
@@ -632,10 +700,10 @@ export const createOrder = createServerFn({ method: 'POST' })
 
     // Disparar e-mail "pedido recebido" — não bloqueia retorno; falhas são logadas
     try {
-      const { sendOrderEmail } = await import('@/server/email/orderEmails');
-      void sendOrderEmail({ orderId: order.id, type: 'order_created' });
+      const { sendOrderEmail } = await import("@/server/email/orderEmails");
+      void sendOrderEmail({ orderId: order.id, type: "order_created" });
     } catch (e) {
-      console.error('[checkout] falha ao agendar e-mail order_created', e);
+      console.error("[checkout] falha ao agendar e-mail order_created", e);
     }
 
     return {
@@ -648,31 +716,31 @@ export const createOrder = createServerFn({ method: 'POST' })
 // ============================================================
 // Buscar pedido por id (para confirmação e detalhe)
 // ============================================================
-export const getOrderById = createServerFn({ method: 'POST' })
+export const getOrderById = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: unknown) => z.object({ id: z.string().uuid() }).parse(input))
   .handler(async ({ data, context }) => {
     const { supabase } = context;
     const { data: order, error } = await supabase
-      .from('orders')
-      .select('*, order_items(*)')
-      .eq('id', data.id)
+      .from("orders")
+      .select("*, order_items(*)")
+      .eq("id", data.id)
       .single();
-    if (error || !order) return { ok: false as const, error: 'Pedido não encontrado' };
+    if (error || !order) return { ok: false as const, error: "Pedido não encontrado" };
     return { ok: true as const, order };
   });
 
 // ============================================================
 // Listar pedidos do usuário
 // ============================================================
-export const listMyOrders = createServerFn({ method: 'POST' })
+export const listMyOrders = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
     const { supabase } = context;
     const { data } = await supabase
-      .from('orders')
-      .select('id, order_number, status, payment_status, total, created_at')
-      .order('created_at', { ascending: false })
+      .from("orders")
+      .select("id, order_number, status, payment_status, total, created_at")
+      .order("created_at", { ascending: false })
       .limit(50);
     return { orders: data ?? [] };
   });

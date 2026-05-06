@@ -1,8 +1,8 @@
-import { createFileRoute } from '@tanstack/react-router';
-import { createHmac, timingSafeEqual } from 'crypto';
-import { supabaseAdmin } from '@/integrations/supabase/client.server';
-import { logSecurityEvent } from '@/server/security/rateLimit';
-import { computeMpFees } from '@/server/mercadoPagoFees.server';
+import { createFileRoute } from "@tanstack/react-router";
+import { createHmac, timingSafeEqual } from "crypto";
+import { supabaseAdmin } from "@/integrations/supabase/client.server";
+import { logSecurityEvent } from "@/server/security/rateLimit";
+import { computeMpFees } from "@/server/mercadoPagoFees.server";
 
 // =============================================================================
 // Webhook Mercado Pago
@@ -24,18 +24,17 @@ type MPPayment = {
   fee_details?: Array<{ amount?: number; type?: string }> | null;
 };
 
-
-const TERMINAL_PAID = new Set(['approved']);
+const TERMINAL_PAID = new Set(["approved"]);
 const STATUS_MAP: Record<string, string> = {
-  approved: 'approved',
-  authorized: 'in_process',
-  in_process: 'in_process',
-  in_mediation: 'in_process',
-  pending: 'pending',
-  rejected: 'rejected',
-  cancelled: 'cancelled',
-  refunded: 'refunded',
-  charged_back: 'charged_back',
+  approved: "approved",
+  authorized: "in_process",
+  in_process: "in_process",
+  in_mediation: "in_process",
+  pending: "pending",
+  rejected: "rejected",
+  cancelled: "cancelled",
+  refunded: "refunded",
+  charged_back: "charged_back",
 };
 
 function safeJson(text: string): Record<string, unknown> {
@@ -52,55 +51,58 @@ function verifySignature(opts: {
   requestId: string | null;
   dataId: string | null;
 }): { ok: boolean; reason?: string } {
-  if (!opts.signatureHeader) return { ok: false, reason: 'missing x-signature' };
-  if (!opts.dataId) return { ok: false, reason: 'missing data.id' };
+  if (!opts.signatureHeader) return { ok: false, reason: "missing x-signature" };
+  if (!opts.dataId) return { ok: false, reason: "missing data.id" };
 
   // x-signature: ts=<timestamp>,v1=<hex>
-  const parts = opts.signatureHeader.split(',').map((p) => p.trim());
+  const parts = opts.signatureHeader.split(",").map((p) => p.trim());
   const map: Record<string, string> = {};
   for (const p of parts) {
-    const [k, v] = p.split('=');
+    const [k, v] = p.split("=");
     if (k && v) map[k.trim()] = v.trim();
   }
-  const ts = map['ts'];
-  const v1 = map['v1'];
-  if (!ts || !v1) return { ok: false, reason: 'malformed x-signature' };
+  const ts = map["ts"];
+  const v1 = map["v1"];
+  if (!ts || !v1) return { ok: false, reason: "malformed x-signature" };
 
   // Manifesto: id:<data.id>;request-id:<x-request-id>;ts:<ts>;
   const manifestParts: string[] = [`id:${opts.dataId};`];
   if (opts.requestId) manifestParts.push(`request-id:${opts.requestId};`);
   manifestParts.push(`ts:${ts};`);
-  const manifest = manifestParts.join('');
+  const manifest = manifestParts.join("");
 
-  const computed = createHmac('sha256', opts.secret).update(manifest).digest('hex');
+  const computed = createHmac("sha256", opts.secret).update(manifest).digest("hex");
   try {
-    const a = Buffer.from(computed, 'hex');
-    const b = Buffer.from(v1, 'hex');
-    if (a.length !== b.length) return { ok: false, reason: 'signature length mismatch' };
-    if (!timingSafeEqual(a, b)) return { ok: false, reason: 'signature mismatch' };
+    const a = Buffer.from(computed, "hex");
+    const b = Buffer.from(v1, "hex");
+    if (a.length !== b.length) return { ok: false, reason: "signature length mismatch" };
+    if (!timingSafeEqual(a, b)) return { ok: false, reason: "signature mismatch" };
   } catch {
-    return { ok: false, reason: 'signature compare error' };
+    return { ok: false, reason: "signature compare error" };
   }
   return { ok: true };
 }
 
 async function fetchPayment(paymentId: string, accessToken: string): Promise<MPPayment | null> {
   try {
-    const r = await fetch(`https://api.mercadopago.com/v1/payments/${encodeURIComponent(paymentId)}`, {
-      headers: { Authorization: `Bearer ${accessToken}` },
-    });
+    const r = await fetch(
+      `https://api.mercadopago.com/v1/payments/${encodeURIComponent(paymentId)}`,
+      {
+        headers: { Authorization: `Bearer ${accessToken}` },
+      },
+    );
     if (!r.ok) {
-      console.error('[MP webhook] GET payment falhou', r.status);
+      console.error("[MP webhook] GET payment falhou", r.status);
       return null;
     }
     return (await r.json()) as MPPayment;
   } catch (e) {
-    console.error('[MP webhook] exception GET payment', e);
+    console.error("[MP webhook] exception GET payment", e);
     return null;
   }
 }
 
-export const Route = createFileRoute('/api/public/mercadopago/webhook')({
+export const Route = createFileRoute("/api/public/mercadopago/webhook")({
   server: {
     handlers: {
       POST: async ({ request }) => {
@@ -108,16 +110,16 @@ export const Route = createFileRoute('/api/public/mercadopago/webhook')({
         const webhookSecret = process.env.MERCADOPAGO_WEBHOOK_SECRET;
 
         // Headers
-        const signatureHeader = request.headers.get('x-signature');
-        const requestId = request.headers.get('x-request-id');
+        const signatureHeader = request.headers.get("x-signature");
+        const requestId = request.headers.get("x-request-id");
 
         const rawBody = await request.text();
         const body = safeJson(rawBody);
 
         // Query params (MP envia data.id também via query em alguns casos)
         const url = new URL(request.url);
-        const queryDataId = url.searchParams.get('data.id') ?? url.searchParams.get('id');
-        const queryType = url.searchParams.get('type') ?? url.searchParams.get('topic');
+        const queryDataId = url.searchParams.get("data.id") ?? url.searchParams.get("id");
+        const queryType = url.searchParams.get("type") ?? url.searchParams.get("topic");
 
         const dataIdFromBody =
           (body as { data?: { id?: string | number } }).data?.id != null
@@ -130,9 +132,12 @@ export const Route = createFileRoute('/api/public/mercadopago/webhook')({
           queryType ??
           null;
         const action = (body as { action?: string }).action ?? null;
-        const eventId = (body as { id?: string | number }).id != null ? String((body as { id?: string | number }).id) : null;
+        const eventId =
+          (body as { id?: string | number }).id != null
+            ? String((body as { id?: string | number }).id)
+            : null;
         const liveMode =
-          typeof (body as { live_mode?: boolean }).live_mode === 'boolean'
+          typeof (body as { live_mode?: boolean }).live_mode === "boolean"
             ? ((body as { live_mode?: boolean }).live_mode as boolean)
             : null;
 
@@ -143,9 +148,9 @@ export const Route = createFileRoute('/api/public/mercadopago/webhook')({
         });
 
         const { data: auditRow, error: auditErr } = await supabaseAdmin
-          .from('payment_webhook_events')
+          .from("payment_webhook_events")
           .insert({
-            provider: 'mercadopago',
+            provider: "mercadopago",
             event_id: eventId,
             action,
             type,
@@ -154,33 +159,37 @@ export const Route = createFileRoute('/api/public/mercadopago/webhook')({
             payload: body as never,
             headers: headersObj as never,
           })
-          .select('id')
+          .select("id")
           .single();
-        if (auditErr) console.error('[MP webhook] erro audit insert', auditErr);
+        if (auditErr) console.error("[MP webhook] erro audit insert", auditErr);
         const auditId = auditRow?.id ?? null;
 
         // 2) Validar assinatura
         // Em produção, secret é OBRIGATÓRIO — ausente => 503.
-        const isProd = process.env.NODE_ENV === 'production';
+        const isProd = process.env.NODE_ENV === "production";
         if (!webhookSecret) {
           if (isProd) {
-            console.error('[MP webhook] MERCADOPAGO_WEBHOOK_SECRET ausente em produção — recusando');
+            console.error(
+              "[MP webhook] MERCADOPAGO_WEBHOOK_SECRET ausente em produção — recusando",
+            );
             void logSecurityEvent({
-              type: 'webhook_invalid_signature',
-              severity: 'error',
-              identifier: 'mercadopago',
-              message: 'Webhook recebido sem secret configurado em produção',
+              type: "webhook_invalid_signature",
+              severity: "error",
+              identifier: "mercadopago",
+              message: "Webhook recebido sem secret configurado em produção",
               metadata: { auditId, dataId, type },
             });
             if (auditId) {
               await supabaseAdmin
-                .from('payment_webhook_events')
-                .update({ processing_error: 'webhook secret missing in production' })
-                .eq('id', auditId);
+                .from("payment_webhook_events")
+                .update({ processing_error: "webhook secret missing in production" })
+                .eq("id", auditId);
             }
-            return new Response('Webhook secret not configured', { status: 503 });
+            return new Response("Webhook secret not configured", { status: 503 });
           }
-          console.warn('[MP webhook] MERCADOPAGO_WEBHOOK_SECRET não configurado (dev) — pulando validação');
+          console.warn(
+            "[MP webhook] MERCADOPAGO_WEBHOOK_SECRET não configurado (dev) — pulando validação",
+          );
         } else {
           const sig = verifySignature({
             secret: webhookSecret,
@@ -189,45 +198,46 @@ export const Route = createFileRoute('/api/public/mercadopago/webhook')({
             dataId,
           });
           if (!sig.ok) {
-            console.warn('[MP webhook] assinatura inválida:', sig.reason);
+            console.warn("[MP webhook] assinatura inválida:", sig.reason);
             void logSecurityEvent({
-              type: 'webhook_invalid_signature',
-              severity: 'warn',
-              identifier: 'mercadopago',
+              type: "webhook_invalid_signature",
+              severity: "warn",
+              identifier: "mercadopago",
               message: `Assinatura inválida: ${sig.reason}`,
               metadata: { auditId, dataId, type, requestId },
             });
             if (auditId) {
               await supabaseAdmin
-                .from('payment_webhook_events')
+                .from("payment_webhook_events")
                 .update({ processing_error: `invalid signature: ${sig.reason}` })
-                .eq('id', auditId);
+                .eq("id", auditId);
             }
-            return new Response('Unauthorized', { status: 401 });
+            return new Response("Unauthorized", { status: 401 });
           }
         }
 
         // 3) Só processa eventos do tipo payment
-        const isPayment = type === 'payment' || type === 'payment.updated' || type === 'payment.created';
+        const isPayment =
+          type === "payment" || type === "payment.updated" || type === "payment.created";
         if (!isPayment || !dataId) {
           if (auditId) {
             await supabaseAdmin
-              .from('payment_webhook_events')
+              .from("payment_webhook_events")
               .update({ processed: true })
-              .eq('id', auditId);
+              .eq("id", auditId);
           }
-          return new Response('ok', { status: 200 });
+          return new Response("ok", { status: 200 });
         }
 
         if (!accessToken) {
-          console.error('[MP webhook] MERCADOPAGO_ACCESS_TOKEN não configurado');
+          console.error("[MP webhook] MERCADOPAGO_ACCESS_TOKEN não configurado");
           if (auditId) {
             await supabaseAdmin
-              .from('payment_webhook_events')
-              .update({ processing_error: 'access token missing' })
-              .eq('id', auditId);
+              .from("payment_webhook_events")
+              .update({ processing_error: "access token missing" })
+              .eq("id", auditId);
           }
-          return new Response('ok', { status: 200 });
+          return new Response("ok", { status: 200 });
         }
 
         // 4) Buscar dados oficiais do pagamento
@@ -235,54 +245,55 @@ export const Route = createFileRoute('/api/public/mercadopago/webhook')({
         if (!payment) {
           if (auditId) {
             await supabaseAdmin
-              .from('payment_webhook_events')
-              .update({ processing_error: 'failed to fetch payment' })
-              .eq('id', auditId);
+              .from("payment_webhook_events")
+              .update({ processing_error: "failed to fetch payment" })
+              .eq("id", auditId);
           }
-          return new Response('ok', { status: 200 });
+          return new Response("ok", { status: 200 });
         }
 
         const externalRef = payment.external_reference;
         if (!externalRef) {
           if (auditId) {
             await supabaseAdmin
-              .from('payment_webhook_events')
-              .update({ processing_error: 'no external_reference', processed: true })
-              .eq('id', auditId);
+              .from("payment_webhook_events")
+              .update({ processing_error: "no external_reference", processed: true })
+              .eq("id", auditId);
           }
-          return new Response('ok', { status: 200 });
+          return new Response("ok", { status: 200 });
         }
 
         // 5) Localizar pedido
         const { data: order, error: orderErr } = await supabaseAdmin
-          .from('orders')
-          .select('id, payment_status, status, mp_payment_id, user_id')
-          .eq('external_reference', externalRef)
+          .from("orders")
+          .select("id, payment_status, status, mp_payment_id, user_id")
+          .eq("external_reference", externalRef)
           .single();
         if (orderErr || !order) {
-          console.error('[MP webhook] pedido não encontrado para ref', externalRef, orderErr);
+          console.error("[MP webhook] pedido não encontrado para ref", externalRef, orderErr);
           if (auditId) {
             await supabaseAdmin
-              .from('payment_webhook_events')
-              .update({ processing_error: 'order not found' })
-              .eq('id', auditId);
+              .from("payment_webhook_events")
+              .update({ processing_error: "order not found" })
+              .eq("id", auditId);
           }
-          return new Response('ok', { status: 200 });
+          return new Response("ok", { status: 200 });
         }
 
-        const mappedStatus = STATUS_MAP[payment.status ?? ''] ?? 'pending';
-        const wasAlreadyPaid = order.payment_status === 'approved' || order.payment_status === 'paid';
-        const willBePaid = TERMINAL_PAID.has(payment.status ?? '');
+        const mappedStatus = STATUS_MAP[payment.status ?? ""] ?? "pending";
+        const wasAlreadyPaid =
+          order.payment_status === "approved" || order.payment_status === "paid";
+        const willBePaid = TERMINAL_PAID.has(payment.status ?? "");
 
         // Idempotência: se já está pago e o evento de novo é "approved", apenas registra e sai
         if (wasAlreadyPaid && willBePaid) {
           if (auditId) {
             await supabaseAdmin
-              .from('payment_webhook_events')
+              .from("payment_webhook_events")
               .update({ processed: true })
-              .eq('id', auditId);
+              .eq("id", auditId);
           }
-          return new Response('ok', { status: 200 });
+          return new Response("ok", { status: 200 });
         }
 
         // 6) Atualizar pedido — inclui campos financeiros do MP (Onda 2)
@@ -296,7 +307,7 @@ export const Route = createFileRoute('/api/public/mercadopago/webhook')({
         const updates: Record<string, unknown> = {
           payment_status: mappedStatus,
           mp_payment_id: String(payment.id),
-          payment_provider: 'mercadopago',
+          payment_provider: "mercadopago",
           mp_payment_method: payment.payment_method_id ?? null,
           mp_payment_type: payment.payment_type_id ?? null,
           mp_gross_amount: fees.gross,
@@ -315,73 +326,71 @@ export const Route = createFileRoute('/api/public/mercadopago/webhook')({
         if (payment.order?.id) updates.mp_merchant_order_id = String(payment.order.id);
         if (willBePaid) {
           updates.paid_at = payment.date_approved ?? nowIso;
-          if (order.status === 'pending') updates.status = 'confirmed';
-        } else if (mappedStatus === 'cancelled' || mappedStatus === 'rejected') {
-          if (order.status === 'pending') updates.status = 'cancelled';
-          updates.cancelled_reason = `Pagamento ${mappedStatus} (${payment.status_detail ?? ''})`.trim();
+          if (order.status === "pending") updates.status = "confirmed";
+        } else if (mappedStatus === "cancelled" || mappedStatus === "rejected") {
+          if (order.status === "pending") updates.status = "cancelled";
+          updates.cancelled_reason =
+            `Pagamento ${mappedStatus} (${payment.status_detail ?? ""})`.trim();
         }
 
-
         const { error: updErr } = await supabaseAdmin
-          .from('orders')
+          .from("orders")
           .update(updates as never)
-          .eq('id', order.id);
+          .eq("id", order.id);
         if (updErr) {
-          console.error('[MP webhook] erro update pedido', updErr);
+          console.error("[MP webhook] erro update pedido", updErr);
           if (auditId) {
             await supabaseAdmin
-              .from('payment_webhook_events')
+              .from("payment_webhook_events")
               .update({ processing_error: `order update: ${updErr.message}` })
-              .eq('id', auditId);
+              .eq("id", auditId);
           }
-          return new Response('ok', { status: 200 });
+          return new Response("ok", { status: 200 });
         }
 
         // Baixa de estoque idempotente quando aprovado
         if (willBePaid) {
           const { data: stockRes, error: stockErr } = await supabaseAdmin.rpc(
-            'decrement_stock_for_order',
-            { _order_id: order.id }
+            "decrement_stock_for_order",
+            { _order_id: order.id },
           );
           if (stockErr) {
-            console.error('[MP webhook] erro decrement_stock_for_order', stockErr);
+            console.error("[MP webhook] erro decrement_stock_for_order", stockErr);
             if (auditId) {
               await supabaseAdmin
-                .from('payment_webhook_events')
+                .from("payment_webhook_events")
                 .update({ processing_error: `stock decrement: ${stockErr.message}` })
-                .eq('id', auditId);
+                .eq("id", auditId);
             }
           } else {
-            console.log('[MP webhook] estoque', { orderId: order.id, result: stockRes });
+            console.log("[MP webhook] estoque", { orderId: order.id, result: stockRes });
           }
         }
 
         // E-mail transacional ao cliente — idempotente, não bloqueia resposta ao MP
         try {
-          const { sendOrderEmail } = await import('@/server/email/orderEmails');
-          let emailType:
-            | 'payment_approved'
-            | 'payment_pending'
-            | 'payment_failed'
-            | null = null;
-          if (willBePaid) emailType = 'payment_approved';
-          else if (mappedStatus === 'pending' || mappedStatus === 'in_process') emailType = 'payment_pending';
-          else if (mappedStatus === 'rejected' || mappedStatus === 'cancelled') emailType = 'payment_failed';
+          const { sendOrderEmail } = await import("@/server/email/orderEmails");
+          let emailType: "payment_approved" | "payment_pending" | "payment_failed" | null = null;
+          if (willBePaid) emailType = "payment_approved";
+          else if (mappedStatus === "pending" || mappedStatus === "in_process")
+            emailType = "payment_pending";
+          else if (mappedStatus === "rejected" || mappedStatus === "cancelled")
+            emailType = "payment_failed";
           if (emailType) {
             void sendOrderEmail({ orderId: order.id, type: emailType });
           }
         } catch (e) {
-          console.error('[MP webhook] falha ao agendar e-mail', e);
+          console.error("[MP webhook] falha ao agendar e-mail", e);
         }
 
         if (auditId) {
           await supabaseAdmin
-            .from('payment_webhook_events')
+            .from("payment_webhook_events")
             .update({ processed: true })
-            .eq('id', auditId);
+            .eq("id", auditId);
         }
 
-        return new Response('ok', { status: 200 });
+        return new Response("ok", { status: 200 });
       },
     },
   },

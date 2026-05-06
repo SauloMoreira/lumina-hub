@@ -1,48 +1,60 @@
-import { useEffect, useState } from 'react';
-import { useServerFn } from '@tanstack/react-start';
-import { FileText, ExternalLink, Pencil, Loader2 } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
+import { useEffect, useState } from "react";
+import { useServerFn } from "@tanstack/react-start";
+import { FileText, ExternalLink, Pencil, Loader2 } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
   DialogFooter,
-} from '@/components/ui/dialog';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { toast } from 'sonner';
+} from "@/components/ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { toast } from "sonner";
 import {
   getInvoiceDetail,
   registerInvoice,
   setInvoiceStatus,
   INVOICE_STATUS_LABEL,
   type InvoiceStatus,
-} from '@/server/invoices.functions';
+} from "@/server/invoices.functions";
 
 const STATUS_BADGE: Record<InvoiceStatus, string> = {
-  nao_necessaria: 'bg-muted text-muted-foreground',
-  pendente_emissao: 'bg-amber-500/10 text-amber-700 dark:text-amber-400',
-  emitida: 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-400',
-  erro_emissao: 'bg-red-500/10 text-red-700 dark:text-red-400',
-  cancelada: 'bg-muted text-muted-foreground line-through',
+  nao_necessaria: "bg-muted text-muted-foreground",
+  pendente_emissao: "bg-amber-500/10 text-amber-700 dark:text-amber-400",
+  emitida: "bg-emerald-500/10 text-emerald-700 dark:text-emerald-400",
+  erro_emissao: "bg-red-500/10 text-red-700 dark:text-red-400",
+  cancelada: "bg-muted text-muted-foreground line-through",
 };
 
 type DetailType = Awaited<ReturnType<typeof getInvoiceDetail>>;
 
 function fmt(d: string | null | undefined) {
-  if (!d) return '—';
+  if (!d) return "—";
   try {
-    return new Date(d).toLocaleString('pt-BR');
+    return new Date(d).toLocaleString("pt-BR");
   } catch {
-    return '—';
+    return "—";
   }
 }
 
-export function InvoiceBlock({ orderId, paymentStatus }: { orderId: string; paymentStatus: string }) {
+export function InvoiceBlock({
+  orderId,
+  paymentStatus,
+}: {
+  orderId: string;
+  paymentStatus: string;
+}) {
   const fetchDetail = useServerFn(getInvoiceDetail);
   const registerFn = useServerFn(registerInvoice);
   const setStatusFn = useServerFn(setInvoiceStatus);
@@ -54,13 +66,13 @@ export function InvoiceBlock({ orderId, paymentStatus }: { orderId: string; paym
   const [statusSaving, setStatusSaving] = useState(false);
 
   const [form, setForm] = useState({
-    invoice_number: '',
-    invoice_series: '',
-    invoice_access_key: '',
-    invoice_danfe_url: '',
-    invoice_xml_url: '',
-    invoice_issued_at: '',
-    invoice_notes: '',
+    invoice_number: "",
+    invoice_series: "",
+    invoice_access_key: "",
+    invoice_danfe_url: "",
+    invoice_xml_url: "",
+    invoice_issued_at: "",
+    invoice_notes: "",
   });
 
   const reload = async () => {
@@ -70,15 +82,15 @@ export function InvoiceBlock({ orderId, paymentStatus }: { orderId: string; paym
       setData(r);
       if (r.ok) {
         setForm({
-          invoice_number: r.order.invoice_number ?? '',
-          invoice_series: r.order.invoice_series ?? '',
-          invoice_access_key: r.order.invoice_access_key ?? '',
-          invoice_danfe_url: r.order.invoice_danfe_url ?? '',
-          invoice_xml_url: r.order.invoice_xml_url ?? '',
+          invoice_number: r.order.invoice_number ?? "",
+          invoice_series: r.order.invoice_series ?? "",
+          invoice_access_key: r.order.invoice_access_key ?? "",
+          invoice_danfe_url: r.order.invoice_danfe_url ?? "",
+          invoice_xml_url: r.order.invoice_xml_url ?? "",
           invoice_issued_at: r.order.invoice_issued_at
             ? new Date(r.order.invoice_issued_at).toISOString().slice(0, 16)
-            : '',
-          invoice_notes: r.order.invoice_notes ?? '',
+            : "",
+          invoice_notes: r.order.invoice_notes ?? "",
         });
       }
     } finally {
@@ -103,8 +115,8 @@ export function InvoiceBlock({ orderId, paymentStatus }: { orderId: string; paym
   }
 
   const o = data.order;
-  const status = (o.invoice_status ?? 'pendente_emissao') as InvoiceStatus;
-  const isPaid = paymentStatus === 'paid';
+  const status = (o.invoice_status ?? "pendente_emissao") as InvoiceStatus;
+  const isPaid = paymentStatus === "paid";
 
   async function handleSave() {
     setSaving(true);
@@ -124,9 +136,9 @@ export function InvoiceBlock({ orderId, paymentStatus }: { orderId: string; paym
         },
       });
       if (!r.ok) {
-        toast.error(r.error ?? 'Erro ao salvar nota');
+        toast.error(r.error ?? "Erro ao salvar nota");
       } else {
-        toast.success('Nota fiscal registrada');
+        toast.success("Nota fiscal registrada");
         setOpen(false);
         await reload();
       }
@@ -139,9 +151,9 @@ export function InvoiceBlock({ orderId, paymentStatus }: { orderId: string; paym
     setStatusSaving(true);
     try {
       const r = await setStatusFn({ data: { orderId, status: next } });
-      if (!r.ok) toast.error(r.error ?? 'Erro ao atualizar status');
+      if (!r.ok) toast.error(r.error ?? "Erro ao atualizar status");
       else {
-        toast.success('Status fiscal atualizado');
+        toast.success("Status fiscal atualizado");
         await reload();
       }
     } finally {
@@ -156,9 +168,7 @@ export function InvoiceBlock({ orderId, paymentStatus }: { orderId: string; paym
           <FileText className="w-4 h-4" />
           <h3 className="font-semibold">Nota fiscal</h3>
         </div>
-        <Badge className={`${STATUS_BADGE[status]} border-0`}>
-          {INVOICE_STATUS_LABEL[status]}
-        </Badge>
+        <Badge className={`${STATUS_BADGE[status]} border-0`}>{INVOICE_STATUS_LABEL[status]}</Badge>
       </div>
 
       {!isPaid && (
@@ -168,9 +178,9 @@ export function InvoiceBlock({ orderId, paymentStatus }: { orderId: string; paym
       )}
 
       <div className="space-y-1 text-sm">
-        <Row label="Número" value={o.invoice_number ?? '—'} />
-        <Row label="Série" value={o.invoice_series ?? '—'} />
-        <Row label="Chave de acesso" value={o.invoice_access_key ?? '—'} mono />
+        <Row label="Número" value={o.invoice_number ?? "—"} />
+        <Row label="Série" value={o.invoice_series ?? "—"} />
+        <Row label="Chave de acesso" value={o.invoice_access_key ?? "—"} mono />
         <Row label="Emitida em" value={fmt(o.invoice_issued_at)} />
         <Row label="Registrada em" value={fmt(o.invoice_registered_at)} />
         {data.registeredByEmail && <Row label="Registrada por" value={data.registeredByEmail} />}
@@ -197,14 +207,16 @@ export function InvoiceBlock({ orderId, paymentStatus }: { orderId: string; paym
           )}
         </div>
         {o.invoice_notes && (
-          <p className="text-xs text-muted-foreground pt-2 whitespace-pre-wrap">{o.invoice_notes}</p>
+          <p className="text-xs text-muted-foreground pt-2 whitespace-pre-wrap">
+            {o.invoice_notes}
+          </p>
         )}
       </div>
 
       <div className="flex flex-wrap items-center gap-2 mt-4">
         <Button size="sm" onClick={() => setOpen(true)}>
           <Pencil className="w-4 h-4 mr-1" />
-          {status === 'emitida' ? 'Editar nota' : 'Registrar nota'}
+          {status === "emitida" ? "Editar nota" : "Registrar nota"}
         </Button>
         <Select
           value={status}
@@ -249,7 +261,10 @@ export function InvoiceBlock({ orderId, paymentStatus }: { orderId: string; paym
               <Input
                 value={form.invoice_access_key}
                 onChange={(e) =>
-                  setForm({ ...form, invoice_access_key: e.target.value.replace(/\D/g, '').slice(0, 44) })
+                  setForm({
+                    ...form,
+                    invoice_access_key: e.target.value.replace(/\D/g, "").slice(0, 44),
+                  })
                 }
               />
             </div>
@@ -291,7 +306,7 @@ export function InvoiceBlock({ orderId, paymentStatus }: { orderId: string; paym
               Cancelar
             </Button>
             <Button onClick={handleSave} disabled={saving}>
-              {saving ? 'Salvando…' : 'Salvar'}
+              {saving ? "Salvando…" : "Salvar"}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -304,7 +319,7 @@ function Row({ label, value, mono }: { label: string; value: string; mono?: bool
   return (
     <div className="flex justify-between gap-3">
       <span className="text-muted-foreground text-xs">{label}</span>
-      <span className={`text-xs text-right ${mono ? 'font-mono break-all' : ''}`}>{value}</span>
+      <span className={`text-xs text-right ${mono ? "font-mono break-all" : ""}`}>{value}</span>
     </div>
   );
 }

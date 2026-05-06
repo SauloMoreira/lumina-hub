@@ -1,21 +1,30 @@
-import { createFileRoute } from '@tanstack/react-router';
-import { useQuery, keepPreviousData } from '@tanstack/react-query';
-import { useEffect, useMemo, useState } from 'react';
-import { Search, SlidersHorizontal, ChevronLeft, ChevronRight, X, Truck, MessageCircle, Tag } from 'lucide-react';
-import { z } from 'zod';
-import { StoreLayout } from '@/components/layout/StoreLayout';
-import { ProductCard } from '@/components/store/ProductCard';
-import { ProductCardSkeleton } from '@/components/ui/shimmer';
-import { Input } from '@/components/ui/input';
-import { Button } from '@/components/ui/button';
-import { supabase } from '@/integrations/supabase/client';
-import type { Product, Category } from '@/lib/domain';
-import { FREE_SHIPPING_THRESHOLD, formatBRL } from '@/lib/domain';
-import { trackSearch } from '@/lib/tracking';
-import { searchProducts, getCatalogAttributeFacets } from '@/server/productSearch.functions';
-import { getPublicAttributeLabels } from '@/server/productAttributeLabels.functions';
-import { buildLabelLookup } from '@/lib/attributeLabels';
-import { getPublicCompanySettings } from '@/server/institutional.functions';
+import { createFileRoute } from "@tanstack/react-router";
+import { useQuery, keepPreviousData } from "@tanstack/react-query";
+import { useEffect, useMemo, useState } from "react";
+import {
+  Search,
+  SlidersHorizontal,
+  ChevronLeft,
+  ChevronRight,
+  X,
+  Truck,
+  MessageCircle,
+  Tag,
+} from "lucide-react";
+import { z } from "zod";
+import { StoreLayout } from "@/components/layout/StoreLayout";
+import { ProductCard } from "@/components/store/ProductCard";
+import { ProductCardSkeleton } from "@/components/ui/shimmer";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { supabase } from "@/integrations/supabase/client";
+import type { Product, Category } from "@/lib/domain";
+import { FREE_SHIPPING_THRESHOLD, formatBRL } from "@/lib/domain";
+import { trackSearch } from "@/lib/tracking";
+import { searchProducts, getCatalogAttributeFacets } from "@/server/productSearch.functions";
+import { getPublicAttributeLabels } from "@/server/productAttributeLabels.functions";
+import { buildLabelLookup } from "@/lib/attributeLabels";
+import { getPublicCompanySettings } from "@/server/institutional.functions";
 import {
   TECH_FILTERS,
   toAttrFilterPayload,
@@ -23,17 +32,19 @@ import {
   joinFilterCsv,
   type SelectedTechFilters,
   type TechFilterKey,
-} from '@/lib/catalogTechFilters';
+} from "@/lib/catalogTechFilters";
 
 const PAGE_SIZE = 24;
 
 const searchSchema = z.object({
   cat: z.string().optional(),
   q: z.string().optional(),
-  sort: z.enum(['relevance', 'featured', 'price_asc', 'price_desc', 'newest', 'best_sellers']).optional(),
+  sort: z
+    .enum(["relevance", "featured", "price_asc", "price_desc", "newest", "best_sellers"])
+    .optional(),
   page: z.coerce.number().int().min(1).optional(),
   oferta: z.coerce.boolean().optional(),
-  shipping: z.enum(['free']).optional(),
+  shipping: z.enum(["free"]).optional(),
   marca: z.string().optional(),
   precoMin: z.coerce.number().min(0).optional(),
   precoMax: z.coerce.number().min(0).optional(),
@@ -45,83 +56,94 @@ const searchSchema = z.object({
   ip: z.string().max(120).optional(),
 });
 
-import { buildSeo } from '@/lib/seo';
+import { buildSeo } from "@/lib/seo";
 
-export const Route = createFileRoute('/catalogo')({
+export const Route = createFileRoute("/catalogo")({
   validateSearch: searchSchema,
-  head: () => buildSeo({
-    title: 'Catálogo de Produtos — Material Elétrico e LED',
-    description: 'Explore nosso catálogo completo de material elétrico e iluminação LED. Filtros por categoria, preço e marca. Entrega para todo o Brasil.',
-    url: '/catalogo',
-  }),
+  head: () =>
+    buildSeo({
+      title: "Catálogo de Produtos — Material Elétrico e LED",
+      description:
+        "Explore nosso catálogo completo de material elétrico e iluminação LED. Filtros por categoria, preço e marca. Entrega para todo o Brasil.",
+      url: "/catalogo",
+    }),
   component: CatalogPage,
 });
 
 function onlyDigits(s: string | null | undefined) {
-  return (s ?? '').replace(/\D+/g, '');
+  return (s ?? "").replace(/\D+/g, "");
 }
 
 function CatalogPage() {
   const search = Route.useSearch();
   const navigate = Route.useNavigate();
-  const [q, setQ] = useState(search.q ?? '');
-  const [priceMin, setPriceMin] = useState(search.precoMin?.toString() ?? '');
-  const [priceMax, setPriceMax] = useState(search.precoMax?.toString() ?? '');
+  const [q, setQ] = useState(search.q ?? "");
+  const [priceMin, setPriceMin] = useState(search.precoMin?.toString() ?? "");
+  const [priceMax, setPriceMax] = useState(search.precoMax?.toString() ?? "");
   const page = search.page ?? 1;
 
   // Sincroniza inputs locais quando os search params mudam por outras vias
-  useEffect(() => { setQ(search.q ?? ''); }, [search.q]);
-  useEffect(() => { setPriceMin(search.precoMin?.toString() ?? ''); }, [search.precoMin]);
-  useEffect(() => { setPriceMax(search.precoMax?.toString() ?? ''); }, [search.precoMax]);
+  useEffect(() => {
+    setQ(search.q ?? "");
+  }, [search.q]);
+  useEffect(() => {
+    setPriceMin(search.precoMin?.toString() ?? "");
+  }, [search.precoMin]);
+  useEffect(() => {
+    setPriceMax(search.precoMax?.toString() ?? "");
+  }, [search.precoMax]);
 
   const { data: categories } = useQuery({
-    queryKey: ['categories'],
+    queryKey: ["categories"],
     staleTime: 1000 * 60 * 60,
     queryFn: async () => {
       const { data } = await supabase
-        .from('categories')
-        .select('id, name, slug, icon, sort_order')
-        .eq('active', true)
-        .order('sort_order');
+        .from("categories")
+        .select("id, name, slug, icon, sort_order")
+        .eq("active", true)
+        .order("sort_order");
       return (data ?? []) as Category[];
     },
   });
 
   const { data: brandsData } = useQuery({
-    queryKey: ['catalog-brands'],
+    queryKey: ["catalog-brands"],
     staleTime: 1000 * 60 * 30,
     queryFn: async () => {
       const { data } = await supabase
-        .from('products')
-        .select('brand')
-        .eq('active', true)
-        .not('brand', 'is', null)
+        .from("products")
+        .select("brand")
+        .eq("active", true)
+        .not("brand", "is", null)
         .limit(1000);
       const set = new Set<string>();
       (data ?? []).forEach((r: any) => {
-        const b = (r.brand ?? '').trim();
+        const b = (r.brand ?? "").trim();
         if (b) set.add(b);
       });
-      return Array.from(set).sort((a, b) => a.localeCompare(b, 'pt-BR'));
+      return Array.from(set).sort((a, b) => a.localeCompare(b, "pt-BR"));
     },
   });
 
   const { data: companyData } = useQuery({
-    queryKey: ['public-company-settings'],
+    queryKey: ["public-company-settings"],
     staleTime: 1000 * 60 * 30,
     queryFn: () => getPublicCompanySettings(),
   });
   const supportWhats = onlyDigits(companyData?.company?.support_whatsapp);
 
-  const sortValue = search.sort ?? (search.q ? 'relevance' : 'featured');
+  const sortValue = search.sort ?? (search.q ? "relevance" : "featured");
 
   // Filtros técnicos selecionados (parsed da URL)
-  const selectedTech: SelectedTechFilters = useMemo(() => ({
-    power: parseFilterCsv(search.pot),
-    color_temperature: parseFilterCsv(search.cor),
-    voltage: parseFilterCsv(search.volt),
-    ip_rating: parseFilterCsv(search.ip),
-  }), [search.pot, search.cor, search.volt, search.ip]);
+  const selectedTech: SelectedTechFilters = useMemo(
+    () => ({
+      power: parseFilterCsv(search.pot),
+      color_temperature: parseFilterCsv(search.cor),
+      voltage: parseFilterCsv(search.volt),
+      ip_rating: parseFilterCsv(search.ip),
+    }),
+    [search.pot, search.cor, search.volt, search.ip],
+  );
 
   const techCount =
     (selectedTech.power?.length ?? 0) +
@@ -133,11 +155,11 @@ function CatalogPage() {
 
   // Rótulos amigáveis cadastrados pelo admin (cache 10min)
   const { data: techLabels } = useQuery({
-    queryKey: ['public-attribute-labels', 'catalog-tech'],
+    queryKey: ["public-attribute-labels", "catalog-tech"],
     staleTime: 1000 * 60 * 10,
     queryFn: () =>
       getPublicAttributeLabels({
-        data: { attributeKeys: ['color_temperature', 'voltage', 'ip_rating', 'power'] },
+        data: { attributeKeys: ["color_temperature", "voltage", "ip_rating", "power"] },
       }),
   });
   const labelLookup = useMemo(() => buildLabelLookup(techLabels ?? []), [techLabels]);
@@ -157,7 +179,7 @@ function CatalogPage() {
 
   // Facets disponíveis para o contexto atual (categoria)
   const { data: facetsData } = useQuery({
-    queryKey: ['catalog-facets', search.cat ?? ''],
+    queryKey: ["catalog-facets", search.cat ?? ""],
     staleTime: 1000 * 60 * 5,
     queryFn: () => getCatalogAttributeFacets({ data: { categorySlug: search.cat || undefined } }),
   });
@@ -171,11 +193,18 @@ function CatalogPage() {
 
   const { data, isLoading, isFetching } = useQuery({
     queryKey: [
-      'products', 'catalog-search',
-      search.q ?? '', search.cat ?? '', search.marca ?? '',
-      search.precoMin ?? null, search.precoMax ?? null,
-      !!search.estoque, !!search.oferta, search.shipping ?? '',
-      sortValue, page,
+      "products",
+      "catalog-search",
+      search.q ?? "",
+      search.cat ?? "",
+      search.marca ?? "",
+      search.precoMin ?? null,
+      search.precoMax ?? null,
+      !!search.estoque,
+      !!search.oferta,
+      search.shipping ?? "",
+      sortValue,
+      page,
       // Filtros técnicos entram na chave para invalidar cache
       JSON.stringify(attrFilters),
     ],
@@ -191,11 +220,11 @@ function CatalogPage() {
           priceMax: search.precoMax,
           inStock: search.estoque || undefined,
           onSale: search.oferta || undefined,
-          freeShipping: search.shipping === 'free' || undefined,
+          freeShipping: search.shipping === "free" || undefined,
           sort: sortValue,
           page,
           pageSize: PAGE_SIZE,
-          source: 'public_store',
+          source: "public_store",
           attrFilters: attrFilters.length > 0 ? attrFilters : undefined,
         },
       });
@@ -223,34 +252,41 @@ function CatalogPage() {
   const pageTitle = search.q
     ? `Resultados para "${search.q}"`
     : search.oferta
-    ? 'Ofertas da semana'
-    : search.shipping === 'free'
-    ? 'Produtos elegíveis a frete grátis'
-    : sortValue === 'best_sellers'
-    ? 'Destaques da loja'
-    : search.cat
-    ? categories?.find((c) => c.slug === search.cat)?.name ?? 'Produtos'
-    : 'Todos os produtos';
+      ? "Ofertas da semana"
+      : search.shipping === "free"
+        ? "Produtos elegíveis a frete grátis"
+        : sortValue === "best_sellers"
+          ? "Destaques da loja"
+          : search.cat
+            ? (categories?.find((c) => c.slug === search.cat)?.name ?? "Produtos")
+            : "Todos os produtos";
 
   const pageSubtitle = search.oferta
-    ? 'Produtos com desconto ativo'
-    : sortValue === 'best_sellers'
-    ? 'Os produtos mais procurados pelos nossos clientes.'
-    : null;
+    ? "Produtos com desconto ativo"
+    : sortValue === "best_sellers"
+      ? "Os produtos mais procurados pelos nossos clientes."
+      : null;
 
   const hasActiveFilters = !!(
-    search.cat || search.oferta || search.shipping || search.sort || search.q ||
-    search.marca || search.precoMin != null || search.precoMax != null || search.estoque ||
+    search.cat ||
+    search.oferta ||
+    search.shipping ||
+    search.sort ||
+    search.q ||
+    search.marca ||
+    search.precoMin != null ||
+    search.precoMax != null ||
+    search.estoque ||
     techCount > 0
   );
 
   const clearFilters = () => navigate({ search: {} as any });
 
-  const techKeyToCsv: Record<TechFilterKey, 'pot' | 'cor' | 'volt' | 'ip'> = {
-    power: 'pot',
-    color_temperature: 'cor',
-    voltage: 'volt',
-    ip_rating: 'ip',
+  const techKeyToCsv: Record<TechFilterKey, "pot" | "cor" | "volt" | "ip"> = {
+    power: "pot",
+    color_temperature: "cor",
+    voltage: "volt",
+    ip_rating: "ip",
   };
 
   const toggleTechId = (key: TechFilterKey, id: string) => {
@@ -258,7 +294,9 @@ function CatalogPage() {
     const idx = current.indexOf(id);
     if (idx >= 0) current.splice(idx, 1);
     else current.push(id);
-    navigate({ search: (s: any) => ({ ...s, [techKeyToCsv[key]]: joinFilterCsv(current), page: 1 }) as any });
+    navigate({
+      search: (s: any) => ({ ...s, [techKeyToCsv[key]]: joinFilterCsv(current), page: 1 }) as any,
+    });
   };
 
   const clearTechKey = (key: TechFilterKey) => {
@@ -270,10 +308,12 @@ function CatalogPage() {
       <div className="bg-card border-b border-border">
         <div className="container mx-auto px-4 py-6 sm:py-8">
           <div className="label-meta mb-2">Catálogo</div>
-          <h1 className="font-display font-bold text-2xl sm:text-3xl tracking-tight mb-2 break-words">{pageTitle}</h1>
+          <h1 className="font-display font-bold text-2xl sm:text-3xl tracking-tight mb-2 break-words">
+            {pageTitle}
+          </h1>
           {pageSubtitle && <p className="text-sm text-muted-foreground mb-4">{pageSubtitle}</p>}
 
-          {search.shipping === 'free' && (
+          {search.shipping === "free" && (
             <div
               role="note"
               aria-label="Regra da promoção de frete grátis"
@@ -284,9 +324,11 @@ function CatalogPage() {
               </div>
               <div className="min-w-0 flex-1">
                 <p className="text-sm sm:text-base text-amber-900 leading-snug dark:text-amber-100">
-                  Frete grátis para compras acima de{' '}
-                  <strong className="font-semibold text-amber-900 dark:text-amber-50">{formatBRL(FREE_SHIPPING_THRESHOLD)}</strong>{' '}
-                  em{' '}
+                  Frete grátis para compras acima de{" "}
+                  <strong className="font-semibold text-amber-900 dark:text-amber-50">
+                    {formatBRL(FREE_SHIPPING_THRESHOLD)}
+                  </strong>{" "}
+                  em{" "}
                   <span className="inline-flex items-center rounded-md bg-amber-200/70 px-1.5 py-0.5 text-xs font-medium text-amber-900 align-baseline dark:bg-amber-500/25 dark:text-amber-100">
                     produtos participantes
                   </span>
@@ -302,45 +344,91 @@ function CatalogPage() {
           {hasActiveFilters && (
             <div className="flex flex-wrap items-center gap-2 mb-4">
               {search.q && (
-                <button onClick={() => { setQ(''); navigate({ search: (s: any) => ({ ...s, q: undefined, page: 1 }) as any }); }} className="inline-flex items-center gap-1.5 text-xs bg-surface px-2.5 py-1 rounded-full hover:bg-muted">
+                <button
+                  onClick={() => {
+                    setQ("");
+                    navigate({ search: (s: any) => ({ ...s, q: undefined, page: 1 }) as any });
+                  }}
+                  className="inline-flex items-center gap-1.5 text-xs bg-surface px-2.5 py-1 rounded-full hover:bg-muted"
+                >
                   "{search.q}" <X className="w-3 h-3" />
                 </button>
               )}
               {search.cat && (
-                <button onClick={() => navigate({ search: (s: any) => ({ ...s, cat: undefined, page: 1 }) as any })} className="inline-flex items-center gap-1.5 text-xs bg-primary-tint text-primary px-2.5 py-1 rounded-full hover:bg-primary/10">
-                  {categories?.find((c) => c.slug === search.cat)?.name ?? search.cat} <X className="w-3 h-3" />
+                <button
+                  onClick={() =>
+                    navigate({ search: (s: any) => ({ ...s, cat: undefined, page: 1 }) as any })
+                  }
+                  className="inline-flex items-center gap-1.5 text-xs bg-primary-tint text-primary px-2.5 py-1 rounded-full hover:bg-primary/10"
+                >
+                  {categories?.find((c) => c.slug === search.cat)?.name ?? search.cat}{" "}
+                  <X className="w-3 h-3" />
                 </button>
               )}
               {search.marca && (
-                <button onClick={() => navigate({ search: (s: any) => ({ ...s, marca: undefined, page: 1 }) as any })} className="inline-flex items-center gap-1.5 text-xs bg-surface px-2.5 py-1 rounded-full hover:bg-muted">
+                <button
+                  onClick={() =>
+                    navigate({ search: (s: any) => ({ ...s, marca: undefined, page: 1 }) as any })
+                  }
+                  className="inline-flex items-center gap-1.5 text-xs bg-surface px-2.5 py-1 rounded-full hover:bg-muted"
+                >
                   Marca: {search.marca} <X className="w-3 h-3" />
                 </button>
               )}
               {(search.precoMin != null || search.precoMax != null) && (
                 <button
-                  onClick={() => { setPriceMin(''); setPriceMax(''); navigate({ search: (s: any) => ({ ...s, precoMin: undefined, precoMax: undefined, page: 1 }) as any }); }}
+                  onClick={() => {
+                    setPriceMin("");
+                    setPriceMax("");
+                    navigate({
+                      search: (s: any) =>
+                        ({ ...s, precoMin: undefined, precoMax: undefined, page: 1 }) as any,
+                    });
+                  }}
                   className="inline-flex items-center gap-1.5 text-xs bg-surface px-2.5 py-1 rounded-full hover:bg-muted"
                 >
-                  Preço {search.precoMin ?? 0}–{search.precoMax ?? '∞'} <X className="w-3 h-3" />
+                  Preço {search.precoMin ?? 0}–{search.precoMax ?? "∞"} <X className="w-3 h-3" />
                 </button>
               )}
               {search.estoque && (
-                <button onClick={() => navigate({ search: (s: any) => ({ ...s, estoque: undefined, page: 1 }) as any })} className="inline-flex items-center gap-1.5 text-xs bg-surface px-2.5 py-1 rounded-full hover:bg-muted">
+                <button
+                  onClick={() =>
+                    navigate({ search: (s: any) => ({ ...s, estoque: undefined, page: 1 }) as any })
+                  }
+                  className="inline-flex items-center gap-1.5 text-xs bg-surface px-2.5 py-1 rounded-full hover:bg-muted"
+                >
                   Em estoque <X className="w-3 h-3" />
                 </button>
               )}
               {search.oferta && (
-                <button onClick={() => navigate({ search: (s: any) => ({ ...s, oferta: undefined, page: 1 }) as any })} className="inline-flex items-center gap-1.5 text-xs bg-accent/10 text-accent-foreground px-2.5 py-1 rounded-full hover:bg-accent/20">
+                <button
+                  onClick={() =>
+                    navigate({ search: (s: any) => ({ ...s, oferta: undefined, page: 1 }) as any })
+                  }
+                  className="inline-flex items-center gap-1.5 text-xs bg-accent/10 text-accent-foreground px-2.5 py-1 rounded-full hover:bg-accent/20"
+                >
                   Oferta <X className="w-3 h-3" />
                 </button>
               )}
-              {search.shipping === 'free' && (
-                <button onClick={() => navigate({ search: (s: any) => ({ ...s, shipping: undefined, page: 1 }) as any })} className="inline-flex items-center gap-1.5 text-xs bg-accent/10 text-accent-foreground px-2.5 py-1 rounded-full hover:bg-accent/20">
+              {search.shipping === "free" && (
+                <button
+                  onClick={() =>
+                    navigate({
+                      search: (s: any) => ({ ...s, shipping: undefined, page: 1 }) as any,
+                    })
+                  }
+                  className="inline-flex items-center gap-1.5 text-xs bg-accent/10 text-accent-foreground px-2.5 py-1 rounded-full hover:bg-accent/20"
+                >
                   Frete grátis <X className="w-3 h-3" />
                 </button>
               )}
-              {sortValue === 'best_sellers' && (
-                <button onClick={() => navigate({ search: (s: any) => ({ ...s, sort: undefined, page: 1 }) as any })} className="inline-flex items-center gap-1.5 text-xs bg-accent/10 text-accent-foreground px-2.5 py-1 rounded-full hover:bg-accent/20">
+              {sortValue === "best_sellers" && (
+                <button
+                  onClick={() =>
+                    navigate({ search: (s: any) => ({ ...s, sort: undefined, page: 1 }) as any })
+                  }
+                  className="inline-flex items-center gap-1.5 text-xs bg-accent/10 text-accent-foreground px-2.5 py-1 rounded-full hover:bg-accent/20"
+                >
                   Destaques <X className="w-3 h-3" />
                 </button>
               )}
@@ -361,16 +449,30 @@ function CatalogPage() {
                   );
                 });
               })}
-              <button onClick={clearFilters} className="text-xs text-muted-foreground underline hover:text-foreground ml-1">
+              <button
+                onClick={clearFilters}
+                className="text-xs text-muted-foreground underline hover:text-foreground ml-1"
+              >
                 Limpar filtros
               </button>
             </div>
           )}
 
-          <form onSubmit={(e) => { e.preventDefault(); submitSearch(); }} className="max-w-md">
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              submitSearch();
+            }}
+            className="max-w-md"
+          >
             <div className="relative">
               <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-text-faint" />
-              <Input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Buscar por nome, SKU, marca..." className="pl-11 h-11 rounded-pill bg-surface" />
+              <Input
+                value={q}
+                onChange={(e) => setQ(e.target.value)}
+                placeholder="Buscar por nome, SKU, marca..."
+                className="pl-11 h-11 rounded-pill bg-surface"
+              />
             </div>
           </form>
         </div>
@@ -388,8 +490,10 @@ function CatalogPage() {
                 <ul className="space-y-1">
                   <li>
                     <button
-                      onClick={() => navigate({ search: (s: any) => ({ ...s, cat: undefined, page: 1 }) as any })}
-                      className={`w-full text-left text-sm px-3 py-2 rounded-md transition-colors ${!search.cat ? 'bg-primary-tint text-primary font-medium' : 'hover:bg-surface text-muted-foreground'}`}
+                      onClick={() =>
+                        navigate({ search: (s: any) => ({ ...s, cat: undefined, page: 1 }) as any })
+                      }
+                      className={`w-full text-left text-sm px-3 py-2 rounded-md transition-colors ${!search.cat ? "bg-primary-tint text-primary font-medium" : "hover:bg-surface text-muted-foreground"}`}
                     >
                       Todas
                     </button>
@@ -397,8 +501,10 @@ function CatalogPage() {
                   {categories?.map((c) => (
                     <li key={c.id}>
                       <button
-                        onClick={() => navigate({ search: (s: any) => ({ ...s, cat: c.slug, page: 1 }) as any })}
-                        className={`w-full text-left text-sm px-3 py-2 rounded-md transition-colors ${search.cat === c.slug ? 'bg-primary-tint text-primary font-medium' : 'hover:bg-surface text-muted-foreground'}`}
+                        onClick={() =>
+                          navigate({ search: (s: any) => ({ ...s, cat: c.slug, page: 1 }) as any })
+                        }
+                        className={`w-full text-left text-sm px-3 py-2 rounded-md transition-colors ${search.cat === c.slug ? "bg-primary-tint text-primary font-medium" : "hover:bg-surface text-muted-foreground"}`}
                       >
                         {c.name}
                       </button>
@@ -408,23 +514,35 @@ function CatalogPage() {
               </div>
 
               <div>
-                <h3 className="font-display font-semibold text-sm mb-3 flex items-center gap-2"><Tag className="w-4 h-4 text-primary" /> Faixa de preço</h3>
+                <h3 className="font-display font-semibold text-sm mb-3 flex items-center gap-2">
+                  <Tag className="w-4 h-4 text-primary" /> Faixa de preço
+                </h3>
                 <div className="flex items-center gap-2">
                   <Input
-                    type="number" inputMode="numeric" min={0}
-                    placeholder="Min" value={priceMin}
+                    type="number"
+                    inputMode="numeric"
+                    min={0}
+                    placeholder="Min"
+                    value={priceMin}
                     onChange={(e) => setPriceMin(e.target.value)}
                     onBlur={applyPrice}
-                    onKeyDown={(e) => { if (e.key === 'Enter') applyPrice(); }}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") applyPrice();
+                    }}
                     className="h-9 text-sm"
                   />
                   <span className="text-xs text-muted-foreground">a</span>
                   <Input
-                    type="number" inputMode="numeric" min={0}
-                    placeholder="Max" value={priceMax}
+                    type="number"
+                    inputMode="numeric"
+                    min={0}
+                    placeholder="Max"
+                    value={priceMax}
                     onChange={(e) => setPriceMax(e.target.value)}
                     onBlur={applyPrice}
-                    onKeyDown={(e) => { if (e.key === 'Enter') applyPrice(); }}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") applyPrice();
+                    }}
                     className="h-9 text-sm"
                   />
                 </div>
@@ -434,12 +552,21 @@ function CatalogPage() {
                 <div>
                   <h3 className="font-display font-semibold text-sm mb-3">Marca</h3>
                   <select
-                    value={search.marca ?? ''}
-                    onChange={(e) => navigate({ search: (s: any) => ({ ...s, marca: e.target.value || undefined, page: 1 }) as any })}
+                    value={search.marca ?? ""}
+                    onChange={(e) =>
+                      navigate({
+                        search: (s: any) =>
+                          ({ ...s, marca: e.target.value || undefined, page: 1 }) as any,
+                      })
+                    }
                     className="w-full text-sm border border-border rounded-md px-3 py-2 bg-card focus:outline-none focus:ring-2 focus:ring-primary/20"
                   >
                     <option value="">Todas as marcas</option>
-                    {brandsData.map((b) => <option key={b} value={b}>{b}</option>)}
+                    {brandsData.map((b) => (
+                      <option key={b} value={b}>
+                        {b}
+                      </option>
+                    ))}
                   </select>
                 </div>
               )}
@@ -450,7 +577,12 @@ function CatalogPage() {
                   <input
                     type="checkbox"
                     checked={!!search.estoque}
-                    onChange={(e) => navigate({ search: (s: any) => ({ ...s, estoque: e.target.checked || undefined, page: 1 }) as any })}
+                    onChange={(e) =>
+                      navigate({
+                        search: (s: any) =>
+                          ({ ...s, estoque: e.target.checked || undefined, page: 1 }) as any,
+                      })
+                    }
                     className="rounded border-border"
                   />
                   Apenas em estoque
@@ -459,7 +591,12 @@ function CatalogPage() {
                   <input
                     type="checkbox"
                     checked={!!search.oferta}
-                    onChange={(e) => navigate({ search: (s: any) => ({ ...s, oferta: e.target.checked || undefined, page: 1 }) as any })}
+                    onChange={(e) =>
+                      navigate({
+                        search: (s: any) =>
+                          ({ ...s, oferta: e.target.checked || undefined, page: 1 }) as any,
+                      })
+                    }
                     className="rounded border-border"
                   />
                   Em promoção
@@ -467,8 +604,17 @@ function CatalogPage() {
                 <label className="flex items-center gap-2 text-sm cursor-pointer mt-2">
                   <input
                     type="checkbox"
-                    checked={search.shipping === 'free'}
-                    onChange={(e) => navigate({ search: (s: any) => ({ ...s, shipping: e.target.checked ? 'free' : undefined, page: 1 }) as any })}
+                    checked={search.shipping === "free"}
+                    onChange={(e) =>
+                      navigate({
+                        search: (s: any) =>
+                          ({
+                            ...s,
+                            shipping: e.target.checked ? "free" : undefined,
+                            page: 1,
+                          }) as any,
+                      })
+                    }
                     className="rounded border-border"
                   />
                   Frete grátis
@@ -488,7 +634,7 @@ function CatalogPage() {
                     if (!facetValues || facetValues.size === 0) return null;
                     // Mostra apenas opções que têm pelo menos um produto cadastrado.
                     const visibleOptions = def.options.filter((opt: any) => {
-                      if (def.kind === 'value') {
+                      if (def.kind === "value") {
                         const values: string[] = opt.values ?? [];
                         return values.some((v) => facetValues.has(v.toLowerCase()));
                       }
@@ -518,14 +664,19 @@ function CatalogPage() {
                         </div>
                         <div className="space-y-1.5">
                           {visibleOptions.map((opt) => (
-                            <label key={opt.id} className="flex items-center gap-2 text-sm cursor-pointer">
+                            <label
+                              key={opt.id}
+                              className="flex items-center gap-2 text-sm cursor-pointer"
+                            >
                               <input
                                 type="checkbox"
                                 checked={selectedIds.includes(opt.id)}
                                 onChange={() => toggleTechId(def.key, opt.id)}
                                 className="rounded border-border"
                               />
-                              <span className="text-muted-foreground">{decorateOptionLabel(def.key, opt as any)}</span>
+                              <span className="text-muted-foreground">
+                                {decorateOptionLabel(def.key, opt as any)}
+                              </span>
                             </label>
                           ))}
                         </div>
@@ -540,12 +691,20 @@ function CatalogPage() {
           <div className="flex-1">
             <div className="flex items-center justify-between mb-5 gap-3 flex-wrap">
               <p className="text-sm text-muted-foreground">
-                {isLoading ? 'Carregando...' : `${total} produto${total === 1 ? '' : 's'} · página ${page} de ${totalPages}`}
-                {isFetching && !isLoading && <span className="ml-2 text-xs text-muted-foreground/60">atualizando…</span>}
+                {isLoading
+                  ? "Carregando..."
+                  : `${total} produto${total === 1 ? "" : "s"} · página ${page} de ${totalPages}`}
+                {isFetching && !isLoading && (
+                  <span className="ml-2 text-xs text-muted-foreground/60">atualizando…</span>
+                )}
               </p>
               <select
                 value={sortValue}
-                onChange={(e) => navigate({ search: (s: any) => ({ ...s, sort: e.target.value as any, page: 1 }) as any })}
+                onChange={(e) =>
+                  navigate({
+                    search: (s: any) => ({ ...s, sort: e.target.value as any, page: 1 }) as any,
+                  })
+                }
                 className="text-sm border border-border rounded-md px-3 py-1.5 bg-card focus:outline-none focus:ring-2 focus:ring-primary/20"
               >
                 {search.q && <option value="relevance">Mais relevantes</option>}
@@ -559,7 +718,9 @@ function CatalogPage() {
 
             {isLoading ? (
               <div className="grid grid-cols-2 md:grid-cols-3 gap-2.5 sm:gap-4">
-                {Array.from({ length: 8 }).map((_, i) => <ProductCardSkeleton key={i} />)}
+                {Array.from({ length: 8 }).map((_, i) => (
+                  <ProductCardSkeleton key={i} />
+                ))}
               </div>
             ) : products.length === 0 ? (
               <EmptyResults
@@ -571,16 +732,30 @@ function CatalogPage() {
             ) : (
               <>
                 <div className="grid grid-cols-2 md:grid-cols-3 gap-2.5 sm:gap-4">
-                  {products.map((p, i) => <ProductCard key={p.id} product={p} index={i} />)}
+                  {products.map((p, i) => (
+                    <ProductCard key={p.id} product={p} index={i} />
+                  ))}
                 </div>
 
                 {totalPages > 1 && (
                   <div className="flex items-center justify-center gap-2 mt-8">
-                    <Button variant="outline" size="sm" disabled={page <= 1} onClick={() => goPage(page - 1)}>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      disabled={page <= 1}
+                      onClick={() => goPage(page - 1)}
+                    >
                       <ChevronLeft className="w-4 h-4" /> Anterior
                     </Button>
-                    <span className="text-sm text-muted-foreground px-3">{page} / {totalPages}</span>
-                    <Button variant="outline" size="sm" disabled={page >= totalPages} onClick={() => goPage(page + 1)}>
+                    <span className="text-sm text-muted-foreground px-3">
+                      {page} / {totalPages}
+                    </span>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      disabled={page >= totalPages}
+                      onClick={() => goPage(page + 1)}
+                    >
                       Próxima <ChevronRight className="w-4 h-4" />
                     </Button>
                   </div>
@@ -595,16 +770,24 @@ function CatalogPage() {
 }
 
 function EmptyResults({
-  query, hasFilters, onClear, supportWhats,
-}: { query: string | undefined; hasFilters: boolean; onClear: () => void; supportWhats: string }) {
+  query,
+  hasFilters,
+  onClear,
+  supportWhats,
+}: {
+  query: string | undefined;
+  hasFilters: boolean;
+  onClear: () => void;
+  supportWhats: string;
+}) {
   const message = query
     ? `Não encontramos produtos para "${query}".`
-    : 'Nenhum produto corresponde aos filtros selecionados.';
+    : "Nenhum produto corresponde aos filtros selecionados.";
 
   const whatsappText = encodeURIComponent(
     query
       ? `Olá! Estou procurando por "${query}" no site e não encontrei. Vocês têm disponível?`
-      : 'Olá! Não encontrei o produto que procuro no site. Podem me ajudar?'
+      : "Olá! Não encontrei o produto que procuro no site. Podem me ajudar?",
   );
 
   return (
@@ -614,19 +797,25 @@ function EmptyResults({
       </div>
       <p className="text-base font-medium text-foreground mb-2">{message}</p>
       <p className="text-sm text-muted-foreground mb-6">
-        Tente outro termo, ajuste os filtros ou fale com nosso atendimento — temos muito mais produtos do que aparece no site.
+        Tente outro termo, ajuste os filtros ou fale com nosso atendimento — temos muito mais
+        produtos do que aparece no site.
       </p>
       <div className="flex flex-wrap items-center justify-center gap-2">
         {hasFilters && (
-          <Button variant="outline" size="sm" onClick={onClear}>Limpar filtros</Button>
+          <Button variant="outline" size="sm" onClick={onClear}>
+            Limpar filtros
+          </Button>
         )}
         <a href="/catalogo" className="inline-flex">
-          <Button variant="outline" size="sm">Ver todas as categorias</Button>
+          <Button variant="outline" size="sm">
+            Ver todas as categorias
+          </Button>
         </a>
         {supportWhats && (
           <a
             href={`https://wa.me/${supportWhats}?text=${whatsappText}`}
-            target="_blank" rel="noopener noreferrer"
+            target="_blank"
+            rel="noopener noreferrer"
             className="inline-flex"
           >
             <Button size="sm" className="gap-1.5">

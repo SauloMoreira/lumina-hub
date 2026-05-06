@@ -262,7 +262,9 @@ export function ChatWidget() {
     try {
       const res = await chat({
         data: {
-          messages: next.filter((m) => m !== WELCOME || messages.length > 1).map((m) => ({ role: m.role, content: m.content })),
+          messages: next
+            .filter((m) => m !== WELCOME || messages.length > 1)
+            .map((m) => ({ role: m.role, content: m.content })),
           sessionId,
           userId,
         },
@@ -281,7 +283,10 @@ export function ChatWidget() {
         }
       }
     } catch (e) {
-      setMessages((p) => [...p, { role: "assistant", content: "⚠️ Erro de conexão. Tente novamente." }]);
+      setMessages((p) => [
+        ...p,
+        { role: "assistant", content: "⚠️ Erro de conexão. Tente novamente." },
+      ]);
     } finally {
       setLoading(false);
     }
@@ -295,10 +300,10 @@ export function ChatWidget() {
       <button
         onClick={toggle}
         aria-label={open ? "Fechar chat" : "Abrir chat"}
-        style={{ bottom: 'calc(env(safe-area-inset-bottom, 0px) + 1.5rem)' }}
+        style={{ bottom: "calc(env(safe-area-inset-bottom, 0px) + 1.5rem)" }}
         className={cn(
           "fixed right-4 sm:right-6 z-50 flex h-14 w-14 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-lg transition-all hover:scale-105 hover:brightness-110",
-          open && "rotate-90"
+          open && "rotate-90",
         )}
       >
         {open ? <X className="h-6 w-6" /> : <MessageCircle className="h-6 w-6" />}
@@ -308,7 +313,7 @@ export function ChatWidget() {
       {open && (
         <div
           className="fixed inset-x-2 bottom-2 top-2 z-50 flex flex-col overflow-hidden rounded-2xl border border-border bg-card shadow-2xl animate-in fade-in slide-in-from-bottom-4 sm:inset-auto sm:bottom-24 sm:right-6 sm:top-auto sm:h-[34rem] sm:w-[calc(100vw-3rem)] sm:max-w-sm"
-          style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
+          style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
         >
           <div className="flex items-center gap-3 border-b border-border bg-primary px-4 py-3 text-primary-foreground">
             <div className="flex h-9 w-9 items-center justify-center rounded-full bg-primary-foreground/20">
@@ -322,13 +327,16 @@ export function ChatWidget() {
 
           <div ref={scrollRef} className="flex-1 space-y-3 overflow-y-auto bg-muted/30 p-4">
             {messages.map((m, i) => (
-              <div key={i} className={cn("flex", m.role === "user" ? "justify-end" : "justify-start")}>
+              <div
+                key={i}
+                className={cn("flex", m.role === "user" ? "justify-end" : "justify-start")}
+              >
                 <div
                   className={cn(
                     "max-w-[85%] rounded-2xl px-3 py-2 text-sm",
                     m.role === "user"
                       ? "bg-primary text-primary-foreground"
-                      : "bg-card border border-border text-foreground"
+                      : "bg-card border border-border text-foreground",
                   )}
                 >
                   <div className="prose prose-sm max-w-none break-words [&_p]:my-1 [&_ul]:my-1 [&_a]:text-inherit [&_a]:underline">
@@ -376,16 +384,18 @@ export function ChatWidget() {
                   autoComplete="tel"
                   className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:border-primary"
                 />
-                {handoffError && (
-                  <p className="text-xs text-destructive">{handoffError}</p>
-                )}
+                {handoffError && <p className="text-xs text-destructive">{handoffError}</p>}
                 <Button
                   size="sm"
                   className="w-full"
                   onClick={submitHandoff}
                   disabled={handoffLoading}
                 >
-                  {handoffLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : "Continuar para o WhatsApp"}
+                  {handoffLoading ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    "Continuar para o WhatsApp"
+                  )}
                 </Button>
                 <p className="text-[10px] text-muted-foreground">
                   Usamos seus dados apenas para registrar este atendimento.
@@ -394,100 +404,102 @@ export function ChatWidget() {
             )}
 
             {/* Handoff: pronto */}
-            {handoffStep === "ready" && whatsappUrl && (() => {
-              const isMobile =
-                typeof navigator !== "undefined" &&
-                /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent);
-              const encoded = encodeURIComponent(whatsappText);
-              const webUrl = `https://web.whatsapp.com/send?phone=${whatsappPhone}&text=${encoded}`;
-              const waMeUrl = `https://wa.me/${whatsappPhone}?text=${encoded}`;
-              const appUrl = `whatsapp://send?phone=${whatsappPhone}&text=${encoded}`;
-              const primaryUrl = isMobile ? waMeUrl : webUrl;
+            {handoffStep === "ready" &&
+              whatsappUrl &&
+              (() => {
+                const isMobile =
+                  typeof navigator !== "undefined" &&
+                  /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent);
+                const encoded = encodeURIComponent(whatsappText);
+                const webUrl = `https://web.whatsapp.com/send?phone=${whatsappPhone}&text=${encoded}`;
+                const waMeUrl = `https://wa.me/${whatsappPhone}?text=${encoded}`;
+                const appUrl = `whatsapp://send?phone=${whatsappPhone}&text=${encoded}`;
+                const primaryUrl = isMobile ? waMeUrl : webUrl;
 
-              return (
-                <div className="flex flex-col gap-2 rounded-xl border border-border bg-background p-3">
-                  <a
-                    href={primaryUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="block"
-                  >
-                    <Button
-                      size="sm"
-                      className="w-full bg-green-600 hover:bg-green-700 text-white"
+                return (
+                  <div className="flex flex-col gap-2 rounded-xl border border-border bg-background p-3">
+                    <a
+                      href={primaryUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="block"
                     >
-                      <ExternalLink className="h-4 w-4 mr-2" />
-                      {isMobile ? "Abrir WhatsApp" : "Abrir WhatsApp Web"}
-                    </Button>
-                  </a>
-
-                  {!isMobile && (
-                    <a href={appUrl} className="block">
-                      <Button size="sm" variant="outline" className="w-full">
-                        Abrir no app WhatsApp Desktop
+                      <Button
+                        size="sm"
+                        className="w-full bg-green-600 hover:bg-green-700 text-white"
+                      >
+                        <ExternalLink className="h-4 w-4 mr-2" />
+                        {isMobile ? "Abrir WhatsApp" : "Abrir WhatsApp Web"}
                       </Button>
                     </a>
-                  )}
 
-                  <p className="text-[11px] text-muted-foreground text-center">
-                    Se nada abrir, copie os dados abaixo e fale conosco direto:
-                  </p>
-                  <div className="grid grid-cols-2 gap-2">
+                    {!isMobile && (
+                      <a href={appUrl} className="block">
+                        <Button size="sm" variant="outline" className="w-full">
+                          Abrir no app WhatsApp Desktop
+                        </Button>
+                      </a>
+                    )}
+
+                    <p className="text-[11px] text-muted-foreground text-center">
+                      Se nada abrir, copie os dados abaixo e fale conosco direto:
+                    </p>
+                    <div className="grid grid-cols-2 gap-2">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={async () => {
+                          try {
+                            await navigator.clipboard.writeText(whatsappPhone);
+                            setCopyFeedback("Número copiado!");
+                            setTimeout(() => setCopyFeedback(null), 2000);
+                          } catch {
+                            setCopyFeedback("Não foi possível copiar.");
+                          }
+                        }}
+                      >
+                        Copiar número
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={async () => {
+                          try {
+                            await navigator.clipboard.writeText(whatsappText);
+                            setCopyFeedback("Mensagem copiada!");
+                            setTimeout(() => setCopyFeedback(null), 2000);
+                          } catch {
+                            setCopyFeedback("Não foi possível copiar.");
+                          }
+                        }}
+                      >
+                        Copiar mensagem
+                      </Button>
+                    </div>
+                    <a href={`tel:+${whatsappPhone}`} className="block">
+                      <Button size="sm" variant="outline" className="w-full">
+                        Ligar agora
+                      </Button>
+                    </a>
+                    {copyFeedback && (
+                      <p className="text-[11px] text-center text-primary">{copyFeedback}</p>
+                    )}
                     <Button
                       size="sm"
-                      variant="outline"
-                      onClick={async () => {
-                        try {
-                          await navigator.clipboard.writeText(whatsappPhone);
-                          setCopyFeedback("Número copiado!");
-                          setTimeout(() => setCopyFeedback(null), 2000);
-                        } catch {
-                          setCopyFeedback("Não foi possível copiar.");
-                        }
+                      variant="ghost"
+                      onClick={() => {
+                        setHandoffStep("idle");
+                        setHandoffName("");
+                        setHandoffPhone("");
+                        setWhatsappUrl(null);
+                        setCopyFeedback(null);
                       }}
                     >
-                      Copiar número
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={async () => {
-                        try {
-                          await navigator.clipboard.writeText(whatsappText);
-                          setCopyFeedback("Mensagem copiada!");
-                          setTimeout(() => setCopyFeedback(null), 2000);
-                        } catch {
-                          setCopyFeedback("Não foi possível copiar.");
-                        }
-                      }}
-                    >
-                      Copiar mensagem
+                      Continuar conversando aqui
                     </Button>
                   </div>
-                  <a href={`tel:+${whatsappPhone}`} className="block">
-                    <Button size="sm" variant="outline" className="w-full">
-                      Ligar agora
-                    </Button>
-                  </a>
-                  {copyFeedback && (
-                    <p className="text-[11px] text-center text-primary">{copyFeedback}</p>
-                  )}
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    onClick={() => {
-                      setHandoffStep("idle");
-                      setHandoffName("");
-                      setHandoffPhone("");
-                      setWhatsappUrl(null);
-                      setCopyFeedback(null);
-                    }}
-                  >
-                    Continuar conversando aqui
-                  </Button>
-                </div>
-              );
-            })()}
+                );
+              })()}
           </div>
 
           <div className="flex items-center gap-2 border-t border-border bg-card p-3">
@@ -504,8 +516,8 @@ export function ChatWidget() {
                 handoffStep === "form"
                   ? "Preencha o formulário acima…"
                   : handoffStep === "ready"
-                  ? "Clique em Falar no WhatsApp"
-                  : "Digite sua mensagem..."
+                    ? "Clique em Falar no WhatsApp"
+                    : "Digite sua mensagem..."
               }
               disabled={inputDisabled}
               className="flex-1 rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:border-primary disabled:opacity-60"

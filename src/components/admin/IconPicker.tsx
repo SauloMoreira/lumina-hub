@@ -1,11 +1,11 @@
-import { useMemo, useState, type ElementType } from 'react';
-import * as Icons from 'lucide-react';
-import { Check, ChevronDown, Search, X } from 'lucide-react';
+import { useMemo, useState, type ElementType } from "react";
+import * as Icons from "lucide-react";
+import { Check, ChevronDown, Search, X } from "lucide-react";
 
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { cn } from '@/lib/utils';
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { cn } from "@/lib/utils";
 
 /**
  * Curated list of lucide-react icons that make sense for a storefront homepage.
@@ -13,55 +13,125 @@ import { cn } from '@/lib/utils';
  */
 export const ICON_GROUPS: { label: string; icons: string[] }[] = [
   {
-    label: 'Destaque & marketing',
+    label: "Destaque & marketing",
     icons: [
-      'Sparkles', 'Star', 'Heart', 'Gem', 'Gift', 'Flame', 'Rocket',
-      'Sun', 'Sunrise', 'Moon', 'Award', 'Crown', 'Trophy', 'PartyPopper',
-      'BadgeCheck', 'BadgePercent', 'Megaphone', 'Bell',
+      "Sparkles",
+      "Star",
+      "Heart",
+      "Gem",
+      "Gift",
+      "Flame",
+      "Rocket",
+      "Sun",
+      "Sunrise",
+      "Moon",
+      "Award",
+      "Crown",
+      "Trophy",
+      "PartyPopper",
+      "BadgeCheck",
+      "BadgePercent",
+      "Megaphone",
+      "Bell",
     ],
   },
   {
-    label: 'Comércio & ofertas',
+    label: "Comércio & ofertas",
     icons: [
-      'ShoppingBag', 'ShoppingCart', 'Tag', 'Tags', 'Percent', 'Ticket',
-      'Wallet', 'CreditCard', 'Banknote', 'DollarSign', 'Coins',
-      'Receipt', 'PiggyBank',
+      "ShoppingBag",
+      "ShoppingCart",
+      "Tag",
+      "Tags",
+      "Percent",
+      "Ticket",
+      "Wallet",
+      "CreditCard",
+      "Banknote",
+      "DollarSign",
+      "Coins",
+      "Receipt",
+      "PiggyBank",
     ],
   },
   {
-    label: 'Entrega & logística',
+    label: "Entrega & logística",
     icons: [
-      'Truck', 'Package', 'PackageCheck', 'PackageOpen', 'Box', 'Boxes',
-      'MapPin', 'Map', 'Navigation', 'Route', 'Clock', 'Timer', 'Zap',
+      "Truck",
+      "Package",
+      "PackageCheck",
+      "PackageOpen",
+      "Box",
+      "Boxes",
+      "MapPin",
+      "Map",
+      "Navigation",
+      "Route",
+      "Clock",
+      "Timer",
+      "Zap",
     ],
   },
   {
-    label: 'Confiança & segurança',
+    label: "Confiança & segurança",
     icons: [
-      'Shield', 'ShieldCheck', 'Lock', 'CheckCircle', 'CheckCircle2',
-      'ThumbsUp', 'Handshake', 'HeartHandshake', 'Users', 'UserCheck',
+      "Shield",
+      "ShieldCheck",
+      "Lock",
+      "CheckCircle",
+      "CheckCircle2",
+      "ThumbsUp",
+      "Handshake",
+      "HeartHandshake",
+      "Users",
+      "UserCheck",
     ],
   },
   {
-    label: 'Bem-estar & holístico',
+    label: "Bem-estar & holístico",
     icons: [
-      'Leaf', 'Flower', 'Flower2', 'Sprout', 'TreePine', 'Mountain',
-      'Feather', 'Wind', 'Droplet', 'Waves', 'Compass',
+      "Leaf",
+      "Flower",
+      "Flower2",
+      "Sprout",
+      "TreePine",
+      "Mountain",
+      "Feather",
+      "Wind",
+      "Droplet",
+      "Waves",
+      "Compass",
     ],
   },
   {
-    label: 'Comunicação',
+    label: "Comunicação",
     icons: [
-      'MessageCircle', 'MessageSquare', 'MessageSquareText', 'Mail',
-      'Phone', 'PhoneCall', 'Send', 'Headphones', 'Mic',
+      "MessageCircle",
+      "MessageSquare",
+      "MessageSquareText",
+      "Mail",
+      "Phone",
+      "PhoneCall",
+      "Send",
+      "Headphones",
+      "Mic",
     ],
   },
   {
-    label: 'Navegação & ações',
+    label: "Navegação & ações",
     icons: [
-      'ArrowRight', 'ArrowUpRight', 'ChevronRight', 'ExternalLink',
-      'Search', 'Filter', 'PlayCircle', 'Play', 'BookOpen', 'Info',
-      'HelpCircle', 'Eye', 'Plus',
+      "ArrowRight",
+      "ArrowUpRight",
+      "ChevronRight",
+      "ExternalLink",
+      "Search",
+      "Filter",
+      "PlayCircle",
+      "Play",
+      "BookOpen",
+      "Info",
+      "HelpCircle",
+      "Eye",
+      "Plus",
     ],
   },
 ];
@@ -69,14 +139,14 @@ export const ICON_GROUPS: { label: string; icons: string[] }[] = [
 function isRenderableIcon(value: unknown): value is ElementType {
   // lucide-react icons are React forwardRef components. Depending on the
   // build/runtime they can appear as either functions or objects.
-  return !!value && (typeof value === 'function' || typeof value === 'object');
+  return !!value && (typeof value === "function" || typeof value === "object");
 }
 
 const LUCIDE_ICON_MAP = (Icons as any).icons as Record<string, unknown> | undefined;
 
-const ALL_ICONS: string[] = Array.from(
-  new Set(ICON_GROUPS.flatMap((g) => g.icons)),
-).filter((name) => isRenderableIcon(LUCIDE_ICON_MAP?.[name] ?? (Icons as any)[name]));
+const ALL_ICONS: string[] = Array.from(new Set(ICON_GROUPS.flatMap((g) => g.icons))).filter(
+  (name) => isRenderableIcon(LUCIDE_ICON_MAP?.[name] ?? (Icons as any)[name]),
+);
 
 export function getLucideIconComponent(name?: string | null) {
   if (!name) return null;
@@ -96,12 +166,12 @@ interface IconPickerProps {
 export function IconPicker({
   value,
   onChange,
-  placeholder = 'Escolher ícone',
+  placeholder = "Escolher ícone",
   allowEmoji = false,
   className,
 }: IconPickerProps) {
   const [open, setOpen] = useState(false);
-  const [query, setQuery] = useState('');
+  const [query, setQuery] = useState("");
 
   const isEmoji = !!value && !getLucideIconComponent(value);
   const Selected = getLucideIconComponent(value);
@@ -109,23 +179,17 @@ export function IconPicker({
   const filteredGroups = useMemo(() => {
     const q = query.trim().toLowerCase();
     if (!q) return ICON_GROUPS;
-    return ICON_GROUPS
-      .map((g) => ({
-        ...g,
-        icons: g.icons.filter((n) => n.toLowerCase().includes(q)),
-      }))
-      .filter((g) => g.icons.length > 0);
+    return ICON_GROUPS.map((g) => ({
+      ...g,
+      icons: g.icons.filter((n) => n.toLowerCase().includes(q)),
+    })).filter((g) => g.icons.length > 0);
   }, [query]);
 
   return (
-    <div className={cn('flex items-center gap-2', className)}>
+    <div className={cn("flex items-center gap-2", className)}>
       <Popover open={open} onOpenChange={setOpen}>
         <PopoverTrigger asChild>
-          <Button
-            type="button"
-            variant="outline"
-            className="w-full justify-between font-normal"
-          >
+          <Button type="button" variant="outline" className="w-full justify-between font-normal">
             <span className="flex items-center gap-2 min-w-0">
               {Selected ? (
                 <Selected className="w-4 h-4 shrink-0" />
@@ -170,7 +234,7 @@ export function IconPicker({
           {allowEmoji && (
             <div className="p-2 border-b">
               <Input
-                value={isEmoji ? value ?? '' : ''}
+                value={isEmoji ? (value ?? "") : ""}
                 onChange={(e) => onChange(e.target.value || null)}
                 placeholder="Ou cole um emoji (🚚, ❤️, ✨)"
                 className="h-8 text-sm"
@@ -205,10 +269,10 @@ export function IconPicker({
                             setOpen(false);
                           }}
                           className={cn(
-                            'group relative aspect-square rounded-md border flex items-center justify-center hover:bg-accent transition',
+                            "group relative aspect-square rounded-md border flex items-center justify-center hover:bg-accent transition",
                             selected
-                              ? 'border-primary bg-primary/5 text-primary'
-                              : 'border-transparent text-foreground/80',
+                              ? "border-primary bg-primary/5 text-primary"
+                              : "border-transparent text-foreground/80",
                           )}
                         >
                           <Comp className="w-4 h-4" />

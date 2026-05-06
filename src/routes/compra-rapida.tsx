@@ -1,7 +1,7 @@
-import { createFileRoute, Link, useRouter } from '@tanstack/react-router';
-import { useEffect, useMemo, useState } from 'react';
-import { useMutation, useQuery } from '@tanstack/react-query';
-import { toast } from 'sonner';
+import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
+import { useEffect, useMemo, useState } from "react";
+import { useMutation, useQuery } from "@tanstack/react-query";
+import { toast } from "sonner";
 import {
   AlertTriangle,
   CheckCircle2,
@@ -12,34 +12,34 @@ import {
   Trash2,
   X,
   Zap,
-} from 'lucide-react';
-import { StoreLayout } from '@/components/layout/StoreLayout';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
-import { buildSeo } from '@/lib/seo';
-import { formatBRL, STORE_WHATSAPP } from '@/lib/domain';
-import { useCart } from '@/stores/cartStore';
-import { supabase } from '@/integrations/supabase/client';
-import { resolveQuickBuyCodes, type QuickBuyResolvedLine } from '@/server/quickBuy.functions';
-import { autocompleteSearch } from '@/server/productSearch.functions';
-import { getPublicCompanySettings } from '@/server/institutional.functions';
-import { ProductImagePlaceholder } from '@/components/store/ProductImagePlaceholder';
-import { CsvImportButton } from '@/components/quickbuy/CsvImportButton';
-import type { CsvParsedRow } from '@/lib/quickBuyCsv';
+} from "lucide-react";
+import { StoreLayout } from "@/components/layout/StoreLayout";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { buildSeo } from "@/lib/seo";
+import { formatBRL, STORE_WHATSAPP } from "@/lib/domain";
+import { useCart } from "@/stores/cartStore";
+import { supabase } from "@/integrations/supabase/client";
+import { resolveQuickBuyCodes, type QuickBuyResolvedLine } from "@/server/quickBuy.functions";
+import { autocompleteSearch } from "@/server/productSearch.functions";
+import { getPublicCompanySettings } from "@/server/institutional.functions";
+import { ProductImagePlaceholder } from "@/components/store/ProductImagePlaceholder";
+import { CsvImportButton } from "@/components/quickbuy/CsvImportButton";
+import type { CsvParsedRow } from "@/lib/quickBuyCsv";
 
-export const Route = createFileRoute('/compra-rapida')({
+export const Route = createFileRoute("/compra-rapida")({
   head: () =>
     buildSeo({
-      title: 'Compra rápida por SKU ou código de barras | Led Maricá',
+      title: "Compra rápida por SKU ou código de barras | Led Maricá",
       description:
-        'Adicione vários produtos ao carrinho informando SKU, EAN/GTIN ou nome. Ideal para compras empresariais.',
-      url: '/compra-rapida',
+        "Adicione vários produtos ao carrinho informando SKU, EAN/GTIN ou nome. Ideal para compras empresariais.",
+      url: "/compra-rapida",
     }),
   component: CompraRapidaPage,
 });
 
 function onlyDigits(s: string | null | undefined) {
-  return (s ?? '').replace(/\D+/g, '');
+  return (s ?? "").replace(/\D+/g, "");
 }
 
 type ParsedLine = { code: string; qty: number; raw: string };
@@ -62,20 +62,20 @@ function parseInputLines(text: string): ParsedLine[] {
   return out.slice(0, 100);
 }
 
-type CompanyStatus = 'guest' | 'pf' | 'pending' | 'approved' | 'blocked' | 'rejected';
+type CompanyStatus = "guest" | "pf" | "pending" | "approved" | "blocked" | "rejected";
 
 function CompraRapidaPage() {
   const cart = useCart();
   const router = useRouter();
-  const [text, setText] = useState('');
+  const [text, setText] = useState("");
   const [resolved, setResolved] = useState<QuickBuyResolvedLine[]>([]);
-  const [companyStatus, setCompanyStatus] = useState<CompanyStatus>('guest');
+  const [companyStatus, setCompanyStatus] = useState<CompanyStatus>("guest");
   const [companyName, setCompanyName] = useState<string | null>(null);
   const [companyCnpj, setCompanyCnpj] = useState<string | null>(null);
 
   // Busca rápida individual
-  const [searchQ, setSearchQ] = useState('');
-  const [debouncedQ, setDebouncedQ] = useState('');
+  const [searchQ, setSearchQ] = useState("");
+  const [debouncedQ, setDebouncedQ] = useState("");
   useEffect(() => {
     const id = setTimeout(() => setDebouncedQ(searchQ), 280);
     return () => clearTimeout(id);
@@ -87,23 +87,23 @@ function CompraRapidaPage() {
       const { data: sess } = await supabase.auth.getSession();
       const userId = sess.session?.user?.id;
       if (!userId) {
-        if (mounted) setCompanyStatus('guest');
+        if (mounted) setCompanyStatus("guest");
         return;
       }
       const { data: link } = await supabase
-        .from('company_users')
-        .select('company_id')
-        .eq('user_id', userId)
+        .from("company_users")
+        .select("company_id")
+        .eq("user_id", userId)
         .limit(1)
         .maybeSingle();
       if (!link) {
-        if (mounted) setCompanyStatus('pf');
+        if (mounted) setCompanyStatus("pf");
         return;
       }
       const { data: company } = await supabase
-        .from('companies')
-        .select('status, legal_name, trade_name, cnpj')
-        .eq('id', link.company_id)
+        .from("companies")
+        .select("status, legal_name, trade_name, cnpj")
+        .eq("id", link.company_id)
         .maybeSingle();
       if (!mounted || !company) return;
       setCompanyStatus(company.status as CompanyStatus);
@@ -115,10 +115,10 @@ function CompraRapidaPage() {
     };
   }, []);
 
-  const isApproved = companyStatus === 'approved';
+  const isApproved = companyStatus === "approved";
 
   const { data: companyData } = useQuery({
-    queryKey: ['public-company-settings'],
+    queryKey: ["public-company-settings"],
     staleTime: 1000 * 60 * 30,
     queryFn: () => getPublicCompanySettings(),
   });
@@ -126,12 +126,12 @@ function CompraRapidaPage() {
 
   // Autocomplete (busca rápida individual)
   const { data: suggestions } = useQuery({
-    queryKey: ['quickbuy-autocomplete', debouncedQ],
+    queryKey: ["quickbuy-autocomplete", debouncedQ],
     enabled: debouncedQ.trim().length >= 2,
     staleTime: 30_000,
     queryFn: async () => {
       const res = await autocompleteSearch({ data: { q: debouncedQ.trim() } });
-      return res.suggestions.filter((s: any) => s.kind === 'product');
+      return res.suggestions.filter((s: any) => s.kind === "product");
     },
   });
 
@@ -147,9 +147,7 @@ function CompraRapidaPage() {
         // anexa, mantendo dedupe por product_id quando existir
         const merged = [...prev];
         for (const ln of res.lines) {
-          const idx = ln.product_id
-            ? merged.findIndex((x) => x.product_id === ln.product_id)
-            : -1;
+          const idx = ln.product_id ? merged.findIndex((x) => x.product_id === ln.product_id) : -1;
           if (idx >= 0) {
             merged[idx] = { ...ln, requested_quantity: ln.requested_quantity };
           } else {
@@ -158,10 +156,10 @@ function CompraRapidaPage() {
         }
         return merged;
       });
-      setText('');
+      setText("");
     },
     onError: (err: any) => {
-      toast.error(err?.message || 'Erro ao resolver códigos');
+      toast.error(err?.message || "Erro ao resolver códigos");
     },
   });
 
@@ -169,7 +167,7 @@ function CompraRapidaPage() {
 
   const handleResolve = () => {
     if (parsedLines.length === 0) {
-      toast.error('Adicione pelo menos uma linha de código.');
+      toast.error("Adicione pelo menos uma linha de código.");
       return;
     }
     resolveMutation.mutate(parsedLines);
@@ -187,20 +185,16 @@ function CompraRapidaPage() {
       // Recalcula preview B2B local: se min/mult atendidos -> b2b_price; senão -> retail
       const retail = ln.sale_price ?? ln.retail_price ?? 0;
       let applied = retail;
-      let source: QuickBuyResolvedLine['pricing_source_preview'] = 'retail';
+      let source: QuickBuyResolvedLine["pricing_source_preview"] = "retail";
       const warnings: string[] = (ln.warnings ?? []).filter(
-        (w) => !w.startsWith('Para acessar o preço empresa'),
+        (w) => !w.startsWith("Para acessar o preço empresa"),
       );
-      if (
-        ln.b2b_price != null &&
-        ln.b2b_min_quantity != null &&
-        ln.b2b_price > 0
-      ) {
+      if (ln.b2b_price != null && ln.b2b_min_quantity != null && ln.b2b_price > 0) {
         const min = ln.b2b_min_quantity;
         const mult = ln.b2b_qty_multiple ?? 1;
         if (qty >= min && (mult <= 1 || (qty - min) % mult === 0)) {
           applied = ln.b2b_price;
-          source = 'b2b';
+          source = "b2b";
         } else if (qty < min) {
           warnings.push(
             `Para acessar o preço empresa deste produto, compre a partir de ${min} unidades. Com a quantidade atual, será aplicado o preço de varejo.`,
@@ -230,27 +224,27 @@ function CompraRapidaPage() {
 
   const handleAddAllToCart = () => {
     const valid = resolved.filter(
-      (ln) => ln.match_status === 'found' && ln.product_id && ln.applied_preview_price != null,
+      (ln) => ln.match_status === "found" && ln.product_id && ln.applied_preview_price != null,
     );
     if (valid.length === 0) {
-      toast.error('Nenhum item válido para adicionar.');
+      toast.error("Nenhum item válido para adicionar.");
       return;
     }
     let added = 0;
     for (const ln of valid) {
-      const useB2b = ln.pricing_source_preview === 'b2b';
+      const useB2b = ln.pricing_source_preview === "b2b";
       cart.addItem(
         {
           productId: ln.product_id!,
-          name: ln.product_name || '',
-          slug: ln.product_slug || '',
+          name: ln.product_name || "",
+          slug: ln.product_slug || "",
           price: ln.applied_preview_price!,
           image: ln.image_url ?? null,
           stock: ln.available_stock,
           freeShippingEligible: false,
-          minQty: useB2b ? ln.b2b_min_quantity ?? 1 : 1,
-          qtyMultiple: useB2b ? ln.b2b_qty_multiple ?? 1 : 1,
-          source: useB2b ? 'b2b' : 'b2c',
+          minQty: useB2b ? (ln.b2b_min_quantity ?? 1) : 1,
+          qtyMultiple: useB2b ? (ln.b2b_qty_multiple ?? 1) : 1,
+          source: useB2b ? "b2b" : "b2c",
         },
         ln.requested_quantity,
         { openDrawer: false },
@@ -264,10 +258,10 @@ function CompraRapidaPage() {
         : `${added} item(ns) adicionado(s) ao carrinho.`,
       {
         duration: 6000,
-        position: 'top-center',
+        position: "top-center",
         action: {
-          label: 'Ver carrinho',
-          onClick: () => router.navigate({ to: '/carrinho' }),
+          label: "Ver carrinho",
+          onClick: () => router.navigate({ to: "/carrinho" }),
         },
       },
     );
@@ -279,7 +273,7 @@ function CompraRapidaPage() {
     let applied = 0;
     let count = 0;
     for (const ln of resolved) {
-      if (ln.match_status !== 'found' || ln.applied_preview_price == null) continue;
+      if (ln.match_status !== "found" || ln.applied_preview_price == null) continue;
       const r = ln.sale_price ?? ln.retail_price ?? ln.applied_preview_price;
       retail += r * ln.requested_quantity;
       applied += ln.applied_preview_price * ln.requested_quantity;
@@ -296,18 +290,18 @@ function CompraRapidaPage() {
   // CTA de negociação WhatsApp
   const whatsappLink = useMemo(() => {
     const itensTxt = resolved
-      .filter((ln) => ln.match_status === 'found')
-      .map((ln) => `- ${ln.product_name} (${ln.sku ?? '-'}) x ${ln.requested_quantity}`)
-      .join('\n');
+      .filter((ln) => ln.match_status === "found")
+      .map((ln) => `- ${ln.product_name} (${ln.sku ?? "-"}) x ${ln.requested_quantity}`)
+      .join("\n");
     const lines = [
-      'Olá! Gostaria de negociar uma compra B2B com os seguintes itens:',
-      '',
-      itensTxt || '(nenhum item ainda)',
+      "Olá! Gostaria de negociar uma compra B2B com os seguintes itens:",
+      "",
+      itensTxt || "(nenhum item ainda)",
     ];
-    if (companyName) lines.push('', `Empresa: ${companyName}`);
+    if (companyName) lines.push("", `Empresa: ${companyName}`);
     if (companyCnpj) lines.push(`CNPJ: ${companyCnpj}`);
-    lines.push('', 'Pode me ajudar com uma condição comercial?');
-    return `https://wa.me/${supportWhats}?text=${encodeURIComponent(lines.join('\n'))}`;
+    lines.push("", "Pode me ajudar com uma condição comercial?");
+    return `https://wa.me/${supportWhats}?text=${encodeURIComponent(lines.join("\n"))}`;
   }, [resolved, companyName, companyCnpj, supportWhats]);
 
   return (
@@ -336,8 +330,8 @@ function CompraRapidaPage() {
         <div className="bg-card border border-border rounded-xl p-4 sm:p-5">
           <h2 className="font-display font-bold text-foreground text-lg">Adicionar por código</h2>
           <p className="text-xs text-muted-foreground mt-1">
-            Uma linha por item. Aceita SKU, EAN/GTIN ou nome. Separe a quantidade com{' '}
-            <code className="px-1 rounded bg-muted">;</code>,{' '}
+            Uma linha por item. Aceita SKU, EAN/GTIN ou nome. Separe a quantidade com{" "}
+            <code className="px-1 rounded bg-muted">;</code>,{" "}
             <code className="px-1 rounded bg-muted">,</code> ou espaço.
           </p>
           <Textarea
@@ -350,8 +344,8 @@ function CompraRapidaPage() {
           />
           <div className="flex items-center justify-between mt-3 gap-2 flex-wrap">
             <span className="text-xs text-muted-foreground">
-              {parsedLines.length} linha{parsedLines.length === 1 ? '' : 's'} identificada
-              {parsedLines.length === 1 ? '' : 's'} (máx. 100)
+              {parsedLines.length} linha{parsedLines.length === 1 ? "" : "s"} identificada
+              {parsedLines.length === 1 ? "" : "s"} (máx. 100)
             </span>
             <button
               type="button"
@@ -360,7 +354,7 @@ function CompraRapidaPage() {
               className="inline-flex items-center gap-2 h-10 px-4 rounded-md bg-primary text-primary-foreground font-semibold hover:brightness-110 transition shadow-primary disabled:opacity-50 disabled:cursor-not-allowed text-sm"
             >
               <Package className="w-4 h-4" />
-              {resolveMutation.isPending ? 'Buscando...' : 'Buscar produtos'}
+              {resolveMutation.isPending ? "Buscando..." : "Buscar produtos"}
             </button>
           </div>
 
@@ -378,7 +372,7 @@ function CompraRapidaPage() {
               {searchQ && (
                 <button
                   type="button"
-                  onClick={() => setSearchQ('')}
+                  onClick={() => setSearchQ("")}
                   className="absolute right-2 top-1/2 -translate-y-1/2 p-1 rounded hover:bg-muted"
                   aria-label="Limpar busca"
                 >
@@ -394,7 +388,7 @@ function CompraRapidaPage() {
                       type="button"
                       onClick={() => {
                         addQuickPick(s);
-                        setSearchQ('');
+                        setSearchQ("");
                       }}
                       className="w-full flex items-center gap-3 p-2 text-left hover:bg-muted transition"
                     >
@@ -421,7 +415,7 @@ function CompraRapidaPage() {
                           ? formatBRL(Number(s.sale_price))
                           : s.price != null
                             ? formatBRL(Number(s.price))
-                            : '—'}
+                            : "—"}
                       </div>
                     </button>
                   </li>
@@ -431,10 +425,7 @@ function CompraRapidaPage() {
           </div>
 
           {/* Importação CSV */}
-          <CsvImportButton
-            onParsed={handleCsvParsed}
-            isProcessing={resolveMutation.isPending}
-          />
+          <CsvImportButton onParsed={handleCsvParsed} isProcessing={resolveMutation.isPending} />
         </div>
 
         {/* Coluna 2: lista resolvida */}
@@ -466,7 +457,7 @@ function CompraRapidaPage() {
             <ul className="mt-3 flex flex-col gap-2 max-h-[520px] overflow-auto pr-1">
               {resolved.map((ln, idx) => (
                 <ResolvedLineCard
-                  key={`${ln.product_id ?? 'x'}-${idx}`}
+                  key={`${ln.product_id ?? "x"}-${idx}`}
                   line={ln}
                   onRemove={() => removeLine(idx)}
                   onChangeQty={(q) => updateQty(idx, q)}
@@ -509,7 +500,7 @@ function CompraRapidaPage() {
                 >
                   <ShoppingCart className="w-4 h-4" /> Adicionar ao carrinho
                 </button>
-                {(isApproved || companyStatus === 'pending') && (
+                {(isApproved || companyStatus === "pending") && (
                   <a
                     href={whatsappLink}
                     target="_blank"
@@ -539,14 +530,14 @@ function ResolvedLineCard({
   onRemove: () => void;
   onChangeQty: (q: number) => void;
 }) {
-  const isFound = line.match_status === 'found';
-  const isMultiple = line.match_status === 'multiple_matches';
+  const isFound = line.match_status === "found";
+  const isMultiple = line.match_status === "multiple_matches";
   const tone =
-    line.match_status === 'found'
-      ? 'border-border'
-      : line.match_status === 'out_of_stock'
-        ? 'border-warning/40 bg-warning/5'
-        : 'border-destructive/40 bg-destructive/5';
+    line.match_status === "found"
+      ? "border-border"
+      : line.match_status === "out_of_stock"
+        ? "border-warning/40 bg-warning/5"
+        : "border-destructive/40 bg-destructive/5";
 
   return (
     <li className={`border rounded-lg p-3 flex gap-3 ${tone}`}>
@@ -569,11 +560,11 @@ function ResolvedLineCard({
               Código: <span className="font-mono">{line.original_code}</span>
             </div>
             <div className="text-sm font-medium text-foreground truncate">
-              {line.product_name ?? <span className="text-destructive">Produto não encontrado</span>}
+              {line.product_name ?? (
+                <span className="text-destructive">Produto não encontrado</span>
+              )}
             </div>
-            {line.sku && (
-              <div className="text-[11px] text-muted-foreground">SKU: {line.sku}</div>
-            )}
+            {line.sku && <div className="text-[11px] text-muted-foreground">SKU: {line.sku}</div>}
           </div>
           <button
             type="button"
@@ -598,7 +589,7 @@ function ResolvedLineCard({
               />
             </div>
             <div className="ml-auto text-right">
-              {line.pricing_source_preview === 'b2b' && line.sale_price != null && (
+              {line.pricing_source_preview === "b2b" && line.sale_price != null && (
                 <div className="text-[11px] text-muted-foreground line-through">
                   {formatBRL(line.sale_price ?? line.retail_price ?? 0)}
                 </div>
@@ -606,9 +597,9 @@ function ResolvedLineCard({
               <div className="text-base font-display font-extrabold text-primary">
                 {line.applied_preview_price != null
                   ? formatBRL(line.applied_preview_price * line.requested_quantity)
-                  : '—'}
+                  : "—"}
               </div>
-              {line.pricing_source_preview === 'b2b' && (
+              {line.pricing_source_preview === "b2b" && (
                 <span className="inline-flex items-center gap-1 text-[10px] font-bold uppercase bg-primary text-primary-foreground px-1.5 py-0.5 rounded mt-0.5">
                   Preço empresa
                 </span>
@@ -653,15 +644,15 @@ function ResolvedLineCard({
           </div>
         )}
 
-        {!isFound && !isMultiple && line.match_status !== 'invalid_quantity' && (
+        {!isFound && !isMultiple && line.match_status !== "invalid_quantity" && (
           <p className="text-[11px] text-destructive mt-1">
-            {line.match_status === 'not_found' && 'Produto não encontrado.'}
-            {line.match_status === 'inactive_product' && 'Produto indisponível.'}
-            {line.match_status === 'no_price' && 'Produto sem preço cadastrado.'}
-            {line.match_status === 'out_of_stock' && 'Sem estoque no momento.'}
+            {line.match_status === "not_found" && "Produto não encontrado."}
+            {line.match_status === "inactive_product" && "Produto indisponível."}
+            {line.match_status === "no_price" && "Produto sem preço cadastrado."}
+            {line.match_status === "out_of_stock" && "Sem estoque no momento."}
           </p>
         )}
-        {line.match_status === 'invalid_quantity' && (
+        {line.match_status === "invalid_quantity" && (
           <p className="text-[11px] text-destructive mt-1">Informe uma quantidade válida.</p>
         )}
       </div>
@@ -678,20 +669,19 @@ function ClientStatusBanner({
   status: CompanyStatus;
   companyName: string | null;
 }) {
-  const base =
-    'flex items-start gap-3 p-4 rounded-lg border text-sm';
-  if (status === 'guest') {
+  const base = "flex items-start gap-3 p-4 rounded-lg border text-sm";
+  if (status === "guest") {
     return (
       <div className={`${base} bg-primary/5 border-primary/30`}>
         <Info className="w-5 h-5 mt-0.5 shrink-0 text-primary" />
         <div>
           <div className="font-semibold text-foreground">Você está navegando como visitante</div>
           <div className="text-muted-foreground mt-0.5">
-            Para condições B2B,{' '}
-            <Link to={'/cadastro-empresa' as never} className="font-semibold underline">
+            Para condições B2B,{" "}
+            <Link to={"/cadastro-empresa" as never} className="font-semibold underline">
               cadastre sua empresa
-            </Link>{' '}
-            ou{' '}
+            </Link>{" "}
+            ou{" "}
             <Link to="/login" className="font-semibold underline">
               faça login
             </Link>
@@ -701,15 +691,15 @@ function ClientStatusBanner({
       </div>
     );
   }
-  if (status === 'pf') {
+  if (status === "pf") {
     return (
       <div className={`${base} bg-primary/5 border-primary/30`}>
         <Info className="w-5 h-5 mt-0.5 shrink-0 text-primary" />
         <div>
           <div className="font-semibold text-foreground">Conta pessoa física</div>
           <div className="text-muted-foreground mt-0.5">
-            Para acessar preços B2B,{' '}
-            <Link to={'/cadastro-empresa' as never} className="font-semibold underline">
+            Para acessar preços B2B,{" "}
+            <Link to={"/cadastro-empresa" as never} className="font-semibold underline">
               cadastre sua empresa
             </Link>
             .
@@ -718,13 +708,13 @@ function ClientStatusBanner({
       </div>
     );
   }
-  if (status === 'pending') {
+  if (status === "pending") {
     return (
       <div className={`${base} bg-warning/10 border-warning/40`}>
         <Info className="w-5 h-5 mt-0.5 shrink-0 text-warning" />
         <div>
           <div className="font-semibold text-foreground">
-            Cadastro empresarial em análise{companyName ? ` — ${companyName}` : ''}
+            Cadastro empresarial em análise{companyName ? ` — ${companyName}` : ""}
           </div>
           <div className="text-muted-foreground mt-0.5">
             Enquanto isso, você pode comprar com preço normal de varejo.
@@ -733,7 +723,7 @@ function ClientStatusBanner({
       </div>
     );
   }
-  if (status === 'blocked' || status === 'rejected') {
+  if (status === "blocked" || status === "rejected") {
     return (
       <div className={`${base} bg-destructive/10 border-destructive/40`}>
         <AlertTriangle className="w-5 h-5 mt-0.5 shrink-0 text-destructive" />
@@ -751,7 +741,7 @@ function ClientStatusBanner({
       <CheckCircle2 className="w-5 h-5 mt-0.5 shrink-0 text-success" />
       <div>
         <div className="font-semibold text-foreground">
-          Empresa aprovada{companyName ? ` — ${companyName}` : ''}
+          Empresa aprovada{companyName ? ` — ${companyName}` : ""}
         </div>
         <div className="text-muted-foreground mt-0.5">
           Os preços empresa são exibidos quando aplicável e validados no checkout.

@@ -1,15 +1,15 @@
-import { Search, X } from 'lucide-react';
-import { Input } from '@/components/ui/input';
+import { Search, X } from "lucide-react";
+import { Input } from "@/components/ui/input";
 
 export type B2bSortKey =
-  | 'relevance'
-  | 'b2b_discount_desc'
-  | 'b2b_min_qty_asc'
-  | 'price_asc'
-  | 'price_desc'
-  | 'stock_first'
-  | 'newest'
-  | 'name_asc';
+  | "relevance"
+  | "b2b_discount_desc"
+  | "b2b_min_qty_asc"
+  | "price_asc"
+  | "price_desc"
+  | "stock_first"
+  | "newest"
+  | "name_asc";
 
 export type B2bFiltersState = {
   q: string;
@@ -24,15 +24,15 @@ export type B2bFiltersState = {
 };
 
 export const DEFAULT_B2B_FILTERS: B2bFiltersState = {
-  q: '',
-  categoryId: '',
-  brand: '',
-  priceMin: '',
-  priceMax: '',
+  q: "",
+  categoryId: "",
+  brand: "",
+  priceMin: "",
+  priceMax: "",
   b2bOnly: false,
   inStock: true,
   onSale: false,
-  sort: 'relevance',
+  sort: "relevance",
 };
 
 type CategoryOption = { id: string; name: string };
@@ -64,10 +64,10 @@ export function B2BProductFilters({
 
   const hasAnyFilter =
     state.q.trim().length > 0 ||
-    state.categoryId !== '' ||
-    state.brand !== '' ||
-    state.priceMin !== '' ||
-    state.priceMax !== '' ||
+    state.categoryId !== "" ||
+    state.brand !== "" ||
+    state.priceMin !== "" ||
+    state.priceMax !== "" ||
     state.b2bOnly ||
     state.onSale ||
     !state.inStock; // padrão é estoque ligado
@@ -83,14 +83,14 @@ export function B2BProductFilters({
             inputMode="search"
             placeholder="Buscar por nome, SKU, marca, 18W, 6500K, IP66..."
             value={state.q}
-            onChange={(e) => set('q', e.target.value)}
+            onChange={(e) => set("q", e.target.value)}
             className="pl-9 h-10"
             aria-label="Buscar produtos no atacado"
           />
           {state.q && (
             <button
               type="button"
-              onClick={() => set('q', '')}
+              onClick={() => set("q", "")}
               className="absolute right-2 top-1/2 -translate-y-1/2 p-1 rounded hover:bg-muted"
               aria-label="Limpar busca"
             >
@@ -105,7 +105,7 @@ export function B2BProductFilters({
           <select
             id="b2b-sort"
             value={state.sort}
-            onChange={(e) => set('sort', e.target.value as B2bSortKey)}
+            onChange={(e) => set("sort", e.target.value as B2bSortKey)}
             className="h-10 rounded-md border border-border bg-background px-2 text-xs"
           >
             <option value="relevance">Mais relevantes</option>
@@ -123,15 +123,15 @@ export function B2BProductFilters({
       {/* Linha 2: chips */}
       <div className="flex items-center gap-2 overflow-x-auto -mx-1 px-1">
         <Chip
-          active={state.categoryId === ''}
-          onClick={() => set('categoryId', '')}
+          active={state.categoryId === ""}
+          onClick={() => set("categoryId", "")}
           label="Todas as categorias"
         />
         {categories.map((c) => (
           <Chip
             key={c.id}
             active={state.categoryId === c.id}
-            onClick={() => set('categoryId', c.id)}
+            onClick={() => set("categoryId", c.id)}
             label={c.name}
           />
         ))}
@@ -141,7 +141,7 @@ export function B2BProductFilters({
       <div className="flex flex-wrap items-center gap-2">
         <select
           value={state.brand}
-          onChange={(e) => set('brand', e.target.value)}
+          onChange={(e) => set("brand", e.target.value)}
           className="h-9 rounded-md border border-border bg-background px-2 text-xs min-w-[140px]"
           aria-label="Filtrar por marca"
         >
@@ -157,7 +157,7 @@ export function B2BProductFilters({
           inputMode="decimal"
           placeholder="Preço mín."
           value={state.priceMin}
-          onChange={(e) => set('priceMin', e.target.value)}
+          onChange={(e) => set("priceMin", e.target.value)}
           className="h-9 w-28 text-xs"
           min={0}
         />
@@ -166,24 +166,24 @@ export function B2BProductFilters({
           inputMode="decimal"
           placeholder="Preço máx."
           value={state.priceMax}
-          onChange={(e) => set('priceMax', e.target.value)}
+          onChange={(e) => set("priceMax", e.target.value)}
           className="h-9 w-28 text-xs"
           min={0}
         />
         <Toggle
           active={state.inStock}
-          onClick={() => set('inStock', !state.inStock)}
+          onClick={() => set("inStock", !state.inStock)}
           label="Em estoque"
         />
         <Toggle
           active={state.onSale}
-          onClick={() => set('onSale', !state.onSale)}
+          onClick={() => set("onSale", !state.onSale)}
           label="Em promoção"
         />
         {showB2bOnly && (
           <Toggle
             active={state.b2bOnly}
-            onClick={() => set('b2bOnly', !state.b2bOnly)}
+            onClick={() => set("b2bOnly", !state.b2bOnly)}
             label="Apenas com preço empresa"
           />
         )}
@@ -202,31 +202,23 @@ export function B2BProductFilters({
       {totalCount !== null && (
         <div className="text-xs text-muted-foreground">
           {isFetching
-            ? 'Buscando...'
-            : `${totalCount} produto${totalCount === 1 ? '' : 's'} encontrado${totalCount === 1 ? '' : 's'}`}
+            ? "Buscando..."
+            : `${totalCount} produto${totalCount === 1 ? "" : "s"} encontrado${totalCount === 1 ? "" : "s"}`}
         </div>
       )}
     </div>
   );
 }
 
-function Chip({
-  active,
-  onClick,
-  label,
-}: {
-  active: boolean;
-  onClick: () => void;
-  label: string;
-}) {
+function Chip({ active, onClick, label }: { active: boolean; onClick: () => void; label: string }) {
   return (
     <button
       type="button"
       onClick={onClick}
       className={`shrink-0 h-8 px-3 rounded-full text-xs font-medium border transition ${
         active
-          ? 'bg-primary text-primary-foreground border-primary'
-          : 'bg-background text-foreground border-border hover:bg-muted'
+          ? "bg-primary text-primary-foreground border-primary"
+          : "bg-background text-foreground border-border hover:bg-muted"
       }`}
     >
       {label}
@@ -249,8 +241,8 @@ function Toggle({
       onClick={onClick}
       className={`shrink-0 h-9 px-3 rounded-md text-xs font-medium border transition ${
         active
-          ? 'bg-primary/10 text-primary border-primary/40'
-          : 'bg-background text-foreground border-border hover:bg-muted'
+          ? "bg-primary/10 text-primary border-primary/40"
+          : "bg-background text-foreground border-border hover:bg-muted"
       }`}
       aria-pressed={active}
     >

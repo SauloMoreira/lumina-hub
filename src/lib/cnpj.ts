@@ -1,7 +1,7 @@
 // Utilitários de CNPJ — validação pelo algoritmo oficial e formatação.
 
 export function onlyDigits(value: string): string {
-  return (value || '').replace(/\D+/g, '');
+  return (value || "").replace(/\D+/g, "");
 }
 
 export function formatCNPJ(value: string): string {
@@ -20,9 +20,7 @@ export function isValidCNPJ(value: string): boolean {
   if (/^(\d)\1{13}$/.test(cnpj)) return false;
 
   const calcDigit = (base: string, weights: number[]) => {
-    const sum = base
-      .split('')
-      .reduce((acc, n, i) => acc + parseInt(n, 10) * weights[i], 0);
+    const sum = base.split("").reduce((acc, n, i) => acc + parseInt(n, 10) * weights[i], 0);
     const mod = sum % 11;
     return mod < 2 ? 0 : 11 - mod;
   };

@@ -1,17 +1,26 @@
-import { createFileRoute } from '@tanstack/react-router';
-import { useQuery } from '@tanstack/react-query';
-import { RotateCcw, ShoppingBag, CheckCircle2, DollarSign, Users, Briefcase, Package, TrendingUp } from 'lucide-react';
-import { AdminLayout } from '@/components/admin/AdminLayout';
-import { getAdminOperations } from '@/server/operations.functions';
-import { OperationsCardItem, AlertItem } from '@/components/admin/operations/OperationsCardItem';
-import { DashboardMetricCard } from '@/components/admin/dashboard/DashboardMetricCard';
-import { fmtBRL, fmtInt } from '@/components/admin/dashboard/format';
+import { createFileRoute } from "@tanstack/react-router";
+import { useQuery } from "@tanstack/react-query";
+import {
+  RotateCcw,
+  ShoppingBag,
+  CheckCircle2,
+  DollarSign,
+  Users,
+  Briefcase,
+  Package,
+  TrendingUp,
+} from "lucide-react";
+import { AdminLayout } from "@/components/admin/AdminLayout";
+import { getAdminOperations } from "@/server/operations.functions";
+import { OperationsCardItem, AlertItem } from "@/components/admin/operations/OperationsCardItem";
+import { DashboardMetricCard } from "@/components/admin/dashboard/DashboardMetricCard";
+import { fmtBRL, fmtInt } from "@/components/admin/dashboard/format";
 
-export const Route = createFileRoute('/admin/painel-do-dia')({ component: PainelDoDia });
+export const Route = createFileRoute("/admin/painel-do-dia")({ component: PainelDoDia });
 
 function PainelDoDia() {
   const { data, isLoading, isFetching, error, refetch } = useQuery({
-    queryKey: ['admin-operations'],
+    queryKey: ["admin-operations"],
     queryFn: () => getAdminOperations(),
     staleTime: 60_000,
   });
@@ -26,7 +35,7 @@ function PainelDoDia() {
           disabled={isFetching}
           className="text-xs flex items-center gap-1.5 px-3 py-1.5 rounded-md border border-border bg-card hover:bg-muted disabled:opacity-50"
         >
-          <RotateCcw className={`w-3.5 h-3.5 ${isFetching ? 'animate-spin' : ''}`} />
+          <RotateCcw className={`w-3.5 h-3.5 ${isFetching ? "animate-spin" : ""}`} />
           Atualizar
         </button>
       }
@@ -75,46 +84,48 @@ function PainelDoDia() {
             icon={ShoppingBag}
             label="Pedidos criados hoje"
             loading={isLoading}
-            value={data ? fmtInt(data.daily.ordersCreatedToday) : '—'}
+            value={data ? fmtInt(data.daily.ordersCreatedToday) : "—"}
           />
           <DashboardMetricCard
             icon={CheckCircle2}
             label="Pedidos pagos hoje"
             accent="success"
             loading={isLoading}
-            value={data ? fmtInt(data.daily.ordersPaidToday) : '—'}
+            value={data ? fmtInt(data.daily.ordersPaidToday) : "—"}
           />
           <DashboardMetricCard
             icon={DollarSign}
             label="Faturamento do dia"
             accent="primary"
             loading={isLoading}
-            value={data ? fmtBRL(data.daily.revenueToday) : '—'}
+            value={data ? fmtBRL(data.daily.revenueToday) : "—"}
           />
           <DashboardMetricCard
             icon={TrendingUp}
             label="Ticket médio do dia"
             loading={isLoading}
-            value={data ? fmtBRL(data.daily.avgTicketToday) : '—'}
-            hint={data && data.daily.ordersPaidToday === 0 ? 'Sem pedidos pagos hoje ainda.' : undefined}
+            value={data ? fmtBRL(data.daily.avgTicketToday) : "—"}
+            hint={
+              data && data.daily.ordersPaidToday === 0 ? "Sem pedidos pagos hoje ainda." : undefined
+            }
           />
           <DashboardMetricCard
             icon={Users}
             label="Leads recebidos hoje"
             loading={isLoading}
-            value={data ? fmtInt(data.daily.leadsToday) : '—'}
+            value={data ? fmtInt(data.daily.leadsToday) : "—"}
           />
           <DashboardMetricCard
             icon={Briefcase}
             label="Negociações B2B hoje"
             loading={isLoading}
-            value={data ? fmtInt(data.daily.b2bNegotiationsToday) : '—'}
+            value={data ? fmtInt(data.daily.b2bNegotiationsToday) : "—"}
           />
           <DashboardMetricCard
             icon={Package}
             label="Produtos vendidos hoje"
             loading={isLoading}
-            value={data ? fmtInt(data.daily.productsSoldToday) : '—'}
+            value={data ? fmtInt(data.daily.productsSoldToday) : "—"}
           />
         </div>
       </section>
@@ -147,11 +158,15 @@ function PainelDoDia() {
   );
 }
 
-function severityWeight(s: 'high' | 'medium' | 'low') {
-  return s === 'high' ? 3 : s === 'medium' ? 2 : 1;
+function severityWeight(s: "high" | "medium" | "low") {
+  return s === "high" ? 3 : s === "medium" ? 2 : 1;
 }
 
-function RecommendedActions({ cards }: { cards: import('@/server/operations.functions').OperationsCard[] }) {
+function RecommendedActions({
+  cards,
+}: {
+  cards: import("@/server/operations.functions").OperationsCard[];
+}) {
   // Pega cards com qty > 0 (excluindo "ok") e ordena por status
   const actionable = cards
     .filter((c) => c.qty > 0)
@@ -177,7 +192,7 @@ function RecommendedActions({ cards }: { cards: import('@/server/operations.func
           key={`rec-${c.id}`}
           title={`${c.qty} • ${c.title}`}
           description={c.description}
-          severity={c.status === 'danger' ? 'high' : c.status === 'warn' ? 'medium' : 'low'}
+          severity={c.status === "danger" ? "high" : c.status === "warn" ? "medium" : "low"}
           ctaLabel={c.ctaLabel}
           ctaHref={c.ctaHref}
         />
@@ -186,6 +201,6 @@ function RecommendedActions({ cards }: { cards: import('@/server/operations.func
   );
 }
 
-function statusWeight(s: 'ok' | 'warn' | 'danger' | 'unknown') {
-  return s === 'danger' ? 3 : s === 'warn' ? 2 : s === 'unknown' ? 1 : 0;
+function statusWeight(s: "ok" | "warn" | "danger" | "unknown") {
+  return s === "danger" ? 3 : s === "warn" ? 2 : s === "unknown" ? 1 : 0;
 }

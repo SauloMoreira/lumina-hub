@@ -1,7 +1,7 @@
-import { createFileRoute, Link } from '@tanstack/react-router';
-import { useEffect, useMemo, useState } from 'react';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { useServerFn } from '@tanstack/react-start';
+import { createFileRoute, Link } from "@tanstack/react-router";
+import { useEffect, useMemo, useState } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
 import {
   Receipt,
   AlertTriangle,
@@ -13,14 +13,14 @@ import {
   Search,
   Copy,
   RefreshCw,
-} from 'lucide-react';
-import { toast } from 'sonner';
-import { AdminLayout } from '@/components/admin/AdminLayout';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-import { Badge } from '@/components/ui/badge';
+} from "lucide-react";
+import { toast } from "sonner";
+import { AdminLayout } from "@/components/admin/AdminLayout";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Badge } from "@/components/ui/badge";
 import {
   Dialog,
   DialogContent,
@@ -28,7 +28,7 @@ import {
   DialogTitle,
   DialogDescription,
   DialogFooter,
-} from '@/components/ui/dialog';
+} from "@/components/ui/dialog";
 import {
   Table,
   TableBody,
@@ -36,7 +36,7 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from '@/components/ui/table';
+} from "@/components/ui/table";
 import {
   listInvoices,
   getInvoiceSummary,
@@ -44,19 +44,19 @@ import {
   setInvoiceStatus,
   INVOICE_STATUS_LABEL,
   type InvoiceStatus,
-} from '@/server/invoices.functions';
+} from "@/server/invoices.functions";
 
-export const Route = createFileRoute('/admin/financeiro/notas-fiscais')({
+export const Route = createFileRoute("/admin/financeiro/notas-fiscais")({
   component: NotasFiscaisPage,
 });
 
 type Row = Awaited<ReturnType<typeof listInvoices>> extends { rows: infer R } ? R : never;
 
 function fmtBRL(n: number | string | null | undefined) {
-  return Number(n ?? 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+  return Number(n ?? 0).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 }
 function fmtDate(d: string | null | undefined) {
-  return d ? new Date(d).toLocaleString('pt-BR') : '—';
+  return d ? new Date(d).toLocaleString("pt-BR") : "—";
 }
 function hoursSince(d: string | null | undefined) {
   if (!d) return null;
@@ -65,14 +65,16 @@ function hoursSince(d: string | null | undefined) {
 
 function statusBadge(s: string) {
   const map: Record<string, string> = {
-    nao_necessaria: 'bg-muted text-muted-foreground',
-    pendente_emissao: 'bg-amber-500/10 text-amber-700 dark:text-amber-400',
-    emitida: 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-400',
-    erro_emissao: 'bg-red-500/10 text-red-700 dark:text-red-400',
-    cancelada: 'bg-muted text-muted-foreground line-through',
+    nao_necessaria: "bg-muted text-muted-foreground",
+    pendente_emissao: "bg-amber-500/10 text-amber-700 dark:text-amber-400",
+    emitida: "bg-emerald-500/10 text-emerald-700 dark:text-emerald-400",
+    erro_emissao: "bg-red-500/10 text-red-700 dark:text-red-400",
+    cancelada: "bg-muted text-muted-foreground line-through",
   };
   return (
-    <span className={`inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium ${map[s] ?? 'bg-muted'}`}>
+    <span
+      className={`inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium ${map[s] ?? "bg-muted"}`}
+    >
       {INVOICE_STATUS_LABEL[s as InvoiceStatus] ?? s}
     </span>
   );
@@ -80,9 +82,9 @@ function statusBadge(s: string) {
 
 function FiscalIssuesBanner() {
   const { data } = useQuery({
-    queryKey: ['fiscal-paid-issues'],
+    queryKey: ["fiscal-paid-issues"],
     queryFn: async () => {
-      const { listPaidOrdersWithFiscalIssues } = await import('@/server/fiscal.functions');
+      const { listPaidOrdersWithFiscalIssues } = await import("@/server/fiscal.functions");
       return listPaidOrdersWithFiscalIssues();
     },
   });
@@ -100,7 +102,10 @@ function FiscalIssuesBanner() {
             Revise os dados fiscais antes de emitir a nota fiscal no sistema externo.
           </p>
           <div className="mt-2 text-xs text-amber-700 dark:text-amber-400 line-clamp-2">
-            {data.slice(0, 4).map((d) => d.product_name).join(' • ')}
+            {data
+              .slice(0, 4)
+              .map((d) => d.product_name)
+              .join(" • ")}
             {data.length > 4 && ` +${data.length - 4}`}
           </div>
           <div className="mt-2">
@@ -123,21 +128,21 @@ function NotasFiscaisPage() {
   const setStatus = useServerFn(setInvoiceStatus);
 
   const [filters, setFilters] = useState({
-    status: 'all',
-    orderType: 'all' as 'all' | 'b2c' | 'b2b',
-    search: '',
+    status: "all",
+    orderType: "all" as "all" | "b2c" | "b2b",
+    search: "",
     onlyOverdue: false,
     page: 1,
   });
 
   const summary = useQuery({
-    queryKey: ['invoice-summary'],
+    queryKey: ["invoice-summary"],
     queryFn: () => getInvoiceSummary(),
     staleTime: 60_000,
   });
 
   const rows = useQuery({
-    queryKey: ['invoices', filters],
+    queryKey: ["invoices", filters],
     queryFn: () =>
       list({
         data: {
@@ -155,15 +160,15 @@ function NotasFiscaisPage() {
   const [registerOrder, setRegisterOrder] = useState<{ id: string; number: number } | null>(null);
 
   const refreshAll = () => {
-    qc.invalidateQueries({ queryKey: ['invoices'] });
-    qc.invalidateQueries({ queryKey: ['invoice-summary'] });
+    qc.invalidateQueries({ queryKey: ["invoices"] });
+    qc.invalidateQueries({ queryKey: ["invoice-summary"] });
   };
 
   const handleQuickStatus = async (orderId: string, newStatus: InvoiceStatus) => {
     const r = await setStatus({ data: { orderId, status: newStatus } });
-    if (!r.ok) toast.error(r.error ?? 'Falha ao atualizar status');
+    if (!r.ok) toast.error(r.error ?? "Falha ao atualizar status");
     else {
-      toast.success('Status fiscal atualizado');
+      toast.success("Status fiscal atualizado");
       refreshAll();
     }
   };
@@ -178,27 +183,46 @@ function NotasFiscaisPage() {
       }
     >
       <p className="text-sm text-muted-foreground -mt-2 mb-6">
-        Esta tela <strong>não emite</strong> nota fiscal automaticamente. Use-a para registrar manualmente os dados das NF-e
-        emitidas fora da plataforma e acompanhar pendências fiscais.
+        Esta tela <strong>não emite</strong> nota fiscal automaticamente. Use-a para registrar
+        manualmente os dados das NF-e emitidas fora da plataforma e acompanhar pendências fiscais.
       </p>
 
       <FiscalIssuesBanner />
 
-
       {/* Cards */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
         <SummaryCard icon={Clock} label="Pendentes" value={summary.data?.pendentes} accent="warn" />
-        <SummaryCard icon={CheckCircle2} label="Emitidas" value={summary.data?.emitidas} accent="ok" />
-        <SummaryCard icon={AlertTriangle} label="Com erro" value={summary.data?.comErro} accent="danger" />
+        <SummaryCard
+          icon={CheckCircle2}
+          label="Emitidas"
+          value={summary.data?.emitidas}
+          accent="ok"
+        />
+        <SummaryCard
+          icon={AlertTriangle}
+          label="Com erro"
+          value={summary.data?.comErro}
+          accent="danger"
+        />
         <SummaryCard icon={XCircle} label="Canceladas" value={summary.data?.canceladas} />
-        <SummaryCard icon={Receipt} label="Pagos sem nota" value={summary.data?.semNota} accent="warn" />
+        <SummaryCard
+          icon={Receipt}
+          label="Pagos sem nota"
+          value={summary.data?.semNota}
+          accent="warn"
+        />
         <SummaryCard
           icon={AlertTriangle}
           label="+24h sem nota"
           value={summary.data?.overdue}
           accent="danger"
         />
-        <SummaryCard icon={FileText} label="B2B sem nota" value={summary.data?.b2bSemNota} accent="warn" />
+        <SummaryCard
+          icon={FileText}
+          label="B2B sem nota"
+          value={summary.data?.b2bSemNota}
+          accent="warn"
+        />
         <SummaryCard icon={Receipt} label="Pagos no mês" value={summary.data?.paidMonth} />
       </div>
 
@@ -238,7 +262,11 @@ function NotasFiscaisPage() {
             className="h-9 w-full rounded-md border border-input bg-background px-2 text-sm"
             value={filters.orderType}
             onChange={(e) =>
-              setFilters({ ...filters, orderType: e.target.value as 'all' | 'b2c' | 'b2b', page: 1 })
+              setFilters({
+                ...filters,
+                orderType: e.target.value as "all" | "b2c" | "b2b",
+                page: 1,
+              })
             }
           >
             <option value="all">B2C + B2B</option>
@@ -289,7 +317,7 @@ function NotasFiscaisPage() {
             ) : (
               rows.data.rows.map((r: any) => {
                 const h = hoursSince(r.paid_at);
-                const overdue = r.invoice_status === 'pendente_emissao' && (h ?? 0) >= 24;
+                const overdue = r.invoice_status === "pendente_emissao" && (h ?? 0) >= 24;
                 return (
                   <TableRow key={r.id}>
                     <TableCell>
@@ -306,21 +334,21 @@ function NotasFiscaisPage() {
                       </div>
                     </TableCell>
                     <TableCell className="text-xs">
-                      {r.order_type === 'b2b' ? (
+                      {r.order_type === "b2b" ? (
                         <>
-                          <div className="font-medium">{r.company_name ?? '—'}</div>
-                          <div className="text-muted-foreground">{r.company_cnpj ?? ''}</div>
+                          <div className="font-medium">{r.company_name ?? "—"}</div>
+                          <div className="text-muted-foreground">{r.company_cnpj ?? ""}</div>
                         </>
                       ) : (
                         <>
-                          <div className="font-medium">{r.customer_name ?? '—'}</div>
-                          <div className="text-muted-foreground">{r.customer_email ?? ''}</div>
+                          <div className="font-medium">{r.customer_name ?? "—"}</div>
+                          <div className="text-muted-foreground">{r.customer_email ?? ""}</div>
                         </>
                       )}
                     </TableCell>
                     <TableCell>
-                      <Badge variant={r.order_type === 'b2b' ? 'default' : 'secondary'}>
-                        {r.order_type === 'b2b' ? 'B2B' : 'B2C'}
+                      <Badge variant={r.order_type === "b2b" ? "default" : "secondary"}>
+                        {r.order_type === "b2b" ? "B2B" : "B2C"}
                       </Badge>
                     </TableCell>
                     <TableCell className="text-xs">{fmtDate(r.paid_at)}</TableCell>
@@ -338,14 +366,14 @@ function NotasFiscaisPage() {
                         <>
                           <div>
                             #{r.invoice_number}
-                            {r.invoice_series ? `/s${r.invoice_series}` : ''}
+                            {r.invoice_series ? `/s${r.invoice_series}` : ""}
                           </div>
                           {r.invoice_access_key && (
                             <button
                               className="text-[10px] text-muted-foreground hover:text-foreground inline-flex items-center gap-1"
                               onClick={() => {
                                 navigator.clipboard.writeText(r.invoice_access_key);
-                                toast.success('Chave copiada');
+                                toast.success("Chave copiada");
                               }}
                             >
                               <Copy className="w-2.5 h-2.5" />
@@ -387,7 +415,7 @@ function NotasFiscaisPage() {
                           className="h-7 text-xs"
                           onClick={() => setRegisterOrder({ id: r.id, number: r.order_number })}
                         >
-                          {r.invoice_status === 'emitida' ? 'Editar NF' : 'Registrar NF'}
+                          {r.invoice_status === "emitida" ? "Editar NF" : "Registrar NF"}
                         </Button>
                         <select
                           className="h-7 rounded border border-input bg-background px-1 text-[11px]"
@@ -395,7 +423,7 @@ function NotasFiscaisPage() {
                           onChange={(e) => {
                             if (!e.target.value) return;
                             handleQuickStatus(r.id, e.target.value as InvoiceStatus);
-                            e.target.value = '';
+                            e.target.value = "";
                           }}
                         >
                           <option value="">Status…</option>
@@ -463,23 +491,23 @@ function SummaryCard({
   icon: any;
   label: string;
   value: number | undefined;
-  accent?: 'ok' | 'warn' | 'danger';
+  accent?: "ok" | "warn" | "danger";
 }) {
   const cls =
-    accent === 'danger'
-      ? 'text-red-600'
-      : accent === 'warn'
-        ? 'text-amber-600'
-        : accent === 'ok'
-          ? 'text-emerald-600'
-          : 'text-muted-foreground';
+    accent === "danger"
+      ? "text-red-600"
+      : accent === "warn"
+        ? "text-amber-600"
+        : accent === "ok"
+          ? "text-emerald-600"
+          : "text-muted-foreground";
   return (
     <div className="bg-card border border-border rounded-xl p-3">
       <div className={`flex items-center gap-2 text-xs ${cls}`}>
         <Icon className="w-3.5 h-3.5" />
         {label}
       </div>
-      <div className="text-2xl font-bold mt-1">{value ?? '—'}</div>
+      <div className="text-2xl font-bold mt-1">{value ?? "—"}</div>
     </div>
   );
 }
@@ -497,13 +525,13 @@ export function RegisterInvoiceDialog({
 }) {
   const register = useServerFn(registerInvoice);
   const [form, setForm] = useState({
-    invoice_number: '',
-    invoice_series: '1',
-    invoice_access_key: '',
-    invoice_danfe_url: '',
-    invoice_xml_url: '',
+    invoice_number: "",
+    invoice_series: "1",
+    invoice_access_key: "",
+    invoice_danfe_url: "",
+    invoice_xml_url: "",
     invoice_issued_at: new Date().toISOString().slice(0, 16),
-    invoice_notes: '',
+    invoice_notes: "",
   });
   const [saving, setSaving] = useState(false);
 
@@ -524,13 +552,13 @@ export function RegisterInvoiceDialog({
           invoice_notes: form.invoice_notes || null,
         } as any,
       });
-      if (!r.ok) toast.error(r.error ?? 'Falha ao registrar NF');
+      if (!r.ok) toast.error(r.error ?? "Falha ao registrar NF");
       else {
-        toast.success('Nota fiscal registrada');
+        toast.success("Nota fiscal registrada");
         onSaved();
       }
     } catch (e: any) {
-      toast.error(e?.message ?? 'Erro inesperado');
+      toast.error(e?.message ?? "Erro inesperado");
     } finally {
       setSaving(false);
     }
@@ -566,7 +594,7 @@ export function RegisterInvoiceDialog({
               value={form.invoice_access_key}
               maxLength={44}
               onChange={(e) =>
-                setForm({ ...form, invoice_access_key: e.target.value.replace(/\D/g, '') })
+                setForm({ ...form, invoice_access_key: e.target.value.replace(/\D/g, "") })
               }
             />
           </div>
@@ -610,11 +638,10 @@ export function RegisterInvoiceDialog({
             Cancelar
           </Button>
           <Button onClick={handleSave} disabled={saving}>
-            {saving ? 'Salvando…' : 'Salvar nota fiscal'}
+            {saving ? "Salvando…" : "Salvar nota fiscal"}
           </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
   );
 }
-

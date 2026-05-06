@@ -1,6 +1,6 @@
-import { createServerFn } from '@tanstack/react-start';
-import { z } from 'zod';
-import { supabaseAdmin } from '@/integrations/supabase/client.server';
+import { createServerFn } from "@tanstack/react-start";
+import { z } from "zod";
+import { supabaseAdmin } from "@/integrations/supabase/client.server";
 
 const ItemSchema = z.object({
   code: z.string().trim().min(1).max(120),
@@ -12,13 +12,13 @@ const InputSchema = z.object({
 });
 
 export type QuickBuyMatchStatus =
-  | 'found'
-  | 'not_found'
-  | 'multiple_matches'
-  | 'invalid_quantity'
-  | 'inactive_product'
-  | 'no_price'
-  | 'out_of_stock';
+  | "found"
+  | "not_found"
+  | "multiple_matches"
+  | "invalid_quantity"
+  | "inactive_product"
+  | "no_price"
+  | "out_of_stock";
 
 export type QuickBuyMultipleOption = {
   product_id: string;
@@ -48,7 +48,7 @@ export type QuickBuyResolvedLine = {
   retail_price: number | null;
   sale_price: number | null;
   applied_preview_price: number | null;
-  pricing_source_preview: 'retail' | 'b2b' | 'unavailable';
+  pricing_source_preview: "retail" | "b2b" | "unavailable";
   b2b_enabled: boolean;
   b2b_price: number | null;
   b2b_min_quantity: number | null;
@@ -58,7 +58,7 @@ export type QuickBuyResolvedLine = {
   has_stock: boolean;
   available_stock: number;
   warnings: string[];
-  matched_via: 'sku' | 'ean' | 'name' | 'none';
+  matched_via: "sku" | "ean" | "name" | "none";
   multiple_options: QuickBuyMultipleOption[] | null;
 };
 
@@ -72,9 +72,9 @@ export type QuickBuyResolveResult = {
 
 async function getCurrentUserId(): Promise<string | null> {
   try {
-    const { getRequestHeader } = await import('@tanstack/react-start/server');
-    const auth = getRequestHeader('Authorization') || getRequestHeader('authorization');
-    if (!auth || !auth.toLowerCase().startsWith('bearer ')) return null;
+    const { getRequestHeader } = await import("@tanstack/react-start/server");
+    const auth = getRequestHeader("Authorization") || getRequestHeader("authorization");
+    if (!auth || !auth.toLowerCase().startsWith("bearer ")) return null;
     const token = auth.slice(7).trim();
     const { data } = await supabaseAdmin.auth.getUser(token);
     return data.user?.id ?? null;
@@ -89,24 +89,24 @@ function num(v: unknown): number | null {
   return Number.isFinite(n) ? n : null;
 }
 
-export const resolveQuickBuyCodes = createServerFn({ method: 'POST' })
+export const resolveQuickBuyCodes = createServerFn({ method: "POST" })
   .inputValidator((input: unknown) => InputSchema.parse(input))
   .handler(async ({ data }): Promise<QuickBuyResolveResult> => {
     const userId = await getCurrentUserId();
 
-    const { data: rows, error } = await (supabaseAdmin as any).rpc('resolve_codes_bulk', {
+    const { data: rows, error } = await (supabaseAdmin as any).rpc("resolve_codes_bulk", {
       _user_id: userId,
       _items: data.items.map((it) => ({ code: it.code, qty: it.qty })),
     });
 
     if (error) {
-      console.error('[resolveQuickBuyCodes] RPC error', error);
-      throw new Error('Falha ao resolver códigos');
+      console.error("[resolveQuickBuyCodes] RPC error", error);
+      throw new Error("Falha ao resolver códigos");
     }
 
     let companyApproved = false;
     if (userId) {
-      const { data: cid } = await (supabaseAdmin as any).rpc('get_user_approved_company_id', {
+      const { data: cid } = await (supabaseAdmin as any).rpc("get_user_approved_company_id", {
         _user_id: userId,
       });
       companyApproved = !!cid;
@@ -114,8 +114,8 @@ export const resolveQuickBuyCodes = createServerFn({ method: 'POST' })
 
     const lines: QuickBuyResolvedLine[] = (rows ?? []).map((r: any) => ({
       line_index: Number(r.line_index ?? 0),
-      original_code: r.original_code ?? '',
-      normalized_code: r.normalized_code ?? '',
+      original_code: r.original_code ?? "",
+      normalized_code: r.normalized_code ?? "",
       requested_quantity: Number(r.requested_quantity ?? 0),
       match_status: r.match_status as QuickBuyMatchStatus,
       product_id: r.product_id ?? null,
@@ -130,7 +130,8 @@ export const resolveQuickBuyCodes = createServerFn({ method: 'POST' })
       sale_price: num(r.sale_price),
       applied_preview_price: num(r.applied_preview_price),
       pricing_source_preview:
-        (r.pricing_source_preview as QuickBuyResolvedLine['pricing_source_preview']) ?? 'unavailable',
+        (r.pricing_source_preview as QuickBuyResolvedLine["pricing_source_preview"]) ??
+        "unavailable",
       b2b_enabled: r.b2b_enabled === true,
       b2b_price: num(r.b2b_price),
       b2b_min_quantity: r.b2b_min_quantity != null ? Number(r.b2b_min_quantity) : null,
@@ -140,7 +141,7 @@ export const resolveQuickBuyCodes = createServerFn({ method: 'POST' })
       has_stock: r.has_stock === true,
       available_stock: Number(r.available_stock ?? 0),
       warnings: Array.isArray(r.warnings) ? r.warnings : [],
-      matched_via: (r.matched_via as QuickBuyResolvedLine['matched_via']) ?? 'none',
+      matched_via: (r.matched_via as QuickBuyResolvedLine["matched_via"]) ?? "none",
       multiple_options: Array.isArray(r.multiple_options)
         ? (r.multiple_options as QuickBuyMultipleOption[])
         : null,
@@ -149,7 +150,7 @@ export const resolveQuickBuyCodes = createServerFn({ method: 'POST' })
     let retailSubtotal = 0;
     let appliedSubtotal = 0;
     for (const ln of lines) {
-      if (ln.match_status === 'found' && ln.applied_preview_price != null) {
+      if (ln.match_status === "found" && ln.applied_preview_price != null) {
         const r = ln.sale_price ?? ln.retail_price ?? ln.applied_preview_price;
         retailSubtotal += r * ln.requested_quantity;
         appliedSubtotal += ln.applied_preview_price * ln.requested_quantity;

@@ -10,12 +10,12 @@
 // payload de webhooks, headers, e-mails internos, etc.
 // ============================================================
 
-import { createServerFn } from '@tanstack/react-start';
-import { z } from 'zod';
-import { getRequestHeader } from '@tanstack/react-start/server';
-import { createClient } from '@supabase/supabase-js';
-import { supabaseAdmin } from '@/integrations/supabase/client.server';
-import type { Database } from '@/integrations/supabase/types';
+import { createServerFn } from "@tanstack/react-start";
+import { z } from "zod";
+import { getRequestHeader } from "@tanstack/react-start/server";
+import { createClient } from "@supabase/supabase-js";
+import { supabaseAdmin } from "@/integrations/supabase/client.server";
+import type { Database } from "@/integrations/supabase/types";
 
 const Input = z.object({
   id: z.string().uuid(),
@@ -34,9 +34,9 @@ type Address = {
 } | null;
 
 async function getAuthenticatedUserId(): Promise<string | null> {
-  const authHeader = getRequestHeader('authorization');
-  if (!authHeader?.startsWith('Bearer ')) return null;
-  const token = authHeader.replace('Bearer ', '');
+  const authHeader = getRequestHeader("authorization");
+  if (!authHeader?.startsWith("Bearer ")) return null;
+  const token = authHeader.replace("Bearer ", "");
   if (!token) return null;
   const SUPABASE_URL = process.env.SUPABASE_URL;
   const SUPABASE_PUBLISHABLE_KEY = process.env.SUPABASE_PUBLISHABLE_KEY;
@@ -53,32 +53,30 @@ async function getAuthenticatedUserId(): Promise<string | null> {
   }
 }
 
-export const getOrderForCustomer = createServerFn({ method: 'POST' })
+export const getOrderForCustomer = createServerFn({ method: "POST" })
   .inputValidator((input: unknown) => Input.parse(input))
   .handler(async ({ data }) => {
     // Carrega o pedido completo via admin (vamos validar acesso manualmente)
     const { data: order, error } = await supabaseAdmin
-      .from('orders')
+      .from("orders")
       .select(
-        'id, order_number, user_id, status, payment_status, payment_method, subtotal, discount, shipping_cost, total, coupon_code, shipping_carrier, shipping_service, tracking_code, estimated_delivery, address_snapshot, created_at, paid_at, public_access_token, delivery_method, pickup_status, pickup_store_name, pickup_store_address, pickup_store_phone, pickup_instructions, local_delivery_district, local_delivery_eta, bundle_discount_total, bundle_discount_details, has_bundle_discount, order_items(id, product_name, product_image, qty, unit_price, total_price, bundle_id, bundle_name, bundle_applied, bundle_discount_amount)'
+        "id, order_number, user_id, status, payment_status, payment_method, subtotal, discount, shipping_cost, total, coupon_code, shipping_carrier, shipping_service, tracking_code, estimated_delivery, address_snapshot, created_at, paid_at, public_access_token, delivery_method, pickup_status, pickup_store_name, pickup_store_address, pickup_store_phone, pickup_instructions, local_delivery_district, local_delivery_eta, bundle_discount_total, bundle_discount_details, has_bundle_discount, order_items(id, product_name, product_image, qty, unit_price, total_price, bundle_id, bundle_name, bundle_applied, bundle_discount_amount)",
       )
-      .eq('id', data.id)
+      .eq("id", data.id)
       .single();
 
     if (error || !order) {
-      return { ok: false as const, error: 'Pedido não encontrado' };
+      return { ok: false as const, error: "Pedido não encontrado" };
     }
 
     // Validar acesso
     const userId = await getAuthenticatedUserId();
     const isOwner = userId && userId === order.user_id;
     const tokenMatches =
-      !!data.token &&
-      !!order.public_access_token &&
-      data.token === order.public_access_token;
+      !!data.token && !!order.public_access_token && data.token === order.public_access_token;
 
     if (!isOwner && !tokenMatches) {
-      return { ok: false as const, error: 'Pedido não encontrado' };
+      return { ok: false as const, error: "Pedido não encontrado" };
     }
 
     // Sanitizar e retornar APENAS o que o cliente pode ver
@@ -89,17 +87,15 @@ export const getOrderForCustomer = createServerFn({ method: 'POST' })
       bundle_name: string;
       discount_amount: number;
     };
-    const rawDetails = (orderAny.bundle_discount_details ?? null) as
-      | {
-          applied?: Array<{ bundle_id?: string; bundle_name?: string; discount_amount?: number }>;
-        }
-      | null;
+    const rawDetails = (orderAny.bundle_discount_details ?? null) as {
+      applied?: Array<{ bundle_id?: string; bundle_name?: string; discount_amount?: number }>;
+    } | null;
     const appliedBundles: AppliedBundleSummary[] =
       rawDetails?.applied
         ?.filter((b) => Number(b?.discount_amount ?? 0) > 0)
         .map((b) => ({
-          bundle_id: String(b.bundle_id ?? ''),
-          bundle_name: String(b.bundle_name ?? 'Combo'),
+          bundle_id: String(b.bundle_id ?? ""),
+          bundle_name: String(b.bundle_name ?? "Combo"),
           discount_amount: Number(b.discount_amount ?? 0),
         })) ?? [];
 
@@ -124,22 +120,24 @@ export const getOrderForCustomer = createServerFn({ method: 'POST' })
         estimatedDelivery: order.estimated_delivery,
         createdAt: order.created_at,
         paidAt: order.paid_at,
-        deliveryMethod: orderAny.delivery_method ?? 'delivery',
-        pickup: (orderAny.delivery_method === 'pickup')
-          ? {
-              status: orderAny.pickup_status ?? null,
-              storeName: orderAny.pickup_store_name ?? null,
-              storeAddress: orderAny.pickup_store_address ?? null,
-              storePhone: orderAny.pickup_store_phone ?? null,
-              instructions: orderAny.pickup_instructions ?? null,
-            }
-          : null,
-        localDelivery: (orderAny.delivery_method === 'local_delivery')
-          ? {
-              district: orderAny.local_delivery_district ?? null,
-              eta: orderAny.local_delivery_eta ?? null,
-            }
-          : null,
+        deliveryMethod: orderAny.delivery_method ?? "delivery",
+        pickup:
+          orderAny.delivery_method === "pickup"
+            ? {
+                status: orderAny.pickup_status ?? null,
+                storeName: orderAny.pickup_store_name ?? null,
+                storeAddress: orderAny.pickup_store_address ?? null,
+                storePhone: orderAny.pickup_store_phone ?? null,
+                instructions: orderAny.pickup_instructions ?? null,
+              }
+            : null,
+        localDelivery:
+          orderAny.delivery_method === "local_delivery"
+            ? {
+                district: orderAny.local_delivery_district ?? null,
+                eta: orderAny.local_delivery_eta ?? null,
+              }
+            : null,
         address: addr
           ? {
               recipient: addr.recipient ?? null,

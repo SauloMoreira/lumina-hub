@@ -19,16 +19,16 @@ export const CSV_MAX_ROWS = 100;
 export type CsvParsedRow = { code: string; qty: number; raw: string };
 
 export type CsvParseError =
-  | { kind: 'empty_file' }
-  | { kind: 'too_large'; bytes: number }
-  | { kind: 'no_rows' }
-  | { kind: 'too_many_rows'; total: number }
-  | { kind: 'missing_code_column' }
-  | { kind: 'missing_qty_column' };
+  | { kind: "empty_file" }
+  | { kind: "too_large"; bytes: number }
+  | { kind: "no_rows" }
+  | { kind: "too_many_rows"; total: number }
+  | { kind: "missing_code_column" }
+  | { kind: "missing_qty_column" };
 
 export type CsvLineIssue =
-  | { line: number; raw: string; reason: 'empty_code' }
-  | { line: number; raw: string; reason: 'invalid_qty'; value: string };
+  | { line: number; raw: string; reason: "empty_code" }
+  | { line: number; raw: string; reason: "invalid_qty"; value: string };
 
 export type CsvParseResult = {
   rows: CsvParsedRow[];
@@ -37,20 +37,12 @@ export type CsvParseResult = {
   totalLinesRead: number;
 };
 
-const CODE_HEADER_ALIASES = ['codigo', 'código', 'sku', 'ean', 'produto', 'cod', 'code'];
-const QTY_HEADER_ALIASES = [
-  'quantidade',
-  'qtd',
-  'qty',
-  'qte',
-  'quantity',
-  'qnt',
-  'unidades',
-];
+const CODE_HEADER_ALIASES = ["codigo", "código", "sku", "ean", "produto", "cod", "code"];
+const QTY_HEADER_ALIASES = ["quantidade", "qtd", "qty", "qte", "quantity", "qnt", "unidades"];
 
 /** Sanitiza valor de célula: remove caracteres perigosos no início (CSV injection). */
 export function sanitizeCell(input: string): string {
-  let v = (input ?? '').replace(/^\uFEFF/, ''); // BOM
+  let v = (input ?? "").replace(/^\uFEFF/, ""); // BOM
   // Remove aspas externas
   v = v.trim();
   if (v.length >= 2 && v.startsWith('"') && v.endsWith('"')) {
@@ -61,32 +53,32 @@ export function sanitizeCell(input: string): string {
     v = v.slice(1);
   }
   // Remove qualquer caractere de controle que sobrou
-  v = v.replace(/[\u0000-\u001F\u007F]/g, '').trim();
+  v = v.replace(/[\u0000-\u001F\u007F]/g, "").trim();
   return v;
 }
 
 function normalizeHeader(s: string): string {
   return sanitizeCell(s)
     .toLowerCase()
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
     .trim();
 }
 
 /** Detecta separador entre `,` e `;` pela 1ª linha não vazia. */
-function detectDelimiter(firstLine: string): ',' | ';' {
+function detectDelimiter(firstLine: string): "," | ";" {
   const semi = (firstLine.match(/;/g) ?? []).length;
   const comma = (firstLine.match(/,/g) ?? []).length;
-  return semi > comma ? ';' : ',';
+  return semi > comma ? ";" : ",";
 }
 
 /**
  * Parser CSV minimalista compatível com aspas duplas escapadas ("").
  * Suficiente para 2 colunas; não cobre casos exóticos (multilinha em célula etc).
  */
-function splitCsvLine(line: string, delim: ',' | ';'): string[] {
+function splitCsvLine(line: string, delim: "," | ";"): string[] {
   const out: string[] = [];
-  let cur = '';
+  let cur = "";
   let inQuotes = false;
   for (let i = 0; i < line.length; i++) {
     const c = line[i];
@@ -106,7 +98,7 @@ function splitCsvLine(line: string, delim: ',' | ';'): string[] {
         inQuotes = true;
       } else if (c === delim) {
         out.push(cur);
-        cur = '';
+        cur = "";
       } else {
         cur += c;
       }
@@ -119,21 +111,19 @@ function splitCsvLine(line: string, delim: ',' | ';'): string[] {
 export function parseQuickBuyCsv(
   text: string,
   fileSizeBytes: number,
-):
-  | { ok: true; result: CsvParseResult }
-  | { ok: false; error: CsvParseError } {
+): { ok: true; result: CsvParseResult } | { ok: false; error: CsvParseError } {
   if (fileSizeBytes > CSV_MAX_BYTES) {
-    return { ok: false, error: { kind: 'too_large', bytes: fileSizeBytes } };
+    return { ok: false, error: { kind: "too_large", bytes: fileSizeBytes } };
   }
 
-  const cleanText = (text ?? '').replace(/\r\n/g, '\n').replace(/\r/g, '\n');
+  const cleanText = (text ?? "").replace(/\r\n/g, "\n").replace(/\r/g, "\n");
   if (!cleanText.trim()) {
-    return { ok: false, error: { kind: 'empty_file' } };
+    return { ok: false, error: { kind: "empty_file" } };
   }
 
-  const allLines = cleanText.split('\n').filter((l) => l.trim().length > 0);
+  const allLines = cleanText.split("\n").filter((l) => l.trim().length > 0);
   if (allLines.length === 0) {
-    return { ok: false, error: { kind: 'empty_file' } };
+    return { ok: false, error: { kind: "empty_file" } };
   }
 
   const delim = detectDelimiter(allLines[0]);
@@ -152,12 +142,12 @@ export function parseQuickBuyCsv(
     resolvedCodeIdx = 0;
     resolvedQtyIdx = 1;
   } else {
-    if (codeIdx < 0) return { ok: false, error: { kind: 'missing_code_column' } };
-    if (qtyIdx < 0) return { ok: false, error: { kind: 'missing_qty_column' } };
+    if (codeIdx < 0) return { ok: false, error: { kind: "missing_code_column" } };
+    if (qtyIdx < 0) return { ok: false, error: { kind: "missing_qty_column" } };
   }
 
   if (dataLines.length === 0) {
-    return { ok: false, error: { kind: 'no_rows' } };
+    return { ok: false, error: { kind: "no_rows" } };
   }
 
   const issues: CsvLineIssue[] = [];
@@ -171,27 +161,27 @@ export function parseQuickBuyCsv(
     const humanLine = codeIdx >= 0 || qtyIdx >= 0 ? i + 2 : i + 1;
 
     const cols = splitCsvLine(raw, delim);
-    const codeRaw = sanitizeCell(cols[resolvedCodeIdx] ?? '');
+    const codeRaw = sanitizeCell(cols[resolvedCodeIdx] ?? "");
     // Para qty, NÃO removemos prefixos como `-` (preservamos sinal para detectar negativos).
-    const qtyCellRaw = (cols[resolvedQtyIdx] ?? '')
-      .replace(/^\uFEFF/, '')
-      .replace(/[\u0000-\u001F\u007F]/g, '')
+    const qtyCellRaw = (cols[resolvedQtyIdx] ?? "")
+      .replace(/^\uFEFF/, "")
+      .replace(/[\u0000-\u001F\u007F]/g, "")
       .trim()
-      .replace(/^"(.*)"$/s, '$1');
+      .replace(/^"(.*)"$/s, "$1");
 
     if (!codeRaw) {
       // Linha sem código mas com algo — registra apenas se havia conteúdo
       if (cols.some((c) => sanitizeCell(c).length > 0)) {
-        issues.push({ line: humanLine, raw, reason: 'empty_code' });
+        issues.push({ line: humanLine, raw, reason: "empty_code" });
       }
       continue;
     }
 
     // Quantidade: aceita "10", "10.0", "10,0" — converte vírgula em ponto
-    const qtyNorm = qtyCellRaw.replace(',', '.');
+    const qtyNorm = qtyCellRaw.replace(",", ".");
     const qtyNum = Number(qtyNorm);
     if (!Number.isFinite(qtyNum) || qtyNum <= 0 || !Number.isInteger(qtyNum)) {
-      issues.push({ line: humanLine, raw, reason: 'invalid_qty', value: qtyCellRaw });
+      issues.push({ line: humanLine, raw, reason: "invalid_qty", value: qtyCellRaw });
       continue;
     }
 
@@ -208,11 +198,11 @@ export function parseQuickBuyCsv(
   const rows = Array.from(map.values());
 
   if (rows.length === 0) {
-    return { ok: false, error: { kind: 'no_rows' } };
+    return { ok: false, error: { kind: "no_rows" } };
   }
 
   if (rows.length > CSV_MAX_ROWS) {
-    return { ok: false, error: { kind: 'too_many_rows', total: rows.length } };
+    return { ok: false, error: { kind: "too_many_rows", total: rows.length } };
   }
 
   return {

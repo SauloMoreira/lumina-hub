@@ -1,33 +1,33 @@
-import { useQuery } from '@tanstack/react-query';
-import { Link } from '@tanstack/react-router';
-import { Package, Info, AlertTriangle } from 'lucide-react';
-import { useCart } from '@/stores/cartStore';
-import { formatBRL } from '@/lib/domain';
+import { useQuery } from "@tanstack/react-query";
+import { Link } from "@tanstack/react-router";
+import { Package, Info, AlertTriangle } from "lucide-react";
+import { useCart } from "@/stores/cartStore";
+import { formatBRL } from "@/lib/domain";
 import {
   getCartBundlePreview,
   type CartBundlePreviewRow,
-} from '@/server/cartBundlePreview.functions';
+} from "@/server/cartBundlePreview.functions";
 
-const STATUS_LABEL: Record<CartBundlePreviewRow['status'], string> = {
-  eligible_preview: 'Combo elegível',
-  not_eligible: 'Sem desconto',
-  blocked_by_b2b: 'Não acumula com B2B',
-  blocked_by_coupon: 'Não acumula com cupom',
-  missing_items: 'Faltam itens',
-  expired: 'Fora da validade',
-  inactive: 'Inativo',
-  needs_review: 'Em revisão',
+const STATUS_LABEL: Record<CartBundlePreviewRow["status"], string> = {
+  eligible_preview: "Combo elegível",
+  not_eligible: "Sem desconto",
+  blocked_by_b2b: "Não acumula com B2B",
+  blocked_by_coupon: "Não acumula com cupom",
+  missing_items: "Faltam itens",
+  expired: "Fora da validade",
+  inactive: "Inativo",
+  needs_review: "Em revisão",
 };
 
-const STATUS_TONE: Record<CartBundlePreviewRow['status'], string> = {
-  eligible_preview: 'bg-emerald-50 text-emerald-700 border-emerald-200',
-  not_eligible: 'bg-muted text-muted-foreground border-border',
-  blocked_by_b2b: 'bg-amber-50 text-amber-700 border-amber-200',
-  blocked_by_coupon: 'bg-amber-50 text-amber-700 border-amber-200',
-  missing_items: 'bg-muted text-muted-foreground border-border',
-  expired: 'bg-muted text-muted-foreground border-border',
-  inactive: 'bg-muted text-muted-foreground border-border',
-  needs_review: 'bg-muted text-muted-foreground border-border',
+const STATUS_TONE: Record<CartBundlePreviewRow["status"], string> = {
+  eligible_preview: "bg-emerald-50 text-emerald-700 border-emerald-200",
+  not_eligible: "bg-muted text-muted-foreground border-border",
+  blocked_by_b2b: "bg-amber-50 text-amber-700 border-amber-200",
+  blocked_by_coupon: "bg-amber-50 text-amber-700 border-amber-200",
+  missing_items: "bg-muted text-muted-foreground border-border",
+  expired: "bg-muted text-muted-foreground border-border",
+  inactive: "bg-muted text-muted-foreground border-border",
+  needs_review: "bg-muted text-muted-foreground border-border",
 };
 
 export function CartBundlePreview({ hasCoupon = false }: { hasCoupon?: boolean }) {
@@ -36,9 +36,9 @@ export function CartBundlePreview({ hasCoupon = false }: { hasCoupon?: boolean }
 
   const { data } = useQuery({
     queryKey: [
-      'cart-bundle-preview',
+      "cart-bundle-preview",
       hasCoupon,
-      items.map((i) => `${i.product_id}:${i.qty}`).join('|'),
+      items.map((i) => `${i.product_id}:${i.qty}`).join("|"),
     ],
     queryFn: () => getCartBundlePreview({ data: { items, hasCoupon } }),
     enabled: items.length > 0,
@@ -51,15 +51,15 @@ export function CartBundlePreview({ hasCoupon = false }: { hasCoupon?: boolean }
   // Mostrar apenas combos relevantes ao cliente: elegíveis ou que faltam só itens.
   const visible = rows.filter(
     (r) =>
-      r.status === 'eligible_preview' ||
-      r.status === 'missing_items' ||
-      r.status === 'blocked_by_b2b' ||
-      r.status === 'blocked_by_coupon'
+      r.status === "eligible_preview" ||
+      r.status === "missing_items" ||
+      r.status === "blocked_by_b2b" ||
+      r.status === "blocked_by_coupon",
   );
   if (visible.length === 0) return null;
 
   const totalEstimated = visible
-    .filter((r) => r.status === 'eligible_preview')
+    .filter((r) => r.status === "eligible_preview")
     .reduce((acc, r) => acc + r.estimated_discount, 0);
 
   return (
@@ -103,9 +103,7 @@ export function CartBundlePreview({ hasCoupon = false }: { hasCoupon?: boolean }
                       {r.bundle_name}
                     </Link>
                   ) : (
-                    <span className="font-medium text-foreground truncate">
-                      {r.bundle_name}
-                    </span>
+                    <span className="font-medium text-foreground truncate">{r.bundle_name}</span>
                   )}
                   <span
                     className={`text-[10px] px-1.5 py-0.5 rounded border ${STATUS_TONE[r.status]}`}
@@ -113,34 +111,31 @@ export function CartBundlePreview({ hasCoupon = false }: { hasCoupon?: boolean }
                     {STATUS_LABEL[r.status]}
                   </span>
                 </div>
-                {r.status === 'eligible_preview' && r.estimated_discount > 0 && (
+                {r.status === "eligible_preview" && r.estimated_discount > 0 && (
                   <div className="mt-1 text-emerald-700">
-                    Desconto estimado: {formatBRL(r.estimated_discount)} sobre{' '}
+                    Desconto estimado: {formatBRL(r.estimated_discount)} sobre{" "}
                     {formatBRL(r.eligible_subtotal)}
                   </div>
                 )}
-                {r.status === 'missing_items' && r.missing_items.length > 0 && (
+                {r.status === "missing_items" && r.missing_items.length > 0 && (
                   <div className="mt-1 text-muted-foreground">
-                    Faltam:{' '}
+                    Faltam:{" "}
                     {r.missing_items
                       .map((m) =>
-                        m.reason === 'low_qty'
+                        m.reason === "low_qty"
                           ? `${m.product_name} (${m.cart_qty}/${m.required_qty})`
-                          : m.product_name
+                          : m.product_name,
                       )
-                      .join(', ')}
+                      .join(", ")}
                   </div>
                 )}
-                {r.reason && r.status !== 'eligible_preview' && (
+                {r.reason && r.status !== "eligible_preview" && (
                   <div className="mt-1 text-muted-foreground">{r.reason}</div>
                 )}
                 {r.warnings.length > 0 && (
                   <ul className="mt-1.5 space-y-1">
                     {r.warnings.map((w, i) => (
-                      <li
-                        key={i}
-                        className="flex items-start gap-1.5 text-amber-700"
-                      >
+                      <li key={i} className="flex items-start gap-1.5 text-amber-700">
                         <AlertTriangle className="w-3 h-3 mt-0.5 shrink-0" aria-hidden />
                         <span>{w}</span>
                       </li>
@@ -156,8 +151,8 @@ export function CartBundlePreview({ hasCoupon = false }: { hasCoupon?: boolean }
       <div className="mt-3 flex items-start gap-1.5 text-[11px] text-muted-foreground">
         <Info className="w-3 h-3 mt-0.5 shrink-0" aria-hidden />
         <span>
-          O total atual do carrinho ainda não considera este desconto. A aplicação
-          definitiva acontecerá em uma próxima etapa.
+          O total atual do carrinho ainda não considera este desconto. A aplicação definitiva
+          acontecerá em uma próxima etapa.
         </span>
       </div>
     </section>

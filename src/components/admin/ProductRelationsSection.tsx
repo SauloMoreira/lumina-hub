@@ -1,10 +1,10 @@
-import { useState } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Search, Trash2, Loader2, Plus, GripVertical, AlertCircle } from 'lucide-react';
-import { toast } from 'sonner';
-import { Input } from '@/components/ui/input';
-import { Button } from '@/components/ui/button';
-import { Switch } from '@/components/ui/switch';
+import { useState } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { Search, Trash2, Loader2, Plus, GripVertical, AlertCircle } from "lucide-react";
+import { toast } from "sonner";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { Switch } from "@/components/ui/switch";
 import {
   adminListRelations,
   adminCreateRelation,
@@ -14,23 +14,23 @@ import {
   RELATION_TYPES,
   RELATION_TYPE_LABEL,
   type RelationType,
-} from '@/server/productRelations.functions';
+} from "@/server/productRelations.functions";
 
 type Props = { productId: string };
 
 export function ProductRelationsSection({ productId }: Props) {
   const qc = useQueryClient();
-  const [type, setType] = useState<RelationType>('frequently_bought_together');
-  const [searchQuery, setSearchQuery] = useState('');
+  const [type, setType] = useState<RelationType>("frequently_bought_together");
+  const [searchQuery, setSearchQuery] = useState("");
   const [showResults, setShowResults] = useState(false);
 
   const relationsQuery = useQuery({
-    queryKey: ['admin-product-relations', productId],
+    queryKey: ["admin-product-relations", productId],
     queryFn: () => adminListRelations({ data: { productId } }),
   });
 
   const searchResults = useQuery({
-    queryKey: ['admin-rel-search', productId, searchQuery],
+    queryKey: ["admin-rel-search", productId, searchQuery],
     queryFn: () =>
       adminSearchProductsForRelation({
         data: { query: searchQuery, excludeProductId: productId, limit: 10 },
@@ -42,22 +42,27 @@ export function ProductRelationsSection({ productId }: Props) {
   const createMut = useMutation({
     mutationFn: (relatedProductId: string) =>
       adminCreateRelation({
-        data: { productId, relatedProductId, relationType: type, sortOrder: relationsQuery.data?.length ?? 0 },
+        data: {
+          productId,
+          relatedProductId,
+          relationType: type,
+          sortOrder: relationsQuery.data?.length ?? 0,
+        },
       }),
     onSuccess: () => {
-      toast.success('Relação adicionada');
-      setSearchQuery('');
+      toast.success("Relação adicionada");
+      setSearchQuery("");
       setShowResults(false);
-      qc.invalidateQueries({ queryKey: ['admin-product-relations', productId] });
+      qc.invalidateQueries({ queryKey: ["admin-product-relations", productId] });
     },
     onError: (err: any) => {
-      const msg = String(err?.message ?? '');
-      if (msg.includes('relation_already_exists')) {
-        toast.error('Esse produto já está relacionado com esse tipo.');
-      } else if (msg.includes('cannot_relate_to_self')) {
-        toast.error('Você não pode relacionar o produto com ele mesmo.');
+      const msg = String(err?.message ?? "");
+      if (msg.includes("relation_already_exists")) {
+        toast.error("Esse produto já está relacionado com esse tipo.");
+      } else if (msg.includes("cannot_relate_to_self")) {
+        toast.error("Você não pode relacionar o produto com ele mesmo.");
       } else {
-        toast.error('Não foi possível adicionar a relação.');
+        toast.error("Não foi possível adicionar a relação.");
       }
     },
   });
@@ -65,19 +70,23 @@ export function ProductRelationsSection({ productId }: Props) {
   const deleteMut = useMutation({
     mutationFn: (id: string) => adminDeleteRelation({ data: { id } }),
     onSuccess: () => {
-      toast.success('Relação removida');
-      qc.invalidateQueries({ queryKey: ['admin-product-relations', productId] });
+      toast.success("Relação removida");
+      qc.invalidateQueries({ queryKey: ["admin-product-relations", productId] });
     },
-    onError: () => toast.error('Erro ao remover'),
+    onError: () => toast.error("Erro ao remover"),
   });
 
   const updateMut = useMutation({
-    mutationFn: (vars: { id: string; isActive?: boolean; relationType?: RelationType; sortOrder?: number }) =>
-      adminUpdateRelation({ data: vars }),
+    mutationFn: (vars: {
+      id: string;
+      isActive?: boolean;
+      relationType?: RelationType;
+      sortOrder?: number;
+    }) => adminUpdateRelation({ data: vars }),
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ['admin-product-relations', productId] });
+      qc.invalidateQueries({ queryKey: ["admin-product-relations", productId] });
     },
-    onError: () => toast.error('Erro ao atualizar'),
+    onError: () => toast.error("Erro ao atualizar"),
   });
 
   const rows = relationsQuery.data ?? [];
@@ -136,7 +145,9 @@ export function ProductRelationsSection({ productId }: Props) {
                   </div>
                 )}
                 {searchResults.data?.length === 0 && !searchResults.isLoading && (
-                  <div className="p-3 text-xs text-muted-foreground">Nenhum produto encontrado.</div>
+                  <div className="p-3 text-xs text-muted-foreground">
+                    Nenhum produto encontrado.
+                  </div>
                 )}
                 {searchResults.data?.map((p) => (
                   <button
@@ -147,13 +158,15 @@ export function ProductRelationsSection({ productId }: Props) {
                     className="w-full text-left flex items-center gap-2 p-2 hover:bg-accent/40 border-b border-border last:border-b-0"
                   >
                     <div className="w-9 h-9 rounded bg-surface flex-shrink-0 overflow-hidden">
-                      {p.image && <img src={p.image} alt="" className="w-full h-full object-cover" />}
+                      {p.image && (
+                        <img src={p.image} alt="" className="w-full h-full object-cover" />
+                      )}
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="text-sm font-medium truncate">{p.name}</div>
                       <div className="text-[11px] text-muted-foreground truncate">
-                        {p.sku ? `SKU ${p.sku}` : ''} {p.brand ? `· ${p.brand}` : ''}
-                        {!p.active && ' · inativo'}
+                        {p.sku ? `SKU ${p.sku}` : ""} {p.brand ? `· ${p.brand}` : ""}
+                        {!p.active && " · inativo"}
                       </div>
                     </div>
                     <Plus className="w-4 h-4 text-muted-foreground" />
@@ -164,8 +177,9 @@ export function ProductRelationsSection({ productId }: Props) {
           </div>
         </div>
         <p className="text-[11px] text-muted-foreground">
-          Use <strong>Compre junto</strong> para o bloco principal na página do produto, <strong>Acessório</strong>{' '}
-          para itens complementares e <strong>Recomendação para empresas</strong> para sugestões B2B.
+          Use <strong>Compre junto</strong> para o bloco principal na página do produto,{" "}
+          <strong>Acessório</strong> para itens complementares e{" "}
+          <strong>Recomendação para empresas</strong> para sugestões B2B.
         </p>
       </div>
 
@@ -185,8 +199,10 @@ export function ProductRelationsSection({ productId }: Props) {
       {grouped.map((group) => (
         <div key={group.type} className="space-y-1.5">
           <div className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-            {group.label}{' '}
-            <span className="text-muted-foreground/60 font-normal normal-case">({group.items.length})</span>
+            {group.label}{" "}
+            <span className="text-muted-foreground/60 font-normal normal-case">
+              ({group.items.length})
+            </span>
           </div>
           <div className="border border-border rounded-md divide-y divide-border">
             {group.items.map((row) => {
@@ -195,11 +211,13 @@ export function ProductRelationsSection({ productId }: Props) {
                 <div key={row.id} className="flex items-center gap-2 p-2">
                   <GripVertical className="w-3 h-3 text-muted-foreground/50" />
                   <div className="w-9 h-9 rounded bg-surface flex-shrink-0 overflow-hidden">
-                    {rp?.image && <img src={rp.image} alt="" className="w-full h-full object-cover" />}
+                    {rp?.image && (
+                      <img src={rp.image} alt="" className="w-full h-full object-cover" />
+                    )}
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="text-sm font-medium truncate">
-                      {rp?.name ?? '(produto removido)'}
+                      {rp?.name ?? "(produto removido)"}
                       {rp && !rp.active && (
                         <span className="ml-2 inline-flex items-center gap-1 text-[10px] text-warning">
                           <AlertCircle className="w-3 h-3" /> inativo
@@ -207,7 +225,7 @@ export function ProductRelationsSection({ productId }: Props) {
                       )}
                     </div>
                     <div className="text-[11px] text-muted-foreground truncate">
-                      {rp?.sku ? `SKU ${rp.sku}` : ''} {rp?.brand ? `· ${rp.brand}` : ''}
+                      {rp?.sku ? `SKU ${rp.sku}` : ""} {rp?.brand ? `· ${rp.brand}` : ""}
                     </div>
                   </div>
                   <input
@@ -215,7 +233,10 @@ export function ProductRelationsSection({ productId }: Props) {
                     value={row.sort_order}
                     min={0}
                     onChange={(e) =>
-                      updateMut.mutate({ id: row.id, sortOrder: Math.max(0, Number(e.target.value) || 0) })
+                      updateMut.mutate({
+                        id: row.id,
+                        sortOrder: Math.max(0, Number(e.target.value) || 0),
+                      })
                     }
                     className="w-14 h-8 text-xs rounded border border-border bg-background px-2"
                     title="Ordem de exibição"
@@ -228,7 +249,7 @@ export function ProductRelationsSection({ productId }: Props) {
                     variant="ghost"
                     size="sm"
                     onClick={() => {
-                      if (confirm('Remover esta relação?')) deleteMut.mutate(row.id);
+                      if (confirm("Remover esta relação?")) deleteMut.mutate(row.id);
                     }}
                     className="text-muted-foreground hover:text-destructive h-8 w-8 p-0"
                   >

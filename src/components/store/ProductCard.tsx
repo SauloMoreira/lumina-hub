@@ -1,9 +1,9 @@
-import { Link } from '@tanstack/react-router';
-import { ShoppingCart } from 'lucide-react';
-import type { Product } from '@/lib/domain';
-import { formatBRL } from '@/lib/domain';
-import { useCart } from '@/stores/cartStore';
-import { ProductImagePlaceholder } from '@/components/store/ProductImagePlaceholder';
+import { Link } from "@tanstack/react-router";
+import { ShoppingCart } from "lucide-react";
+import type { Product } from "@/lib/domain";
+import { formatBRL } from "@/lib/domain";
+import { useCart } from "@/stores/cartStore";
+import { ProductImagePlaceholder } from "@/components/store/ProductImagePlaceholder";
 
 export function ProductCard({
   product,
@@ -57,8 +57,8 @@ export function ProductCard({
               alt={product.name}
               width={400}
               height={400}
-              loading={isAboveFold ? 'eager' : 'lazy'}
-              fetchPriority={isAboveFold ? 'high' : 'auto'}
+              loading={isAboveFold ? "eager" : "lazy"}
+              fetchPriority={isAboveFold ? "high" : "auto"}
               decoding="async"
               className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
             />
@@ -78,7 +78,9 @@ export function ProductCard({
         </div>
         <div className="p-2.5 sm:p-4">
           {product.brand && (
-            <div className="text-[10px] uppercase tracking-widest text-muted-foreground font-medium mb-1 truncate">{product.brand}</div>
+            <div className="text-[10px] uppercase tracking-widest text-muted-foreground font-medium mb-1 truncate">
+              {product.brand}
+            </div>
           )}
           <h3 className="text-xs sm:text-sm font-medium text-foreground line-clamp-2 leading-snug mb-2 sm:mb-3 min-h-[2.25rem] sm:min-h-[2.5rem] break-words">
             {product.name}
@@ -98,9 +100,13 @@ export function ProductCard({
               ) : (
                 <>
                   {hasDiscount && (
-                    <div className="text-[10px] sm:text-xs text-muted-foreground line-through leading-none mb-0.5 truncate">{formatBRL(product.price)}</div>
+                    <div className="text-[10px] sm:text-xs text-muted-foreground line-through leading-none mb-0.5 truncate">
+                      {formatBRL(product.price)}
+                    </div>
                   )}
-                  <div className="font-display font-extrabold text-primary text-base sm:text-lg leading-none truncate">{formatBRL(finalPrice)}</div>
+                  <div className="font-display font-extrabold text-primary text-base sm:text-lg leading-none truncate">
+                    {formatBRL(finalPrice)}
+                  </div>
                 </>
               )}
             </div>
@@ -119,13 +125,17 @@ export function ProductCard({
             </div>
           )}
           {product.stock_qty <= 5 && product.stock_qty > 0 && (
-            <div className="text-[10px] text-warning font-medium mt-2">⚠ Últimas {product.stock_qty} unidades</div>
+            <div className="text-[10px] text-warning font-medium mt-2">
+              ⚠ Últimas {product.stock_qty} unidades
+            </div>
           )}
           {product.stock_qty === 0 && (
             <div className="text-[10px] text-destructive font-medium mt-2">Esgotado</div>
           )}
           {product.free_shipping_eligible && product.stock_qty > 0 && (
-            <div className="text-[10px] text-success font-medium mt-2 leading-tight">🚚 Frete grátis acima de R$ 199,00</div>
+            <div className="text-[10px] text-success font-medium mt-2 leading-tight">
+              🚚 Frete grátis acima de R$ 199,00
+            </div>
           )}
         </div>
       </Link>

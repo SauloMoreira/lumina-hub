@@ -10,7 +10,10 @@ function DefaultErrorComponent({ error, reset }: { error: Error; reset: () => vo
         <h1 className="text-2xl font-bold tracking-tight text-foreground">Algo deu errado</h1>
         <p className="mt-2 text-sm text-muted-foreground">{error.message}</p>
         <button
-          onClick={() => { router.invalidate(); reset(); }}
+          onClick={() => {
+            router.invalidate();
+            reset();
+          }}
           className="mt-6 inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:brightness-110"
         >
           Tentar novamente
@@ -24,8 +27,8 @@ export const getRouter = () => {
   const queryClient = new QueryClient({
     defaultOptions: {
       queries: {
-        staleTime: 1000 * 60 * 5,    // 5 min de cache padrão
-        gcTime: 1000 * 60 * 10,      // 10 min antes de limpar
+        staleTime: 1000 * 60 * 5, // 5 min de cache padrão
+        gcTime: 1000 * 60 * 10, // 10 min antes de limpar
         retry: 1,
         refetchOnWindowFocus: false,
       },

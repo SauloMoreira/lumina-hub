@@ -1,6 +1,6 @@
-import { createServerFn } from '@tanstack/react-start';
-import { requireAdmin } from '@/integrations/supabase/admin-middleware';
-import { computeProductQuality, type QualityResult } from '@/lib/productQuality';
+import { createServerFn } from "@tanstack/react-start";
+import { requireAdmin } from "@/integrations/supabase/admin-middleware";
+import { computeProductQuality, type QualityResult } from "@/lib/productQuality";
 
 const PRODUCT_QUALITY_SELECT = `
   id, name, slug, sku, brand, active, featured, tags,
@@ -26,63 +26,108 @@ export type ProductQualityRow = {
  * Lista produtos com seu score de qualidade.
  * Apenas admin. Sem efeitos colaterais.
  */
-export const listProductQuality = createServerFn({ method: 'GET' })
+export const listProductQuality = createServerFn({ method: "GET" })
   .middleware([requireAdmin])
-  .handler(async (): Promise<{ rows: ProductQualityRow[]; counts: { total: number; ruim: number; atencao: number; bom: number; excelente: number; activeBelow70: number; featuredBelow70: number; missingImage: number; missingCost: number; missingSeo: number; missingFiscal: number; missingTech: number; } }> => {
-    const { supabaseAdmin } = await import('@/integrations/supabase/client.server');
-    const { data, error } = await supabaseAdmin
-      .from('products')
-      .select(PRODUCT_QUALITY_SELECT)
-      .order('active', { ascending: false })
-      .order('updated_at', { ascending: false })
-      .limit(1000);
+  .handler(
+    async (): Promise<{
+      rows: ProductQualityRow[];
+      counts: {
+        total: number;
+        ruim: number;
+        atencao: number;
+        bom: number;
+        excelente: number;
+        activeBelow70: number;
+        featuredBelow70: number;
+        missingImage: number;
+        missingCost: number;
+        missingSeo: number;
+        missingFiscal: number;
+        missingTech: number;
+      };
+    }> => {
+      const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+      const { data, error } = await supabaseAdmin
+        .from("products")
+        .select(PRODUCT_QUALITY_SELECT)
+        .order("active", { ascending: false })
+        .order("updated_at", { ascending: false })
+        .limit(1000);
 
-    if (error) {
-      console.error('listProductQuality error', error);
-      return { rows: [], counts: { total: 0, ruim: 0, atencao: 0, bom: 0, excelente: 0, activeBelow70: 0, featuredBelow70: 0, missingImage: 0, missingCost: 0, missingSeo: 0, missingFiscal: 0, missingTech: 0 } };
-    }
+      if (error) {
+        console.error("listProductQuality error", error);
+        return {
+          rows: [],
+          counts: {
+            total: 0,
+            ruim: 0,
+            atencao: 0,
+            bom: 0,
+            excelente: 0,
+            activeBelow70: 0,
+            featuredBelow70: 0,
+            missingImage: 0,
+            missingCost: 0,
+            missingSeo: 0,
+            missingFiscal: 0,
+            missingTech: 0,
+          },
+        };
+      }
 
-    const rows: ProductQualityRow[] = (data ?? []).map((p: any) => ({
-      id: p.id,
-      name: p.name,
-      slug: p.slug,
-      sku: p.sku,
-      brand: p.brand,
-      active: !!p.active,
-      featured: !!p.featured,
-      quality: computeProductQuality(p),
-    }));
+      const rows: ProductQualityRow[] = (data ?? []).map((p: any) => ({
+        id: p.id,
+        name: p.name,
+        slug: p.slug,
+        sku: p.sku,
+        brand: p.brand,
+        active: !!p.active,
+        featured: !!p.featured,
+        quality: computeProductQuality(p),
+      }));
 
-    const counts = {
-      total: rows.length,
-      ruim: rows.filter((r) => r.quality.classification === 'ruim').length,
-      atencao: rows.filter((r) => r.quality.classification === 'atencao').length,
-      bom: rows.filter((r) => r.quality.classification === 'bom').length,
-      excelente: rows.filter((r) => r.quality.classification === 'excelente').length,
-      activeBelow70: rows.filter((r) => r.active && r.quality.score < 70).length,
-      featuredBelow70: rows.filter((r) => r.featured && r.quality.score < 70).length,
-      missingImage: rows.filter((r) => r.quality.issues.some((i) => i.code === 'no_image')).length,
-      missingCost: rows.filter((r) => r.quality.issues.some((i) => i.code === 'no_cost')).length,
-      missingSeo: rows.filter((r) => r.quality.issues.some((i) => i.code === 'no_seo_title' || i.code === 'no_seo_description')).length,
-      missingFiscal: rows.filter((r) => r.quality.issues.some((i) => i.code === 'no_ncm' || i.code === 'no_weight' || i.code === 'no_dimensions')).length,
-      missingTech: rows.filter((r) => r.active && r.quality.issues.some((i) => i.code === 'no_tech_attrs')).length,
-    };
+      const counts = {
+        total: rows.length,
+        ruim: rows.filter((r) => r.quality.classification === "ruim").length,
+        atencao: rows.filter((r) => r.quality.classification === "atencao").length,
+        bom: rows.filter((r) => r.quality.classification === "bom").length,
+        excelente: rows.filter((r) => r.quality.classification === "excelente").length,
+        activeBelow70: rows.filter((r) => r.active && r.quality.score < 70).length,
+        featuredBelow70: rows.filter((r) => r.featured && r.quality.score < 70).length,
+        missingImage: rows.filter((r) => r.quality.issues.some((i) => i.code === "no_image"))
+          .length,
+        missingCost: rows.filter((r) => r.quality.issues.some((i) => i.code === "no_cost")).length,
+        missingSeo: rows.filter((r) =>
+          r.quality.issues.some(
+            (i) => i.code === "no_seo_title" || i.code === "no_seo_description",
+          ),
+        ).length,
+        missingFiscal: rows.filter((r) =>
+          r.quality.issues.some(
+            (i) => i.code === "no_ncm" || i.code === "no_weight" || i.code === "no_dimensions",
+          ),
+        ).length,
+        missingTech: rows.filter(
+          (r) => r.active && r.quality.issues.some((i) => i.code === "no_tech_attrs"),
+        ).length,
+      };
 
-    return { rows, counts };
-  });
+      return { rows, counts };
+    },
+  );
 
 /**
  * Contadores leves para o Painel do Dia.
  * Reaproveita listProductQuality (a tabela de produtos costuma ter < 1000 linhas).
  */
-export const getProductQualityQuickCounts = createServerFn({ method: 'GET' })
+export const getProductQualityQuickCounts = createServerFn({ method: "GET" })
   .middleware([requireAdmin])
   .handler(async () => {
-    const { supabaseAdmin } = await import('@/integrations/supabase/client.server');
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data, error } = await supabaseAdmin
-      .from('products')
+      .from("products")
       .select(PRODUCT_QUALITY_SELECT)
-      .eq('active', true)
+      .eq("active", true)
       .limit(1000);
 
     if (error) {
@@ -96,7 +141,7 @@ export const getProductQualityQuickCounts = createServerFn({ method: 'GET' })
       const q = computeProductQuality(p);
       if (q.score < 70) activeBelow70++;
       if (p.featured && q.score < 70) featuredBelow70++;
-      if (q.classification === 'ruim') ruim++;
+      if (q.classification === "ruim") ruim++;
     }
     return { activeBelow70, featuredBelow70, ruim };
   });

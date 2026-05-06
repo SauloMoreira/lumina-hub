@@ -52,7 +52,8 @@ async function loadCatalogContext(): Promise<string> {
   const lines = products.map((p: any) => {
     const price = p.sale_price ?? p.price;
     const cat = p.categories?.name ? ` [${p.categories.name}]` : "";
-    const promo = p.sale_price && p.sale_price < p.price ? ` (promo, de R$ ${Number(p.price).toFixed(2)})` : "";
+    const promo =
+      p.sale_price && p.sale_price < p.price ? ` (promo, de R$ ${Number(p.price).toFixed(2)})` : "";
     return `- ${p.name}${p.brand ? ` (${p.brand})` : ""}${cat} — R$ ${Number(price).toFixed(2)}${promo} — /produto/${p.slug}`;
   });
   return `\n\nCATÁLOGO DA LOJA (única fonte permitida para comparação de preços):\n${lines.join("\n")}`;
@@ -79,7 +80,8 @@ function detectLeadIntent(text: string): boolean {
 export const chatWithAI = createServerFn({ method: "POST" })
   .inputValidator((input: ChatInput) => {
     if (!input || !Array.isArray(input.messages)) throw new Error("messages é obrigatório");
-    if (!input.sessionId || typeof input.sessionId !== "string") throw new Error("sessionId é obrigatório");
+    if (!input.sessionId || typeof input.sessionId !== "string")
+      throw new Error("sessionId é obrigatório");
     if (input.messages.length > 30) input.messages = input.messages.slice(-30);
     for (const m of input.messages) {
       if (!m.content || m.content.length > 4000) throw new Error("Mensagem inválida");
@@ -90,8 +92,8 @@ export const chatWithAI = createServerFn({ method: "POST" })
   .handler(async ({ data }) => {
     const ip = getClientIdentifier();
     // Rate limit: por sessão E por IP
-    await enforceRateLimit(`session:${data.sessionId}`, 'chat');
-    await enforceRateLimit(`ip:${ip}`, 'chat', { maxAttempts: 60, windowSeconds: 5 * 60 });
+    await enforceRateLimit(`session:${data.sessionId}`, "chat");
+    await enforceRateLimit(`ip:${ip}`, "chat", { maxAttempts: 60, windowSeconds: 5 * 60 });
 
     const apiKey = process.env.LOVABLE_API_KEY;
     if (!apiKey) {
@@ -120,10 +122,7 @@ export const chatWithAI = createServerFn({ method: "POST" })
         },
         body: JSON.stringify({
           model: "google/gemini-2.5-flash",
-          messages: [
-            { role: "system", content: SYSTEM_PROMPT + catalog },
-            ...data.messages,
-          ],
+          messages: [{ role: "system", content: SYSTEM_PROMPT + catalog }, ...data.messages],
         }),
       });
 

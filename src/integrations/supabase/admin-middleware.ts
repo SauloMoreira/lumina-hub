@@ -1,5 +1,5 @@
-import { createMiddleware } from '@tanstack/react-start';
-import { requireSupabaseAuth } from './auth-middleware';
+import { createMiddleware } from "@tanstack/react-start";
+import { requireSupabaseAuth } from "./auth-middleware";
 
 /**
  * Middleware que estende requireSupabaseAuth garantindo que o usuário
@@ -7,18 +7,18 @@ import { requireSupabaseAuth } from './auth-middleware';
  *
  * Também expõe `adminEmail` no contexto, útil para auditoria.
  */
-export const requireAdmin = createMiddleware({ type: 'function' })
+export const requireAdmin = createMiddleware({ type: "function" })
   .middleware([requireSupabaseAuth])
   .server(async ({ next, context }) => {
-    const { supabaseAdmin } = await import('./client.server');
+    const { supabaseAdmin } = await import("./client.server");
     const userId = (context as { userId: string }).userId;
     const { data, error } = await supabaseAdmin
-      .from('profiles')
-      .select('role, email')
-      .eq('id', userId)
+      .from("profiles")
+      .select("role, email")
+      .eq("id", userId)
       .single();
-    if (error || !data || data.role !== 'admin') {
-      throw new Response('Forbidden: admin only', { status: 403 });
+    if (error || !data || data.role !== "admin") {
+      throw new Response("Forbidden: admin only", { status: 403 });
     }
     return next({
       context: {
@@ -35,10 +35,10 @@ export const requireAdmin = createMiddleware({ type: 'function' })
  * Use em endpoints sensíveis: editar produtos, cupons, banners, gerenciar
  * pedidos, alterar configurações, conceder admin a outros usuários etc.
  */
-export const requireAdminMfa = createMiddleware({ type: 'function' })
+export const requireAdminMfa = createMiddleware({ type: "function" })
   .middleware([requireAdmin])
   .server(async ({ next, context }) => {
-    const { supabaseAdmin } = await import('./client.server');
+    const { supabaseAdmin } = await import("./client.server");
     const ctx = context as {
       adminUserId: string;
       adminEmail: string | null;
@@ -52,17 +52,17 @@ export const requireAdminMfa = createMiddleware({ type: 'function' })
       const { data } = await supabaseAdmin.auth.admin.getUserById(ctx.adminUserId);
       type FactorLite = { status?: string };
       const factors = (data?.user?.factors ?? []) as FactorLite[];
-      hasVerifiedFactor = factors.some((f) => f?.status === 'verified');
+      hasVerifiedFactor = factors.some((f) => f?.status === "verified");
     } catch {
       hasVerifiedFactor = false;
     }
 
     if (!hasVerifiedFactor) {
-      throw new Response('Forbidden: admin must enable MFA', { status: 403 });
+      throw new Response("Forbidden: admin must enable MFA", { status: 403 });
     }
     // Se o admin já tem MFA mas a sessão ainda é aal1, exige re-autenticação MFA.
-    if (aal && aal !== 'aal2') {
-      throw new Response('Forbidden: MFA challenge required', { status: 403 });
+    if (aal && aal !== "aal2") {
+      throw new Response("Forbidden: MFA challenge required", { status: 403 });
     }
 
     return next({ context: ctx });
@@ -77,10 +77,10 @@ export const requireAdminMfa = createMiddleware({ type: 'function' })
  * configurações) durante a fase de homologação. Quando todos os admins
  * tiverem MFA configurado, troque para `requireAdminMfa`.
  */
-export const requireAdminMfaSoft = createMiddleware({ type: 'function' })
+export const requireAdminMfaSoft = createMiddleware({ type: "function" })
   .middleware([requireAdmin])
   .server(async ({ next, context }) => {
-    const { supabaseAdmin } = await import('./client.server');
+    const { supabaseAdmin } = await import("./client.server");
     const ctx = context as {
       adminUserId: string;
       adminEmail: string | null;
@@ -93,20 +93,20 @@ export const requireAdminMfaSoft = createMiddleware({ type: 'function' })
       const { data } = await supabaseAdmin.auth.admin.getUserById(ctx.adminUserId);
       type FactorLite = { status?: string };
       const factors = (data?.user?.factors ?? []) as FactorLite[];
-      hasVerifiedFactor = factors.some((f) => f?.status === 'verified');
+      hasVerifiedFactor = factors.some((f) => f?.status === "verified");
     } catch {
       hasVerifiedFactor = false;
     }
 
-    if (!hasVerifiedFactor || (aal && aal !== 'aal2')) {
+    if (!hasVerifiedFactor || (aal && aal !== "aal2")) {
       try {
-        await supabaseAdmin.rpc('log_security_event', {
-          _type: 'admin_action_without_mfa',
-          _severity: 'warn',
+        await supabaseAdmin.rpc("log_security_event", {
+          _type: "admin_action_without_mfa",
+          _severity: "warn",
           _identifier: ctx.adminEmail ?? ctx.adminUserId,
           _message: hasVerifiedFactor
-            ? 'Admin executou ação sensível sem desafio MFA na sessão'
-            : 'Admin executou ação sensível sem MFA configurado',
+            ? "Admin executou ação sensível sem desafio MFA na sessão"
+            : "Admin executou ação sensível sem MFA configurado",
           _metadata: { adminUserId: ctx.adminUserId, aal: aal ?? null },
         });
       } catch {

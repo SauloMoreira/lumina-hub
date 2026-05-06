@@ -1,6 +1,15 @@
-import { useState } from 'react';
-import { Loader2, Search, Sparkles, ImageIcon, AlertCircle, CheckCircle2, Wand2, Upload } from 'lucide-react';
-import { toast } from 'sonner';
+import { useState } from "react";
+import {
+  Loader2,
+  Search,
+  Sparkles,
+  ImageIcon,
+  AlertCircle,
+  CheckCircle2,
+  Wand2,
+  Upload,
+} from "lucide-react";
+import { toast } from "sonner";
 import {
   Dialog,
   DialogContent,
@@ -8,11 +17,15 @@ import {
   DialogTitle,
   DialogDescription,
   DialogFooter,
-} from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { lookupBarcode, generateProductImage, type BarcodeLookupResult } from '@/server/barcodeLookup.functions';
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  lookupBarcode,
+  generateProductImage,
+  type BarcodeLookupResult,
+} from "@/server/barcodeLookup.functions";
 
 interface Cat {
   id: string;
@@ -31,7 +44,7 @@ export interface BarcodeApplyChoice {
     category_id?: string | null; // já resolvido para id (ou null)
   };
   images: string[]; // URLs externas selecionadas
-  mode: 'fill_empty' | 'replace';
+  mode: "fill_empty" | "replace";
 }
 
 interface Props {
@@ -49,13 +62,17 @@ interface Props {
     seo_description: string;
     seo_keywords: string;
   };
-  onApply: (choice: BarcodeApplyChoice, suggested: BarcodeLookupResult['suggested']) => void;
+  onApply: (choice: BarcodeApplyChoice, suggested: BarcodeLookupResult["suggested"]) => void;
 }
 
 function matchCategoryId(hint: string | null, categories: Cat[]): string | null {
   if (!hint) return null;
   const norm = (s: string) =>
-    s.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim();
+    s
+      .toLowerCase()
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .trim();
   const h = norm(hint);
   // exato
   const exact = categories.find((c) => norm(c.name) === h);
@@ -65,21 +82,27 @@ function matchCategoryId(hint: string | null, categories: Cat[]): string | null 
   return partial?.id ?? null;
 }
 
-export function BarcodeLookupDialog({ open, onOpenChange, categories, currentForm, onApply }: Props) {
-  const [barcode, setBarcode] = useState('');
+export function BarcodeLookupDialog({
+  open,
+  onOpenChange,
+  categories,
+  currentForm,
+  onApply,
+}: Props) {
+  const [barcode, setBarcode] = useState("");
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<BarcodeLookupResult | null>(null);
   const [selectedImages, setSelectedImages] = useState<Set<string>>(new Set());
   const [resolvedCategoryId, setResolvedCategoryId] = useState<string | null>(null);
-  const [manualUrl, setManualUrl] = useState('');
-  const [imageChoice, setImageChoice] = useState<'pending' | 'ai' | 'manual'>('pending');
+  const [manualUrl, setManualUrl] = useState("");
+  const [imageChoice, setImageChoice] = useState<"pending" | "ai" | "manual">("pending");
   const [generatingImage, setGeneratingImage] = useState(false);
 
   function addManualUrl() {
     const url = manualUrl.trim();
     if (!url) return;
     if (!/^https?:\/\//i.test(url)) {
-      toast.error('URL inválida. Deve começar com http:// ou https://');
+      toast.error("URL inválida. Deve começar com http:// ou https://");
       return;
     }
     setSelectedImages((prev) => new Set(prev).add(url));
@@ -89,15 +112,15 @@ export function BarcodeLookupDialog({ open, onOpenChange, categories, currentFor
       if (prev.suggested.images.includes(url)) return prev;
       return { ...prev, suggested: { ...prev.suggested, images: [...prev.suggested.images, url] } };
     });
-    setManualUrl('');
+    setManualUrl("");
   }
 
   const reset = () => {
-    setBarcode('');
+    setBarcode("");
     setResult(null);
     setSelectedImages(new Set());
     setResolvedCategoryId(null);
-    setImageChoice('pending');
+    setImageChoice("pending");
     setGeneratingImage(false);
   };
 
@@ -107,15 +130,15 @@ export function BarcodeLookupDialog({ open, onOpenChange, categories, currentFor
   };
 
   async function search() {
-    const code = barcode.replace(/\D+/g, '');
+    const code = barcode.replace(/\D+/g, "");
     if (code.length < 8 || code.length > 14) {
-      toast.error('Código deve ter entre 8 e 14 dígitos.');
+      toast.error("Código deve ter entre 8 e 14 dígitos.");
       return;
     }
     setLoading(true);
     setResult(null);
     setSelectedImages(new Set());
-    setImageChoice('pending');
+    setImageChoice("pending");
     try {
       const r = await lookupBarcode({
         data: { barcode: code, categoriesAvailable: categories.map((c) => c.name) },
@@ -125,12 +148,12 @@ export function BarcodeLookupDialog({ open, onOpenChange, categories, currentFor
         setSelectedImages(new Set(r.suggested.images.slice(0, 6)));
         setResolvedCategoryId(matchCategoryId(r.suggested.categoryHint, categories));
         // Se já veio imagem da Cosmos, considera resolvido
-        if (r.suggested.images.length > 0) setImageChoice('manual');
+        if (r.suggested.images.length > 0) setImageChoice("manual");
       } else if (r.error) {
         toast.error(r.error);
       }
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : 'Erro ao buscar produto');
+      toast.error(e instanceof Error ? e.message : "Erro ao buscar produto");
     } finally {
       setLoading(false);
     }
@@ -140,7 +163,7 @@ export function BarcodeLookupDialog({ open, onOpenChange, categories, currentFor
     if (!result?.ok) return;
     const s = result.suggested;
     if (!s.name) {
-      toast.error('Sem nome do produto para gerar imagem.');
+      toast.error("Sem nome do produto para gerar imagem.");
       return;
     }
     setGeneratingImage(true);
@@ -151,12 +174,15 @@ export function BarcodeLookupDialog({ open, onOpenChange, categories, currentFor
       setSelectedImages((prev) => new Set(prev).add(dataUrl));
       setResult((prev) => {
         if (!prev || !prev.ok) return prev;
-        return { ...prev, suggested: { ...prev.suggested, images: [...prev.suggested.images, dataUrl] } };
+        return {
+          ...prev,
+          suggested: { ...prev.suggested, images: [...prev.suggested.images, dataUrl] },
+        };
       });
-      setImageChoice('ai');
-      toast.success('Imagem gerada com IA. Revise antes de aplicar.');
+      setImageChoice("ai");
+      toast.success("Imagem gerada com IA. Revise antes de aplicar.");
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : 'Erro ao gerar imagem');
+      toast.error(e instanceof Error ? e.message : "Erro ao gerar imagem");
     } finally {
       setGeneratingImage(false);
     }
@@ -171,10 +197,10 @@ export function BarcodeLookupDialog({ open, onOpenChange, categories, currentFor
     });
   }
 
-  function apply(mode: 'fill_empty' | 'replace') {
+  function apply(mode: "fill_empty" | "replace") {
     if (!result?.ok) return;
     const s = result.suggested;
-    const fillEmpty = mode === 'fill_empty';
+    const fillEmpty = mode === "fill_empty";
     const choice: BarcodeApplyChoice = {
       mode,
       images: Array.from(selectedImages),
@@ -187,7 +213,9 @@ export function BarcodeLookupDialog({ open, onOpenChange, categories, currentFor
         seo_description: !!s.seo_description && (!fillEmpty || !currentForm.seo_description.trim()),
         seo_keywords: !!s.seo_keywords && (!fillEmpty || !currentForm.seo_keywords.trim()),
         category_id:
-          resolvedCategoryId && (!fillEmpty || !currentForm.category_id.trim()) ? resolvedCategoryId : undefined,
+          resolvedCategoryId && (!fillEmpty || !currentForm.category_id.trim())
+            ? resolvedCategoryId
+            : undefined,
       },
     };
     onApply(choice, s);
@@ -195,13 +223,17 @@ export function BarcodeLookupDialog({ open, onOpenChange, categories, currentFor
   }
 
   const confidenceLabel =
-    result?.confidence === 'high' ? 'Alta confiança' : result?.confidence === 'medium' ? 'Média confiança' : 'Baixa confiança';
+    result?.confidence === "high"
+      ? "Alta confiança"
+      : result?.confidence === "medium"
+        ? "Média confiança"
+        : "Baixa confiança";
   const confidenceColor =
-    result?.confidence === 'high'
-      ? 'bg-emerald-100 text-emerald-700 border-emerald-200'
-      : result?.confidence === 'medium'
-        ? 'bg-amber-100 text-amber-700 border-amber-200'
-        : 'bg-muted text-muted-foreground border-border';
+    result?.confidence === "high"
+      ? "bg-emerald-100 text-emerald-700 border-emerald-200"
+      : result?.confidence === "medium"
+        ? "bg-amber-100 text-amber-700 border-amber-200"
+        : "bg-muted text-muted-foreground border-border";
 
   return (
     <Dialog open={open} onOpenChange={(v) => (v ? onOpenChange(true) : close())}>
@@ -227,7 +259,7 @@ export function BarcodeLookupDialog({ open, onOpenChange, categories, currentFor
                 value={barcode}
                 onChange={(e) => setBarcode(e.target.value)}
                 onKeyDown={(e) => {
-                  if (e.key === 'Enter') {
+                  if (e.key === "Enter") {
                     e.preventDefault();
                     search();
                   }
@@ -235,7 +267,11 @@ export function BarcodeLookupDialog({ open, onOpenChange, categories, currentFor
                 disabled={loading}
               />
               <Button type="button" onClick={search} disabled={loading || !barcode.trim()}>
-                {loading ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Search className="w-4 h-4 mr-2" />}
+                {loading ? (
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                ) : (
+                  <Search className="w-4 h-4 mr-2" />
+                )}
                 Buscar produto
               </Button>
             </div>
@@ -253,9 +289,13 @@ export function BarcodeLookupDialog({ open, onOpenChange, categories, currentFor
                 <AlertCircle className="w-4 h-4 mt-0.5 text-amber-600 dark:text-amber-400" />
                 <div>
                   <p className="font-medium text-amber-900 dark:text-amber-200">
-                    {result.notFoundMessage ?? 'Não foi possível buscar o produto.'}
+                    {result.notFoundMessage ?? "Não foi possível buscar o produto."}
                   </p>
-                  {result.error && <p className="text-xs text-amber-700 dark:text-amber-300 mt-1">{result.error}</p>}
+                  {result.error && (
+                    <p className="text-xs text-amber-700 dark:text-amber-300 mt-1">
+                      {result.error}
+                    </p>
+                  )}
                   <p className="text-xs text-amber-700 dark:text-amber-300 mt-2">
                     Você pode continuar preenchendo manualmente.
                   </p>
@@ -267,11 +307,18 @@ export function BarcodeLookupDialog({ open, onOpenChange, categories, currentFor
           {result?.ok && (
             <div className="space-y-4">
               <div className="flex items-center gap-2 flex-wrap">
-                <span className={`text-[11px] px-2 py-0.5 rounded border font-medium ${confidenceColor}`}>
+                <span
+                  className={`text-[11px] px-2 py-0.5 rounded border font-medium ${confidenceColor}`}
+                >
                   {confidenceLabel}
                 </span>
                 <span className="text-[11px] px-2 py-0.5 rounded border border-border bg-muted text-muted-foreground font-medium">
-                  Fonte: {result.source === 'cosmos+ai' ? 'Cosmos GTIN + IA' : result.source === 'cosmos' ? 'Cosmos GTIN' : 'IA'}
+                  Fonte:{" "}
+                  {result.source === "cosmos+ai"
+                    ? "Cosmos GTIN + IA"
+                    : result.source === "cosmos"
+                      ? "Cosmos GTIN"
+                      : "IA"}
                 </span>
                 {result.suggested.referencePrice ? (
                   <span className="text-[11px] px-2 py-0.5 rounded border border-border bg-muted text-muted-foreground">
@@ -286,9 +333,13 @@ export function BarcodeLookupDialog({ open, onOpenChange, categories, currentFor
                 <Field
                   label="Categoria sugerida"
                   value={result.suggested.categoryHint}
-                  hint={resolvedCategoryId ? '✓ Categoria existente encontrada' : 'Sem categoria correspondente — selecione manualmente depois'}
+                  hint={
+                    resolvedCategoryId
+                      ? "✓ Categoria existente encontrada"
+                      : "Sem categoria correspondente — selecione manualmente depois"
+                  }
                 />
-                <Field label="Tags" value={result.suggested.tags.join(', ') || null} />
+                <Field label="Tags" value={result.suggested.tags.join(", ") || null} />
               </div>
               <Field label="Descrição" value={result.suggested.description} multiline />
               <div className="grid sm:grid-cols-2 gap-3 text-sm">
@@ -300,7 +351,8 @@ export function BarcodeLookupDialog({ open, onOpenChange, categories, currentFor
               <div>
                 <Label className="text-xs flex items-center gap-1.5 mb-2">
                   <ImageIcon className="w-3.5 h-3.5" />
-                  Imagens encontradas ({selectedImages.size}/{result.suggested.images.length} selecionadas)
+                  Imagens encontradas ({selectedImages.size}/{result.suggested.images.length}{" "}
+                  selecionadas)
                 </Label>
                 {result.imagesNote && result.suggested.images.length === 0 && (
                   <div className="mb-2 rounded-md border border-amber-200 bg-amber-50 dark:bg-amber-950/30 dark:border-amber-900 px-3 py-2 text-[11px] text-amber-800 dark:text-amber-200">
@@ -317,7 +369,9 @@ export function BarcodeLookupDialog({ open, onOpenChange, categories, currentFor
                           key={url}
                           onClick={() => toggleImage(url)}
                           className={`relative aspect-square rounded-lg overflow-hidden border-2 transition ${
-                            selected ? 'border-primary ring-2 ring-primary/30' : 'border-border hover:border-muted-foreground/50'
+                            selected
+                              ? "border-primary ring-2 ring-primary/30"
+                              : "border-border hover:border-muted-foreground/50"
                           }`}
                         >
                           <img
@@ -326,7 +380,7 @@ export function BarcodeLookupDialog({ open, onOpenChange, categories, currentFor
                             className="w-full h-full object-cover bg-surface"
                             referrerPolicy="no-referrer"
                             onError={(e) => {
-                              (e.currentTarget as HTMLImageElement).style.opacity = '0.3';
+                              (e.currentTarget as HTMLImageElement).style.opacity = "0.3";
                             }}
                           />
                           {selected && (
@@ -338,7 +392,7 @@ export function BarcodeLookupDialog({ open, onOpenChange, categories, currentFor
                       );
                     })}
                   </div>
-                ) : imageChoice === 'pending' ? (
+                ) : imageChoice === "pending" ? (
                   <div className="rounded-lg border border-dashed border-border bg-muted/20 p-4 space-y-3">
                     <p className="text-xs text-muted-foreground">
                       Não encontramos imagens deste produto na base GTIN. Como deseja proceder?
@@ -352,7 +406,11 @@ export function BarcodeLookupDialog({ open, onOpenChange, categories, currentFor
                         className="h-auto py-3 flex-col gap-1.5 items-start text-left"
                       >
                         <span className="flex items-center gap-2 font-medium">
-                          {generatingImage ? <Loader2 className="w-4 h-4 animate-spin" /> : <Wand2 className="w-4 h-4" />}
+                          {generatingImage ? (
+                            <Loader2 className="w-4 h-4 animate-spin" />
+                          ) : (
+                            <Wand2 className="w-4 h-4" />
+                          )}
                           Gerar com IA
                         </span>
                         <span className="text-[11px] font-normal text-muted-foreground whitespace-normal">
@@ -362,7 +420,7 @@ export function BarcodeLookupDialog({ open, onOpenChange, categories, currentFor
                       <Button
                         type="button"
                         variant="outline"
-                        onClick={() => setImageChoice('manual')}
+                        onClick={() => setImageChoice("manual")}
                         className="h-auto py-3 flex-col gap-1.5 items-start text-left"
                       >
                         <span className="flex items-center gap-2 font-medium">
@@ -370,7 +428,8 @@ export function BarcodeLookupDialog({ open, onOpenChange, categories, currentFor
                           Vou subir manualmente
                         </span>
                         <span className="text-[11px] font-normal text-muted-foreground whitespace-normal">
-                          Pula esta etapa. Faça upload depois pelo gerenciador de imagens do produto.
+                          Pula esta etapa. Faça upload depois pelo gerenciador de imagens do
+                          produto.
                         </span>
                       </Button>
                     </div>
@@ -378,9 +437,9 @@ export function BarcodeLookupDialog({ open, onOpenChange, categories, currentFor
                 ) : (
                   <div className="rounded-lg border border-dashed border-border bg-muted/20 p-3 text-xs text-muted-foreground space-y-2">
                     <p>
-                      {imageChoice === 'ai'
-                        ? 'Você optou por gerar com IA, mas nenhuma imagem foi gerada ainda.'
-                        : 'Você optou por subir manualmente. Faça upload depois pelo gerenciador de imagens do produto.'}
+                      {imageChoice === "ai"
+                        ? "Você optou por gerar com IA, mas nenhuma imagem foi gerada ainda."
+                        : "Você optou por subir manualmente. Faça upload depois pelo gerenciador de imagens do produto."}
                     </p>
                     <div className="flex gap-2">
                       <Button
@@ -390,10 +449,19 @@ export function BarcodeLookupDialog({ open, onOpenChange, categories, currentFor
                         onClick={generateAiImage}
                         disabled={generatingImage || !result.suggested.name}
                       >
-                        {generatingImage ? <Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" /> : <Wand2 className="w-3.5 h-3.5 mr-1.5" />}
+                        {generatingImage ? (
+                          <Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" />
+                        ) : (
+                          <Wand2 className="w-3.5 h-3.5 mr-1.5" />
+                        )}
                         Gerar com IA
                       </Button>
-                      <Button type="button" variant="ghost" size="sm" onClick={() => setImageChoice('pending')}>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => setImageChoice("pending")}
+                      >
                         Voltar
                       </Button>
                     </div>
@@ -407,25 +475,33 @@ export function BarcodeLookupDialog({ open, onOpenChange, categories, currentFor
                     value={manualUrl}
                     onChange={(e) => setManualUrl(e.target.value)}
                     onKeyDown={(e) => {
-                      if (e.key === 'Enter') {
+                      if (e.key === "Enter") {
                         e.preventDefault();
                         addManualUrl();
                       }
                     }}
                     className="text-xs h-8"
                   />
-                  <Button type="button" variant="outline" size="sm" onClick={addManualUrl} disabled={!manualUrl.trim()}>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={addManualUrl}
+                    disabled={!manualUrl.trim()}
+                  >
                     Adicionar
                   </Button>
                 </div>
 
                 <p className="text-[11px] text-muted-foreground mt-2">
-                  As imagens selecionadas serão baixadas e adicionadas como pendentes. Você poderá otimizá-las antes de salvar.
+                  As imagens selecionadas serão baixadas e adicionadas como pendentes. Você poderá
+                  otimizá-las antes de salvar.
                 </p>
               </div>
 
               <div className="rounded-lg border border-border bg-muted/30 p-3 text-xs text-muted-foreground">
-                <strong className="text-foreground">Importante:</strong> preço de venda, custo interno e estoque
+                <strong className="text-foreground">Importante:</strong> preço de venda, custo
+                interno e estoque
                 <em> nunca</em> são preenchidos automaticamente. Você decide.
               </div>
             </div>
@@ -438,10 +514,10 @@ export function BarcodeLookupDialog({ open, onOpenChange, categories, currentFor
           </Button>
           {result?.ok && (
             <>
-              <Button type="button" variant="outline" onClick={() => apply('fill_empty')}>
+              <Button type="button" variant="outline" onClick={() => apply("fill_empty")}>
                 Preencher apenas vazios
               </Button>
-              <Button type="button" onClick={() => apply('replace')}>
+              <Button type="button" onClick={() => apply("replace")}>
                 Substituir dados
               </Button>
             </>
@@ -468,10 +544,10 @@ function Field({
       <Label className="text-[11px] uppercase tracking-wider text-muted-foreground">{label}</Label>
       <div
         className={`rounded-md border border-border bg-background px-3 py-2 text-sm ${
-          multiline ? 'whitespace-pre-wrap min-h-[60px]' : ''
-        } ${!value ? 'text-muted-foreground italic' : ''}`}
+          multiline ? "whitespace-pre-wrap min-h-[60px]" : ""
+        } ${!value ? "text-muted-foreground italic" : ""}`}
       >
-        {value || '(não encontrado)'}
+        {value || "(não encontrado)"}
       </div>
       {hint && <p className="text-[10px] text-muted-foreground">{hint}</p>}
     </div>

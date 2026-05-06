@@ -1,13 +1,13 @@
-import { createFileRoute, Link, useSearch } from '@tanstack/react-router';
-import { useState } from 'react';
-import { XCircle, ArrowRight, Loader2 } from 'lucide-react';
-import { z } from 'zod';
-import { toast } from 'sonner';
-import { StoreLayout } from '@/components/layout/StoreLayout';
-import { Button } from '@/components/ui/button';
-import { createMercadoPagoPreference } from '@/server/payment.functions';
-import { buildSeo } from '@/lib/seo';
-import { redirectToExternalCheckout } from '@/lib/externalCheckout';
+import { createFileRoute, Link, useSearch } from "@tanstack/react-router";
+import { useState } from "react";
+import { XCircle, ArrowRight, Loader2 } from "lucide-react";
+import { z } from "zod";
+import { toast } from "sonner";
+import { StoreLayout } from "@/components/layout/StoreLayout";
+import { Button } from "@/components/ui/button";
+import { createMercadoPagoPreference } from "@/server/payment.functions";
+import { buildSeo } from "@/lib/seo";
+import { redirectToExternalCheckout } from "@/lib/externalCheckout";
 
 const searchSchema = z.object({
   order_id: z.string().uuid().optional(),
@@ -15,14 +15,15 @@ const searchSchema = z.object({
   status: z.string().optional(),
 });
 
-export const Route = createFileRoute('/checkout/failure')({
-  head: () => buildSeo({ title: 'Pagamento não aprovado', url: '/checkout/failure', noindex: true }),
+export const Route = createFileRoute("/checkout/failure")({
+  head: () =>
+    buildSeo({ title: "Pagamento não aprovado", url: "/checkout/failure", noindex: true }),
   validateSearch: (s) => searchSchema.parse(s),
   component: FailurePage,
 });
 
 function FailurePage() {
-  const { order_id } = useSearch({ from: '/checkout/failure' });
+  const { order_id } = useSearch({ from: "/checkout/failure" });
   const [retrying, setRetrying] = useState(false);
 
   async function retry() {
@@ -35,11 +36,15 @@ function FailurePage() {
         redirectToExternalCheckout(r.checkoutUrl);
         return; // não reabilita botão; navegação em curso
       }
-      toast.error('Não foi possível iniciar o pagamento pelo Mercado Pago. Tente novamente em alguns instantes.');
+      toast.error(
+        "Não foi possível iniciar o pagamento pelo Mercado Pago. Tente novamente em alguns instantes.",
+      );
       setRetrying(false);
     } catch (e) {
-      if (import.meta.env.DEV) console.error('[MP retry]', e);
-      toast.error('Não foi possível iniciar o pagamento pelo Mercado Pago. Tente novamente em alguns instantes.');
+      if (import.meta.env.DEV) console.error("[MP retry]", e);
+      toast.error(
+        "Não foi possível iniciar o pagamento pelo Mercado Pago. Tente novamente em alguns instantes.",
+      );
       setRetrying(false);
     }
   }
@@ -52,17 +57,29 @@ function FailurePage() {
         </div>
         <h1 className="font-display font-bold text-3xl mb-2">Pagamento não aprovado</h1>
         <p className="text-muted-foreground mb-6">
-          Não conseguimos confirmar seu pagamento. Você pode tentar novamente — seu pedido segue reservado.
+          Não conseguimos confirmar seu pagamento. Você pode tentar novamente — seu pedido segue
+          reservado.
         </p>
         <div className="flex gap-3 justify-center flex-wrap">
           {order_id && (
             <Button onClick={retry} disabled={retrying} className="h-11">
-              {retrying ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Gerando link...</> : <>Tentar pagar novamente <ArrowRight className="w-4 h-4 ml-1.5" /></>}
+              {retrying ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Gerando link...
+                </>
+              ) : (
+                <>
+                  Tentar pagar novamente <ArrowRight className="w-4 h-4 ml-1.5" />
+                </>
+              )}
             </Button>
           )}
           {order_id && (
             <Button asChild variant="outline" className="h-11">
-              <Link to="/pedido/$id/confirmacao" params={{ id: order_id }}>Ver pedido</Link>
+              <Link to="/pedido/$id/confirmacao" params={{ id: order_id }}>
+                Ver pedido
+              </Link>
             </Button>
           )}
           <Button asChild variant="ghost" className="h-11">

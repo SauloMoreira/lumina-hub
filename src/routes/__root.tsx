@@ -1,4 +1,10 @@
-import { Outlet, Link, createRootRouteWithContext, HeadContent, Scripts } from "@tanstack/react-router";
+import {
+  Outlet,
+  Link,
+  createRootRouteWithContext,
+  HeadContent,
+  Scripts,
+} from "@tanstack/react-router";
 import { useEffect } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { AuthProvider } from "@/components/auth/AuthProvider";
@@ -6,7 +12,9 @@ import { installAuthFetch } from "@/integrations/supabase/auth-fetch";
 import { SITE_URL, SITE_NAME, SITE_DESCRIPTION } from "@/lib/seo";
 import appCss from "../styles.css?url";
 
-interface MyRouterContext { queryClient: QueryClient }
+interface MyRouterContext {
+  queryClient: QueryClient;
+}
 
 const ORG_JSONLD = JSON.stringify({
   "@context": "https://schema.org",
@@ -58,9 +66,14 @@ function NotFoundComponent() {
     <div className="flex min-h-screen items-center justify-center bg-background px-4">
       <div className="max-w-md text-center">
         <h1 className="font-display text-7xl font-extrabold text-primary">404</h1>
-        <h2 className="mt-4 font-display text-xl font-semibold text-foreground">Página não encontrada</h2>
+        <h2 className="mt-4 font-display text-xl font-semibold text-foreground">
+          Página não encontrada
+        </h2>
         <p className="mt-2 text-sm text-muted-foreground">A página que você procura não existe.</p>
-        <Link to="/" className="mt-6 inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:brightness-110">
+        <Link
+          to="/"
+          className="mt-6 inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:brightness-110"
+        >
           Voltar ao início
         </Link>
       </div>
@@ -84,7 +97,7 @@ const CSP_POLICY = [
   "form-action 'self' https://www.mercadopago.com https://www.mercadopago.com.br",
   "frame-ancestors 'none'",
   "report-uri /api/public/csp-report",
-].join('; ');
+].join("; ");
 
 export const Route = createRootRouteWithContext<MyRouterContext>()({
   head: () => ({
@@ -93,18 +106,35 @@ export const Route = createRootRouteWithContext<MyRouterContext>()({
       { name: "viewport", content: "width=device-width, initial-scale=1" },
       { name: "theme-color", content: "#3F5AE0" },
       { name: "referrer", content: "strict-origin-when-cross-origin" },
-      { httpEquiv: "Content-Language", content: "pt-BR" } as unknown as { name: string; content: string },
+      { httpEquiv: "Content-Language", content: "pt-BR" } as unknown as {
+        name: string;
+        content: string;
+      },
       { name: "google", content: "notranslate" },
       { name: "language", content: "Portuguese" },
       { title: "Led Maricá — Material Elétrico & Iluminação LED em Maricá/RJ" },
-      { property: "og:title", content: "Led Maricá — Material Elétrico & Iluminação LED em Maricá/RJ" },
-      { name: "twitter:title", content: "Led Maricá — Material Elétrico & Iluminação LED em Maricá/RJ" },
+      {
+        property: "og:title",
+        content: "Led Maricá — Material Elétrico & Iluminação LED em Maricá/RJ",
+      },
+      {
+        name: "twitter:title",
+        content: "Led Maricá — Material Elétrico & Iluminação LED em Maricá/RJ",
+      },
       { property: "og:locale", content: "pt_BR" },
       { name: "description", content: SITE_DESCRIPTION },
       { property: "og:description", content: SITE_DESCRIPTION },
       { name: "twitter:description", content: SITE_DESCRIPTION },
-      { property: "og:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/67194be9-0eba-4ee8-a498-3845ba247db4/id-preview-ecc3ae96--3f0ae235-0d23-458c-97a5-352d790386aa.lovable.app-1777381033099.png" },
-      { name: "twitter:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/67194be9-0eba-4ee8-a498-3845ba247db4/id-preview-ecc3ae96--3f0ae235-0d23-458c-97a5-352d790386aa.lovable.app-1777381033099.png" },
+      {
+        property: "og:image",
+        content:
+          "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/67194be9-0eba-4ee8-a498-3845ba247db4/id-preview-ecc3ae96--3f0ae235-0d23-458c-97a5-352d790386aa.lovable.app-1777381033099.png",
+      },
+      {
+        name: "twitter:image",
+        content:
+          "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/67194be9-0eba-4ee8-a498-3845ba247db4/id-preview-ecc3ae96--3f0ae235-0d23-458c-97a5-352d790386aa.lovable.app-1777381033099.png",
+      },
       { name: "twitter:card", content: "summary_large_image" },
       { property: "og:type", content: "website" },
     ],
@@ -134,14 +164,19 @@ function RootShell({ children }: { children: React.ReactNode }) {
         <meta name="google" content="notranslate" />
         <HeadContent />
       </head>
-      <body>{children}<Scripts /></body>
+      <body>
+        {children}
+        <Scripts />
+      </body>
     </html>
   );
 }
 
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
-  useEffect(() => { installAuthFetch(); }, []);
+  useEffect(() => {
+    installAuthFetch();
+  }, []);
   useEffect(() => {
     // Captura UTMs/origem na URL atual e guarda no sessionStorage
     void import("@/lib/leadTracking").then((m) => m.captureTrackingFromCurrentUrl());

@@ -1,5 +1,5 @@
-import { Link } from '@tanstack/react-router';
-import { MessageSquareText, RefreshCw, ShoppingBag } from 'lucide-react';
+import { Link } from "@tanstack/react-router";
+import { MessageSquareText, RefreshCw, ShoppingBag } from "lucide-react";
 
 type Props = {
   onReset: () => void;

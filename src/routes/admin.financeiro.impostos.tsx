@@ -1,7 +1,7 @@
-import { createFileRoute, Link } from '@tanstack/react-router';
-import { useMemo, useState } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { useServerFn } from '@tanstack/react-start';
+import { createFileRoute, Link } from "@tanstack/react-router";
+import { useMemo, useState } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
 import {
   Receipt,
   AlertTriangle,
@@ -13,14 +13,14 @@ import {
   RefreshCw,
   ExternalLink,
   Info,
-} from 'lucide-react';
-import { toast } from 'sonner';
-import { AdminLayout } from '@/components/admin/AdminLayout';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-import { Badge } from '@/components/ui/badge';
+} from "lucide-react";
+import { toast } from "sonner";
+import { AdminLayout } from "@/components/admin/AdminLayout";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Badge } from "@/components/ui/badge";
 import {
   Dialog,
   DialogContent,
@@ -28,14 +28,14 @@ import {
   DialogTitle,
   DialogDescription,
   DialogFooter,
-} from '@/components/ui/dialog';
+} from "@/components/ui/dialog";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
+} from "@/components/ui/select";
 import {
   Table,
   TableBody,
@@ -43,7 +43,7 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from '@/components/ui/table';
+} from "@/components/ui/table";
 import {
   getFiscalQuickCounts,
   listFiscalProducts,
@@ -55,28 +55,28 @@ import {
   FISCAL_STATUS_LABEL,
   type FiscalProductRow,
   type FiscalListFilter,
-} from '@/server/fiscal.functions';
+} from "@/server/fiscal.functions";
 
-export const Route = createFileRoute('/admin/financeiro/impostos')({
+export const Route = createFileRoute("/admin/financeiro/impostos")({
   component: ImpostosPage,
 });
 
 function originLabelShort(o: number | null) {
-  if (o == null) return '—';
+  if (o == null) return "—";
   const m = FISCAL_ORIGIN_OPTIONS.find((x) => x.value === o);
-  return m ? m.label.split(' — ')[0] : String(o);
+  return m ? m.label.split(" — ")[0] : String(o);
 }
 
 function statusBadge(s: string) {
   const map: Record<string, string> = {
-    completo: 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-400',
-    incompleto: 'bg-amber-500/10 text-amber-700 dark:text-amber-400',
-    revisar: 'bg-orange-500/10 text-orange-700 dark:text-orange-400',
-    nao_aplicavel: 'bg-muted text-muted-foreground',
+    completo: "bg-emerald-500/10 text-emerald-700 dark:text-emerald-400",
+    incompleto: "bg-amber-500/10 text-amber-700 dark:text-amber-400",
+    revisar: "bg-orange-500/10 text-orange-700 dark:text-orange-400",
+    nao_aplicavel: "bg-muted text-muted-foreground",
   };
   return (
     <span
-      className={`inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium ${map[s] ?? 'bg-muted'}`}
+      className={`inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium ${map[s] ?? "bg-muted"}`}
     >
       {FISCAL_STATUS_LABEL[s] ?? s}
     </span>
@@ -84,14 +84,14 @@ function statusBadge(s: string) {
 }
 
 function scoreBadge(score: number) {
-  let cls = 'bg-red-500/10 text-red-700 dark:text-red-400';
-  let label = 'ruim';
+  let cls = "bg-red-500/10 text-red-700 dark:text-red-400";
+  let label = "ruim";
   if (score >= 71) {
-    cls = 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-400';
-    label = 'bom';
+    cls = "bg-emerald-500/10 text-emerald-700 dark:text-emerald-400";
+    label = "bom";
   } else if (score >= 41) {
-    cls = 'bg-amber-500/10 text-amber-700 dark:text-amber-400';
-    label = 'atenção';
+    cls = "bg-amber-500/10 text-amber-700 dark:text-amber-400";
+    label = "atenção";
   }
   return (
     <span className={`inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium ${cls}`}>
@@ -102,22 +102,22 @@ function scoreBadge(score: number) {
 
 function ImpostosPage() {
   const qc = useQueryClient();
-  const [filter, setFilter] = useState<FiscalListFilter>('all');
-  const [activeFilter, setActiveFilter] = useState<'all' | 'active' | 'inactive'>('active');
-  const [search, setSearch] = useState('');
+  const [filter, setFilter] = useState<FiscalListFilter>("all");
+  const [activeFilter, setActiveFilter] = useState<"all" | "active" | "inactive">("active");
+  const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
   const [editing, setEditing] = useState<FiscalProductRow | null>(null);
 
   const counts = useQuery({
-    queryKey: ['fiscal-counts'],
+    queryKey: ["fiscal-counts"],
     queryFn: () => getFiscalQuickCounts(),
   });
   const company = useQuery({
-    queryKey: ['fiscal-company'],
+    queryKey: ["fiscal-company"],
     queryFn: () => getFiscalCompanyData(),
   });
   const list = useQuery({
-    queryKey: ['fiscal-list', filter, activeFilter, search, page],
+    queryKey: ["fiscal-list", filter, activeFilter, search, page],
     queryFn: () =>
       listFiscalProducts({
         data: { filter, active: activeFilter, search, page, pageSize: 25 },
@@ -130,16 +130,16 @@ function ImpostosPage() {
     setExporting(true);
     try {
       const res = await exportFn({ data: { filter, active: activeFilter, search } });
-      const blob = new Blob([res.csv], { type: 'text/csv;charset=utf-8' });
+      const blob = new Blob([res.csv], { type: "text/csv;charset=utf-8" });
       const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
+      const a = document.createElement("a");
       a.href = url;
       a.download = `pendencias-fiscais-${new Date().toISOString().slice(0, 10)}.csv`;
       a.click();
       URL.revokeObjectURL(url);
       toast.success(`CSV gerado com ${res.count} linhas`);
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : 'Falha ao exportar CSV');
+      toast.error(e instanceof Error ? e.message : "Falha ao exportar CSV");
     } finally {
       setExporting(false);
     }
@@ -150,65 +150,65 @@ function ImpostosPage() {
     if (!c) return [];
     return [
       {
-        title: 'Produtos analisados',
+        title: "Produtos analisados",
         value: c.productsActive,
-        sub: 'Ativos com fiscal aplicável',
-        tone: 'neutral' as const,
+        sub: "Ativos com fiscal aplicável",
+        tone: "neutral" as const,
       },
       {
-        title: 'Fiscal completo',
+        title: "Fiscal completo",
         value: c.productsFiscalComplete,
-        sub: 'Prontos para emissão',
-        tone: 'good' as const,
+        sub: "Prontos para emissão",
+        tone: "good" as const,
       },
       {
-        title: 'Fiscal incompleto',
+        title: "Fiscal incompleto",
         value: c.productsFiscalIncomplete,
-        sub: 'Falta dado essencial',
-        tone: 'warn' as const,
-        filter: 'incomplete' as FiscalListFilter,
+        sub: "Falta dado essencial",
+        tone: "warn" as const,
+        filter: "incomplete" as FiscalListFilter,
       },
       {
-        title: 'Para revisar',
+        title: "Para revisar",
         value: c.productsNeedReview,
-        sub: 'Conferir antes de emitir',
-        tone: 'warn' as const,
-        filter: 'review' as FiscalListFilter,
+        sub: "Conferir antes de emitir",
+        tone: "warn" as const,
+        filter: "review" as FiscalListFilter,
       },
       {
-        title: 'Sem NCM',
+        title: "Sem NCM",
         value: c.productsNoNcm,
-        sub: 'Classificação fiscal ausente',
-        tone: 'bad' as const,
-        filter: 'no_ncm' as FiscalListFilter,
+        sub: "Classificação fiscal ausente",
+        tone: "bad" as const,
+        filter: "no_ncm" as FiscalListFilter,
       },
       {
-        title: 'Sem unidade comercial',
+        title: "Sem unidade comercial",
         value: c.productsNoUnit,
-        sub: 'UN, CX, KG, M…',
-        tone: 'bad' as const,
-        filter: 'no_unit' as FiscalListFilter,
+        sub: "UN, CX, KG, M…",
+        tone: "bad" as const,
+        filter: "no_unit" as FiscalListFilter,
       },
       {
-        title: 'Sem origem',
+        title: "Sem origem",
         value: c.productsNoOrigin,
-        sub: 'Nacional / importado',
-        tone: 'bad' as const,
-        filter: 'no_origin' as FiscalListFilter,
+        sub: "Nacional / importado",
+        tone: "bad" as const,
+        filter: "no_origin" as FiscalListFilter,
       },
       {
-        title: 'Sem peso/dimensão',
+        title: "Sem peso/dimensão",
         value: c.productsNoWeightOrDims,
-        sub: 'Útil p/ frete e fiscal',
-        tone: 'warn' as const,
-        filter: 'no_weight' as FiscalListFilter,
+        sub: "Útil p/ frete e fiscal",
+        tone: "warn" as const,
+        filter: "no_weight" as FiscalListFilter,
       },
       {
-        title: 'Sem EAN/GTIN',
+        title: "Sem EAN/GTIN",
         value: c.productsNoEan,
-        sub: 'Código de barras',
-        tone: 'warn' as const,
-        filter: 'no_ean' as FiscalListFilter,
+        sub: "Código de barras",
+        tone: "warn" as const,
+        filter: "no_ean" as FiscalListFilter,
       },
     ];
   }, [counts.data]);
@@ -235,19 +235,19 @@ function ImpostosPage() {
                 }
               }}
               className={`text-left bg-card border border-border rounded-xl p-4 transition hover:border-primary/40 ${
-                c.filter ? 'cursor-pointer' : 'cursor-default'
+                c.filter ? "cursor-pointer" : "cursor-default"
               }`}
             >
               <div className="text-xs text-muted-foreground">{c.title}</div>
               <div
                 className={`text-2xl font-bold ${
-                  c.tone === 'good'
-                    ? 'text-emerald-600 dark:text-emerald-400'
-                    : c.tone === 'warn'
-                      ? 'text-amber-600 dark:text-amber-400'
-                      : c.tone === 'bad'
-                        ? 'text-red-600 dark:text-red-400'
-                        : ''
+                  c.tone === "good"
+                    ? "text-emerald-600 dark:text-emerald-400"
+                    : c.tone === "warn"
+                      ? "text-amber-600 dark:text-amber-400"
+                      : c.tone === "bad"
+                        ? "text-red-600 dark:text-red-400"
+                        : ""
                 }`}
               >
                 {c.value}
@@ -280,15 +280,21 @@ function ImpostosPage() {
                 variant="outline"
                 size="sm"
                 onClick={() => {
-                  qc.invalidateQueries({ queryKey: ['fiscal-list'] });
-                  qc.invalidateQueries({ queryKey: ['fiscal-counts'] });
+                  qc.invalidateQueries({ queryKey: ["fiscal-list"] });
+                  qc.invalidateQueries({ queryKey: ["fiscal-counts"] });
                 }}
               >
                 <RefreshCw className="w-4 h-4" />
               </Button>
             </div>
             <div className="flex items-center gap-2">
-              <Select value={activeFilter} onValueChange={(v: any) => { setActiveFilter(v); setPage(1); }}>
+              <Select
+                value={activeFilter}
+                onValueChange={(v: any) => {
+                  setActiveFilter(v);
+                  setPage(1);
+                }}
+              >
                 <SelectTrigger className="w-[160px]">
                   <SelectValue />
                 </SelectTrigger>
@@ -300,7 +306,7 @@ function ImpostosPage() {
               </Select>
               <Button variant="outline" size="sm" onClick={handleExport} disabled={exporting}>
                 <Download className="w-4 h-4 mr-2" />
-                {exporting ? 'Exportando…' : 'Exportar pendências'}
+                {exporting ? "Exportando…" : "Exportar pendências"}
               </Button>
             </div>
           </div>
@@ -308,25 +314,28 @@ function ImpostosPage() {
           <div className="flex flex-wrap gap-1.5">
             {(
               [
-                ['all', 'Todos'],
-                ['complete', 'Fiscal completo'],
-                ['incomplete', 'Incompleto'],
-                ['review', 'Revisar'],
-                ['na', 'Não aplicável'],
-                ['no_ncm', 'Sem NCM'],
-                ['no_unit', 'Sem unidade'],
-                ['no_origin', 'Sem origem'],
-                ['no_weight', 'Sem peso/dim.'],
-                ['no_ean', 'Sem EAN'],
+                ["all", "Todos"],
+                ["complete", "Fiscal completo"],
+                ["incomplete", "Incompleto"],
+                ["review", "Revisar"],
+                ["na", "Não aplicável"],
+                ["no_ncm", "Sem NCM"],
+                ["no_unit", "Sem unidade"],
+                ["no_origin", "Sem origem"],
+                ["no_weight", "Sem peso/dim."],
+                ["no_ean", "Sem EAN"],
               ] as Array<[FiscalListFilter, string]>
             ).map(([k, label]) => (
               <button
                 key={k}
-                onClick={() => { setFilter(k); setPage(1); }}
+                onClick={() => {
+                  setFilter(k);
+                  setPage(1);
+                }}
                 className={`px-3 py-1.5 rounded-full text-xs border transition ${
                   filter === k
-                    ? 'bg-primary text-primary-foreground border-primary'
-                    : 'bg-background border-border hover:border-primary/40'
+                    ? "bg-primary text-primary-foreground border-primary"
+                    : "bg-background border-border hover:border-primary/40"
                 }`}
               >
                 {label}
@@ -371,35 +380,35 @@ function ImpostosPage() {
                   </TableRow>
                 )}
                 {list.data?.rows.map((p) => (
-                  <TableRow key={p.id} className={!p.active ? 'opacity-60' : ''}>
+                  <TableRow key={p.id} className={!p.active ? "opacity-60" : ""}>
                     <TableCell>
                       <div className="font-medium text-sm">{p.name}</div>
                       {p.problems.length > 0 && (
                         <div className="text-[11px] text-amber-700 dark:text-amber-400 mt-0.5">
-                          {p.problems.slice(0, 2).join(' • ')}
+                          {p.problems.slice(0, 2).join(" • ")}
                           {p.problems.length > 2 && ` +${p.problems.length - 2}`}
                         </div>
                       )}
                     </TableCell>
-                    <TableCell className="hidden md:table-cell text-xs">{p.sku ?? '—'}</TableCell>
+                    <TableCell className="hidden md:table-cell text-xs">{p.sku ?? "—"}</TableCell>
                     <TableCell className="hidden lg:table-cell text-xs">
-                      {p.category_name ?? '—'}
+                      {p.category_name ?? "—"}
                     </TableCell>
-                    <TableCell className="text-xs font-mono">{p.ncm ?? '—'}</TableCell>
+                    <TableCell className="text-xs font-mono">{p.ncm ?? "—"}</TableCell>
                     <TableCell className="hidden xl:table-cell text-xs font-mono">
-                      {p.cest ?? '—'}
+                      {p.cest ?? "—"}
                     </TableCell>
                     <TableCell className="hidden lg:table-cell text-xs">
                       {originLabelShort(p.product_origin)}
                     </TableCell>
                     <TableCell className="hidden md:table-cell text-xs">
-                      {p.commercial_unit ?? '—'}
+                      {p.commercial_unit ?? "—"}
                     </TableCell>
                     <TableCell className="hidden xl:table-cell text-xs font-mono">
-                      {p.cfop_default ?? '—'}
+                      {p.cfop_default ?? "—"}
                     </TableCell>
                     <TableCell className="hidden xl:table-cell text-xs font-mono">
-                      {p.gtin_ean ?? '—'}
+                      {p.gtin_ean ?? "—"}
                     </TableCell>
                     <TableCell>{scoreBadge(p.fiscal_score)}</TableCell>
                     <TableCell>{statusBadge(p.fiscal_status)}</TableCell>
@@ -455,12 +464,10 @@ function ImpostosPage() {
             <Info className="w-4 h-4" /> Para administrador iniciante
           </div>
           <p>NCM é o código fiscal que classifica o produto na nota fiscal (8 dígitos).</p>
+          <p>Unidade comercial é como o produto é vendido: unidade, caixa, metro, quilo etc.</p>
           <p>
-            Unidade comercial é como o produto é vendido: unidade, caixa, metro, quilo etc.
-          </p>
-          <p>
-            Origem da mercadoria indica se o produto é nacional, importado ou possui conteúdo
-            de importação.
+            Origem da mercadoria indica se o produto é nacional, importado ou possui conteúdo de
+            importação.
           </p>
         </div>
       </div>
@@ -470,9 +477,9 @@ function ImpostosPage() {
           row={editing}
           onClose={() => setEditing(null)}
           onSaved={() => {
-            qc.invalidateQueries({ queryKey: ['fiscal-list'] });
-            qc.invalidateQueries({ queryKey: ['fiscal-counts'] });
-            qc.invalidateQueries({ queryKey: ['admin-alerts'] });
+            qc.invalidateQueries({ queryKey: ["fiscal-list"] });
+            qc.invalidateQueries({ queryKey: ["fiscal-counts"] });
+            qc.invalidateQueries({ queryKey: ["admin-alerts"] });
           }}
         />
       )}
@@ -492,9 +499,7 @@ function CompanyFiscalBlock({
   return (
     <div
       className={`border rounded-xl p-4 ${
-        incomplete
-          ? 'bg-amber-500/5 border-amber-500/30'
-          : 'bg-emerald-500/5 border-emerald-500/30'
+        incomplete ? "bg-amber-500/5 border-amber-500/30" : "bg-emerald-500/5 border-emerald-500/30"
       }`}
     >
       <div className="flex items-start gap-3">
@@ -515,11 +520,11 @@ function CompanyFiscalBlock({
           </div>
           {incomplete ? (
             <p className="text-sm text-amber-700 dark:text-amber-400 mt-1">
-              Faltam: {data.missing_fields.join(', ')}.
+              Faltam: {data.missing_fields.join(", ")}.
             </p>
           ) : (
             <p className="text-sm text-muted-foreground mt-1">
-              CNPJ {data.cnpj} • Regime {data.fiscal_tax_regime} • Série{' '}
+              CNPJ {data.cnpj} • Regime {data.fiscal_tax_regime} • Série{" "}
               {data.fiscal_default_nf_series} • Ambiente {data.fiscal_environment}
             </p>
           )}
@@ -547,21 +552,17 @@ function FiscalEditDialog({
   onSaved: () => void;
 }) {
   const [form, setForm] = useState({
-    ncm: row.ncm ?? '',
-    cest: row.cest ?? '',
-    cfop_default: row.cfop_default ?? '',
+    ncm: row.ncm ?? "",
+    cest: row.cest ?? "",
+    cfop_default: row.cfop_default ?? "",
     product_origin: row.product_origin,
-    commercial_unit: row.commercial_unit ?? '',
-    tributary_unit: row.tributary_unit ?? '',
-    gtin_ean: row.gtin_ean ?? '',
-    gtin_tax: row.gtin_tax ?? '',
-    fiscal_description: row.fiscal_description ?? '',
-    fiscal_notes: row.fiscal_notes ?? '',
-    fiscal_status: row.fiscal_status as
-      | 'completo'
-      | 'incompleto'
-      | 'revisar'
-      | 'nao_aplicavel',
+    commercial_unit: row.commercial_unit ?? "",
+    tributary_unit: row.tributary_unit ?? "",
+    gtin_ean: row.gtin_ean ?? "",
+    gtin_tax: row.gtin_tax ?? "",
+    fiscal_description: row.fiscal_description ?? "",
+    fiscal_notes: row.fiscal_notes ?? "",
+    fiscal_status: row.fiscal_status as "completo" | "incompleto" | "revisar" | "nao_aplicavel",
   });
 
   const updateFn = useServerFn(updateProductFiscal);
@@ -584,12 +585,12 @@ function FiscalEditDialog({
         },
       }),
     onSuccess: () => {
-      toast.success('Dados fiscais atualizados');
+      toast.success("Dados fiscais atualizados");
       onSaved();
       onClose();
     },
     onError: (e: any) => {
-      toast.error(e?.message ?? 'Falha ao salvar');
+      toast.error(e?.message ?? "Falha ao salvar");
     },
   });
 
@@ -606,7 +607,9 @@ function FiscalEditDialog({
             <Label className="text-xs">NCM (8 dígitos)</Label>
             <Input
               value={form.ncm}
-              onChange={(e) => setForm({ ...form, ncm: e.target.value.replace(/\D/g, '').slice(0, 8) })}
+              onChange={(e) =>
+                setForm({ ...form, ncm: e.target.value.replace(/\D/g, "").slice(0, 8) })
+              }
               placeholder="00000000"
             />
           </div>
@@ -614,7 +617,9 @@ function FiscalEditDialog({
             <Label className="text-xs">CEST (7 dígitos)</Label>
             <Input
               value={form.cest}
-              onChange={(e) => setForm({ ...form, cest: e.target.value.replace(/\D/g, '').slice(0, 7) })}
+              onChange={(e) =>
+                setForm({ ...form, cest: e.target.value.replace(/\D/g, "").slice(0, 7) })
+              }
               placeholder="0000000"
             />
           </div>
@@ -623,7 +628,7 @@ function FiscalEditDialog({
             <Input
               value={form.cfop_default}
               onChange={(e) =>
-                setForm({ ...form, cfop_default: e.target.value.replace(/\D/g, '').slice(0, 4) })
+                setForm({ ...form, cfop_default: e.target.value.replace(/\D/g, "").slice(0, 4) })
               }
               placeholder="5102"
             />
@@ -631,9 +636,9 @@ function FiscalEditDialog({
           <div>
             <Label className="text-xs">Origem da mercadoria</Label>
             <Select
-              value={form.product_origin == null ? '' : String(form.product_origin)}
+              value={form.product_origin == null ? "" : String(form.product_origin)}
               onValueChange={(v) =>
-                setForm({ ...form, product_origin: v === '' ? null : Number(v) })
+                setForm({ ...form, product_origin: v === "" ? null : Number(v) })
               }
             >
               <SelectTrigger>
@@ -652,7 +657,9 @@ function FiscalEditDialog({
             <Label className="text-xs">Unidade comercial</Label>
             <Input
               value={form.commercial_unit}
-              onChange={(e) => setForm({ ...form, commercial_unit: e.target.value.toUpperCase().slice(0, 10) })}
+              onChange={(e) =>
+                setForm({ ...form, commercial_unit: e.target.value.toUpperCase().slice(0, 10) })
+              }
               list="unit-suggestions"
               placeholder="UN, CX, KG…"
             />
@@ -666,7 +673,9 @@ function FiscalEditDialog({
             <Label className="text-xs">Unidade tributável</Label>
             <Input
               value={form.tributary_unit}
-              onChange={(e) => setForm({ ...form, tributary_unit: e.target.value.toUpperCase().slice(0, 10) })}
+              onChange={(e) =>
+                setForm({ ...form, tributary_unit: e.target.value.toUpperCase().slice(0, 10) })
+              }
               placeholder="UN"
             />
           </div>
@@ -674,7 +683,9 @@ function FiscalEditDialog({
             <Label className="text-xs">EAN/GTIN</Label>
             <Input
               value={form.gtin_ean}
-              onChange={(e) => setForm({ ...form, gtin_ean: e.target.value.replace(/\D/g, '').slice(0, 14) })}
+              onChange={(e) =>
+                setForm({ ...form, gtin_ean: e.target.value.replace(/\D/g, "").slice(0, 14) })
+              }
               placeholder="7891234567890"
             />
           </div>
@@ -682,7 +693,9 @@ function FiscalEditDialog({
             <Label className="text-xs">GTIN tributável</Label>
             <Input
               value={form.gtin_tax}
-              onChange={(e) => setForm({ ...form, gtin_tax: e.target.value.replace(/\D/g, '').slice(0, 14) })}
+              onChange={(e) =>
+                setForm({ ...form, gtin_tax: e.target.value.replace(/\D/g, "").slice(0, 14) })
+              }
               placeholder="Geralmente igual ao EAN"
             />
           </div>
@@ -690,7 +703,9 @@ function FiscalEditDialog({
             <Label className="text-xs">Descrição fiscal</Label>
             <Input
               value={form.fiscal_description}
-              onChange={(e) => setForm({ ...form, fiscal_description: e.target.value.slice(0, 500) })}
+              onChange={(e) =>
+                setForm({ ...form, fiscal_description: e.target.value.slice(0, 500) })
+              }
               placeholder="Descrição detalhada para a NF-e (opcional)"
             />
           </div>
@@ -729,7 +744,7 @@ function FiscalEditDialog({
             Cancelar
           </Button>
           <Button onClick={() => mutation.mutate()} disabled={mutation.isPending}>
-            {mutation.isPending ? 'Salvando…' : 'Salvar dados fiscais'}
+            {mutation.isPending ? "Salvando…" : "Salvar dados fiscais"}
           </Button>
         </DialogFooter>
       </DialogContent>

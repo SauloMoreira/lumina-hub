@@ -1,9 +1,9 @@
-import { ResponsiveContainer, PieChart, Pie, Cell, Tooltip, Legend } from 'recharts';
-import type { DashboardData } from '@/server/dashboard.functions';
-import { CHART_COLORS, orderStatusPtBR } from './format';
-import { EmptyChart } from './EmptyChart';
+import { ResponsiveContainer, PieChart, Pie, Cell, Tooltip, Legend } from "recharts";
+import type { DashboardData } from "@/server/dashboard.functions";
+import { CHART_COLORS, orderStatusPtBR } from "./format";
+import { EmptyChart } from "./EmptyChart";
 
-export function OrderStatusChart({ data }: { data: DashboardData['orderStatus'] }) {
+export function OrderStatusChart({ data }: { data: DashboardData["orderStatus"] }) {
   if (data.length === 0) {
     return <EmptyChart message="Nenhum pedido no período." />;
   }
@@ -31,8 +31,8 @@ export function OrderStatusChart({ data }: { data: DashboardData['orderStatus'] 
           </Pie>
           <Tooltip
             contentStyle={{
-              background: 'hsl(var(--card))',
-              border: '1px solid hsl(var(--border))',
+              background: "hsl(var(--card))",
+              border: "1px solid hsl(var(--border))",
               borderRadius: 8,
               fontSize: 12,
             }}

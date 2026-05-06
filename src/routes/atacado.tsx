@@ -1,7 +1,7 @@
-import { createFileRoute, Link, useRouter } from '@tanstack/react-router';
-import { useEffect, useMemo, useState } from 'react';
-import { useQuery, keepPreviousData } from '@tanstack/react-query';
-import { toast } from 'sonner';
+import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
+import { useEffect, useMemo, useState } from "react";
+import { useQuery, keepPreviousData } from "@tanstack/react-query";
+import { toast } from "sonner";
 import {
   Building2,
   CheckCircle2,
@@ -12,24 +12,24 @@ import {
   Sparkles,
   Tag,
   Zap,
-} from 'lucide-react';
-import { supabase } from '@/integrations/supabase/client';
-import { buildSeo } from '@/lib/seo';
-import { formatCNPJ } from '@/lib/cnpj';
-import { ProductCard } from '@/components/store/ProductCard';
-import { StoreLayout } from '@/components/layout/StoreLayout';
-import { ProductImagePlaceholder } from '@/components/store/ProductImagePlaceholder';
-import { formatBRL, STORE_WHATSAPP } from '@/lib/domain';
-import { useCart } from '@/stores/cartStore';
-import type { Product } from '@/lib/domain';
-import { searchProducts } from '@/server/productSearch.functions';
-import { getPublicCompanySettings } from '@/server/institutional.functions';
+} from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { buildSeo } from "@/lib/seo";
+import { formatCNPJ } from "@/lib/cnpj";
+import { ProductCard } from "@/components/store/ProductCard";
+import { StoreLayout } from "@/components/layout/StoreLayout";
+import { ProductImagePlaceholder } from "@/components/store/ProductImagePlaceholder";
+import { formatBRL, STORE_WHATSAPP } from "@/lib/domain";
+import { useCart } from "@/stores/cartStore";
+import type { Product } from "@/lib/domain";
+import { searchProducts } from "@/server/productSearch.functions";
+import { getPublicCompanySettings } from "@/server/institutional.functions";
 import {
   B2BProductFilters,
   DEFAULT_B2B_FILTERS,
   type B2bFiltersState,
-} from '@/components/b2b/B2BProductFilters';
-import { B2BEmptyState } from '@/components/b2b/B2BEmptyState';
+} from "@/components/b2b/B2BProductFilters";
+import { B2BEmptyState } from "@/components/b2b/B2BEmptyState";
 
 type B2bSettings = {
   hero_title: string | null;
@@ -47,23 +47,23 @@ type B2bSettings = {
   og_image_url: string | null;
 };
 
-type CompanyStatus = 'guest' | 'pf' | 'pending' | 'approved' | 'blocked' | 'rejected';
+type CompanyStatus = "guest" | "pf" | "pending" | "approved" | "blocked" | "rejected";
 
 type Category = { id: string; name: string; slug: string };
 
-export const Route = createFileRoute('/atacado')({
+export const Route = createFileRoute("/atacado")({
   head: () =>
     buildSeo({
-      title: 'Atacado para empresas | Led Maricá',
+      title: "Atacado para empresas | Led Maricá",
       description:
-        'Preços especiais para empresas com CNPJ. Cadastre-se e tenha acesso a condições B2B.',
-      url: '/atacado',
+        "Preços especiais para empresas com CNPJ. Cadastre-se e tenha acesso a condições B2B.",
+      url: "/atacado",
     }),
   component: AtacadoPage,
 });
 
 function onlyDigits(s: string | null | undefined) {
-  return (s ?? '').replace(/\D+/g, '');
+  return (s ?? "").replace(/\D+/g, "");
 }
 
 function useDebounced<T>(value: T, delay = 280): T {
@@ -78,7 +78,7 @@ function useDebounced<T>(value: T, delay = 280): T {
 function AtacadoPage() {
   const [settings, setSettings] = useState<B2bSettings | null>(null);
   const [categories, setCategories] = useState<Category[]>([]);
-  const [companyStatus, setCompanyStatus] = useState<CompanyStatus>('guest');
+  const [companyStatus, setCompanyStatus] = useState<CompanyStatus>("guest");
   const [companyName, setCompanyName] = useState<string | null>(null);
 
   const [filters, setFilters] = useState<B2bFiltersState>(DEFAULT_B2B_FILTERS);
@@ -91,17 +91,17 @@ function AtacadoPage() {
     (async () => {
       const [{ data: s }, { data: cats }, { data: sess }] = await Promise.all([
         supabase
-          .from('b2b_settings')
+          .from("b2b_settings")
           .select(
-            'hero_title, hero_subtitle, hero_description, hero_primary_button_text, hero_primary_button_url, hero_secondary_button_text, hero_secondary_button_url, whatsapp_cta_text, show_b2b_prices_to_guests, vitrine_is_active, seo_title, seo_description, og_image_url',
+            "hero_title, hero_subtitle, hero_description, hero_primary_button_text, hero_primary_button_url, hero_secondary_button_text, hero_secondary_button_url, whatsapp_cta_text, show_b2b_prices_to_guests, vitrine_is_active, seo_title, seo_description, og_image_url",
           )
           .limit(1)
           .maybeSingle(),
         supabase
-          .from('categories')
-          .select('id, name, slug')
-          .eq('active', true)
-          .order('sort_order', { ascending: true }),
+          .from("categories")
+          .select("id, name, slug")
+          .eq("active", true)
+          .order("sort_order", { ascending: true }),
         supabase.auth.getSession(),
       ]);
 
@@ -111,23 +111,23 @@ function AtacadoPage() {
 
       const userId = sess.session?.user?.id;
       if (!userId) {
-        setCompanyStatus('guest');
+        setCompanyStatus("guest");
         return;
       }
       const { data: link } = await supabase
-        .from('company_users')
-        .select('company_id')
-        .eq('user_id', userId)
+        .from("company_users")
+        .select("company_id")
+        .eq("user_id", userId)
         .limit(1)
         .maybeSingle();
       if (!link) {
-        setCompanyStatus('pf');
+        setCompanyStatus("pf");
         return;
       }
       const { data: company } = await supabase
-        .from('companies')
-        .select('status, legal_name, trade_name')
-        .eq('id', link.company_id)
+        .from("companies")
+        .select("status, legal_name, trade_name")
+        .eq("id", link.company_id)
         .maybeSingle();
       if (company) {
         setCompanyStatus(company.status as CompanyStatus);
@@ -139,31 +139,31 @@ function AtacadoPage() {
     };
   }, []);
 
-  const isApproved = companyStatus === 'approved';
+  const isApproved = companyStatus === "approved";
 
   // Marcas (do catálogo público — somente nomes, sem dados sensíveis)
   const { data: brands } = useQuery({
-    queryKey: ['atacado-brands'],
+    queryKey: ["atacado-brands"],
     staleTime: 1000 * 60 * 30,
     queryFn: async () => {
       const { data } = await supabase
-        .from('products')
-        .select('brand')
-        .eq('active', true)
-        .not('brand', 'is', null)
+        .from("products")
+        .select("brand")
+        .eq("active", true)
+        .not("brand", "is", null)
         .limit(1000);
       const set = new Set<string>();
       (data ?? []).forEach((r: any) => {
-        const b = (r.brand ?? '').trim();
+        const b = (r.brand ?? "").trim();
         if (b) set.add(b);
       });
-      return Array.from(set).sort((a, b) => a.localeCompare(b, 'pt-BR'));
+      return Array.from(set).sort((a, b) => a.localeCompare(b, "pt-BR"));
     },
   });
 
   // WhatsApp dinâmico (company_settings); fallback para STORE_WHATSAPP.
   const { data: companyData } = useQuery({
-    queryKey: ['public-company-settings'],
+    queryKey: ["public-company-settings"],
     staleTime: 1000 * 60 * 30,
     queryFn: () => getPublicCompanySettings(),
   });
@@ -171,16 +171,19 @@ function AtacadoPage() {
 
   // Filtros B2B-only só são aplicados quando empresa aprovada (regra comercial).
   const effectiveB2bOnly = isApproved && filters.b2bOnly;
-  const effectiveSort: B2bFiltersState['sort'] = (() => {
-    if (!isApproved && (filters.sort === 'b2b_discount_desc' || filters.sort === 'b2b_min_qty_asc')) {
-      return 'relevance';
+  const effectiveSort: B2bFiltersState["sort"] = (() => {
+    if (
+      !isApproved &&
+      (filters.sort === "b2b_discount_desc" || filters.sort === "b2b_min_qty_asc")
+    ) {
+      return "relevance";
     }
     return filters.sort;
   })();
 
   const { data: searchData, isFetching } = useQuery({
     queryKey: [
-      'atacado-search',
+      "atacado-search",
       debouncedQ,
       filters.categoryId,
       filters.brand,
@@ -209,7 +212,7 @@ function AtacadoPage() {
           sort: effectiveSort,
           page: 1,
           pageSize: 48,
-          source: 'b2b_store',
+          source: "b2b_store",
         },
       });
       return res;
@@ -223,7 +226,7 @@ function AtacadoPage() {
 
   const whatsappLink = useMemo(() => {
     const text = encodeURIComponent(
-      `Olá! Quero solicitar uma negociação B2B${companyName ? ` para a empresa ${companyName}` : ''}.`,
+      `Olá! Quero solicitar uma negociação B2B${companyName ? ` para a empresa ${companyName}` : ""}.`,
     );
     return `https://wa.me/${supportWhats}?text=${text}`;
   }, [companyName, supportWhats]);
@@ -247,154 +250,154 @@ function AtacadoPage() {
     <StoreLayout>
       <div className="bg-background">
         {/* HERO — compacto quando empresa aprovada */}
-      {isApproved ? (
-        <CompactHero companyName={companyName} whatsappLink={whatsappLink} />
-      ) : (
-        <FullHero settings={settings} />
-      )}
-
-      {/* Card de status (aparece sempre, mas no aprovado fica logo abaixo do hero compacto) */}
-      <section className="max-w-6xl mx-auto px-4 mt-6">
-        <ClientStatusBanner status={companyStatus} companyName={companyName} />
-      </section>
-
-      {/* VITRINE B2B — área nobre */}
-      <section id="produtos" className="max-w-6xl mx-auto px-4 pt-8 pb-12">
-        <div className="flex items-end justify-between gap-4 flex-wrap mb-5">
-          <div>
-            <h2 className="text-2xl md:text-3xl font-display font-bold text-foreground">
-              Produtos com preço empresa
-            </h2>
-            <p className="text-sm text-muted-foreground mt-1">
-              Condições especiais para compras em quantidade.
-            </p>
-          </div>
-          <div className="flex items-center gap-2 flex-wrap">
-            {(isApproved || companyStatus === 'pending') && (
-              <Link
-                to={'/compra-rapida' as never}
-                className="inline-flex items-center gap-2 h-10 px-4 rounded-md bg-primary/10 text-primary border border-primary/30 text-sm font-semibold hover:bg-primary/15 transition"
-              >
-                <Zap className="w-4 h-4" /> Compra rápida por código
-              </Link>
-            )}
-            <CartButton />
-            {isApproved && (
-              <a
-                href={whatsappLink}
-                target="_blank"
-                rel="noreferrer"
-                className="hidden sm:inline-flex items-center gap-2 h-10 px-4 rounded-md border border-border bg-card text-sm font-semibold text-foreground hover:bg-muted transition"
-              >
-                <MessageSquareText className="w-4 h-4" /> Solicitar negociação
-              </a>
-            )}
-          </div>
-        </div>
-        {companyStatus === 'pending' && (
-          <p className="text-xs text-muted-foreground -mt-2 mb-3">
-            Compra rápida disponível com preço de varejo enquanto sua empresa está em análise.
-          </p>
-        )}
-
-        {/* Filtros B2B */}
-        <B2BProductFilters
-          state={filters}
-          onChange={setFilters}
-          onReset={() => setFilters(DEFAULT_B2B_FILTERS)}
-          categories={availableCategories}
-          brands={brands ?? []}
-          showB2bOnly={isApproved}
-          totalCount={totalCount}
-          isFetching={isFetching}
-        />
-
-        {visibleProducts.length === 0 ? (
-          <B2BEmptyState
-            onReset={() => setFilters(DEFAULT_B2B_FILTERS)}
-            whatsappLink={whatsappLink}
-            isApproved={isApproved}
-          />
+        {isApproved ? (
+          <CompactHero companyName={companyName} whatsappLink={whatsappLink} />
         ) : (
-          <div
-            className={`mt-6 grid gap-3 sm:gap-5 ${
-              isApproved
-                ? 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3'
-                : 'grid-cols-2 sm:grid-cols-3 lg:grid-cols-4'
-            }`}
-          >
-            {visibleProducts.map((p, i) => {
-              const hasB2b = isApproved && p.b2b_enabled === true && (p.b2b_price ?? 0) > 0;
-              return hasB2b ? (
-                <B2bProductCard key={p.id} product={p} index={i} />
-              ) : (
-                <div key={p.id} className="relative">
-                  {p.b2b_enabled === true && (p.b2b_price ?? 0) > 0 && !isApproved && (
-                    <span className="absolute z-10 top-2 left-2 inline-flex items-center gap-1 bg-primary text-primary-foreground text-[10px] font-bold uppercase px-2 py-1 rounded">
-                      Preço empresa
-                    </span>
-                  )}
-                  <ProductCard product={p} index={i} />
-                </div>
-              );
-            })}
-          </div>
+          <FullHero settings={settings} />
         )}
 
-        {!isApproved && (
-          <p className="text-xs text-muted-foreground mt-6">
-            Os preços de atacado são exibidos após login com empresa aprovada. Para acessar,{' '}
-            <Link to={'/cadastro-empresa' as never} className="font-semibold underline">
-              cadastre sua empresa com CNPJ
-            </Link>
-            .
-          </p>
-        )}
-      </section>
+        {/* Card de status (aparece sempre, mas no aprovado fica logo abaixo do hero compacto) */}
+        <section className="max-w-6xl mx-auto px-4 mt-6">
+          <ClientStatusBanner status={companyStatus} companyName={companyName} />
+        </section>
 
-      {/* Benefícios */}
-      <section className="max-w-6xl mx-auto px-4 py-10 grid sm:grid-cols-3 gap-4">
-        <Benefit
-          icon={Tag}
-          title="Preço empresa"
-          desc="Condições especiais para CNPJ a partir da quantidade mínima."
-        />
-        <Benefit
-          icon={ShieldCheck}
-          title="Mesmo checkout seguro"
-          desc="Compre no atacado com a mesma logística e pagamento da loja."
-        />
-        <Benefit
-          icon={MessageSquareText}
-          title="Negociação B2B"
-          desc="Precisa de uma condição melhor? Fale com nosso atendimento."
-        />
-      </section>
-
-      {/* CTA negociação B2B */}
-      <section className="max-w-6xl mx-auto px-4 pb-16">
-        <div className="bg-gradient-to-br from-primary/10 via-primary/5 to-background border border-primary/20 rounded-2xl p-6 md:p-8 flex flex-col md:flex-row items-start md:items-center gap-4 md:gap-6">
-          <div className="flex-1">
-            <div className="inline-flex items-center gap-2 text-xs font-semibold text-primary mb-2">
-              <Sparkles className="w-4 h-4" /> Negociação personalizada
+        {/* VITRINE B2B — área nobre */}
+        <section id="produtos" className="max-w-6xl mx-auto px-4 pt-8 pb-12">
+          <div className="flex items-end justify-between gap-4 flex-wrap mb-5">
+            <div>
+              <h2 className="text-2xl md:text-3xl font-display font-bold text-foreground">
+                Produtos com preço empresa
+              </h2>
+              <p className="text-sm text-muted-foreground mt-1">
+                Condições especiais para compras em quantidade.
+              </p>
             </div>
-            <h3 className="text-xl md:text-2xl font-display font-bold text-foreground">
-              Volume maior? Faça uma cotação.
-            </h3>
-            <p className="text-sm text-muted-foreground mt-1 max-w-xl">
-              Atendimento dedicado para projetos, obras e compras recorrentes.
-            </p>
+            <div className="flex items-center gap-2 flex-wrap">
+              {(isApproved || companyStatus === "pending") && (
+                <Link
+                  to={"/compra-rapida" as never}
+                  className="inline-flex items-center gap-2 h-10 px-4 rounded-md bg-primary/10 text-primary border border-primary/30 text-sm font-semibold hover:bg-primary/15 transition"
+                >
+                  <Zap className="w-4 h-4" /> Compra rápida por código
+                </Link>
+              )}
+              <CartButton />
+              {isApproved && (
+                <a
+                  href={whatsappLink}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="hidden sm:inline-flex items-center gap-2 h-10 px-4 rounded-md border border-border bg-card text-sm font-semibold text-foreground hover:bg-muted transition"
+                >
+                  <MessageSquareText className="w-4 h-4" /> Solicitar negociação
+                </a>
+              )}
+            </div>
           </div>
-          <a
-            href={whatsappLink}
-            target="_blank"
-            rel="noreferrer"
-            className="inline-flex items-center gap-2 h-11 px-5 rounded-md bg-primary text-primary-foreground font-semibold hover:brightness-110 transition shadow-primary"
-          >
-            <MessageSquareText className="w-4 h-4" /> Solicitar negociação B2B
-          </a>
-        </div>
-      </section>
+          {companyStatus === "pending" && (
+            <p className="text-xs text-muted-foreground -mt-2 mb-3">
+              Compra rápida disponível com preço de varejo enquanto sua empresa está em análise.
+            </p>
+          )}
+
+          {/* Filtros B2B */}
+          <B2BProductFilters
+            state={filters}
+            onChange={setFilters}
+            onReset={() => setFilters(DEFAULT_B2B_FILTERS)}
+            categories={availableCategories}
+            brands={brands ?? []}
+            showB2bOnly={isApproved}
+            totalCount={totalCount}
+            isFetching={isFetching}
+          />
+
+          {visibleProducts.length === 0 ? (
+            <B2BEmptyState
+              onReset={() => setFilters(DEFAULT_B2B_FILTERS)}
+              whatsappLink={whatsappLink}
+              isApproved={isApproved}
+            />
+          ) : (
+            <div
+              className={`mt-6 grid gap-3 sm:gap-5 ${
+                isApproved
+                  ? "grid-cols-1 sm:grid-cols-2 lg:grid-cols-3"
+                  : "grid-cols-2 sm:grid-cols-3 lg:grid-cols-4"
+              }`}
+            >
+              {visibleProducts.map((p, i) => {
+                const hasB2b = isApproved && p.b2b_enabled === true && (p.b2b_price ?? 0) > 0;
+                return hasB2b ? (
+                  <B2bProductCard key={p.id} product={p} index={i} />
+                ) : (
+                  <div key={p.id} className="relative">
+                    {p.b2b_enabled === true && (p.b2b_price ?? 0) > 0 && !isApproved && (
+                      <span className="absolute z-10 top-2 left-2 inline-flex items-center gap-1 bg-primary text-primary-foreground text-[10px] font-bold uppercase px-2 py-1 rounded">
+                        Preço empresa
+                      </span>
+                    )}
+                    <ProductCard product={p} index={i} />
+                  </div>
+                );
+              })}
+            </div>
+          )}
+
+          {!isApproved && (
+            <p className="text-xs text-muted-foreground mt-6">
+              Os preços de atacado são exibidos após login com empresa aprovada. Para acessar,{" "}
+              <Link to={"/cadastro-empresa" as never} className="font-semibold underline">
+                cadastre sua empresa com CNPJ
+              </Link>
+              .
+            </p>
+          )}
+        </section>
+
+        {/* Benefícios */}
+        <section className="max-w-6xl mx-auto px-4 py-10 grid sm:grid-cols-3 gap-4">
+          <Benefit
+            icon={Tag}
+            title="Preço empresa"
+            desc="Condições especiais para CNPJ a partir da quantidade mínima."
+          />
+          <Benefit
+            icon={ShieldCheck}
+            title="Mesmo checkout seguro"
+            desc="Compre no atacado com a mesma logística e pagamento da loja."
+          />
+          <Benefit
+            icon={MessageSquareText}
+            title="Negociação B2B"
+            desc="Precisa de uma condição melhor? Fale com nosso atendimento."
+          />
+        </section>
+
+        {/* CTA negociação B2B */}
+        <section className="max-w-6xl mx-auto px-4 pb-16">
+          <div className="bg-gradient-to-br from-primary/10 via-primary/5 to-background border border-primary/20 rounded-2xl p-6 md:p-8 flex flex-col md:flex-row items-start md:items-center gap-4 md:gap-6">
+            <div className="flex-1">
+              <div className="inline-flex items-center gap-2 text-xs font-semibold text-primary mb-2">
+                <Sparkles className="w-4 h-4" /> Negociação personalizada
+              </div>
+              <h3 className="text-xl md:text-2xl font-display font-bold text-foreground">
+                Volume maior? Faça uma cotação.
+              </h3>
+              <p className="text-sm text-muted-foreground mt-1 max-w-xl">
+                Atendimento dedicado para projetos, obras e compras recorrentes.
+              </p>
+            </div>
+            <a
+              href={whatsappLink}
+              target="_blank"
+              rel="noreferrer"
+              className="inline-flex items-center gap-2 h-11 px-5 rounded-md bg-primary text-primary-foreground font-semibold hover:brightness-110 transition shadow-primary"
+            >
+              <MessageSquareText className="w-4 h-4" /> Solicitar negociação B2B
+            </a>
+          </div>
+        </section>
       </div>
     </StoreLayout>
   );
@@ -410,7 +413,7 @@ function FullHero({ settings }: { settings: B2bSettings | null }) {
           <Building2 className="w-4 h-4" /> Área exclusiva para empresas
         </div>
         <h1 className="text-3xl md:text-5xl font-display font-bold text-foreground max-w-3xl">
-          {settings?.hero_title ?? 'Compras em atacado para empresas'}
+          {settings?.hero_title ?? "Compras em atacado para empresas"}
         </h1>
         {settings?.hero_subtitle && (
           <p className="text-lg md:text-xl text-foreground/80 mt-3 max-w-2xl">
@@ -422,7 +425,7 @@ function FullHero({ settings }: { settings: B2bSettings | null }) {
         )}
         <div className="flex flex-wrap gap-3 mt-6">
           <Link
-            to={'/cadastro-empresa' as never}
+            to={"/cadastro-empresa" as never}
             className="inline-flex items-center gap-2 h-11 px-5 rounded-md bg-primary text-primary-foreground font-semibold hover:brightness-110 transition shadow-primary"
           >
             Cadastrar empresa
@@ -452,7 +455,7 @@ function CompactHero({
         <div>
           <div className="inline-flex items-center gap-2 bg-success/15 text-success px-2.5 py-1 rounded-full text-[11px] font-semibold mb-2">
             <CheckCircle2 className="w-3.5 h-3.5" /> Empresa aprovada
-            {companyName ? ` — ${companyName}` : ''}
+            {companyName ? ` — ${companyName}` : ""}
           </div>
           <h1 className="text-2xl md:text-3xl font-display font-bold text-foreground">
             Compras em atacado para empresas
@@ -490,7 +493,8 @@ function B2bProductCard({ product, index }: { product: Product; index: number })
   const b2bPrice = product.b2b_price ?? null;
   const minQty = product.b2b_min_qty ?? 1;
   const hasB2b = b2bPrice != null && b2bPrice > 0;
-  const savePct = hasB2b && retail > 0 ? Math.round(((retail - (b2bPrice as number)) / retail) * 100) : 0;
+  const savePct =
+    hasB2b && retail > 0 ? Math.round(((retail - (b2bPrice as number)) / retail) * 100) : 0;
   const finalPrice = hasB2b ? (b2bPrice as number) : retail;
 
   const router = useRouter();
@@ -508,20 +512,20 @@ function B2bProductCard({ product, index }: { product: Product; index: number })
         freeShippingEligible: !!product.free_shipping_eligible,
         minQty,
         qtyMultiple: product.b2b_qty_multiple ?? 1,
-        source: 'b2b',
+        source: "b2b",
       },
       minQty,
-      { openDrawer: false }
+      { openDrawer: false },
     );
-    toast.success('Produto adicionado ao carrinho', {
+    toast.success("Produto adicionado ao carrinho", {
       description: `${product.name} · ${minQty} un`,
       duration: 6000,
-      position: 'top-center',
+      position: "top-center",
       action: {
-        label: 'Ir ao carrinho',
+        label: "Ir ao carrinho",
         onClick: () => {
           cart.close();
-          router.navigate({ to: '/carrinho' });
+          router.navigate({ to: "/carrinho" });
         },
       },
     });
@@ -543,8 +547,8 @@ function B2bProductCard({ product, index }: { product: Product; index: number })
             alt={product.name}
             width={600}
             height={450}
-            loading={isAboveFold ? 'eager' : 'lazy'}
-            fetchPriority={isAboveFold ? 'high' : 'auto'}
+            loading={isAboveFold ? "eager" : "lazy"}
+            fetchPriority={isAboveFold ? "high" : "auto"}
             decoding="async"
             className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
           />
@@ -609,15 +613,15 @@ function B2bProductCard({ product, index }: { product: Product; index: number })
 
 function Badge({
   children,
-  tone = 'neutral',
+  tone = "neutral",
 }: {
   children: React.ReactNode;
-  tone?: 'neutral' | 'success';
+  tone?: "neutral" | "success";
 }) {
   const cls =
-    tone === 'success'
-      ? 'bg-success/10 text-success border-success/30'
-      : 'bg-muted text-foreground/80 border-border';
+    tone === "success"
+      ? "bg-success/10 text-success border-success/30"
+      : "bg-muted text-foreground/80 border-border";
   return (
     <span
       className={`inline-flex items-center text-[10px] font-medium px-2 py-0.5 rounded border ${cls}`}
@@ -636,7 +640,7 @@ function ClientStatusBanner({
   status: CompanyStatus;
   companyName: string | null;
 }) {
-  if (status === 'guest') {
+  if (status === "guest") {
     return (
       <Banner
         tone="info"
@@ -644,11 +648,11 @@ function ClientStatusBanner({
         title="Você está navegando como visitante"
         body={
           <>
-            Para ver e comprar com preço empresa,{' '}
-            <Link to={'/cadastro-empresa' as never} className="font-semibold underline">
+            Para ver e comprar com preço empresa,{" "}
+            <Link to={"/cadastro-empresa" as never} className="font-semibold underline">
               cadastre sua empresa com CNPJ
             </Link>
-            . Já tem cadastro?{' '}
+            . Já tem cadastro?{" "}
             <Link to="/login" className="font-semibold underline">
               Faça login
             </Link>
@@ -658,7 +662,7 @@ function ClientStatusBanner({
       />
     );
   }
-  if (status === 'pf') {
+  if (status === "pf") {
     return (
       <Banner
         tone="info"
@@ -666,27 +670,27 @@ function ClientStatusBanner({
         title="Sua conta é pessoa física"
         body={
           <>
-            Para acessar preços B2B,{' '}
-            <Link to={'/cadastro-empresa' as never} className="font-semibold underline">
+            Para acessar preços B2B,{" "}
+            <Link to={"/cadastro-empresa" as never} className="font-semibold underline">
               cadastre sua empresa
-            </Link>{' '}
+            </Link>{" "}
             informando o CNPJ.
           </>
         }
       />
     );
   }
-  if (status === 'pending') {
+  if (status === "pending") {
     return (
       <Banner
         tone="warn"
         icon={Clock}
-        title={`Empresa em análise${companyName ? ` — ${companyName}` : ''}`}
+        title={`Empresa em análise${companyName ? ` — ${companyName}` : ""}`}
         body="Seu cadastro empresarial está em análise. Após aprovação, os preços B2B serão liberados automaticamente."
       />
     );
   }
-  if (status === 'blocked' || status === 'rejected') {
+  if (status === "blocked" || status === "rejected") {
     return (
       <Banner
         tone="error"
@@ -701,7 +705,7 @@ function ClientStatusBanner({
     <Banner
       tone="success"
       icon={CheckCircle2}
-      title={`Empresa aprovada${companyName ? ` — ${companyName}` : ''}`}
+      title={`Empresa aprovada${companyName ? ` — ${companyName}` : ""}`}
       body="Os valores B2B aparecem nos cards abaixo. Adicione respeitando a quantidade mínima de cada produto."
     />
   );
@@ -713,16 +717,16 @@ function Banner({
   title,
   body,
 }: {
-  tone: 'info' | 'warn' | 'error' | 'success';
+  tone: "info" | "warn" | "error" | "success";
   icon: typeof Building2;
   title: string;
   body: React.ReactNode;
 }) {
   const colors: Record<typeof tone, string> = {
-    info: 'bg-primary/5 border-primary/30 text-foreground',
-    warn: 'bg-warning/10 border-warning/40 text-foreground',
-    error: 'bg-destructive/10 border-destructive/40 text-foreground',
-    success: 'bg-success/10 border-success/40 text-foreground',
+    info: "bg-primary/5 border-primary/30 text-foreground",
+    warn: "bg-warning/10 border-warning/40 text-foreground",
+    error: "bg-destructive/10 border-destructive/40 text-foreground",
+    success: "bg-success/10 border-success/40 text-foreground",
   };
   return (
     <div className={`flex items-start gap-3 p-4 rounded-lg border ${colors[tone]}`}>
@@ -768,7 +772,7 @@ function CartButton() {
       type="button"
       onClick={() => cart.open()}
       className="relative inline-flex items-center gap-2 h-10 px-4 rounded-md border border-border bg-card text-sm font-semibold text-foreground hover:bg-muted transition"
-      aria-label={`Abrir carrinho (${count} ${count === 1 ? 'item' : 'itens'})`}
+      aria-label={`Abrir carrinho (${count} ${count === 1 ? "item" : "itens"})`}
     >
       <ShoppingCart className="w-4 h-4" />
       <span className="hidden sm:inline">Carrinho</span>

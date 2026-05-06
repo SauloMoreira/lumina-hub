@@ -8,12 +8,12 @@ import {
   Tooltip,
   CartesianGrid,
   Legend,
-} from 'recharts';
-import type { DashboardData } from '@/server/dashboard.functions';
-import { fmtBRL, fmtDayShort, fmtInt } from './format';
-import { EmptyChart } from './EmptyChart';
+} from "recharts";
+import type { DashboardData } from "@/server/dashboard.functions";
+import { fmtBRL, fmtDayShort, fmtInt } from "./format";
+import { EmptyChart } from "./EmptyChart";
 
-export function SalesChart({ data }: { data: DashboardData['salesByDay'] }) {
+export function SalesChart({ data }: { data: DashboardData["salesByDay"] }) {
   const hasAny = data.some((d) => d.revenue > 0 || d.paidOrders > 0);
   if (!hasAny) {
     return <EmptyChart message="Ainda não há vendas neste período." />;
@@ -44,14 +44,14 @@ export function SalesChart({ data }: { data: DashboardData['salesByDay'] }) {
           />
           <Tooltip
             contentStyle={{
-              background: 'hsl(var(--card))',
-              border: '1px solid hsl(var(--border))',
+              background: "hsl(var(--card))",
+              border: "1px solid hsl(var(--border))",
               borderRadius: 8,
               fontSize: 12,
             }}
             labelFormatter={(l) => `Dia ${fmtDayShort(String(l))}`}
             formatter={(value: number, name: string) => {
-              if (name === 'Receita') return [fmtBRL(value), name];
+              if (name === "Receita") return [fmtBRL(value), name];
               return [fmtInt(value), name];
             }}
           />

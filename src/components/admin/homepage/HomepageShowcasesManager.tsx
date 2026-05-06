@@ -1,25 +1,44 @@
-import { useEffect, useMemo, useState } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { toast } from 'sonner';
+import { useEffect, useMemo, useState } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { toast } from "sonner";
 import {
-  Loader2, Plus, Trash2, ArrowUp, ArrowDown, Save, Search, AlertTriangle,
-  Package, Boxes, Eye, EyeOff, X,
-} from 'lucide-react';
+  Loader2,
+  Plus,
+  Trash2,
+  ArrowUp,
+  ArrowDown,
+  Save,
+  Search,
+  AlertTriangle,
+  Package,
+  Boxes,
+  Eye,
+  EyeOff,
+  X,
+} from "lucide-react";
 
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Switch } from '@/components/ui/switch';
-import { Textarea } from '@/components/ui/textarea';
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
+import { Textarea } from "@/components/ui/textarea";
 import {
-  Select, SelectTrigger, SelectValue, SelectContent, SelectItem,
-} from '@/components/ui/select';
-import { Card, CardContent } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
+  Select,
+  SelectTrigger,
+  SelectValue,
+  SelectContent,
+  SelectItem,
+} from "@/components/ui/select";
+import { Card, CardContent } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import {
-  Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter,
-} from '@/components/ui/dialog';
-import { supabase } from '@/integrations/supabase/client';
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import { supabase } from "@/integrations/supabase/client";
 import {
   adminListHomepageShowcases,
   adminCreateHomepageShowcase,
@@ -33,27 +52,27 @@ import {
   type ShowcaseType,
   type ShowcaseMode,
   type ShowcaseVisual,
-} from '@/lib/homepageBlocks';
-import { computeProductQuality, QUALITY_FEATURED_MIN } from '@/lib/productQuality';
+} from "@/lib/homepageBlocks";
+import { computeProductQuality, QUALITY_FEATURED_MIN } from "@/lib/productQuality";
 
 const TYPE_LABEL: Record<ShowcaseType, string> = {
-  featured: 'Destaques',
-  offers: 'Ofertas',
-  best_sellers: 'Mais vendidos',
-  new_arrivals: 'Novidades',
-  category: 'Categoria',
-  bundles: 'Combos',
-  custom: 'Personalizada',
+  featured: "Destaques",
+  offers: "Ofertas",
+  best_sellers: "Mais vendidos",
+  new_arrivals: "Novidades",
+  category: "Categoria",
+  bundles: "Combos",
+  custom: "Personalizada",
 };
 
 const VISUAL_LABEL: Record<ShowcaseVisual, string> = {
-  default: 'Padrão',
-  premium: 'Premium',
-  compact: 'Compacta',
-  highlighted: 'Destacada',
+  default: "Padrão",
+  premium: "Premium",
+  compact: "Compacta",
+  highlighted: "Destacada",
 };
 
-const NOBLE_TYPES: ShowcaseType[] = ['featured', 'offers', 'best_sellers', 'new_arrivals'];
+const NOBLE_TYPES: ShowcaseType[] = ["featured", "offers", "best_sellers", "new_arrivals"];
 
 function isUrlSafe(u: string | null | undefined) {
   if (!u) return true;
@@ -65,16 +84,16 @@ function isUrlSafe(u: string | null | undefined) {
 export function HomepageShowcasesManager() {
   const qc = useQueryClient();
   const { data: showcases, isLoading } = useQuery({
-    queryKey: ['admin_homepage_showcases'],
+    queryKey: ["admin_homepage_showcases"],
     queryFn: adminListHomepageShowcases,
   });
   const { data: categories } = useQuery({
-    queryKey: ['admin_categories_list_min'],
+    queryKey: ["admin_categories_list_min"],
     queryFn: async () => {
       const { data } = await (supabase as any)
-        .from('categories')
-        .select('id, name, slug, active')
-        .order('name', { ascending: true });
+        .from("categories")
+        .select("id, name, slug, active")
+        .order("name", { ascending: true });
       return (data ?? []) as Array<{ id: string; name: string; slug: string; active: boolean }>;
     },
   });
@@ -86,43 +105,43 @@ export function HomepageShowcasesManager() {
       const next = (showcases?.length ?? 0) + 1;
       const created = await adminCreateHomepageShowcase({
         title: `Nova vitrine ${next}`,
-        showcase_type: 'featured',
-        mode: 'auto',
+        showcase_type: "featured",
+        mode: "auto",
         product_limit: 8,
-        visual_variant: 'default',
+        visual_variant: "default",
         is_active: false,
         sort_order: next * 10,
       });
       return created;
     },
     onSuccess: (c) => {
-      toast.success('Vitrine criada');
-      qc.invalidateQueries({ queryKey: ['admin_homepage_showcases'] });
+      toast.success("Vitrine criada");
+      qc.invalidateQueries({ queryKey: ["admin_homepage_showcases"] });
       setEditingId(c.id);
     },
-    onError: (e: any) => toast.error(e?.message ?? 'Erro ao criar vitrine'),
+    onError: (e: any) => toast.error(e?.message ?? "Erro ao criar vitrine"),
   });
 
   const deleteMut = useMutation({
     mutationFn: (id: string) => adminDeleteHomepageShowcase(id),
     onSuccess: () => {
-      toast.success('Vitrine excluída');
-      qc.invalidateQueries({ queryKey: ['admin_homepage_showcases'] });
+      toast.success("Vitrine excluída");
+      qc.invalidateQueries({ queryKey: ["admin_homepage_showcases"] });
       setEditingId(null);
     },
-    onError: (e: any) => toast.error(e?.message ?? 'Erro ao excluir'),
+    onError: (e: any) => toast.error(e?.message ?? "Erro ao excluir"),
   });
 
   const reorderMut = useMutation({
     mutationFn: async ({ id, sort_order }: { id: string; sort_order: number }) =>
       adminUpdateHomepageShowcase(id, { sort_order }),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['admin_homepage_showcases'] }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["admin_homepage_showcases"] }),
   });
 
   const toggleActiveMut = useMutation({
     mutationFn: async ({ id, is_active }: { id: string; is_active: boolean }) =>
       adminUpdateHomepageShowcase(id, { is_active }),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['admin_homepage_showcases'] }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["admin_homepage_showcases"] }),
   });
 
   function move(id: string, dir: -1 | 1) {
@@ -140,8 +159,9 @@ export function HomepageShowcasesManager() {
         <div>
           <h2 className="font-semibold">Vitrines de produtos</h2>
           <p className="text-xs text-muted-foreground max-w-xl">
-            Crie vitrines automáticas (por regra) ou manuais (escolhendo produto a produto). Quando criar
-            uma vitrine de <b>Ofertas</b> ou <b>Destaques</b>, ela substitui o bloco padrão da homepage.
+            Crie vitrines automáticas (por regra) ou manuais (escolhendo produto a produto). Quando
+            criar uma vitrine de <b>Ofertas</b> ou <b>Destaques</b>, ela substitui o bloco padrão da
+            homepage.
           </p>
         </div>
         <Button size="sm" onClick={() => createMut.mutate()} disabled={createMut.isPending}>
@@ -179,14 +199,27 @@ export function HomepageShowcasesManager() {
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 flex-wrap">
                   <span className="font-medium truncate">{s.title}</span>
-                  <Badge variant="outline" className="text-[10px]">{TYPE_LABEL[s.showcase_type]}</Badge>
-                  <Badge variant={s.mode === 'manual' ? 'default' : 'secondary'} className="text-[10px]">
-                    {s.mode === 'manual' ? 'Manual' : 'Automática'}
+                  <Badge variant="outline" className="text-[10px]">
+                    {TYPE_LABEL[s.showcase_type]}
                   </Badge>
-                  <Badge variant="outline" className="text-[10px]">{VISUAL_LABEL[s.visual_variant]}</Badge>
-                  {!s.is_active && <Badge variant="destructive" className="text-[10px]">Inativa</Badge>}
+                  <Badge
+                    variant={s.mode === "manual" ? "default" : "secondary"}
+                    className="text-[10px]"
+                  >
+                    {s.mode === "manual" ? "Manual" : "Automática"}
+                  </Badge>
+                  <Badge variant="outline" className="text-[10px]">
+                    {VISUAL_LABEL[s.visual_variant]}
+                  </Badge>
+                  {!s.is_active && (
+                    <Badge variant="destructive" className="text-[10px]">
+                      Inativa
+                    </Badge>
+                  )}
                 </div>
-                {s.subtitle && <p className="text-xs text-muted-foreground truncate">{s.subtitle}</p>}
+                {s.subtitle && (
+                  <p className="text-xs text-muted-foreground truncate">{s.subtitle}</p>
+                )}
               </div>
 
               <div className="flex items-center gap-2">
@@ -194,7 +227,9 @@ export function HomepageShowcasesManager() {
                   checked={s.is_active}
                   onCheckedChange={(v) => toggleActiveMut.mutate({ id: s.id, is_active: v })}
                 />
-                <Button variant="outline" size="sm" onClick={() => setEditingId(s.id)}>Editar</Button>
+                <Button variant="outline" size="sm" onClick={() => setEditingId(s.id)}>
+                  Editar
+                </Button>
                 <Button
                   variant="ghost"
                   size="sm"
@@ -211,7 +246,8 @@ export function HomepageShowcasesManager() {
         ))}
         {!isLoading && (showcases?.length ?? 0) === 0 && (
           <p className="text-sm text-muted-foreground border rounded-md p-6 text-center">
-            Nenhuma vitrine criada ainda. A homepage continua usando os blocos padrão (Ofertas e Destaques).
+            Nenhuma vitrine criada ainda. A homepage continua usando os blocos padrão (Ofertas e
+            Destaques).
           </p>
         )}
       </div>
@@ -254,29 +290,30 @@ function ShowcaseEditorDialog({
   const saveMut = useMutation({
     mutationFn: async () => {
       if (!showcaseId) return;
-      if (!form.title || form.title.trim().length === 0) throw new Error('Título obrigatório');
-      if (form.title.length > 120) throw new Error('Título muito longo (máx 120)');
-      if (form.subtitle && form.subtitle.length > 240) throw new Error('Subtítulo muito longo (máx 240)');
+      if (!form.title || form.title.trim().length === 0) throw new Error("Título obrigatório");
+      if (form.title.length > 120) throw new Error("Título muito longo (máx 120)");
+      if (form.subtitle && form.subtitle.length > 240)
+        throw new Error("Subtítulo muito longo (máx 240)");
       if (!isUrlSafe(form.view_all_url ?? null)) throw new Error('URL "Ver todos" inválida');
-      if (form.showcase_type === 'category' && !form.category_id) {
-        throw new Error('Selecione uma categoria para vitrine do tipo Categoria');
+      if (form.showcase_type === "category" && !form.category_id) {
+        throw new Error("Selecione uma categoria para vitrine do tipo Categoria");
       }
       const payload: any = { ...form };
       delete payload.id;
       await adminUpdateHomepageShowcase(showcaseId, payload);
     },
     onSuccess: () => {
-      toast.success('Vitrine salva');
-      qc.invalidateQueries({ queryKey: ['admin_homepage_showcases'] });
+      toast.success("Vitrine salva");
+      qc.invalidateQueries({ queryKey: ["admin_homepage_showcases"] });
     },
-    onError: (e: any) => toast.error(e?.message ?? 'Erro ao salvar'),
+    onError: (e: any) => toast.error(e?.message ?? "Erro ao salvar"),
   });
 
   if (!showcaseId || !showcase) return null;
 
-  const isManual = form.mode === 'manual';
-  const isCategory = form.showcase_type === 'category';
-  const isBundles = form.showcase_type === 'bundles';
+  const isManual = form.mode === "manual";
+  const isCategory = form.showcase_type === "category";
+  const isBundles = form.showcase_type === "bundles";
   const isNoble = form.showcase_type ? NOBLE_TYPES.includes(form.showcase_type) : false;
 
   return (
@@ -291,8 +328,8 @@ function ShowcaseEditorDialog({
             <div className="space-y-1.5 md:col-span-2">
               <Label className="text-xs">Título *</Label>
               <Input
-                value={form.title ?? ''}
-                onChange={(e) => set('title', e.target.value)}
+                value={form.title ?? ""}
+                onChange={(e) => set("title", e.target.value)}
                 maxLength={120}
               />
             </div>
@@ -300,8 +337,8 @@ function ShowcaseEditorDialog({
               <Label className="text-xs">Subtítulo (opcional)</Label>
               <Textarea
                 rows={2}
-                value={form.subtitle ?? ''}
-                onChange={(e) => set('subtitle', e.target.value || null)}
+                value={form.subtitle ?? ""}
+                onChange={(e) => set("subtitle", e.target.value || null)}
                 maxLength={240}
               />
             </div>
@@ -310,12 +347,16 @@ function ShowcaseEditorDialog({
               <Label className="text-xs">Tipo</Label>
               <Select
                 value={form.showcase_type}
-                onValueChange={(v) => set('showcase_type', v as ShowcaseType)}
+                onValueChange={(v) => set("showcase_type", v as ShowcaseType)}
               >
-                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
                 <SelectContent>
                   {(Object.keys(TYPE_LABEL) as ShowcaseType[]).map((t) => (
-                    <SelectItem key={t} value={t}>{TYPE_LABEL[t]}</SelectItem>
+                    <SelectItem key={t} value={t}>
+                      {TYPE_LABEL[t]}
+                    </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
@@ -323,8 +364,10 @@ function ShowcaseEditorDialog({
 
             <div className="space-y-1.5">
               <Label className="text-xs">Modo</Label>
-              <Select value={form.mode} onValueChange={(v) => set('mode', v as ShowcaseMode)}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
+              <Select value={form.mode} onValueChange={(v) => set("mode", v as ShowcaseMode)}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="auto">Automático (por regra)</SelectItem>
                   <SelectItem value="manual">Manual (escolher itens)</SelectItem>
@@ -336,12 +379,16 @@ function ShowcaseEditorDialog({
               <Label className="text-xs">Variante visual</Label>
               <Select
                 value={form.visual_variant}
-                onValueChange={(v) => set('visual_variant', v as ShowcaseVisual)}
+                onValueChange={(v) => set("visual_variant", v as ShowcaseVisual)}
               >
-                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
                 <SelectContent>
                   {(Object.keys(VISUAL_LABEL) as ShowcaseVisual[]).map((v) => (
-                    <SelectItem key={v} value={v}>{VISUAL_LABEL[v]}</SelectItem>
+                    <SelectItem key={v} value={v}>
+                      {VISUAL_LABEL[v]}
+                    </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
@@ -354,7 +401,9 @@ function ShowcaseEditorDialog({
                 min={1}
                 max={24}
                 value={form.product_limit ?? 8}
-                onChange={(e) => set('product_limit', Math.min(24, Math.max(1, Number(e.target.value) || 8)))}
+                onChange={(e) =>
+                  set("product_limit", Math.min(24, Math.max(1, Number(e.target.value) || 8)))
+                }
               />
             </div>
 
@@ -362,14 +411,20 @@ function ShowcaseEditorDialog({
               <div className="space-y-1.5 md:col-span-2">
                 <Label className="text-xs">Categoria *</Label>
                 <Select
-                  value={form.category_id ?? ''}
-                  onValueChange={(v) => set('category_id', v || null)}
+                  value={form.category_id ?? ""}
+                  onValueChange={(v) => set("category_id", v || null)}
                 >
-                  <SelectTrigger><SelectValue placeholder="Selecione uma categoria" /></SelectTrigger>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecione uma categoria" />
+                  </SelectTrigger>
                   <SelectContent>
-                    {categories.filter((c) => c.active).map((c) => (
-                      <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
-                    ))}
+                    {categories
+                      .filter((c) => c.active)
+                      .map((c) => (
+                        <SelectItem key={c.id} value={c.id}>
+                          {c.name}
+                        </SelectItem>
+                      ))}
                   </SelectContent>
                 </Select>
               </div>
@@ -380,15 +435,12 @@ function ShowcaseEditorDialog({
               <Input
                 type="number"
                 value={form.sort_order ?? 0}
-                onChange={(e) => set('sort_order', Number(e.target.value) || 0)}
+                onChange={(e) => set("sort_order", Number(e.target.value) || 0)}
               />
             </div>
 
             <div className="space-y-1.5 flex items-end gap-2">
-              <Switch
-                checked={!!form.is_active}
-                onCheckedChange={(v) => set('is_active', v)}
-              />
+              <Switch checked={!!form.is_active} onCheckedChange={(v) => set("is_active", v)} />
               <Label className="text-xs">Vitrine ativa</Label>
             </div>
 
@@ -396,7 +448,7 @@ function ShowcaseEditorDialog({
               <div className="flex items-center gap-2">
                 <Switch
                   checked={!!form.show_view_all_button}
-                  onCheckedChange={(v) => set('show_view_all_button', v)}
+                  onCheckedChange={(v) => set("show_view_all_button", v)}
                 />
                 <Label className="text-xs">Exibir botão "Ver todos"</Label>
               </div>
@@ -406,8 +458,8 @@ function ShowcaseEditorDialog({
               <div className="space-y-1.5 md:col-span-2">
                 <Label className="text-xs">URL do "Ver todos" (opcional)</Label>
                 <Input
-                  value={form.view_all_url ?? ''}
-                  onChange={(e) => set('view_all_url', e.target.value || null)}
+                  value={form.view_all_url ?? ""}
+                  onChange={(e) => set("view_all_url", e.target.value || null)}
                   placeholder="/catalogo?oferta=true"
                 />
                 <p className="text-[11px] text-muted-foreground">
@@ -427,8 +479,9 @@ function ShowcaseEditorDialog({
 
           {!isManual && isNoble && (
             <p className="text-xs text-muted-foreground border-l-2 border-amber-500 pl-3">
-              Vitrines nobres ({TYPE_LABEL[form.showcase_type as ShowcaseType]}) ocultam automaticamente
-              produtos com qualidade insuficiente para destaque (score &lt; {QUALITY_FEATURED_MIN}).
+              Vitrines nobres ({TYPE_LABEL[form.showcase_type as ShowcaseType]}) ocultam
+              automaticamente produtos com qualidade insuficiente para destaque (score &lt;{" "}
+              {QUALITY_FEATURED_MIN}).
             </p>
           )}
           {!isManual && isBundles && (
@@ -439,9 +492,15 @@ function ShowcaseEditorDialog({
         </div>
 
         <DialogFooter>
-          <Button variant="outline" onClick={onClose}>Fechar</Button>
+          <Button variant="outline" onClick={onClose}>
+            Fechar
+          </Button>
           <Button onClick={() => saveMut.mutate()} disabled={saveMut.isPending}>
-            {saveMut.isPending ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : <Save className="w-4 h-4 mr-1" />}
+            {saveMut.isPending ? (
+              <Loader2 className="w-4 h-4 animate-spin mr-1" />
+            ) : (
+              <Save className="w-4 h-4 mr-1" />
+            )}
             Salvar
           </Button>
         </DialogFooter>
@@ -456,7 +515,7 @@ function ShowcaseEditorDialog({
 
 interface ResolvedManualItem {
   itemId: string;
-  itemType: 'product' | 'combo';
+  itemType: "product" | "combo";
   sortOrder: number;
   isActive: boolean;
   product?: any;
@@ -475,10 +534,10 @@ function ManualItemsEditor({
   acceptCombos: boolean;
 }) {
   const qc = useQueryClient();
-  const [searchOpen, setSearchOpen] = useState<'product' | 'combo' | null>(null);
+  const [searchOpen, setSearchOpen] = useState<"product" | "combo" | null>(null);
 
   const { data: items, isLoading } = useQuery({
-    queryKey: ['admin_showcase_items', showcaseId],
+    queryKey: ["admin_showcase_items", showcaseId],
     queryFn: () => adminListShowcaseItems(showcaseId),
   });
 
@@ -487,111 +546,122 @@ function ManualItemsEditor({
   const comboIds = (items ?? []).filter((i) => i.combo_id).map((i) => i.combo_id!);
 
   const { data: products } = useQuery({
-    queryKey: ['admin_showcase_products', productIds.sort().join(',')],
+    queryKey: ["admin_showcase_products", productIds.sort().join(",")],
     enabled: productIds.length > 0,
     queryFn: async () => {
       const { data } = await (supabase as any)
-        .from('products')
-        .select('id, name, slug, active, price, sale_price, images, description, ncm, weight_kg, height_cm, width_cm, length_cm, cost_price, category_id, seo_title, seo_description, seo_keywords')
-        .in('id', productIds);
+        .from("products")
+        .select(
+          "id, name, slug, active, price, sale_price, images, description, ncm, weight_kg, height_cm, width_cm, length_cm, cost_price, category_id, seo_title, seo_description, seo_keywords",
+        )
+        .in("id", productIds);
       return (data ?? []) as any[];
     },
   });
 
   const { data: combos } = useQuery({
-    queryKey: ['admin_showcase_combos', comboIds.sort().join(',')],
+    queryKey: ["admin_showcase_combos", comboIds.sort().join(",")],
     enabled: comboIds.length > 0,
     queryFn: async () => {
       const { data } = await (supabase as any)
-        .from('product_bundles')
-        .select('id, name, slug, image_url, is_active, start_date, end_date')
-        .in('id', comboIds);
+        .from("product_bundles")
+        .select("id, name, slug, image_url, is_active, start_date, end_date")
+        .in("id", comboIds);
       return (data ?? []) as any[];
     },
   });
 
   const resolved: ResolvedManualItem[] = useMemo(() => {
-    return (items ?? []).map((it) => {
-      const warnings: string[] = [];
-      let product: any | undefined;
-      let combo: any | undefined;
-      let qualityScore: number | undefined;
+    return (items ?? [])
+      .map((it) => {
+        const warnings: string[] = [];
+        let product: any | undefined;
+        let combo: any | undefined;
+        let qualityScore: number | undefined;
 
-      if (it.item_type === 'product' && it.product_id) {
-        product = (products ?? []).find((p) => p.id === it.product_id);
-        if (!product) warnings.push('Produto não encontrado');
-        else {
-          if (!product.active) warnings.push('Produto inativo — não aparecerá');
-          const price = product.sale_price ?? product.price;
-          if (!price || price <= 0) warnings.push('Sem preço — não aparecerá');
-          const q = computeProductQuality(product);
-          qualityScore = q.score;
-          if (isNoble && q.score < QUALITY_FEATURED_MIN) {
-            warnings.push(`Qualidade ${q.score} < ${QUALITY_FEATURED_MIN} — não aparecerá em vitrine nobre`);
+        if (it.item_type === "product" && it.product_id) {
+          product = (products ?? []).find((p) => p.id === it.product_id);
+          if (!product) warnings.push("Produto não encontrado");
+          else {
+            if (!product.active) warnings.push("Produto inativo — não aparecerá");
+            const price = product.sale_price ?? product.price;
+            if (!price || price <= 0) warnings.push("Sem preço — não aparecerá");
+            const q = computeProductQuality(product);
+            qualityScore = q.score;
+            if (isNoble && q.score < QUALITY_FEATURED_MIN) {
+              warnings.push(
+                `Qualidade ${q.score} < ${QUALITY_FEATURED_MIN} — não aparecerá em vitrine nobre`,
+              );
+            }
+          }
+        } else if (it.item_type === "combo" && it.combo_id) {
+          combo = (combos ?? []).find((c) => c.id === it.combo_id);
+          if (!combo) warnings.push("Combo não encontrado");
+          else {
+            if (!combo.is_active) warnings.push("Combo inativo — não aparecerá");
+            const now = Date.now();
+            if (combo.start_date && new Date(combo.start_date).getTime() > now)
+              warnings.push("Combo ainda não começou");
+            if (combo.end_date && new Date(combo.end_date).getTime() < now)
+              warnings.push("Combo expirado");
           }
         }
-      } else if (it.item_type === 'combo' && it.combo_id) {
-        combo = (combos ?? []).find((c) => c.id === it.combo_id);
-        if (!combo) warnings.push('Combo não encontrado');
-        else {
-          if (!combo.is_active) warnings.push('Combo inativo — não aparecerá');
-          const now = Date.now();
-          if (combo.start_date && new Date(combo.start_date).getTime() > now) warnings.push('Combo ainda não começou');
-          if (combo.end_date && new Date(combo.end_date).getTime() < now) warnings.push('Combo expirado');
-        }
-      }
 
-      return {
-        itemId: it.id,
-        itemType: it.item_type,
-        sortOrder: it.sort_order,
-        isActive: it.is_active,
-        product, combo, qualityScore, warnings,
-      };
-    }).sort((a, b) => a.sortOrder - b.sortOrder);
+        return {
+          itemId: it.id,
+          itemType: it.item_type,
+          sortOrder: it.sort_order,
+          isActive: it.is_active,
+          product,
+          combo,
+          qualityScore,
+          warnings,
+        };
+      })
+      .sort((a, b) => a.sortOrder - b.sortOrder);
   }, [items, products, combos, isNoble]);
 
   const addMut = useMutation({
-    mutationFn: async ({ type, id }: { type: 'product' | 'combo'; id: string }) => {
+    mutationFn: async ({ type, id }: { type: "product" | "combo"; id: string }) => {
       const next = (items?.length ?? 0) + 1;
       await adminAddShowcaseItem({
         showcase_id: showcaseId,
         item_type: type,
-        product_id: type === 'product' ? id : null,
-        combo_id: type === 'combo' ? id : null,
+        product_id: type === "product" ? id : null,
+        combo_id: type === "combo" ? id : null,
         sort_order: next * 10,
       });
     },
     onSuccess: () => {
-      toast.success('Item adicionado');
-      qc.invalidateQueries({ queryKey: ['admin_showcase_items', showcaseId] });
+      toast.success("Item adicionado");
+      qc.invalidateQueries({ queryKey: ["admin_showcase_items", showcaseId] });
       setSearchOpen(null);
     },
     onError: (e: any) => {
-      const msg = String(e?.message ?? '');
-      if (msg.includes('duplicate') || msg.includes('uq_homepage_showcase_items')) {
-        toast.error('Este item já está nessa vitrine');
+      const msg = String(e?.message ?? "");
+      if (msg.includes("duplicate") || msg.includes("uq_homepage_showcase_items")) {
+        toast.error("Este item já está nessa vitrine");
       } else {
-        toast.error(msg || 'Erro ao adicionar');
+        toast.error(msg || "Erro ao adicionar");
       }
     },
   });
 
   const removeMut = useMutation({
     mutationFn: (id: string) => adminDeleteShowcaseItem(id),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['admin_showcase_items', showcaseId] }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["admin_showcase_items", showcaseId] }),
   });
 
   const toggleMut = useMutation({
     mutationFn: ({ id, is_active }: { id: string; is_active: boolean }) =>
       adminUpdateShowcaseItem(id, { is_active }),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['admin_showcase_items', showcaseId] }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["admin_showcase_items", showcaseId] }),
   });
 
   const reorderMut = useMutation({
     mutationFn: ({ id, sort_order }: { id: string; sort_order: number }) =>
       adminUpdateShowcaseItem(id, { sort_order }),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['admin_showcase_items', showcaseId] }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["admin_showcase_items", showcaseId] }),
   });
 
   function move(itemId: string, dir: -1 | 1) {
@@ -607,11 +677,11 @@ function ManualItemsEditor({
       <div className="flex items-center justify-between">
         <h3 className="text-sm font-semibold">Itens manuais</h3>
         <div className="flex gap-2">
-          <Button size="sm" variant="outline" onClick={() => setSearchOpen('product')}>
+          <Button size="sm" variant="outline" onClick={() => setSearchOpen("product")}>
             <Package className="w-4 h-4 mr-1" /> Adicionar produto
           </Button>
           {acceptCombos && (
-            <Button size="sm" variant="outline" onClick={() => setSearchOpen('combo')}>
+            <Button size="sm" variant="outline" onClick={() => setSearchOpen("combo")}>
               <Boxes className="w-4 h-4 mr-1" /> Adicionar combo
             </Button>
           )}
@@ -627,14 +697,14 @@ function ManualItemsEditor({
       <div className="space-y-2">
         {resolved.map((r, i) => {
           const data = r.product ?? r.combo;
-          const name = data?.name ?? '(item removido)';
+          const name = data?.name ?? "(item removido)";
           const image = r.product
-            ? (Array.isArray(r.product.images) && r.product.images[0])
+            ? Array.isArray(r.product.images) && r.product.images[0]
             : r.combo?.image_url;
           return (
             <div
               key={r.itemId}
-              className={`flex items-center gap-3 p-2 border rounded-md ${r.warnings.length > 0 ? 'border-amber-500/50 bg-amber-500/5' : ''}`}
+              className={`flex items-center gap-3 p-2 border rounded-md ${r.warnings.length > 0 ? "border-amber-500/50 bg-amber-500/5" : ""}`}
             >
               <div className="flex flex-col gap-0.5">
                 <button
@@ -656,7 +726,7 @@ function ManualItemsEditor({
               <div className="w-12 h-12 rounded bg-muted flex items-center justify-center overflow-hidden flex-shrink-0">
                 {image ? (
                   <img src={image} alt="" className="w-full h-full object-cover" />
-                ) : r.itemType === 'combo' ? (
+                ) : r.itemType === "combo" ? (
                   <Boxes className="w-5 h-5 text-muted-foreground" />
                 ) : (
                   <Package className="w-5 h-5 text-muted-foreground" />
@@ -667,11 +737,11 @@ function ManualItemsEditor({
                 <div className="flex items-center gap-2 flex-wrap">
                   <span className="font-medium text-sm truncate">{name}</span>
                   <Badge variant="outline" className="text-[10px]">
-                    {r.itemType === 'combo' ? 'Combo' : 'Produto'}
+                    {r.itemType === "combo" ? "Combo" : "Produto"}
                   </Badge>
                   {r.qualityScore !== undefined && (
                     <Badge
-                      variant={r.qualityScore >= QUALITY_FEATURED_MIN ? 'secondary' : 'destructive'}
+                      variant={r.qualityScore >= QUALITY_FEATURED_MIN ? "secondary" : "destructive"}
                       className="text-[10px]"
                     >
                       Qualidade {r.qualityScore}
@@ -681,7 +751,7 @@ function ManualItemsEditor({
                 {r.warnings.length > 0 && (
                   <div className="flex items-start gap-1 mt-0.5">
                     <AlertTriangle className="w-3 h-3 text-amber-600 mt-0.5 flex-shrink-0" />
-                    <p className="text-[11px] text-amber-700">{r.warnings.join(' • ')}</p>
+                    <p className="text-[11px] text-amber-700">{r.warnings.join(" • ")}</p>
                   </div>
                 )}
               </div>
@@ -734,33 +804,35 @@ function ItemSearchDialog({
   onSelect,
   onClose,
 }: {
-  type: 'product' | 'combo';
+  type: "product" | "combo";
   isNoble: boolean;
   existingProductIds: string[];
   existingComboIds: string[];
   onSelect: (id: string) => void;
   onClose: () => void;
 }) {
-  const [q, setQ] = useState('');
+  const [q, setQ] = useState("");
   const { data, isFetching } = useQuery({
-    queryKey: ['admin_showcase_search', type, q],
+    queryKey: ["admin_showcase_search", type, q],
     queryFn: async () => {
-      if (type === 'product') {
+      if (type === "product") {
         const query = (supabase as any)
-          .from('products')
-          .select('id, name, slug, active, price, sale_price, images, description, ncm, weight_kg, height_cm, width_cm, length_cm, cost_price, category_id, seo_title, seo_description, seo_keywords')
-          .order('created_at', { ascending: false })
+          .from("products")
+          .select(
+            "id, name, slug, active, price, sale_price, images, description, ncm, weight_kg, height_cm, width_cm, length_cm, cost_price, category_id, seo_title, seo_description, seo_keywords",
+          )
+          .order("created_at", { ascending: false })
           .limit(20);
-        if (q.trim().length > 0) query.ilike('name', `%${q.trim()}%`);
+        if (q.trim().length > 0) query.ilike("name", `%${q.trim()}%`);
         const { data: rows } = await query;
         return (rows ?? []) as any[];
       } else {
         const query = (supabase as any)
-          .from('product_bundles')
-          .select('id, name, slug, is_active, image_url, start_date, end_date')
-          .order('created_at', { ascending: false })
+          .from("product_bundles")
+          .select("id, name, slug, is_active, image_url, start_date, end_date")
+          .order("created_at", { ascending: false })
           .limit(20);
-        if (q.trim().length > 0) query.ilike('name', `%${q.trim()}%`);
+        if (q.trim().length > 0) query.ilike("name", `%${q.trim()}%`);
         const { data: rows } = await query;
         return (rows ?? []) as any[];
       }
@@ -771,9 +843,7 @@ function ItemSearchDialog({
     <Dialog open onOpenChange={(o) => !o && onClose()}>
       <DialogContent className="max-w-xl">
         <DialogHeader>
-          <DialogTitle>
-            Adicionar {type === 'product' ? 'produto' : 'combo'} à vitrine
-          </DialogTitle>
+          <DialogTitle>Adicionar {type === "product" ? "produto" : "combo"} à vitrine</DialogTitle>
         </DialogHeader>
         <div className="relative">
           <Search className="absolute left-2 top-2.5 w-4 h-4 text-muted-foreground" />
@@ -789,18 +859,16 @@ function ItemSearchDialog({
           {isFetching && <Loader2 className="w-4 h-4 animate-spin mx-auto my-4" />}
           {(data ?? []).map((row: any) => {
             const already =
-              type === 'product'
+              type === "product"
                 ? existingProductIds.includes(row.id)
                 : existingComboIds.includes(row.id);
-            const image = type === 'product'
-              ? (Array.isArray(row.images) && row.images[0])
-              : row.image_url;
-            const isActive = type === 'product' ? row.active : row.is_active;
-            const price = type === 'product' ? (row.sale_price ?? row.price) : null;
-            const qualityScore =
-              type === 'product' ? computeProductQuality(row).score : undefined;
+            const image =
+              type === "product" ? Array.isArray(row.images) && row.images[0] : row.image_url;
+            const isActive = type === "product" ? row.active : row.is_active;
+            const price = type === "product" ? (row.sale_price ?? row.price) : null;
+            const qualityScore = type === "product" ? computeProductQuality(row).score : undefined;
             const blockedByQuality =
-              type === 'product' && isNoble && (qualityScore ?? 0) < QUALITY_FEATURED_MIN;
+              type === "product" && isNoble && (qualityScore ?? 0) < QUALITY_FEATURED_MIN;
 
             return (
               <button
@@ -810,34 +878,54 @@ function ItemSearchDialog({
                 className="w-full flex items-center gap-3 p-2 border rounded-md text-left hover:bg-muted disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <div className="w-10 h-10 rounded bg-muted overflow-hidden flex items-center justify-center flex-shrink-0">
-                  {image ? <img src={image} alt="" className="w-full h-full object-cover" /> : <Package className="w-4 h-4" />}
+                  {image ? (
+                    <img src={image} alt="" className="w-full h-full object-cover" />
+                  ) : (
+                    <Package className="w-4 h-4" />
+                  )}
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-medium truncate">{row.name}</p>
                   <div className="flex items-center gap-1.5 flex-wrap mt-0.5">
-                    {!isActive && <Badge variant="destructive" className="text-[10px]">Inativo</Badge>}
-                    {price !== null && <span className="text-[11px] text-muted-foreground">R$ {Number(price).toFixed(2)}</span>}
+                    {!isActive && (
+                      <Badge variant="destructive" className="text-[10px]">
+                        Inativo
+                      </Badge>
+                    )}
+                    {price !== null && (
+                      <span className="text-[11px] text-muted-foreground">
+                        R$ {Number(price).toFixed(2)}
+                      </span>
+                    )}
                     {qualityScore !== undefined && (
-                      <Badge variant={qualityScore >= QUALITY_FEATURED_MIN ? 'secondary' : 'destructive'} className="text-[10px]">
+                      <Badge
+                        variant={qualityScore >= QUALITY_FEATURED_MIN ? "secondary" : "destructive"}
+                        className="text-[10px]"
+                      >
                         Q {qualityScore}
                       </Badge>
                     )}
-                    {already && <Badge variant="outline" className="text-[10px]">Já adicionado</Badge>}
+                    {already && (
+                      <Badge variant="outline" className="text-[10px]">
+                        Já adicionado
+                      </Badge>
+                    )}
                     {blockedByQuality && (
                       <span className="text-[10px] text-destructive">
-                        Qualidade insuficiente para vitrine nobre — corrija imagem, descrição, SEO, custo, fiscal ou logística antes
+                        Qualidade insuficiente para vitrine nobre — corrija imagem, descrição, SEO,
+                        custo, fiscal ou logística antes
                       </span>
                     )}
                   </div>
                 </div>
-                {!already && !blockedByQuality && <Plus className="w-4 h-4 text-muted-foreground" />}
+                {!already && !blockedByQuality && (
+                  <Plus className="w-4 h-4 text-muted-foreground" />
+                )}
               </button>
             );
           })}
           {!isFetching && (data?.length ?? 0) === 0 && (
-            <p className="text-sm text-muted-foreground text-center py-6">
-              Nenhum resultado.
-            </p>
+            <p className="text-sm text-muted-foreground text-center py-6">Nenhum resultado.</p>
           )}
         </div>
         <DialogFooter>

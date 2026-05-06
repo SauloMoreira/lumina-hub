@@ -1,13 +1,13 @@
-import { createFileRoute, Link, useSearch } from '@tanstack/react-router';
-import { useEffect, useRef, useState } from 'react';
-import { CheckCircle2, Clock, Loader2, ArrowRight } from 'lucide-react';
-import { z } from 'zod';
-import { StoreLayout } from '@/components/layout/StoreLayout';
-import { Button } from '@/components/ui/button';
-import { useAuth } from '@/hooks/useAuth';
-import { useCart } from '@/stores/cartStore';
-import { getOrderPaymentStatus } from '@/server/payment.functions';
-import { buildSeo } from '@/lib/seo';
+import { createFileRoute, Link, useSearch } from "@tanstack/react-router";
+import { useEffect, useRef, useState } from "react";
+import { CheckCircle2, Clock, Loader2, ArrowRight } from "lucide-react";
+import { z } from "zod";
+import { StoreLayout } from "@/components/layout/StoreLayout";
+import { Button } from "@/components/ui/button";
+import { useAuth } from "@/hooks/useAuth";
+import { useCart } from "@/stores/cartStore";
+import { getOrderPaymentStatus } from "@/server/payment.functions";
+import { buildSeo } from "@/lib/seo";
 
 const searchSchema = z.object({
   order_id: z.string().uuid().optional(),
@@ -15,14 +15,14 @@ const searchSchema = z.object({
   status: z.string().optional(),
 });
 
-export const Route = createFileRoute('/checkout/success')({
-  head: () => buildSeo({ title: 'Pagamento confirmado', url: '/checkout/success', noindex: true }),
+export const Route = createFileRoute("/checkout/success")({
+  head: () => buildSeo({ title: "Pagamento confirmado", url: "/checkout/success", noindex: true }),
   validateSearch: (s) => searchSchema.parse(s),
   component: CheckoutSuccessPage,
 });
 
 function CheckoutSuccessPage() {
-  const { order_id } = useSearch({ from: '/checkout/success' });
+  const { order_id } = useSearch({ from: "/checkout/success" });
   const { user, loading } = useAuth();
   const cart = useCart();
   const [status, setStatus] = useState<string | null>(null);
@@ -46,9 +46,13 @@ function CheckoutSuccessPage() {
       const r = await getOrderPaymentStatus({ data: { orderId: order_id! } });
       if (cancelled) return;
       if (r.ok) {
-        setStatus(r.order.payment_status ?? 'pending');
+        setStatus(r.order.payment_status ?? "pending");
         setOrderNumber(r.order.order_number);
-        if (r.order.payment_status === 'approved' || r.order.payment_status === 'paid' || attempts >= 8) {
+        if (
+          r.order.payment_status === "approved" ||
+          r.order.payment_status === "paid" ||
+          attempts >= 8
+        ) {
           setPolling(false);
           return;
         }
@@ -62,33 +66,51 @@ function CheckoutSuccessPage() {
   }, [order_id, user]);
 
   if (loading) {
-    return <StoreLayout><div className="container mx-auto px-4 py-12 text-center text-muted-foreground"><Loader2 className="w-5 h-5 animate-spin inline mr-2" />Carregando...</div></StoreLayout>;
+    return (
+      <StoreLayout>
+        <div className="container mx-auto px-4 py-12 text-center text-muted-foreground">
+          <Loader2 className="w-5 h-5 animate-spin inline mr-2" />
+          Carregando...
+        </div>
+      </StoreLayout>
+    );
   }
 
-  const approved = status === 'approved' || status === 'paid';
+  const approved = status === "approved" || status === "paid";
 
   return (
     <StoreLayout>
       <div className="container mx-auto px-4 py-12 max-w-xl text-center">
-        <div className={`w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 ${approved ? 'bg-success/15' : 'bg-primary-tint'}`}>
-          {approved ? <CheckCircle2 className="w-9 h-9 text-success" /> : <Clock className="w-9 h-9 text-primary" />}
+        <div
+          className={`w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 ${approved ? "bg-success/15" : "bg-primary-tint"}`}
+        >
+          {approved ? (
+            <CheckCircle2 className="w-9 h-9 text-success" />
+          ) : (
+            <Clock className="w-9 h-9 text-primary" />
+          )}
         </div>
         <h1 className="font-display font-bold text-3xl mb-2">
-          {approved ? 'Pagamento aprovado!' : 'Pagamento recebido'}
+          {approved ? "Pagamento aprovado!" : "Pagamento recebido"}
         </h1>
         {orderNumber && (
-          <p className="text-muted-foreground mb-1">Pedido <strong className="text-foreground">#{orderNumber}</strong></p>
+          <p className="text-muted-foreground mb-1">
+            Pedido <strong className="text-foreground">#{orderNumber}</strong>
+          </p>
         )}
         <p className="text-muted-foreground mb-2">
           {approved
-            ? 'Recebemos a confirmação do Mercado Pago. Vamos preparar seu pedido.'
-            : 'Estamos confirmando seu pagamento com o Mercado Pago. Você será avisado quando for aprovado.'}
+            ? "Recebemos a confirmação do Mercado Pago. Vamos preparar seu pedido."
+            : "Estamos confirmando seu pagamento com o Mercado Pago. Você será avisado quando for aprovado."}
         </p>
         <p className="text-xs text-muted-foreground mb-6">
           Enviamos as atualizações do pedido para o seu e-mail cadastrado.
         </p>
         {polling && !approved && (
-          <p className="text-xs text-muted-foreground mb-6 inline-flex items-center"><Loader2 className="w-3.5 h-3.5 animate-spin mr-1.5" />Aguardando confirmação...</p>
+          <p className="text-xs text-muted-foreground mb-6 inline-flex items-center">
+            <Loader2 className="w-3.5 h-3.5 animate-spin mr-1.5" />
+            Aguardando confirmação...
+          </p>
         )}
         <div className="flex gap-3 justify-center">
           {order_id && (

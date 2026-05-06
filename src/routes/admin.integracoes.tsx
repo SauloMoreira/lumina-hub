@@ -1,15 +1,30 @@
-import { createFileRoute } from '@tanstack/react-router';
-import { useEffect, useState } from 'react';
-import { toast } from 'sonner';
-import { Plus, Trash2, ExternalLink, Loader2, ShieldCheck, FlaskConical, CheckCircle2, AlertTriangle } from 'lucide-react';
-import { AdminLayout } from '@/components/admin/AdminLayout';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Switch } from '@/components/ui/switch';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Badge } from '@/components/ui/badge';
+import { createFileRoute } from "@tanstack/react-router";
+import { useEffect, useState } from "react";
+import { toast } from "sonner";
+import {
+  Plus,
+  Trash2,
+  ExternalLink,
+  Loader2,
+  ShieldCheck,
+  FlaskConical,
+  CheckCircle2,
+  AlertTriangle,
+} from "lucide-react";
+import { AdminLayout } from "@/components/admin/AdminLayout";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Badge } from "@/components/ui/badge";
 import {
   listIntegrations,
   upsertIntegration,
@@ -18,58 +33,64 @@ import {
   type MarketingIntegration,
   type IntegrationProvider,
   type ConsentCategory,
-} from '@/server/marketingIntegrations.functions';
+} from "@/server/marketingIntegrations.functions";
 
-export const Route = createFileRoute('/admin/integracoes')({
+export const Route = createFileRoute("/admin/integracoes")({
   component: IntegrationsPage,
-  head: () => ({ meta: [{ title: 'Integrações | Admin' }] }),
+  head: () => ({ meta: [{ title: "Integrações | Admin" }] }),
 });
 
 const PROVIDER_INFO: Record<
   IntegrationProvider,
-  { label: string; placeholder: string; example: string; defaultConsent: ConsentCategory; help: string }
+  {
+    label: string;
+    placeholder: string;
+    example: string;
+    defaultConsent: ConsentCategory;
+    help: string;
+  }
 > = {
   ga4: {
-    label: 'Google Analytics 4 (GA4)',
-    placeholder: 'G-XXXXXXXXXX',
-    example: 'G-ABCDEF1234',
-    defaultConsent: 'analytics',
+    label: "Google Analytics 4 (GA4)",
+    placeholder: "G-XXXXXXXXXX",
+    example: "G-ABCDEF1234",
+    defaultConsent: "analytics",
     help: 'Encontre em GA4 → Admin → Fluxos de dados → Web → "ID de medição".',
   },
   gtm: {
-    label: 'Google Tag Manager (GTM)',
-    placeholder: 'GTM-XXXXXXX',
-    example: 'GTM-ABCD123',
-    defaultConsent: 'analytics',
-    help: 'Encontre em tagmanager.google.com → seu container → ID no topo.',
+    label: "Google Tag Manager (GTM)",
+    placeholder: "GTM-XXXXXXX",
+    example: "GTM-ABCD123",
+    defaultConsent: "analytics",
+    help: "Encontre em tagmanager.google.com → seu container → ID no topo.",
   },
   meta_pixel: {
-    label: 'Meta Pixel (Facebook/Instagram)',
-    placeholder: '1234567890123456',
-    example: '123456789012345',
-    defaultConsent: 'marketing',
-    help: 'Gerenciador de Eventos do Meta → ID do Pixel (números).',
+    label: "Meta Pixel (Facebook/Instagram)",
+    placeholder: "1234567890123456",
+    example: "123456789012345",
+    defaultConsent: "marketing",
+    help: "Gerenciador de Eventos do Meta → ID do Pixel (números).",
   },
   tiktok_pixel: {
-    label: 'TikTok Pixel',
-    placeholder: 'CXXXXXXXXXXXXXXXXX',
-    example: 'C12ABCDEFGHIJKLMNOP',
-    defaultConsent: 'marketing',
-    help: 'TikTok Ads → Assets → Events → Pixel ID.',
+    label: "TikTok Pixel",
+    placeholder: "CXXXXXXXXXXXXXXXXX",
+    example: "C12ABCDEFGHIJKLMNOP",
+    defaultConsent: "marketing",
+    help: "TikTok Ads → Assets → Events → Pixel ID.",
   },
   clarity: {
-    label: 'Microsoft Clarity',
-    placeholder: 'xxxxxxxxxx',
-    example: 'abcd123456',
-    defaultConsent: 'analytics',
-    help: 'clarity.microsoft.com → Settings → Project ID.',
+    label: "Microsoft Clarity",
+    placeholder: "xxxxxxxxxx",
+    example: "abcd123456",
+    defaultConsent: "analytics",
+    help: "clarity.microsoft.com → Settings → Project ID.",
   },
   google_ads: {
-    label: 'Google Ads',
-    placeholder: 'AW-XXXXXXXXX',
-    example: 'AW-123456789',
-    defaultConsent: 'marketing',
-    help: 'Google Ads → Tools → Conversions → Tag setup → Conversion ID.',
+    label: "Google Ads",
+    placeholder: "AW-XXXXXXXXX",
+    example: "AW-123456789",
+    defaultConsent: "marketing",
+    help: "Google Ads → Tools → Conversions → Tag setup → Conversion ID.",
   },
 };
 
@@ -100,11 +121,11 @@ function IntegrationsPage() {
     consent_category: ConsentCategory;
     notes: string;
   }>({
-    provider: 'ga4',
-    account_id: '',
+    provider: "ga4",
+    account_id: "",
     enabled: true,
-    consent_category: 'analytics',
-    notes: '',
+    consent_category: "analytics",
+    notes: "",
   });
 
   async function load() {
@@ -113,7 +134,7 @@ function IntegrationsPage() {
       const list = await listIntegrations();
       setItems(list);
     } catch (e) {
-      toast.error('Falha ao carregar integrações');
+      toast.error("Falha ao carregar integrações");
       console.error(e);
     } finally {
       setLoading(false);
@@ -130,7 +151,7 @@ function IntegrationsPage() {
 
   async function handleAdd() {
     if (!form.account_id.trim()) {
-      toast.error('Informe o ID da conta');
+      toast.error("Informe o ID da conta");
       return;
     }
     setSaving(true);
@@ -144,11 +165,11 @@ function IntegrationsPage() {
           notes: form.notes.trim() || null,
         },
       });
-      toast.success('Integração salva');
-      setForm((f) => ({ ...f, account_id: '', notes: '' }));
+      toast.success("Integração salva");
+      setForm((f) => ({ ...f, account_id: "", notes: "" }));
       await load();
     } catch (e: any) {
-      toast.error(e?.message || 'Falha ao salvar');
+      toast.error(e?.message || "Falha ao salvar");
     } finally {
       setSaving(false);
     }
@@ -166,21 +187,21 @@ function IntegrationsPage() {
           notes: item.notes,
         },
       });
-      toast.success(item.enabled ? 'Integração desativada' : 'Integração ativada');
+      toast.success(item.enabled ? "Integração desativada" : "Integração ativada");
       await load();
     } catch (e: any) {
-      toast.error(e?.message || 'Falha ao alterar');
+      toast.error(e?.message || "Falha ao alterar");
     }
   }
 
   async function handleDelete(id: string) {
-    if (!confirm('Excluir esta integração?')) return;
+    if (!confirm("Excluir esta integração?")) return;
     try {
       await deleteIntegration({ data: { id } });
-      toast.success('Integração excluída');
+      toast.success("Integração excluída");
       await load();
     } catch (e: any) {
-      toast.error(e?.message || 'Falha ao excluir');
+      toast.error(e?.message || "Falha ao excluir");
     }
   }
 
@@ -189,16 +210,18 @@ function IntegrationsPage() {
     try {
       const r = await testIntegration({ data: { id: item.id } });
       if (!r.formatOk) {
-        toast.error('ID com formato inválido. Verifique o valor informado.');
-      } else if (r.reachable === 'ok') {
-        toast.success('Configuração válida — endpoint do provedor respondeu OK.');
-      } else if (r.reachable === 'failed') {
-        toast.warning(`Formato OK, mas o provedor recusou (${r.detail || 'erro'}). Confirme o ID.`);
+        toast.error("ID com formato inválido. Verifique o valor informado.");
+      } else if (r.reachable === "ok") {
+        toast.success("Configuração válida — endpoint do provedor respondeu OK.");
+      } else if (r.reachable === "failed") {
+        toast.warning(`Formato OK, mas o provedor recusou (${r.detail || "erro"}). Confirme o ID.`);
       } else {
-        toast.success('Formato do ID válido. Este provedor não permite teste de alcance — verifique o pixel no painel oficial.');
+        toast.success(
+          "Formato do ID válido. Este provedor não permite teste de alcance — verifique o pixel no painel oficial.",
+        );
       }
     } catch (e: any) {
-      toast.error(e?.message || 'Falha ao testar');
+      toast.error(e?.message || "Falha ao testar");
     } finally {
       setTestingId(null);
     }
@@ -209,8 +232,8 @@ function IntegrationsPage() {
   const activeWithBadFormat = items.filter(
     (i) => i.enabled && !isValidId(i.provider, i.account_id),
   );
-  const missingGa4 = !configuredProviders.has('ga4');
-  const missingMetaPixel = !configuredProviders.has('meta_pixel');
+  const missingGa4 = !configuredProviders.has("ga4");
+  const missingMetaPixel = !configuredProviders.has("meta_pixel");
 
   const info = PROVIDER_INFO[form.provider];
 
@@ -218,8 +241,8 @@ function IntegrationsPage() {
     <AdminLayout title="Pixels & Analytics">
       <div className="space-y-6 p-4 md:p-6 max-w-5xl">
         <p className="text-sm text-muted-foreground">
-          Configure GA4, GTM, Meta, TikTok, Clarity e Google Ads. Os scripts só carregam
-          após o consentimento LGPD do visitante.
+          Configure GA4, GTM, Meta, TikTok, Clarity e Google Ads. Os scripts só carregam após o
+          consentimento LGPD do visitante.
         </p>
 
         {(missingGa4 || missingMetaPixel || activeWithBadFormat.length > 0) && (
@@ -230,10 +253,16 @@ function IntegrationsPage() {
               </p>
               <ul className="space-y-1 text-muted-foreground list-disc pl-5">
                 {missingGa4 && <li>Google Analytics 4 ainda não foi configurado.</li>}
-                {missingMetaPixel && <li>Meta Pixel ainda não foi configurado — recomendado para campanhas no Facebook/Instagram.</li>}
+                {missingMetaPixel && (
+                  <li>
+                    Meta Pixel ainda não foi configurado — recomendado para campanhas no
+                    Facebook/Instagram.
+                  </li>
+                )}
                 {activeWithBadFormat.map((i) => (
                   <li key={i.id} className="text-destructive">
-                    {PROVIDER_INFO[i.provider]?.label ?? i.provider}: integração ativa com ID em formato inválido.
+                    {PROVIDER_INFO[i.provider]?.label ?? i.provider}: integração ativa com ID em
+                    formato inválido.
                   </li>
                 ))}
               </ul>
@@ -241,14 +270,17 @@ function IntegrationsPage() {
           </Card>
         )}
 
-        {items.length > 0 && !missingGa4 && !missingMetaPixel && activeWithBadFormat.length === 0 && (
-          <Card className="border-emerald-500/40 bg-emerald-50/40 dark:bg-emerald-950/20">
-            <CardContent className="pt-6 text-sm flex items-center gap-2 text-emerald-900 dark:text-emerald-200">
-              <CheckCircle2 className="w-4 h-4" />
-              Tudo certo! As principais ferramentas de medição estão configuradas.
-            </CardContent>
-          </Card>
-        )}
+        {items.length > 0 &&
+          !missingGa4 &&
+          !missingMetaPixel &&
+          activeWithBadFormat.length === 0 && (
+            <Card className="border-emerald-500/40 bg-emerald-50/40 dark:bg-emerald-950/20">
+              <CardContent className="pt-6 text-sm flex items-center gap-2 text-emerald-900 dark:text-emerald-200">
+                <CheckCircle2 className="w-4 h-4" />
+                Tudo certo! As principais ferramentas de medição estão configuradas.
+              </CardContent>
+            </Card>
+          )}
 
         <Card>
           <CardHeader>
@@ -263,11 +295,18 @@ function IntegrationsPage() {
             <div className="grid md:grid-cols-2 gap-4">
               <div>
                 <Label>Plataforma</Label>
-                <Select value={form.provider} onValueChange={(v) => pickProvider(v as IntegrationProvider)}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
+                <Select
+                  value={form.provider}
+                  onValueChange={(v) => pickProvider(v as IntegrationProvider)}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
                   <SelectContent>
                     {PROVIDERS.map((p) => (
-                      <SelectItem key={p} value={p}>{PROVIDER_INFO[p].label}</SelectItem>
+                      <SelectItem key={p} value={p}>
+                        {PROVIDER_INFO[p].label}
+                      </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
@@ -281,16 +320,22 @@ function IntegrationsPage() {
                   value={form.account_id}
                   onChange={(e) => setForm((f) => ({ ...f, account_id: e.target.value }))}
                 />
-                <p className="text-xs text-muted-foreground mt-1">Exemplo: <code>{info.example}</code></p>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Exemplo: <code>{info.example}</code>
+                </p>
               </div>
 
               <div>
                 <Label>Categoria de consentimento</Label>
                 <Select
                   value={form.consent_category}
-                  onValueChange={(v) => setForm((f) => ({ ...f, consent_category: v as ConsentCategory }))}
+                  onValueChange={(v) =>
+                    setForm((f) => ({ ...f, consent_category: v as ConsentCategory }))
+                  }
                 >
-                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="analytics">Analytics</SelectItem>
                     <SelectItem value="marketing">Marketing</SelectItem>
@@ -318,10 +363,14 @@ function IntegrationsPage() {
                   checked={form.enabled}
                   onCheckedChange={(c) => setForm((f) => ({ ...f, enabled: c }))}
                 />
-                <span className="text-sm">{form.enabled ? 'Ativada' : 'Desativada'}</span>
+                <span className="text-sm">{form.enabled ? "Ativada" : "Desativada"}</span>
               </div>
               <Button onClick={handleAdd} disabled={saving}>
-                {saving ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Plus className="w-4 h-4 mr-2" />}
+                {saving ? (
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                ) : (
+                  <Plus className="w-4 h-4 mr-2" />
+                )}
                 Salvar integração
               </Button>
             </div>
@@ -350,49 +399,59 @@ function IntegrationsPage() {
                 {items.map((item) => {
                   const formatOk = isValidId(item.provider, item.account_id);
                   return (
-                  <div
-                    key={item.id}
-                    className="flex items-center justify-between gap-3 p-3 rounded-lg border bg-card"
-                  >
-                    <div className="min-w-0 flex-1">
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <span className="font-medium text-sm">{PROVIDER_INFO[item.provider]?.label ?? item.provider}</span>
-                        <Badge variant={item.enabled ? 'default' : 'secondary'} className="text-[10px]">
-                          {item.enabled ? 'Ativa' : 'Inativa'}
-                        </Badge>
-                        <Badge variant="outline" className="text-[10px]">
-                          {item.consent_category === 'analytics' ? 'Analytics' : 'Marketing'}
-                        </Badge>
-                        {!formatOk && (
-                          <Badge variant="destructive" className="text-[10px]">
-                            <AlertTriangle className="w-2.5 h-2.5 mr-1" /> ID inválido
+                    <div
+                      key={item.id}
+                      className="flex items-center justify-between gap-3 p-3 rounded-lg border bg-card"
+                    >
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className="font-medium text-sm">
+                            {PROVIDER_INFO[item.provider]?.label ?? item.provider}
+                          </span>
+                          <Badge
+                            variant={item.enabled ? "default" : "secondary"}
+                            className="text-[10px]"
+                          >
+                            {item.enabled ? "Ativa" : "Inativa"}
                           </Badge>
+                          <Badge variant="outline" className="text-[10px]">
+                            {item.consent_category === "analytics" ? "Analytics" : "Marketing"}
+                          </Badge>
+                          {!formatOk && (
+                            <Badge variant="destructive" className="text-[10px]">
+                              <AlertTriangle className="w-2.5 h-2.5 mr-1" /> ID inválido
+                            </Badge>
+                          )}
+                        </div>
+                        <code className="text-xs text-muted-foreground">{item.account_id}</code>
+                        {item.notes && (
+                          <p className="text-xs text-muted-foreground mt-1">{item.notes}</p>
                         )}
                       </div>
-                      <code className="text-xs text-muted-foreground">{item.account_id}</code>
-                      {item.notes && <p className="text-xs text-muted-foreground mt-1">{item.notes}</p>}
+                      <div className="flex items-center gap-2 shrink-0">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleTest(item)}
+                          disabled={testingId === item.id}
+                          title="Testar configuração"
+                        >
+                          {testingId === item.id ? (
+                            <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                          ) : (
+                            <FlaskConical className="w-3.5 h-3.5" />
+                          )}
+                          <span className="hidden sm:inline ml-1">Testar</span>
+                        </Button>
+                        <Switch
+                          checked={item.enabled}
+                          onCheckedChange={() => toggleEnabled(item)}
+                        />
+                        <Button variant="ghost" size="icon" onClick={() => handleDelete(item.id)}>
+                          <Trash2 className="w-4 h-4 text-destructive" />
+                        </Button>
+                      </div>
                     </div>
-                    <div className="flex items-center gap-2 shrink-0">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handleTest(item)}
-                        disabled={testingId === item.id}
-                        title="Testar configuração"
-                      >
-                        {testingId === item.id ? (
-                          <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                        ) : (
-                          <FlaskConical className="w-3.5 h-3.5" />
-                        )}
-                        <span className="hidden sm:inline ml-1">Testar</span>
-                      </Button>
-                      <Switch checked={item.enabled} onCheckedChange={() => toggleEnabled(item)} />
-                      <Button variant="ghost" size="icon" onClick={() => handleDelete(item.id)}>
-                        <Trash2 className="w-4 h-4 text-destructive" />
-                      </Button>
-                    </div>
-                  </div>
                   );
                 })}
               </div>
@@ -405,11 +464,12 @@ function IntegrationsPage() {
             <p className="flex items-center gap-1.5">
               <ExternalLink className="w-3.5 h-3.5" />
               <strong>Como funciona:</strong> ao salvar uma integração ativa, o script é injetado
-              automaticamente no front da loja para visitantes que aceitaram a categoria correspondente.
+              automaticamente no front da loja para visitantes que aceitaram a categoria
+              correspondente.
             </p>
             <p>
-              Se o visitante recusar ou revogar consentimento, nenhum script de analytics ou marketing é
-              carregado.
+              Se o visitante recusar ou revogar consentimento, nenhum script de analytics ou
+              marketing é carregado.
             </p>
           </CardContent>
         </Card>

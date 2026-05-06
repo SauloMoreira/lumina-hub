@@ -14,35 +14,35 @@
 
 export const QUALITY_FEATURED_MIN = 70;
 
-export type QualityClass = 'ruim' | 'atencao' | 'bom' | 'excelente';
+export type QualityClass = "ruim" | "atencao" | "bom" | "excelente";
 
 export type QualityIssueCode =
-  | 'no_image'
-  | 'no_alt_text'
-  | 'no_description'
-  | 'description_short'
-  | 'no_specs'
-  | 'no_seo_title'
-  | 'no_seo_description'
-  | 'no_slug'
-  | 'seo_limits'
-  | 'no_ncm'
-  | 'no_weight'
-  | 'no_dimensions'
-  | 'no_cost'
-  | 'no_category'
+  | "no_image"
+  | "no_alt_text"
+  | "no_description"
+  | "description_short"
+  | "no_specs"
+  | "no_seo_title"
+  | "no_seo_description"
+  | "no_slug"
+  | "seo_limits"
+  | "no_ncm"
+  | "no_weight"
+  | "no_dimensions"
+  | "no_cost"
+  | "no_category"
   // Atributos técnicos (Onda B). Não bloqueantes, peso leve.
-  | 'no_tech_attrs'
-  | 'no_tech_power'
-  | 'no_tech_voltage'
-  | 'no_tech_color_temp'
-  | 'no_tech_ip_rating'
-  | 'tech_attr_hidden'
-  | 'tech_attr_duplicate';
+  | "no_tech_attrs"
+  | "no_tech_power"
+  | "no_tech_voltage"
+  | "no_tech_color_temp"
+  | "no_tech_ip_rating"
+  | "tech_attr_hidden"
+  | "tech_attr_duplicate";
 
 export interface QualityIssue {
   code: QualityIssueCode;
-  group: 'media' | 'content' | 'seo' | 'fiscal' | 'tech';
+  group: "media" | "content" | "seo" | "fiscal" | "tech";
   label: string;
   hint: string;
   weight: number;
@@ -103,135 +103,318 @@ const SEO_DESC_MAX = 160;
 const DESCRIPTION_MIN = 120;
 
 function classify(score: number): QualityClass {
-  if (score >= 91) return 'excelente';
-  if (score >= 71) return 'bom';
-  if (score >= 41) return 'atencao';
-  return 'ruim';
+  if (score >= 91) return "excelente";
+  if (score >= 71) return "bom";
+  if (score >= 41) return "atencao";
+  return "ruim";
 }
 
 export function computeProductQuality(p: QualityProductInput): QualityResult {
   const issues: QualityIssue[] = [];
   const passed: QualityIssueCode[] = [];
-  let media = 0, content = 0, seo = 0, fiscal = 0;
+  let media = 0,
+    content = 0,
+    seo = 0,
+    fiscal = 0;
 
   // ----- MÍDIA (20) -----
   const imgs = (p.product_images ?? []).filter((i) => !!i?.original_url);
   const legacyImgs = (p.images ?? []).filter(Boolean);
   const hasImage = imgs.length > 0 || legacyImgs.length > 0;
-  if (hasImage) { media += 15; passed.push('no_image'); }
-  else issues.push({ code: 'no_image', group: 'media', weight: 15, label: 'Sem imagem principal', hint: 'Adicione ao menos uma imagem do produto.' });
+  if (hasImage) {
+    media += 15;
+    passed.push("no_image");
+  } else
+    issues.push({
+      code: "no_image",
+      group: "media",
+      weight: 15,
+      label: "Sem imagem principal",
+      hint: "Adicione ao menos uma imagem do produto.",
+    });
 
-  const altOk = imgs.length > 0
-    ? imgs.every((i) => (i.alt_text ?? '').trim().length > 0)
-    : false;
-  if (altOk) { media += 5; passed.push('no_alt_text'); }
-  else if (hasImage) issues.push({ code: 'no_alt_text', group: 'media', weight: 5, label: 'Imagens sem texto alternativo', hint: 'Preencha o "alt" das imagens para SEO e acessibilidade.' });
+  const altOk = imgs.length > 0 ? imgs.every((i) => (i.alt_text ?? "").trim().length > 0) : false;
+  if (altOk) {
+    media += 5;
+    passed.push("no_alt_text");
+  } else if (hasImage)
+    issues.push({
+      code: "no_alt_text",
+      group: "media",
+      weight: 5,
+      label: "Imagens sem texto alternativo",
+      hint: 'Preencha o "alt" das imagens para SEO e acessibilidade.',
+    });
 
   // ----- CONTEÚDO (25) -----
-  const desc = (p.description ?? '').trim();
-  if (desc.length > 0) { content += 10; passed.push('no_description'); }
-  else issues.push({ code: 'no_description', group: 'content', weight: 10, label: 'Sem descrição', hint: 'Descreva o produto, suas vantagens e aplicações.' });
+  const desc = (p.description ?? "").trim();
+  if (desc.length > 0) {
+    content += 10;
+    passed.push("no_description");
+  } else
+    issues.push({
+      code: "no_description",
+      group: "content",
+      weight: 10,
+      label: "Sem descrição",
+      hint: "Descreva o produto, suas vantagens e aplicações.",
+    });
 
-  if (desc.length >= DESCRIPTION_MIN) { content += 5; passed.push('description_short'); }
-  else if (desc.length > 0) issues.push({ code: 'description_short', group: 'content', weight: 5, label: 'Descrição muito curta', hint: `Use ao menos ${DESCRIPTION_MIN} caracteres para melhorar o SEO.` });
+  if (desc.length >= DESCRIPTION_MIN) {
+    content += 5;
+    passed.push("description_short");
+  } else if (desc.length > 0)
+    issues.push({
+      code: "description_short",
+      group: "content",
+      weight: 5,
+      label: "Descrição muito curta",
+      hint: `Use ao menos ${DESCRIPTION_MIN} caracteres para melhorar o SEO.`,
+    });
 
-  const specsCount = p.specs && typeof p.specs === 'object' ? Object.keys(p.specs).length : 0;
-  if (specsCount >= 2) { content += 10; passed.push('no_specs'); }
-  else issues.push({ code: 'no_specs', group: 'content', weight: 10, label: 'Sem especificações técnicas', hint: 'Adicione ao menos 2 specs (potência, voltagem, dimensões etc.).' });
+  const specsCount = p.specs && typeof p.specs === "object" ? Object.keys(p.specs).length : 0;
+  if (specsCount >= 2) {
+    content += 10;
+    passed.push("no_specs");
+  } else
+    issues.push({
+      code: "no_specs",
+      group: "content",
+      weight: 10,
+      label: "Sem especificações técnicas",
+      hint: "Adicione ao menos 2 specs (potência, voltagem, dimensões etc.).",
+    });
 
   // ----- SEO (20) -----
-  const seoTitle = (p.seo_title ?? '').trim();
-  const seoDesc = (p.seo_description ?? '').trim();
-  const slug = (p.slug ?? '').trim();
+  const seoTitle = (p.seo_title ?? "").trim();
+  const seoDesc = (p.seo_description ?? "").trim();
+  const slug = (p.slug ?? "").trim();
 
-  if (seoTitle.length > 0) { seo += 7; passed.push('no_seo_title'); }
-  else issues.push({ code: 'no_seo_title', group: 'seo', weight: 7, label: 'Sem título SEO', hint: 'Preencha um título SEO entre 30 e 65 caracteres.' });
+  if (seoTitle.length > 0) {
+    seo += 7;
+    passed.push("no_seo_title");
+  } else
+    issues.push({
+      code: "no_seo_title",
+      group: "seo",
+      weight: 7,
+      label: "Sem título SEO",
+      hint: "Preencha um título SEO entre 30 e 65 caracteres.",
+    });
 
-  if (seoDesc.length > 0) { seo += 7; passed.push('no_seo_description'); }
-  else issues.push({ code: 'no_seo_description', group: 'seo', weight: 7, label: 'Sem meta description', hint: 'Preencha uma meta description entre 80 e 160 caracteres.' });
+  if (seoDesc.length > 0) {
+    seo += 7;
+    passed.push("no_seo_description");
+  } else
+    issues.push({
+      code: "no_seo_description",
+      group: "seo",
+      weight: 7,
+      label: "Sem meta description",
+      hint: "Preencha uma meta description entre 80 e 160 caracteres.",
+    });
 
-  if (slug.length > 0 && SLUG_RE.test(slug)) { seo += 3; passed.push('no_slug'); }
-  else issues.push({ code: 'no_slug', group: 'seo', weight: 3, label: 'Slug ausente ou inválido', hint: 'Use apenas letras minúsculas, números e hífens.' });
+  if (slug.length > 0 && SLUG_RE.test(slug)) {
+    seo += 3;
+    passed.push("no_slug");
+  } else
+    issues.push({
+      code: "no_slug",
+      group: "seo",
+      weight: 3,
+      label: "Slug ausente ou inválido",
+      hint: "Use apenas letras minúsculas, números e hífens.",
+    });
 
   const titleOk = seoTitle.length >= SEO_TITLE_MIN && seoTitle.length <= SEO_TITLE_MAX;
   const descOk = seoDesc.length >= SEO_DESC_MIN && seoDesc.length <= SEO_DESC_MAX;
-  if (titleOk && descOk) { seo += 3; passed.push('seo_limits'); }
-  else if (seoTitle.length > 0 || seoDesc.length > 0) {
-    issues.push({ code: 'seo_limits', group: 'seo', weight: 3, label: 'SEO fora dos limites recomendados', hint: `Título: ${SEO_TITLE_MIN}-${SEO_TITLE_MAX} caracteres. Meta: ${SEO_DESC_MIN}-${SEO_DESC_MAX} caracteres.` });
+  if (titleOk && descOk) {
+    seo += 3;
+    passed.push("seo_limits");
+  } else if (seoTitle.length > 0 || seoDesc.length > 0) {
+    issues.push({
+      code: "seo_limits",
+      group: "seo",
+      weight: 3,
+      label: "SEO fora dos limites recomendados",
+      hint: `Título: ${SEO_TITLE_MIN}-${SEO_TITLE_MAX} caracteres. Meta: ${SEO_DESC_MIN}-${SEO_DESC_MAX} caracteres.`,
+    });
   }
 
   // ----- FISCAL/LOGÍSTICA + CUSTO (35) -----
-  const ncm = (p.ncm ?? '').trim();
-  if (/^[0-9]{8}$/.test(ncm)) { fiscal += 8; passed.push('no_ncm'); }
-  else issues.push({ code: 'no_ncm', group: 'fiscal', weight: 8, label: 'NCM ausente ou inválido', hint: 'Informe um NCM válido com 8 dígitos para emissão de nota.' });
+  const ncm = (p.ncm ?? "").trim();
+  if (/^[0-9]{8}$/.test(ncm)) {
+    fiscal += 8;
+    passed.push("no_ncm");
+  } else
+    issues.push({
+      code: "no_ncm",
+      group: "fiscal",
+      weight: 8,
+      label: "NCM ausente ou inválido",
+      hint: "Informe um NCM válido com 8 dígitos para emissão de nota.",
+    });
 
-  if (typeof p.weight_kg === 'number' && p.weight_kg > 0) { fiscal += 5; passed.push('no_weight'); }
-  else issues.push({ code: 'no_weight', group: 'fiscal', weight: 5, label: 'Sem peso', hint: 'Informe o peso em kg para cálculo correto de frete.' });
+  if (typeof p.weight_kg === "number" && p.weight_kg > 0) {
+    fiscal += 5;
+    passed.push("no_weight");
+  } else
+    issues.push({
+      code: "no_weight",
+      group: "fiscal",
+      weight: 5,
+      label: "Sem peso",
+      hint: "Informe o peso em kg para cálculo correto de frete.",
+    });
 
-  const hasDims = [p.height_cm, p.width_cm, p.length_cm].every((v) => typeof v === 'number' && v! > 0);
-  if (hasDims) { fiscal += 7; passed.push('no_dimensions'); }
-  else issues.push({ code: 'no_dimensions', group: 'fiscal', weight: 7, label: 'Sem dimensões completas', hint: 'Preencha altura, largura e comprimento em cm.' });
+  const hasDims = [p.height_cm, p.width_cm, p.length_cm].every(
+    (v) => typeof v === "number" && v! > 0,
+  );
+  if (hasDims) {
+    fiscal += 7;
+    passed.push("no_dimensions");
+  } else
+    issues.push({
+      code: "no_dimensions",
+      group: "fiscal",
+      weight: 7,
+      label: "Sem dimensões completas",
+      hint: "Preencha altura, largura e comprimento em cm.",
+    });
 
-  if (typeof p.cost_price === 'number' && p.cost_price > 0) { fiscal += 10; passed.push('no_cost'); }
-  else issues.push({ code: 'no_cost', group: 'fiscal', weight: 10, label: 'Sem custo cadastrado', hint: 'Informe o custo (uso interno) para calcular margem.' });
+  if (typeof p.cost_price === "number" && p.cost_price > 0) {
+    fiscal += 10;
+    passed.push("no_cost");
+  } else
+    issues.push({
+      code: "no_cost",
+      group: "fiscal",
+      weight: 10,
+      label: "Sem custo cadastrado",
+      hint: "Informe o custo (uso interno) para calcular margem.",
+    });
 
-  if (p.category_id && p.category_id.length > 0) { fiscal += 5; passed.push('no_category'); }
-  else issues.push({ code: 'no_category', group: 'fiscal', weight: 5, label: 'Sem categoria', hint: 'Vincule o produto a uma categoria.' });
+  if (p.category_id && p.category_id.length > 0) {
+    fiscal += 5;
+    passed.push("no_category");
+  } else
+    issues.push({
+      code: "no_category",
+      group: "fiscal",
+      weight: 5,
+      label: "Sem categoria",
+      hint: "Vincule o produto a uma categoria.",
+    });
 
   // ----- ATRIBUTOS TÉCNICOS (10, bônus aditivo) -----
   // Modelo intencionalmente leve: a ausência de atributos NÃO derruba o score
   // (apenas não soma os 10 pts extras). Assim produtos antigos sem cadastro
   // técnico não são penalizados retroativamente.
-  const techAttrs = (p.product_attributes ?? []).filter((a) => a && (a.attribute_value ?? '').toString().trim().length > 0);
+  const techAttrs = (p.product_attributes ?? []).filter(
+    (a) => a && (a.attribute_value ?? "").toString().trim().length > 0,
+  );
   const visibleAttrs = techAttrs.filter((a) => a.is_visible !== false);
   const keysSeen = new Map<string, number>();
   for (const a of techAttrs) {
-    const k = (a.attribute_key ?? '').toString().toLowerCase().trim();
+    const k = (a.attribute_key ?? "").toString().toLowerCase().trim();
     if (k) keysSeen.set(k, (keysSeen.get(k) ?? 0) + 1);
   }
-  const hasKey = (k: string) => visibleAttrs.some((a) => (a.attribute_key ?? '').toString().toLowerCase().trim() === k);
-  const ctx = `${(p.name ?? '').toString()} ${(p.tags ?? []).join(' ')}`.toLowerCase();
+  const hasKey = (k: string) =>
+    visibleAttrs.some((a) => (a.attribute_key ?? "").toString().toLowerCase().trim() === k);
+  const ctx = `${(p.name ?? "").toString()} ${(p.tags ?? []).join(" ")}`.toLowerCase();
   // Heurística simples para inferir contexto (sem mexer em RPC ou DB).
-  const looksLightingProduct = /led|lampada|lâmpada|refletor|holofote|painel|plafon|spot|luminaria|lumin[áa]ria|fita\s*led|bulbo/.test(ctx);
-  const looksOutdoor = /externo|outdoor|jardim|piscina|fachada|poste|garagem|área externa|area externa/.test(ctx);
+  const looksLightingProduct =
+    /led|lampada|lâmpada|refletor|holofote|painel|plafon|spot|luminaria|lumin[áa]ria|fita\s*led|bulbo/.test(
+      ctx,
+    );
+  const looksOutdoor =
+    /externo|outdoor|jardim|piscina|fachada|poste|garagem|área externa|area externa/.test(ctx);
 
   let tech = 0;
   if (visibleAttrs.length >= 1) {
     tech += 3;
-    passed.push('no_tech_attrs');
+    passed.push("no_tech_attrs");
   } else {
     issues.push({
-      code: 'no_tech_attrs',
-      group: 'tech',
+      code: "no_tech_attrs",
+      group: "tech",
       weight: 3,
-      label: 'Sem atributos técnicos',
-      hint: 'Adicione atributos técnicos para melhorar a ficha do produto e facilitar a busca.',
+      label: "Sem atributos técnicos",
+      hint: "Adicione atributos técnicos para melhorar a ficha do produto e facilitar a busca.",
     });
   }
 
   if (looksLightingProduct) {
-    if (hasKey('power')) { tech += 2; passed.push('no_tech_power'); }
-    else issues.push({ code: 'no_tech_power', group: 'tech', weight: 2, label: 'Sem potência (W)', hint: 'Produtos de iluminação devem informar a potência em watts.' });
+    if (hasKey("power")) {
+      tech += 2;
+      passed.push("no_tech_power");
+    } else
+      issues.push({
+        code: "no_tech_power",
+        group: "tech",
+        weight: 2,
+        label: "Sem potência (W)",
+        hint: "Produtos de iluminação devem informar a potência em watts.",
+      });
 
-    if (hasKey('voltage')) { tech += 2; passed.push('no_tech_voltage'); }
-    else issues.push({ code: 'no_tech_voltage', group: 'tech', weight: 2, label: 'Sem voltagem', hint: 'Informe 127V, 220V ou Bivolt.' });
+    if (hasKey("voltage")) {
+      tech += 2;
+      passed.push("no_tech_voltage");
+    } else
+      issues.push({
+        code: "no_tech_voltage",
+        group: "tech",
+        weight: 2,
+        label: "Sem voltagem",
+        hint: "Informe 127V, 220V ou Bivolt.",
+      });
 
-    if (hasKey('color_temperature')) { tech += 2; passed.push('no_tech_color_temp'); }
-    else issues.push({ code: 'no_tech_color_temp', group: 'tech', weight: 2, label: 'Sem temperatura de cor', hint: 'Use 3000K (quente), 4000K (neutra) ou 6500K (fria).' });
+    if (hasKey("color_temperature")) {
+      tech += 2;
+      passed.push("no_tech_color_temp");
+    } else
+      issues.push({
+        code: "no_tech_color_temp",
+        group: "tech",
+        weight: 2,
+        label: "Sem temperatura de cor",
+        hint: "Use 3000K (quente), 4000K (neutra) ou 6500K (fria).",
+      });
   }
 
   if (looksOutdoor) {
-    if (hasKey('ip_rating')) { tech += 1; passed.push('no_tech_ip_rating'); }
-    else issues.push({ code: 'no_tech_ip_rating', group: 'tech', weight: 1, label: 'Sem proteção IP', hint: 'Produtos de uso externo devem informar a proteção IP (ex.: IP65, IP66).' });
+    if (hasKey("ip_rating")) {
+      tech += 1;
+      passed.push("no_tech_ip_rating");
+    } else
+      issues.push({
+        code: "no_tech_ip_rating",
+        group: "tech",
+        weight: 1,
+        label: "Sem proteção IP",
+        hint: "Produtos de uso externo devem informar a proteção IP (ex.: IP65, IP66).",
+      });
   }
 
   // Avisos qualitativos (não somam pontos)
   if (techAttrs.length > 0 && visibleAttrs.length === 0) {
-    issues.push({ code: 'tech_attr_hidden', group: 'tech', weight: 0, label: 'Atributos técnicos invisíveis', hint: 'Todos os atributos cadastrados estão ocultos. Marque ao menos um como visível para aparecer na ficha.' });
+    issues.push({
+      code: "tech_attr_hidden",
+      group: "tech",
+      weight: 0,
+      label: "Atributos técnicos invisíveis",
+      hint: "Todos os atributos cadastrados estão ocultos. Marque ao menos um como visível para aparecer na ficha.",
+    });
   }
   for (const [, count] of keysSeen) {
     if (count > 1) {
-      issues.push({ code: 'tech_attr_duplicate', group: 'tech', weight: 0, label: 'Atributos duplicados', hint: 'Existem atributos com a mesma chave. Consolide os duplicados.' });
+      issues.push({
+        code: "tech_attr_duplicate",
+        group: "tech",
+        weight: 0,
+        label: "Atributos duplicados",
+        hint: "Existem atributos com a mesma chave. Consolide os duplicados.",
+      });
       break;
     }
   }
@@ -258,21 +441,45 @@ export function computeProductQuality(p: QualityProductInput): QualityResult {
 
 export function qualityClassLabel(c: QualityClass): string {
   switch (c) {
-    case 'excelente': return 'Excelente';
-    case 'bom': return 'Bom';
-    case 'atencao': return 'Atenção';
-    case 'ruim': return 'Ruim';
+    case "excelente":
+      return "Excelente";
+    case "bom":
+      return "Bom";
+    case "atencao":
+      return "Atenção";
+    case "ruim":
+      return "Ruim";
   }
 }
 
 export function qualityClassColor(c: QualityClass): { bg: string; text: string; ring: string } {
   switch (c) {
-    case 'excelente': return { bg: 'bg-emerald-500/10', text: 'text-emerald-700 dark:text-emerald-400', ring: 'ring-emerald-500/30' };
-    case 'bom':       return { bg: 'bg-sky-500/10',     text: 'text-sky-700 dark:text-sky-400',         ring: 'ring-sky-500/30' };
-    case 'atencao':   return { bg: 'bg-amber-500/10',   text: 'text-amber-700 dark:text-amber-400',     ring: 'ring-amber-500/30' };
-    case 'ruim':      return { bg: 'bg-red-500/10',     text: 'text-red-700 dark:text-red-400',         ring: 'ring-red-500/30' };
+    case "excelente":
+      return {
+        bg: "bg-emerald-500/10",
+        text: "text-emerald-700 dark:text-emerald-400",
+        ring: "ring-emerald-500/30",
+      };
+    case "bom":
+      return {
+        bg: "bg-sky-500/10",
+        text: "text-sky-700 dark:text-sky-400",
+        ring: "ring-sky-500/30",
+      };
+    case "atencao":
+      return {
+        bg: "bg-amber-500/10",
+        text: "text-amber-700 dark:text-amber-400",
+        ring: "ring-amber-500/30",
+      };
+    case "ruim":
+      return {
+        bg: "bg-red-500/10",
+        text: "text-red-700 dark:text-red-400",
+        ring: "ring-red-500/30",
+      };
   }
 }
 
 export const QUALITY_FEATURED_BLOCK_MESSAGE =
-  'Este produto ainda não possui qualidade suficiente para destaque. Corrija imagem, descrição, SEO, custo, fiscal ou logística antes de colocá-lo em uma vitrine premium.';
+  "Este produto ainda não possui qualidade suficiente para destaque. Corrija imagem, descrição, SEO, custo, fiscal ou logística antes de colocá-lo em uma vitrine premium.";

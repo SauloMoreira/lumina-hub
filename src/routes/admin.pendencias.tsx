@@ -1,47 +1,47 @@
-import { createFileRoute } from '@tanstack/react-router';
-import { useMemo, useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
-import { RotateCcw, Search } from 'lucide-react';
-import { AdminLayout } from '@/components/admin/AdminLayout';
-import { getAdminOperations, type OperationsCard } from '@/server/operations.functions';
-import { OperationsCardItem } from '@/components/admin/operations/OperationsCardItem';
-import { Input } from '@/components/ui/input';
-import { cn } from '@/lib/utils';
+import { createFileRoute } from "@tanstack/react-router";
+import { useMemo, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { RotateCcw, Search } from "lucide-react";
+import { AdminLayout } from "@/components/admin/AdminLayout";
+import { getAdminOperations, type OperationsCard } from "@/server/operations.functions";
+import { OperationsCardItem } from "@/components/admin/operations/OperationsCardItem";
+import { Input } from "@/components/ui/input";
+import { cn } from "@/lib/utils";
 
-export const Route = createFileRoute('/admin/pendencias')({ component: PendenciasPage });
+export const Route = createFileRoute("/admin/pendencias")({ component: PendenciasPage });
 
 const PRIORITY_FILTERS = [
-  { id: 'all', label: 'Todas' },
-  { id: 'urgent', label: 'Urgentes' },
-  { id: 'attention', label: 'Atenção' },
-  { id: 'low', label: 'Baixa prioridade' },
+  { id: "all", label: "Todas" },
+  { id: "urgent", label: "Urgentes" },
+  { id: "attention", label: "Atenção" },
+  { id: "low", label: "Baixa prioridade" },
 ] as const;
 
-type PriorityFilter = (typeof PRIORITY_FILTERS)[number]['id'];
+type PriorityFilter = (typeof PRIORITY_FILTERS)[number]["id"];
 
 function PendenciasPage() {
   const { data, isLoading, isFetching, refetch, error } = useQuery({
-    queryKey: ['admin-operations'],
+    queryKey: ["admin-operations"],
     queryFn: () => getAdminOperations(),
     staleTime: 60_000,
   });
 
-  const [search, setSearch] = useState('');
-  const [priority, setPriority] = useState<PriorityFilter>('all');
-  const [groupFilter, setGroupFilter] = useState<string>('all');
+  const [search, setSearch] = useState("");
+  const [priority, setPriority] = useState<PriorityFilter>("all");
+  const [groupFilter, setGroupFilter] = useState<string>("all");
 
   const groups = useMemo(() => {
     const set = new Set<string>();
     (data?.cards ?? []).forEach((c) => set.add(c.group));
-    return ['all', ...Array.from(set)];
+    return ["all", ...Array.from(set)];
   }, [data]);
 
   const filtered = useMemo(() => {
     let list = (data?.cards ?? []).filter((c) => c.qty > 0);
-    if (priority === 'urgent') list = list.filter((c) => c.status === 'danger');
-    else if (priority === 'attention') list = list.filter((c) => c.status === 'warn');
-    else if (priority === 'low') list = list.filter((c) => c.status === 'unknown');
-    if (groupFilter !== 'all') list = list.filter((c) => c.group === groupFilter);
+    if (priority === "urgent") list = list.filter((c) => c.status === "danger");
+    else if (priority === "attention") list = list.filter((c) => c.status === "warn");
+    else if (priority === "low") list = list.filter((c) => c.status === "unknown");
+    if (groupFilter !== "all") list = list.filter((c) => c.group === groupFilter);
     if (search.trim()) {
       const s = search.toLowerCase();
       list = list.filter(
@@ -71,7 +71,7 @@ function PendenciasPage() {
           disabled={isFetching}
           className="text-xs flex items-center gap-1.5 px-3 py-1.5 rounded-md border border-border bg-card hover:bg-muted disabled:opacity-50"
         >
-          <RotateCcw className={`w-3.5 h-3.5 ${isFetching ? 'animate-spin' : ''}`} />
+          <RotateCcw className={`w-3.5 h-3.5 ${isFetching ? "animate-spin" : ""}`} />
           Atualizar
         </button>
       }
@@ -99,22 +99,14 @@ function PendenciasPage() {
         </div>
         <div className="flex flex-wrap gap-2">
           {PRIORITY_FILTERS.map((p) => (
-            <FilterChip
-              key={p.id}
-              active={priority === p.id}
-              onClick={() => setPriority(p.id)}
-            >
+            <FilterChip key={p.id} active={priority === p.id} onClick={() => setPriority(p.id)}>
               {p.label}
             </FilterChip>
           ))}
           <span className="w-px h-6 bg-border mx-1 self-center" />
           {groups.map((g) => (
-            <FilterChip
-              key={g}
-              active={groupFilter === g}
-              onClick={() => setGroupFilter(g)}
-            >
-              {g === 'all' ? 'Todos os grupos' : g}
+            <FilterChip key={g} active={groupFilter === g} onClick={() => setGroupFilter(g)}>
+              {g === "all" ? "Todos os grupos" : g}
             </FilterChip>
           ))}
         </div>
@@ -168,10 +160,10 @@ function FilterChip({
       type="button"
       onClick={onClick}
       className={cn(
-        'text-xs px-3 py-1.5 rounded-full border transition-colors',
+        "text-xs px-3 py-1.5 rounded-full border transition-colors",
         active
-          ? 'bg-primary text-primary-foreground border-primary'
-          : 'bg-card text-muted-foreground border-border hover:bg-muted hover:text-foreground',
+          ? "bg-primary text-primary-foreground border-primary"
+          : "bg-card text-muted-foreground border-border hover:bg-muted hover:text-foreground",
       )}
     >
       {children}
@@ -179,6 +171,6 @@ function FilterChip({
   );
 }
 
-function statusWeight(s: 'ok' | 'warn' | 'danger' | 'unknown') {
-  return s === 'danger' ? 3 : s === 'warn' ? 2 : s === 'unknown' ? 1 : 0;
+function statusWeight(s: "ok" | "warn" | "danger" | "unknown") {
+  return s === "danger" ? 3 : s === "warn" ? 2 : s === "unknown" ? 1 : 0;
 }

@@ -1,6 +1,6 @@
-import { useRef, useState } from 'react';
-import { Download, FileSpreadsheet, Upload, X, AlertTriangle, Info } from 'lucide-react';
-import { toast } from 'sonner';
+import { useRef, useState } from "react";
+import { Download, FileSpreadsheet, Upload, X, AlertTriangle, Info } from "lucide-react";
+import { toast } from "sonner";
 import {
   CSV_MAX_BYTES,
   CSV_MAX_ROWS,
@@ -9,7 +9,7 @@ import {
   type CsvLineIssue,
   type CsvParseError,
   type CsvParsedRow,
-} from '@/lib/quickBuyCsv';
+} from "@/lib/quickBuyCsv";
 
 type Props = {
   onParsed: (rows: CsvParsedRow[]) => void;
@@ -18,29 +18,29 @@ type Props = {
 
 function describeError(e: CsvParseError): string {
   switch (e.kind) {
-    case 'empty_file':
-      return 'O arquivo está vazio.';
-    case 'too_large':
+    case "empty_file":
+      return "O arquivo está vazio.";
+    case "too_large":
       return `Arquivo muito grande (${Math.round(e.bytes / 1024)} KB). Máximo ${Math.round(CSV_MAX_BYTES / 1024)} KB.`;
-    case 'no_rows':
-      return 'Nenhuma linha válida encontrada no arquivo.';
-    case 'too_many_rows':
+    case "no_rows":
+      return "Nenhuma linha válida encontrada no arquivo.";
+    case "too_many_rows":
       return `Limite de ${CSV_MAX_ROWS} itens por importação. O arquivo tem ${e.total}.`;
-    case 'missing_code_column':
+    case "missing_code_column":
       return 'Coluna "codigo" (ou sku/ean/produto) não encontrada no cabeçalho.';
-    case 'missing_qty_column':
+    case "missing_qty_column":
       return 'Coluna "quantidade" (ou qtd/qty) não encontrada no cabeçalho.';
     default:
-      return 'Erro ao processar o arquivo.';
+      return "Erro ao processar o arquivo.";
   }
 }
 
 function downloadTemplate() {
-  const blob = new Blob([CSV_TEMPLATE_CONTENT], { type: 'text/csv;charset=utf-8' });
+  const blob = new Blob([CSV_TEMPLATE_CONTENT], { type: "text/csv;charset=utf-8" });
   const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
+  const a = document.createElement("a");
   a.href = url;
-  a.download = 'modelo-compra-rapida.csv';
+  a.download = "modelo-compra-rapida.csv";
   document.body.appendChild(a);
   a.click();
   document.body.removeChild(a);
@@ -61,13 +61,13 @@ export function CsvImportButton({ onParsed, isProcessing }: Props) {
 
     // Validações de extensão e tamanho ANTES de ler
     const isCsv =
-      file.type === 'text/csv' ||
-      file.type === 'application/vnd.ms-excel' ||
-      file.type === '' || // alguns navegadores mandam vazio
-      file.name.toLowerCase().endsWith('.csv');
+      file.type === "text/csv" ||
+      file.type === "application/vnd.ms-excel" ||
+      file.type === "" || // alguns navegadores mandam vazio
+      file.name.toLowerCase().endsWith(".csv");
 
     if (!isCsv) {
-      toast.error('Envie um arquivo .csv válido.');
+      toast.error("Envie um arquivo .csv válido.");
       return;
     }
 
@@ -104,15 +104,15 @@ export function CsvImportButton({ onParsed, isProcessing }: Props) {
       if (lineIssues.length > 0) {
         messages.push(`${lineIssues.length} linha(s) ignorada(s) por erro.`);
       }
-      toast.success(messages.join(' '));
+      toast.success(messages.join(" "));
 
       onParsed(rows);
     } catch (err) {
-      console.error('CSV read failed', err);
-      toast.error('Não foi possível ler o arquivo.');
+      console.error("CSV read failed", err);
+      toast.error("Não foi possível ler o arquivo.");
     } finally {
       // Permite reimportar o mesmo arquivo
-      if (inputRef.current) inputRef.current.value = '';
+      if (inputRef.current) inputRef.current.value = "";
     }
   };
 
@@ -123,9 +123,10 @@ export function CsvImportButton({ onParsed, isProcessing }: Props) {
         <h3 className="font-semibold text-foreground text-sm">Importar arquivo CSV</h3>
       </div>
       <p className="text-xs text-muted-foreground mt-1">
-        Importe um arquivo CSV com duas colunas: <code className="px-1 rounded bg-muted">codigo</code>{' '}
-        e <code className="px-1 rounded bg-muted">quantidade</code>. Você pode usar SKU, EAN/código
-        de barras ou código interno do produto. Máximo {CSV_MAX_ROWS} itens.
+        Importe um arquivo CSV com duas colunas:{" "}
+        <code className="px-1 rounded bg-muted">codigo</code> e{" "}
+        <code className="px-1 rounded bg-muted">quantidade</code>. Você pode usar SKU, EAN/código de
+        barras ou código interno do produto. Máximo {CSV_MAX_ROWS} itens.
       </p>
 
       <input
@@ -173,8 +174,8 @@ export function CsvImportButton({ onParsed, isProcessing }: Props) {
         <div className="mt-3 flex items-start gap-2 text-xs bg-primary/5 border border-primary/30 rounded-md px-3 py-2">
           <Info className="w-4 h-4 text-primary mt-0.5 shrink-0" />
           <div className="text-foreground/80">
-            <strong className="text-foreground">{summary.fileName}</strong> — {summary.rows}{' '}
-            item(ns) importado(s).{' '}
+            <strong className="text-foreground">{summary.fileName}</strong> — {summary.rows}{" "}
+            item(ns) importado(s).{" "}
             {summary.duplicates > 0 && (
               <span>
                 Encontramos {summary.duplicates} código(s) repetido(s) e consolidamos as
@@ -193,10 +194,10 @@ export function CsvImportButton({ onParsed, isProcessing }: Props) {
           <ul className="mt-2 max-h-40 overflow-auto border border-warning/30 bg-warning/5 rounded-md p-2 space-y-1">
             {issues.slice(0, 50).map((iss, idx) => (
               <li key={idx} className="font-mono text-[11px] text-foreground/80">
-                Linha {iss.line}:{' '}
-                {iss.reason === 'empty_code'
-                  ? 'código vazio'
-                  : `quantidade inválida ("${iss.value}")`}{' '}
+                Linha {iss.line}:{" "}
+                {iss.reason === "empty_code"
+                  ? "código vazio"
+                  : `quantidade inválida ("${iss.value}")`}{" "}
                 — <span className="opacity-70">{iss.raw.slice(0, 80)}</span>
               </li>
             ))}

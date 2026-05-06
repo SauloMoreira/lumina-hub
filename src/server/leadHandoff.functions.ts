@@ -66,9 +66,10 @@ async function buildSummary(sessionId: string): Promise<{
   const lastUserMessage = userMsgs[userMsgs.length - 1]?.content?.slice(0, 500) ?? "";
 
   const recent = userMsgs.slice(-5).map((m, i) => `${i + 1}. ${m.content.slice(0, 200)}`);
-  const summary = recent.length > 0
-    ? `Últimas perguntas do cliente:\n${recent.join("\n")}`
-    : "Cliente solicitou atendimento humano sem mensagens prévias.";
+  const summary =
+    recent.length > 0
+      ? `Últimas perguntas do cliente:\n${recent.join("\n")}`
+      : "Cliente solicitou atendimento humano sem mensagens prévias.";
 
   return { summary: summary.slice(0, 1500), lastUserMessage };
 }
@@ -188,10 +189,7 @@ export const requestHumanHandoff = createServerFn({ method: "POST" })
       };
 
       if (existing?.id) {
-        await supabaseAdmin
-          .from("leads")
-          .update(payload)
-          .eq("id", existing.id);
+        await supabaseAdmin.from("leads").update(payload).eq("id", existing.id);
         leadId = existing.id;
       } else {
         const { data: created } = await supabaseAdmin
