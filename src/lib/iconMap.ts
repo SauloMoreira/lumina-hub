@@ -1,0 +1,97 @@
+/**
+ * Curated icon map for admin-configurable icons.
+ * Replaces `import * as LucideIcons` which pulls ~1000+ icons into the bundle.
+ */
+import {
+  Sparkles,
+  Truck,
+  Shield,
+  MessageSquareText,
+  ArrowRight,
+  Lightbulb,
+  Zap,
+  Cable,
+  Plug,
+  Sun,
+  LayoutGrid,
+  Wrench,
+  Package,
+  Tag,
+  Flame,
+  Star,
+  ShoppingCart,
+  Heart,
+  Clock,
+  Phone,
+  Mail,
+  MapPin,
+  Check,
+  Gift,
+  Percent,
+  Award,
+  ThumbsUp,
+  BadgeCheck,
+  CircleDollarSign,
+  Headphones,
+  Megaphone,
+  CreditCard,
+  Home,
+  Search,
+  Bell,
+  Settings,
+  Info,
+  AlertTriangle,
+  type LucideIcon,
+} from "lucide-react";
+
+const ICON_MAP: Record<string, LucideIcon> = {
+  Sparkles,
+  Truck,
+  Shield,
+  MessageSquareText,
+  ArrowRight,
+  Lightbulb,
+  Zap,
+  Cable,
+  Plug,
+  Sun,
+  LayoutGrid,
+  Wrench,
+  Package,
+  Tag,
+  Flame,
+  Star,
+  ShoppingCart,
+  Heart,
+  Clock,
+  Phone,
+  Mail,
+  MapPin,
+  Check,
+  Gift,
+  Percent,
+  Award,
+  ThumbsUp,
+  BadgeCheck,
+  CircleDollarSign,
+  Headphones,
+  Megaphone,
+  CreditCard,
+  Home,
+  Search,
+  Bell,
+  Settings,
+  Info,
+  AlertTriangle,
+};
+
+export function getLucideIcon(name: string | null | undefined, fallback: LucideIcon): LucideIcon;
+export function getLucideIcon(name: string | null | undefined, fallback: null): LucideIcon | null;
+export function getLucideIcon(name?: string | null, fallback?: LucideIcon | null): LucideIcon | null;
+export function getLucideIcon(
+  name?: string | null,
+  fallback?: LucideIcon | null,
+): LucideIcon | null {
+  if (!name) return fallback ?? null;
+  return ICON_MAP[name] ?? fallback ?? null;
+}

@@ -1,7 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import React, { useEffect } from "react";
-import * as LucideIcons from "lucide-react";
+import React, { useEffect, lazy, Suspense } from "react";
 import {
   Sparkles,
   Truck,
@@ -20,6 +19,7 @@ import {
   Flame,
   Star,
 } from "lucide-react";
+import { getLucideIcon } from "@/lib/iconMap";
 import { StoreLayout } from "@/components/layout/StoreLayout";
 import { ProductCard } from "@/components/store/ProductCard";
 import { HeroCarousel, type HeroBanner } from "@/components/store/HeroCarousel";
@@ -64,11 +64,6 @@ const ICONS: Record<string, any> = {
   Package,
 };
 
-function getLucideIcon(name?: string | null, fallback: any = Sparkles) {
-  if (!name) return fallback;
-  const Comp = (LucideIcons as any).icons?.[name] ?? (LucideIcons as any)[name];
-  return Comp ?? fallback;
-}
 
 function isExternalLink(url?: string | null) {
   if (!url) return false;
@@ -386,7 +381,11 @@ function HomePage() {
   const renderHero = () => (
     <div key="hero">
       {/* CARROSSEL HERO PRINCIPAL */}
-      {banners && banners.length > 0 && <HeroCarousel banners={banners} />}
+      {banners && banners.length > 0 ? (
+        <HeroCarousel banners={banners} />
+      ) : (
+        <div className="w-full h-[260px] xs:h-[300px] sm:h-[380px] md:h-[440px] lg:h-[480px] bg-muted animate-pulse" aria-hidden="true" />
+      )}
 
       {/* HERO INSTITUCIONAL (administrável via /admin/conteudo/homepage) */}
       {(homepage?.hero_is_active ?? true) &&
@@ -501,7 +500,7 @@ function HomePage() {
                     src={logoSrc}
                     alt={logoAlt}
                     loading="eager"
-                    fetchPriority="high"
+                    fetchPriority="auto"
                     decoding="async"
                     width={240}
                     height={88}
@@ -661,7 +660,8 @@ function HomePage() {
   );
 
   const renderBenefits = () => (
-    <section key="benefits_cards" className="container mx-auto px-4 py-10">
+    <section key="benefits_cards" className="container mx-auto px-4 py-10" aria-label="Benefícios">
+      <h2 className="sr-only">Benefícios</h2>
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         {benefitsToRender.map((d) => {
           const inner = (
@@ -770,6 +770,8 @@ function HomePage() {
                 <img
                   src={c.imageUrl}
                   alt={c.name}
+                  width={48}
+                  height={48}
                   loading="lazy"
                   decoding="async"
                   className="w-12 h-12 rounded-full object-cover mb-3"
