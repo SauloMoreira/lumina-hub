@@ -670,7 +670,7 @@ function HomePage() {
                 <d.icon className="w-5 h-5 text-primary" />
               </div>
               <div>
-                <h2 className="font-display font-semibold text-base mb-0.5">{d.title}</h2>
+                <h3 className="font-display font-semibold text-base mb-0.5">{d.title}</h3>
                 {d.desc && (
                   <p className="text-xs text-muted-foreground leading-relaxed">{d.desc}</p>
                 )}
