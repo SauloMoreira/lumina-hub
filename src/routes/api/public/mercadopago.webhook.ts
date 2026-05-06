@@ -375,6 +375,7 @@ export const Route = createFileRoute("/api/public/mercadopago/webhook")({
           } catch (e) {
             console.error("[MP webhook] falha ao sincronizar lead", e);
           }
+        }
 
         // E-mail transacional ao cliente — idempotente, não bloqueia resposta ao MP
         try {
