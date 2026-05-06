@@ -61,7 +61,10 @@ function ComboCard({ combo }: { combo: ResolvedShowcaseCombo }) {
           <img
             src={combo.image_url}
             alt={combo.name}
+            width={400}
+            height={400}
             loading="lazy"
+            decoding="async"
             className="w-full h-full object-cover group-hover:scale-105 transition-transform"
           />
         ) : (
