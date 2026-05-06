@@ -51,7 +51,9 @@ function FunilKanbanPage() {
     setLoading(true);
     const { data, error } = await supabase
       .from("leads")
-      .select("id,name,phone,email,status,origin,estimated_value,score,score_temperature,score_reason,created_at,updated_at")
+      .select(
+        "id,name,phone,email,status,origin,estimated_value,score,score_temperature,score_reason,created_at,updated_at",
+      )
       .order("score", { ascending: false, nullsFirst: false })
       .order("created_at", { ascending: false })
       .limit(500);
@@ -249,7 +251,8 @@ function FunilKanbanPage() {
 
       <div className="mt-6 flex items-center gap-2 rounded-md border bg-muted/30 p-3 text-xs text-muted-foreground">
         <ArrowRight className="h-4 w-4" />
-        Dica: arraste cards entre as colunas ou use o seletor no canto inferior direito de cada card.
+        Dica: arraste cards entre as colunas ou use o seletor no canto inferior direito de cada
+        card.
       </div>
     </AdminLayout>
   );

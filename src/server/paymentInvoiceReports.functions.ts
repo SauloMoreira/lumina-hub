@@ -1,9 +1,9 @@
-import { createServerFn } from '@tanstack/react-start';
-import { z } from 'zod';
-import { requireAdmin } from '@/integrations/supabase/admin-middleware';
+import { createServerFn } from "@tanstack/react-start";
+import { z } from "zod";
+import { requireAdmin } from "@/integrations/supabase/admin-middleware";
 
 async function getSupabaseAdmin() {
-  return (await import('@/integrations/supabase/client.server')).supabaseAdmin;
+  return (await import("@/integrations/supabase/client.server")).supabaseAdmin;
 }
 
 // =============================================================
@@ -12,17 +12,17 @@ async function getSupabaseAdmin() {
 
 const FiltersSchema = z.object({
   preset: z.enum([
-    'today',
-    'yesterday',
-    'last_7_days',
-    'last_30_days',
-    'this_month',
-    'last_month',
-    'custom',
+    "today",
+    "yesterday",
+    "last_7_days",
+    "last_30_days",
+    "this_month",
+    "last_month",
+    "custom",
   ]),
   start: z.string().optional(),
   end: z.string().optional(),
-  orderType: z.enum(['all', 'b2c', 'b2b']).default('all'),
+  orderType: z.enum(["all", "b2c", "b2b"]).default("all"),
   paymentStatus: z.string().nullable().optional(),
   paymentMethod: z.string().nullable().optional(),
   deliveryMethod: z.string().nullable().optional(),
@@ -31,12 +31,18 @@ const FiltersSchema = z.object({
 
 type Filters = z.infer<typeof FiltersSchema>;
 
-const PAID = ['approved', 'paid'];
-const PENDING = ['pending', 'in_process', 'preference_created'];
-const REJECTED = ['rejected', 'failed'];
-const CANCELLED = ['cancelled'];
+const PAID = ["approved", "paid"];
+const PENDING = ["pending", "in_process", "preference_created"];
+const REJECTED = ["rejected", "failed"];
+const CANCELLED = ["cancelled"];
 
-const INVOICE_STATUSES = ['nao_necessaria', 'pendente_emissao', 'emitida', 'erro_emissao', 'cancelada'] as const;
+const INVOICE_STATUSES = [
+  "nao_necessaria",
+  "pendente_emissao",
+  "emitida",
+  "erro_emissao",
+  "cancelada",
+] as const;
 
 function startOfDay(d: Date) {
   const x = new Date(d);
@@ -51,31 +57,34 @@ function endOfDay(d: Date) {
 function resolveRange(f: Filters): { from: Date; to: Date } {
   const now = new Date();
   switch (f.preset) {
-    case 'today':
+    case "today":
       return { from: startOfDay(now), to: endOfDay(now) };
-    case 'yesterday': {
+    case "yesterday": {
       const y = new Date(now);
       y.setDate(now.getDate() - 1);
       return { from: startOfDay(y), to: endOfDay(y) };
     }
-    case 'last_7_days': {
+    case "last_7_days": {
       const x = new Date(now);
       x.setDate(now.getDate() - 6);
       return { from: startOfDay(x), to: endOfDay(now) };
     }
-    case 'last_30_days': {
+    case "last_30_days": {
       const x = new Date(now);
       x.setDate(now.getDate() - 29);
       return { from: startOfDay(x), to: endOfDay(now) };
     }
-    case 'this_month':
-      return { from: startOfDay(new Date(now.getFullYear(), now.getMonth(), 1)), to: endOfDay(now) };
-    case 'last_month': {
+    case "this_month":
+      return {
+        from: startOfDay(new Date(now.getFullYear(), now.getMonth(), 1)),
+        to: endOfDay(now),
+      };
+    case "last_month": {
       const a = new Date(now.getFullYear(), now.getMonth() - 1, 1);
       const b = new Date(now.getFullYear(), now.getMonth(), 0);
       return { from: startOfDay(a), to: endOfDay(b) };
     }
-    case 'custom': {
+    case "custom": {
       const a = f.start ? new Date(f.start) : startOfDay(now);
       const b = f.end ? new Date(f.end) : endOfDay(now);
       return { from: startOfDay(a), to: endOfDay(b) };
@@ -84,31 +93,31 @@ function resolveRange(f: Filters): { from: Date; to: Date } {
 }
 
 function maskCnpj(v: string | null | undefined): string {
-  if (!v) return '';
-  const d = v.replace(/\D/g, '');
+  if (!v) return "";
+  const d = v.replace(/\D/g, "");
   if (d.length !== 14) return v;
   return `${d.slice(0, 2)}.***.***/${d.slice(8, 12)}-**`;
 }
 function csvEscape(s: unknown): string {
-  if (s == null) return '';
+  if (s == null) return "";
   const v = String(s);
-  if (v.includes(';') || v.includes('"') || v.includes('\n')) {
+  if (v.includes(";") || v.includes('"') || v.includes("\n")) {
     return `"${v.replace(/"/g, '""')}"`;
   }
   return v;
 }
 function fmtMoney(n: number) {
-  return n.toFixed(2).replace('.', ',');
+  return n.toFixed(2).replace(".", ",");
 }
 function paymentMethodLabel(key: string | null): string {
-  if (!key) return 'Não informado';
+  if (!key) return "Não informado";
   const map: Record<string, string> = {
-    pix: 'Pix',
-    credit_card: 'Cartão de crédito',
-    debit_card: 'Cartão de débito',
-    bolbradesco: 'Boleto',
-    boleto: 'Boleto',
-    account_money: 'Saldo Mercado Pago',
+    pix: "Pix",
+    credit_card: "Cartão de crédito",
+    debit_card: "Cartão de débito",
+    bolbradesco: "Boleto",
+    boleto: "Boleto",
+    account_money: "Saldo Mercado Pago",
   };
   return map[key.toLowerCase()] ?? key;
 }
@@ -147,7 +156,7 @@ export type MpPaymentRow = {
   created_at: string;
   paid_at: string | null;
   customer_name: string;
-  order_type: 'b2c' | 'b2b';
+  order_type: "b2c" | "b2b";
   mp_payment_id: string | null;
   payment_status: string;
   payment_method: string | null;
@@ -155,7 +164,7 @@ export type MpPaymentRow = {
   mp_payment_type: string | null;
   gross_amount: number;
   fee_amount: number;
-  fee_source: 'mercado_pago_real' | 'estimated' | 'unknown';
+  fee_source: "mercado_pago_real" | "estimated" | "unknown";
   net_amount: number;
   net_complete: boolean;
   mp_last_webhook_at: string | null;
@@ -186,7 +195,7 @@ export type InvoiceRow = {
   created_at: string;
   paid_at: string | null;
   customer_name: string;
-  order_type: 'b2c' | 'b2b';
+  order_type: "b2c" | "b2b";
   company_name: string | null;
   company_cnpj_masked: string;
   total: number;
@@ -207,10 +216,10 @@ export type InvoiceRow = {
 // =============================================================
 
 const MP_SELECT =
-  'id, order_number, status, payment_status, payment_method, order_type, company_name, company_cnpj, address_snapshot, created_at, paid_at, total, mp_payment_id, mp_payment_type, mp_gross_amount, mp_fee_amount, mp_net_amount, mp_fee_details, estimated_fee_amount, estimated_net_amount, payment_fee_source, mp_last_webhook_at, mp_webhook_status, mp_webhook_error';
+  "id, order_number, status, payment_status, payment_method, order_type, company_name, company_cnpj, address_snapshot, created_at, paid_at, total, mp_payment_id, mp_payment_type, mp_gross_amount, mp_fee_amount, mp_net_amount, mp_fee_details, estimated_fee_amount, estimated_net_amount, payment_fee_source, mp_last_webhook_at, mp_webhook_status, mp_webhook_error";
 
 const INVOICE_SELECT =
-  'id, order_number, status, payment_status, payment_method, order_type, company_name, company_cnpj, address_snapshot, created_at, paid_at, total, invoice_status, invoice_number, invoice_series, invoice_access_key, invoice_danfe_url, invoice_xml_url, invoice_issued_at, invoice_notes';
+  "id, order_number, status, payment_status, payment_method, order_type, company_name, company_cnpj, address_snapshot, created_at, paid_at, total, invoice_status, invoice_number, invoice_series, invoice_access_key, invoice_danfe_url, invoice_xml_url, invoice_issued_at, invoice_notes";
 
 type RawOrder = Record<string, unknown>;
 
@@ -221,15 +230,15 @@ async function fetchOrdersRange(
 ): Promise<RawOrder[]> {
   const supabaseAdmin = await getSupabaseAdmin();
   let q = supabaseAdmin
-    .from('orders')
+    .from("orders")
     .select(selectStr)
-    .gte('created_at', range.from.toISOString())
-    .lte('created_at', range.to.toISOString())
-    .order('created_at', { ascending: false });
-  if (filters.orderType !== 'all') q = q.eq('order_type', filters.orderType);
-  if (filters.paymentStatus) q = q.eq('payment_status', filters.paymentStatus);
-  if (filters.paymentMethod) q = q.eq('payment_method', filters.paymentMethod);
-  if (filters.status) q = q.eq('status', filters.status);
+    .gte("created_at", range.from.toISOString())
+    .lte("created_at", range.to.toISOString())
+    .order("created_at", { ascending: false });
+  if (filters.orderType !== "all") q = q.eq("order_type", filters.orderType);
+  if (filters.paymentStatus) q = q.eq("payment_status", filters.paymentStatus);
+  if (filters.paymentMethod) q = q.eq("payment_method", filters.paymentMethod);
+  if (filters.status) q = q.eq("status", filters.status);
   const { data, error } = await q;
   if (error) throw new Response(`orders query failed: ${error.message}`, { status: 500 });
   return (data ?? []) as unknown as RawOrder[];
@@ -237,21 +246,16 @@ async function fetchOrdersRange(
 
 function customerOf(o: RawOrder): string {
   const snap = o.address_snapshot as { recipient?: string; name?: string } | null;
-  return (
-    snap?.recipient ??
-    snap?.name ??
-    (o.company_name as string | null) ??
-    'Cliente'
-  );
+  return snap?.recipient ?? snap?.name ?? (o.company_name as string | null) ?? "Cliente";
 }
 
-function feeSourceOf(o: RawOrder): 'mercado_pago_real' | 'estimated' | 'unknown' {
+function feeSourceOf(o: RawOrder): "mercado_pago_real" | "estimated" | "unknown" {
   const src = (o.payment_fee_source as string | null) ?? null;
-  if (src === 'mercado_pago_real') return 'mercado_pago_real';
-  if (src === 'estimated') return 'estimated';
-  if (o.mp_fee_amount != null) return 'mercado_pago_real';
-  if (o.estimated_fee_amount != null) return 'estimated';
-  return 'unknown';
+  if (src === "mercado_pago_real") return "mercado_pago_real";
+  if (src === "estimated") return "estimated";
+  if (o.mp_fee_amount != null) return "mercado_pago_real";
+  if (o.estimated_fee_amount != null) return "estimated";
+  return "unknown";
 }
 
 function feeAmountOf(o: RawOrder): number {
@@ -267,9 +271,10 @@ function grossAmountOf(o: RawOrder): number {
 
 function netAmountOf(o: RawOrder): { net: number; complete: boolean } {
   if (o.mp_net_amount != null) return { net: Number(o.mp_net_amount), complete: true };
-  if (o.estimated_net_amount != null) return { net: Number(o.estimated_net_amount), complete: true };
+  if (o.estimated_net_amount != null)
+    return { net: Number(o.estimated_net_amount), complete: true };
   const src = feeSourceOf(o);
-  if (src === 'unknown') return { net: Number(o.total ?? 0), complete: false };
+  if (src === "unknown") return { net: Number(o.total ?? 0), complete: false };
   return { net: grossAmountOf(o) - feeAmountOf(o), complete: true };
 }
 
@@ -277,17 +282,17 @@ function netAmountOf(o: RawOrder): { net: number; complete: boolean } {
 // MERCADO PAGO — CARDS
 // =============================================================
 
-export const getMpReportCards = createServerFn({ method: 'POST' })
+export const getMpReportCards = createServerFn({ method: "POST" })
   .middleware([requireAdmin])
   .inputValidator((input: unknown) => FiltersSchema.parse(input))
   .handler(async ({ data: filters }): Promise<MpReportCards> => {
     const range = resolveRange(filters);
     const orders = await fetchOrdersRange(filters, range, MP_SELECT);
 
-    const paid = orders.filter((o) => PAID.includes((o.payment_status as string) ?? ''));
-    const pending = orders.filter((o) => PENDING.includes((o.payment_status as string) ?? ''));
-    const rejected = orders.filter((o) => REJECTED.includes((o.payment_status as string) ?? ''));
-    const cancelled = orders.filter((o) => CANCELLED.includes((o.payment_status as string) ?? ''));
+    const paid = orders.filter((o) => PAID.includes((o.payment_status as string) ?? ""));
+    const pending = orders.filter((o) => PENDING.includes((o.payment_status as string) ?? ""));
+    const rejected = orders.filter((o) => REJECTED.includes((o.payment_status as string) ?? ""));
+    const cancelled = orders.filter((o) => CANCELLED.includes((o.payment_status as string) ?? ""));
 
     let grossPaid = 0;
     let realFees = 0;
@@ -302,10 +307,10 @@ export const getMpReportCards = createServerFn({ method: 'POST' })
       const fee = feeAmountOf(o);
       const { net } = netAmountOf(o);
       netRevenue += net;
-      if (src === 'mercado_pago_real') {
+      if (src === "mercado_pago_real") {
         realFees += fee;
         countFeeReal += 1;
-      } else if (src === 'estimated') {
+      } else if (src === "estimated") {
         estimatedFees += fee;
         countFeeEstimated += 1;
       } else {
@@ -314,7 +319,7 @@ export const getMpReportCards = createServerFn({ method: 'POST' })
     }
 
     const webhookErrors = orders.filter(
-      (o) => (o.mp_webhook_status as string | null) === 'error' || !!o.mp_webhook_error,
+      (o) => (o.mp_webhook_status as string | null) === "error" || !!o.mp_webhook_error,
     ).length;
 
     let lastWebhookAt: string | null = null;
@@ -328,7 +333,7 @@ export const getMpReportCards = createServerFn({ method: 'POST' })
 
     const cutoff = Date.now() - 24 * 3600 * 1000;
     const pendingOlderThan24h = pending.filter((o) => {
-      const t = new Date((o.created_at as string) ?? '').getTime();
+      const t = new Date((o.created_at as string) ?? "").getTime();
       return Number.isFinite(t) && t < cutoff;
     }).length;
 
@@ -367,7 +372,7 @@ export const getMpReportCards = createServerFn({ method: 'POST' })
 const MpListSchema = FiltersSchema.extend({
   page: z.number().int().min(1).default(1),
   pageSize: z.number().int().min(1).max(200).default(50),
-  feeSource: z.enum(['all', 'mercado_pago_real', 'estimated', 'unknown']).default('all'),
+  feeSource: z.enum(["all", "mercado_pago_real", "estimated", "unknown"]).default("all"),
 });
 
 export type MpListResult = {
@@ -379,7 +384,7 @@ export type MpListResult = {
   rows: MpPaymentRow[];
 };
 
-export const getMpPayments = createServerFn({ method: 'POST' })
+export const getMpPayments = createServerFn({ method: "POST" })
   .middleware([requireAdmin])
   .inputValidator((input: unknown) => MpListSchema.parse(input))
   .handler(async ({ data }): Promise<MpListResult> => {
@@ -387,9 +392,7 @@ export const getMpPayments = createServerFn({ method: 'POST' })
     const orders = await fetchOrdersRange(data, range, MP_SELECT);
 
     const filtered =
-      data.feeSource === 'all'
-        ? orders
-        : orders.filter((o) => feeSourceOf(o) === data.feeSource);
+      data.feeSource === "all" ? orders : orders.filter((o) => feeSourceOf(o) === data.feeSource);
 
     const total = filtered.length;
     const startIdx = (data.page - 1) * data.pageSize;
@@ -405,9 +408,9 @@ export const getMpPayments = createServerFn({ method: 'POST' })
         created_at: o.created_at as string,
         paid_at: (o.paid_at as string | null) ?? null,
         customer_name: customerOf(o),
-        order_type: ((o.order_type as string) ?? 'b2c') as 'b2c' | 'b2b',
+        order_type: ((o.order_type as string) ?? "b2c") as "b2c" | "b2b",
         mp_payment_id: (o.mp_payment_id as string | null) ?? null,
-        payment_status: (o.payment_status as string) ?? 'unknown',
+        payment_status: (o.payment_status as string) ?? "unknown",
         payment_method: (o.payment_method as string | null) ?? null,
         payment_method_label: paymentMethodLabel((o.payment_method as string | null) ?? null),
         mp_payment_type: (o.mp_payment_type as string | null) ?? null,
@@ -438,36 +441,34 @@ export const getMpPayments = createServerFn({ method: 'POST' })
 // MERCADO PAGO — CSV
 // =============================================================
 
-export const exportMpPaymentsCsv = createServerFn({ method: 'POST' })
+export const exportMpPaymentsCsv = createServerFn({ method: "POST" })
   .middleware([requireAdmin])
   .inputValidator((input: unknown) => MpListSchema.parse(input))
   .handler(async ({ data }): Promise<{ filename: string; content: string }> => {
     const range = resolveRange(data);
     const orders = await fetchOrdersRange(data, range, MP_SELECT);
     const filtered =
-      data.feeSource === 'all'
-        ? orders
-        : orders.filter((o) => feeSourceOf(o) === data.feeSource);
+      data.feeSource === "all" ? orders : orders.filter((o) => feeSourceOf(o) === data.feeSource);
     const limited = filtered.slice(0, 5000);
 
     const headers = [
-      'Data',
-      'Pedido',
-      'Cliente',
-      'Tipo',
-      'ID Mercado Pago',
-      'Status pagamento',
-      'Método pagamento',
-      'Tipo pagamento',
-      'Valor bruto',
-      'Taxa MP',
-      'Origem da taxa',
-      'Valor líquido',
-      'Último webhook',
-      'Status webhook',
-      'Erro webhook',
+      "Data",
+      "Pedido",
+      "Cliente",
+      "Tipo",
+      "ID Mercado Pago",
+      "Status pagamento",
+      "Método pagamento",
+      "Tipo pagamento",
+      "Valor bruto",
+      "Taxa MP",
+      "Origem da taxa",
+      "Valor líquido",
+      "Último webhook",
+      "Status webhook",
+      "Erro webhook",
     ];
-    const lines: string[] = [headers.join(';')];
+    const lines: string[] = [headers.join(";")];
 
     for (const o of limited) {
       const src = feeSourceOf(o);
@@ -475,38 +476,40 @@ export const exportMpPaymentsCsv = createServerFn({ method: 'POST' })
       const { net } = netAmountOf(o);
       lines.push(
         [
-          new Date(o.created_at as string).toLocaleString('pt-BR'),
+          new Date(o.created_at as string).toLocaleString("pt-BR"),
           `#${o.order_number}`,
           customerOf(o),
-          (o.order_type as string) === 'b2b' ? 'B2B' : 'B2C',
-          (o.mp_payment_id as string | null) ?? '',
-          (o.payment_status as string | null) ?? '',
+          (o.order_type as string) === "b2b" ? "B2B" : "B2C",
+          (o.mp_payment_id as string | null) ?? "",
+          (o.payment_status as string | null) ?? "",
           paymentMethodLabel((o.payment_method as string | null) ?? null),
-          (o.mp_payment_type as string | null) ?? '',
+          (o.mp_payment_type as string | null) ?? "",
           fmtMoney(grossAmountOf(o)),
           fmtMoney(fee),
           src,
           fmtMoney(net),
-          o.mp_last_webhook_at ? new Date(o.mp_last_webhook_at as string).toLocaleString('pt-BR') : '',
-          (o.mp_webhook_status as string | null) ?? '',
-          (o.mp_webhook_error as string | null) ?? '',
+          o.mp_last_webhook_at
+            ? new Date(o.mp_last_webhook_at as string).toLocaleString("pt-BR")
+            : "",
+          (o.mp_webhook_status as string | null) ?? "",
+          (o.mp_webhook_error as string | null) ?? "",
         ]
           .map(csvEscape)
-          .join(';'),
+          .join(";"),
       );
     }
 
     const filename = `mercado_pago_${range.from.toISOString().slice(0, 10)}_${range.to
       .toISOString()
       .slice(0, 10)}.csv`;
-    return { filename, content: '\ufeff' + lines.join('\n') };
+    return { filename, content: "\ufeff" + lines.join("\n") };
   });
 
 // =============================================================
 // NOTAS FISCAIS — CARDS
 // =============================================================
 
-export const getInvoiceReportCards = createServerFn({ method: 'POST' })
+export const getInvoiceReportCards = createServerFn({ method: "POST" })
   .middleware([requireAdmin])
   .inputValidator((input: unknown) => FiltersSchema.parse(input))
   .handler(async ({ data: filters }): Promise<InvoiceReportCards> => {
@@ -527,27 +530,27 @@ export const getInvoiceReportCards = createServerFn({ method: 'POST' })
     const cutoff = Date.now() - 24 * 3600 * 1000;
 
     for (const o of orders) {
-      const status = (o.invoice_status as string | null) ?? 'pendente_emissao';
-      const paid = PAID.includes((o.payment_status as string) ?? '');
+      const status = (o.invoice_status as string | null) ?? "pendente_emissao";
+      const paid = PAID.includes((o.payment_status as string) ?? "");
       const total = Number(o.total ?? 0);
 
-      if (status === 'pendente_emissao') {
+      if (status === "pendente_emissao") {
         pending += 1;
         if (paid) totalPendingAmount += total;
-      } else if (status === 'emitida') {
+      } else if (status === "emitida") {
         issued += 1;
         totalIssuedAmount += total;
-      } else if (status === 'erro_emissao') {
+      } else if (status === "erro_emissao") {
         errored += 1;
-      } else if (status === 'cancelada') {
+      } else if (status === "cancelada") {
         cancelled += 1;
-      } else if (status === 'nao_necessaria') {
+      } else if (status === "nao_necessaria") {
         notRequired += 1;
       }
 
-      if (paid && status !== 'emitida' && status !== 'nao_necessaria' && status !== 'cancelada') {
+      if (paid && status !== "emitida" && status !== "nao_necessaria" && status !== "cancelada") {
         paidWithoutInvoice += 1;
-        if ((o.order_type as string) === 'b2b') b2bPaidWithoutInvoice += 1;
+        if ((o.order_type as string) === "b2b") b2bPaidWithoutInvoice += 1;
         const paidAt = o.paid_at ? new Date(o.paid_at as string).getTime() : null;
         if (paidAt && paidAt < cutoff) paidOver24hWithoutInvoice += 1;
       }
@@ -577,8 +580,18 @@ const InvoiceListSchema = FiltersSchema.extend({
   page: z.number().int().min(1).default(1),
   pageSize: z.number().int().min(1).max(200).default(50),
   invoiceStatus: z
-    .enum(['all', 'nao_necessaria', 'pendente_emissao', 'emitida', 'erro_emissao', 'cancelada', 'paid_no_invoice', 'paid_over_24h', 'b2b_no_invoice'])
-    .default('all'),
+    .enum([
+      "all",
+      "nao_necessaria",
+      "pendente_emissao",
+      "emitida",
+      "erro_emissao",
+      "cancelada",
+      "paid_no_invoice",
+      "paid_over_24h",
+      "b2b_no_invoice",
+    ])
+    .default("all"),
 });
 
 export type InvoiceListResult = {
@@ -596,24 +609,25 @@ async function detectIncompleteFiscalItems(orderIds: string[]): Promise<Set<stri
     const supabaseAdmin = await getSupabaseAdmin();
     // Tenta inferir incompletos via products fiscal flags se houver
     const { data: items } = await supabaseAdmin
-      .from('order_items')
-      .select('order_id, product_id')
-      .in('order_id', orderIds);
+      .from("order_items")
+      .select("order_id, product_id")
+      .in("order_id", orderIds);
     const productIds = Array.from(
-      new Set(((items ?? []) as Array<{ product_id: string | null }>).map((i) => i.product_id).filter(Boolean) as string[]),
+      new Set(
+        ((items ?? []) as Array<{ product_id: string | null }>)
+          .map((i) => i.product_id)
+          .filter(Boolean) as string[],
+      ),
     );
     if (productIds.length === 0) return new Set();
     const { data: products } = await supabaseAdmin
-      .from('products')
-      .select('id, ncm, cfop_default, commercial_unit, fiscal_status')
-      .in('id', productIds);
+      .from("products")
+      .select("id, ncm, cfop_default, commercial_unit, fiscal_status")
+      .in("id", productIds);
     const incompleteProducts = new Set<string>();
-    for (const p of ((products ?? []) as unknown as Array<Record<string, unknown>>)) {
+    for (const p of (products ?? []) as unknown as Array<Record<string, unknown>>) {
       const missing =
-        !p.ncm ||
-        !p.cfop_default ||
-        !p.commercial_unit ||
-        p.fiscal_status === 'incomplete';
+        !p.ncm || !p.cfop_default || !p.commercial_unit || p.fiscal_status === "incomplete";
       if (missing) incompleteProducts.add(p.id as string);
     }
     const orderHasIncomplete = new Set<string>();
@@ -628,7 +642,7 @@ async function detectIncompleteFiscalItems(orderIds: string[]): Promise<Set<stri
   }
 }
 
-export const getInvoicesReport = createServerFn({ method: 'POST' })
+export const getInvoicesReport = createServerFn({ method: "POST" })
   .middleware([requireAdmin])
   .inputValidator((input: unknown) => InvoiceListSchema.parse(input))
   .handler(async ({ data }): Promise<InvoiceListResult> => {
@@ -637,26 +651,29 @@ export const getInvoicesReport = createServerFn({ method: 'POST' })
 
     const cutoff = Date.now() - 24 * 3600 * 1000;
     const filtered = orders.filter((o) => {
-      const status = (o.invoice_status as string | null) ?? 'pendente_emissao';
-      const paid = PAID.includes((o.payment_status as string) ?? '');
+      const status = (o.invoice_status as string | null) ?? "pendente_emissao";
+      const paid = PAID.includes((o.payment_status as string) ?? "");
       switch (data.invoiceStatus) {
-        case 'all':
+        case "all":
           return true;
-        case 'paid_no_invoice':
-          return paid && status !== 'emitida' && status !== 'nao_necessaria' && status !== 'cancelada';
-        case 'paid_over_24h': {
+        case "paid_no_invoice":
+          return (
+            paid && status !== "emitida" && status !== "nao_necessaria" && status !== "cancelada"
+          );
+        case "paid_over_24h": {
           if (!paid) return false;
-          if (status === 'emitida' || status === 'nao_necessaria' || status === 'cancelada') return false;
+          if (status === "emitida" || status === "nao_necessaria" || status === "cancelada")
+            return false;
           const t = o.paid_at ? new Date(o.paid_at as string).getTime() : null;
           return t != null && t < cutoff;
         }
-        case 'b2b_no_invoice':
+        case "b2b_no_invoice":
           return (
             paid &&
-            (o.order_type as string) === 'b2b' &&
-            status !== 'emitida' &&
-            status !== 'nao_necessaria' &&
-            status !== 'cancelada'
+            (o.order_type as string) === "b2b" &&
+            status !== "emitida" &&
+            status !== "nao_necessaria" &&
+            status !== "cancelada"
           );
         default:
           return status === data.invoiceStatus;
@@ -677,11 +694,11 @@ export const getInvoicesReport = createServerFn({ method: 'POST' })
         created_at: o.created_at as string,
         paid_at: (o.paid_at as string | null) ?? null,
         customer_name: customerOf(o),
-        order_type: ((o.order_type as string) ?? 'b2c') as 'b2c' | 'b2b',
+        order_type: ((o.order_type as string) ?? "b2c") as "b2c" | "b2b",
         company_name: (o.company_name as string | null) ?? null,
         company_cnpj_masked: maskCnpj((o.company_cnpj as string | null) ?? null),
         total: Number(o.total ?? 0),
-        invoice_status: (o.invoice_status as string | null) ?? 'pendente_emissao',
+        invoice_status: (o.invoice_status as string | null) ?? "pendente_emissao",
         invoice_number: (o.invoice_number as string | null) ?? null,
         invoice_series: (o.invoice_series as string | null) ?? null,
         invoice_access_key: (o.invoice_access_key as string | null) ?? null,
@@ -708,7 +725,7 @@ export const getInvoicesReport = createServerFn({ method: 'POST' })
 // NOTAS FISCAIS — CSV
 // =============================================================
 
-export const exportInvoicesCsv = createServerFn({ method: 'POST' })
+export const exportInvoicesCsv = createServerFn({ method: "POST" })
   .middleware([requireAdmin])
   .inputValidator((input: unknown) => InvoiceListSchema.parse(input))
   .handler(async ({ data }): Promise<{ filename: string; content: string }> => {
@@ -717,26 +734,29 @@ export const exportInvoicesCsv = createServerFn({ method: 'POST' })
 
     const cutoff = Date.now() - 24 * 3600 * 1000;
     const filtered = orders.filter((o) => {
-      const status = (o.invoice_status as string | null) ?? 'pendente_emissao';
-      const paid = PAID.includes((o.payment_status as string) ?? '');
+      const status = (o.invoice_status as string | null) ?? "pendente_emissao";
+      const paid = PAID.includes((o.payment_status as string) ?? "");
       switch (data.invoiceStatus) {
-        case 'all':
+        case "all":
           return true;
-        case 'paid_no_invoice':
-          return paid && status !== 'emitida' && status !== 'nao_necessaria' && status !== 'cancelada';
-        case 'paid_over_24h': {
+        case "paid_no_invoice":
+          return (
+            paid && status !== "emitida" && status !== "nao_necessaria" && status !== "cancelada"
+          );
+        case "paid_over_24h": {
           if (!paid) return false;
-          if (status === 'emitida' || status === 'nao_necessaria' || status === 'cancelada') return false;
+          if (status === "emitida" || status === "nao_necessaria" || status === "cancelada")
+            return false;
           const t = o.paid_at ? new Date(o.paid_at as string).getTime() : null;
           return t != null && t < cutoff;
         }
-        case 'b2b_no_invoice':
+        case "b2b_no_invoice":
           return (
             paid &&
-            (o.order_type as string) === 'b2b' &&
-            status !== 'emitida' &&
-            status !== 'nao_necessaria' &&
-            status !== 'cancelada'
+            (o.order_type as string) === "b2b" &&
+            status !== "emitida" &&
+            status !== "nao_necessaria" &&
+            status !== "cancelada"
           );
         default:
           return status === data.invoiceStatus;
@@ -746,72 +766,72 @@ export const exportInvoicesCsv = createServerFn({ method: 'POST' })
     const limited = filtered.slice(0, 5000);
 
     const headers = [
-      'Data do pedido',
-      'Pedido',
-      'Cliente',
-      'Tipo',
-      'Empresa',
-      'CNPJ',
-      'Valor do pedido',
-      'Status fiscal',
-      'Número da nota',
-      'Série',
-      'Chave de acesso',
-      'Data de emissão',
-      'Link DANFE',
-      'Link XML',
-      'Tempo desde pagamento (h)',
-      'Observações fiscais',
+      "Data do pedido",
+      "Pedido",
+      "Cliente",
+      "Tipo",
+      "Empresa",
+      "CNPJ",
+      "Valor do pedido",
+      "Status fiscal",
+      "Número da nota",
+      "Série",
+      "Chave de acesso",
+      "Data de emissão",
+      "Link DANFE",
+      "Link XML",
+      "Tempo desde pagamento (h)",
+      "Observações fiscais",
     ];
-    const lines: string[] = [headers.join(';')];
+    const lines: string[] = [headers.join(";")];
 
     for (const o of limited) {
       const paidAt = o.paid_at ? new Date(o.paid_at as string).getTime() : null;
       const hours = paidAt ? Math.floor((Date.now() - paidAt) / 3600000) : null;
       lines.push(
         [
-          new Date(o.created_at as string).toLocaleString('pt-BR'),
+          new Date(o.created_at as string).toLocaleString("pt-BR"),
           `#${o.order_number}`,
           customerOf(o),
-          (o.order_type as string) === 'b2b' ? 'B2B' : 'B2C',
-          (o.company_name as string | null) ?? '',
+          (o.order_type as string) === "b2b" ? "B2B" : "B2C",
+          (o.company_name as string | null) ?? "",
           maskCnpj((o.company_cnpj as string | null) ?? null),
           fmtMoney(Number(o.total ?? 0)),
-          (o.invoice_status as string | null) ?? 'pendente_emissao',
-          (o.invoice_number as string | null) ?? '',
-          (o.invoice_series as string | null) ?? '',
-          (o.invoice_access_key as string | null) ?? '',
+          (o.invoice_status as string | null) ?? "pendente_emissao",
+          (o.invoice_number as string | null) ?? "",
+          (o.invoice_series as string | null) ?? "",
+          (o.invoice_access_key as string | null) ?? "",
           o.invoice_issued_at
-            ? new Date(o.invoice_issued_at as string).toLocaleString('pt-BR')
-            : '',
-          (o.invoice_danfe_url as string | null) ?? '',
-          (o.invoice_xml_url as string | null) ?? '',
-          hours != null ? String(hours) : '',
-          (o.invoice_notes as string | null) ?? '',
+            ? new Date(o.invoice_issued_at as string).toLocaleString("pt-BR")
+            : "",
+          (o.invoice_danfe_url as string | null) ?? "",
+          (o.invoice_xml_url as string | null) ?? "",
+          hours != null ? String(hours) : "",
+          (o.invoice_notes as string | null) ?? "",
         ]
           .map(csvEscape)
-          .join(';'),
+          .join(";"),
       );
     }
 
     const filename = `notas_fiscais_${range.from.toISOString().slice(0, 10)}_${range.to
       .toISOString()
       .slice(0, 10)}.csv`;
-    return { filename, content: '\ufeff' + lines.join('\n') };
+    return { filename, content: "\ufeff" + lines.join("\n") };
   });
 
 export const INVOICE_STATUS_LABELS: Record<string, string> = {
-  nao_necessaria: 'Não necessária',
-  pendente_emissao: 'Pendente',
-  emitida: 'Emitida',
-  erro_emissao: 'Erro',
-  cancelada: 'Cancelada',
+  nao_necessaria: "Não necessária",
+  pendente_emissao: "Pendente",
+  emitida: "Emitida",
+  erro_emissao: "Erro",
+  cancelada: "Cancelada",
 };
 
 export const FEE_SOURCE_LABELS: Record<string, string> = {
-  mercado_pago_real: 'Real',
-  estimated: 'Estimado',
-  unknown: 'Desconhecido',
+  mercado_pago_real: "Real",
+  estimated: "Estimado",
+  unknown: "Desconhecido",
 };
 
 export const ALL_INVOICE_STATUSES = INVOICE_STATUSES;

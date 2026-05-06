@@ -11,7 +11,7 @@
  *  - retornamos uma estrutura pronta para gravar em orders / order_items.
  */
 
-import { supabaseAdmin } from '@/integrations/supabase/client.server';
+import { supabaseAdmin } from "@/integrations/supabase/client.server";
 
 export type ApplyCartBundlesInput = {
   userId: string | null;
@@ -26,7 +26,7 @@ export type AppliedBundleItem = {
   required_qty: number;
   cart_qty: number;
   unit_price: number;
-  pricing_source: 'b2b' | 'retail';
+  pricing_source: "b2b" | "retail";
   considered_qty: number; // min(cart_qty, required_qty) — quantidade que conta para o combo
   bundle_discount_amount: number; // fatia rateada (≥ 0, 2 casas)
 };
@@ -35,18 +35,25 @@ export type AppliedBundle = {
   bundle_id: string;
   bundle_name: string;
   bundle_slug: string | null;
-  discount_type: 'fixed_amount' | 'percentage';
+  discount_type: "fixed_amount" | "percentage";
   discount_value: number;
   eligible_subtotal: number;
   discount_amount: number; // efetivamente aplicado, ≥ 0
-  allocation_method: 'proportional_by_item_subtotal';
+  allocation_method: "proportional_by_item_subtotal";
   items: AppliedBundleItem[];
 };
 
 export type BlockedBundle = {
   bundle_id: string;
   bundle_name: string;
-  status: 'blocked_by_b2b' | 'blocked_by_coupon' | 'missing_items' | 'expired' | 'inactive' | 'not_eligible' | string;
+  status:
+    | "blocked_by_b2b"
+    | "blocked_by_coupon"
+    | "missing_items"
+    | "expired"
+    | "inactive"
+    | "not_eligible"
+    | string;
   reason: string | null;
 };
 
@@ -86,7 +93,7 @@ type RpcRow = {
   bundle_slug: string | null;
   bundle_name: string;
   bundle_image: string | null;
-  discount_type: 'none' | 'fixed_amount' | 'percentage';
+  discount_type: "none" | "fixed_amount" | "percentage";
   discount_value: number;
   status: string;
   eligible_subtotal: number;
@@ -96,7 +103,7 @@ type RpcRow = {
     required_qty: number;
     cart_qty: number;
     unit_price: number;
-    pricing_source: 'b2b' | 'retail';
+    pricing_source: "b2b" | "retail";
   }>;
   missing_items: unknown[];
   reason: string | null;
@@ -122,7 +129,7 @@ function round2(n: number): number {
  *    Diferença de centavos vai para o último item.
  */
 export async function computeBundleApplication(
-  input: ApplyCartBundlesInput
+  input: ApplyCartBundlesInput,
 ): Promise<ApplyCartBundlesResult> {
   const empty: ApplyCartBundlesResult = {
     bundle_discount_total: 0,
@@ -140,18 +147,19 @@ export async function computeBundleApplication(
 
   // Buscar config de acúmulo com cupom (mesma usada pela prévia).
   const { data: settingsRow } = await supabaseAdmin
-    .from('b2b_settings')
-    .select('allow_bundle_discount_with_coupon')
-    .order('created_at', { ascending: true })
+    .from("b2b_settings")
+    .select("allow_bundle_discount_with_coupon")
+    .order("created_at", { ascending: true })
     .limit(1)
     .maybeSingle();
   const allowWithCoupon = Boolean(
-    (settingsRow as { allow_bundle_discount_with_coupon?: boolean } | null)?.allow_bundle_discount_with_coupon
+    (settingsRow as { allow_bundle_discount_with_coupon?: boolean } | null)
+      ?.allow_bundle_discount_with_coupon,
   );
   empty.details.allow_with_coupon = allowWithCoupon;
 
   // Chamar a RPC que já calcula tudo (status, eligible_subtotal, estimated_discount, considered_items).
-  const { data: rows, error } = await supabaseAdmin.rpc('validate_cart_bundles', {
+  const { data: rows, error } = await supabaseAdmin.rpc("validate_cart_bundles", {
     _user_id: (input.userId ?? null) as unknown as string,
     _items: input.items.map((i) => ({ product_id: i.productId, qty: i.qty })),
     // Importante: passamos hasCoupon real para o RPC já marcar blocked_by_coupon
@@ -160,7 +168,7 @@ export async function computeBundleApplication(
   });
 
   if (error) {
-    console.error('[computeBundleApplication] rpc error:', error);
+    console.error("[computeBundleApplication] rpc error:", error);
     return empty;
   }
 
@@ -168,9 +176,11 @@ export async function computeBundleApplication(
   if (list.length === 0) return empty;
 
   // Separar elegíveis x bloqueados.
-  const eligible = list.filter((r) => r.status === 'eligible_preview' && Number(r.estimated_discount) > 0);
+  const eligible = list.filter(
+    (r) => r.status === "eligible_preview" && Number(r.estimated_discount) > 0,
+  );
   const blocked: BlockedBundle[] = list
-    .filter((r) => r.status !== 'eligible_preview' || Number(r.estimated_discount) <= 0)
+    .filter((r) => r.status !== "eligible_preview" || Number(r.estimated_discount) <= 0)
     .map((r) => ({
       bundle_id: r.bundle_id,
       bundle_name: r.bundle_name,
@@ -190,7 +200,7 @@ export async function computeBundleApplication(
   }
 
   const applied: AppliedBundle[] = [];
-  const perItem: ApplyCartBundlesResult['perItem'] = new Map();
+  const perItem: ApplyCartBundlesResult["perItem"] = new Map();
 
   for (const row of eligible) {
     const considered = row.considered_items ?? [];
@@ -198,8 +208,8 @@ export async function computeBundleApplication(
       blocked.push({
         bundle_id: row.bundle_id,
         bundle_name: row.bundle_name,
-        status: 'not_eligible',
-        reason: 'Sem itens considerados.',
+        status: "not_eligible",
+        reason: "Sem itens considerados.",
       });
       continue;
     }
@@ -211,7 +221,7 @@ export async function computeBundleApplication(
       required_qty: number;
       cart_qty: number;
       unit_price: number;
-      pricing_source: 'b2b' | 'retail';
+      pricing_source: "b2b" | "retail";
       considered_qty: number;
       line_eligible: number; // unit_price * considered_qty para itens varejo
     };
@@ -233,7 +243,7 @@ export async function computeBundleApplication(
       }
 
       const unitPrice = Number(ci.unit_price ?? 0);
-      const lineEligible = ci.pricing_source === 'b2b' ? 0 : unitPrice * consideredQty;
+      const lineEligible = ci.pricing_source === "b2b" ? 0 : unitPrice * consideredQty;
       builds.push({
         product_id: ci.product_id,
         required_qty: ci.required_qty,
@@ -249,8 +259,8 @@ export async function computeBundleApplication(
       blocked.push({
         bundle_id: row.bundle_id,
         bundle_name: row.bundle_name,
-        status: 'not_eligible',
-        reason: 'Itens já alocados a outro combo neste pedido.',
+        status: "not_eligible",
+        reason: "Itens já alocados a outro combo neste pedido.",
       });
       continue;
     }
@@ -260,8 +270,8 @@ export async function computeBundleApplication(
       blocked.push({
         bundle_id: row.bundle_id,
         bundle_name: row.bundle_name,
-        status: 'not_eligible',
-        reason: 'Sem subtotal varejo elegível.',
+        status: "not_eligible",
+        reason: "Sem subtotal varejo elegível.",
       });
       continue;
     }
@@ -269,11 +279,14 @@ export async function computeBundleApplication(
     // Recalcular desconto local com o subtotal recortado (pode ser menor que estimated_discount
     // se itens varejo perderam unidades). Usar mesmas regras do RPC.
     let bundleDiscount = 0;
-    if (row.discount_type === 'fixed_amount') {
+    if (row.discount_type === "fixed_amount") {
       bundleDiscount = Math.min(Math.max(0, Number(row.discount_value)), eligibleSubtotalForRebate);
-    } else if (row.discount_type === 'percentage') {
+    } else if (row.discount_type === "percentage") {
       const pct = Math.min(Math.max(0, Number(row.discount_value)), 50); // limite de segurança 50%
-      bundleDiscount = Math.min(round2(eligibleSubtotalForRebate * (pct / 100)), eligibleSubtotalForRebate);
+      bundleDiscount = Math.min(
+        round2(eligibleSubtotalForRebate * (pct / 100)),
+        eligibleSubtotalForRebate,
+      );
     }
     bundleDiscount = round2(bundleDiscount);
 
@@ -281,8 +294,8 @@ export async function computeBundleApplication(
       blocked.push({
         bundle_id: row.bundle_id,
         bundle_name: row.bundle_name,
-        status: 'not_eligible',
-        reason: 'Desconto resultante zero após resolução.',
+        status: "not_eligible",
+        reason: "Desconto resultante zero após resolução.",
       });
       continue;
     }
@@ -312,7 +325,7 @@ export async function computeBundleApplication(
     if (lastEligibleIdx >= 0 && Math.abs(allocated - bundleDiscount) > 0.001) {
       const diff = round2(bundleDiscount - allocated);
       rebateItems[lastEligibleIdx].bundle_discount_amount = round2(
-        rebateItems[lastEligibleIdx].bundle_discount_amount + diff
+        rebateItems[lastEligibleIdx].bundle_discount_amount + diff,
       );
     }
 
@@ -320,11 +333,11 @@ export async function computeBundleApplication(
       bundle_id: row.bundle_id,
       bundle_name: row.bundle_name,
       bundle_slug: row.bundle_slug,
-      discount_type: row.discount_type as 'fixed_amount' | 'percentage',
+      discount_type: row.discount_type as "fixed_amount" | "percentage",
       discount_value: Number(row.discount_value),
       eligible_subtotal: round2(eligibleSubtotalForRebate),
       discount_amount: bundleDiscount,
-      allocation_method: 'proportional_by_item_subtotal',
+      allocation_method: "proportional_by_item_subtotal",
       items: rebateItems,
     });
 
@@ -332,14 +345,14 @@ export async function computeBundleApplication(
     for (const r of rebateItems) {
       consumed.set(r.product_id, (consumed.get(r.product_id) ?? 0) + r.considered_qty);
       const prev = perItem.get(r.product_id);
-      const eligible = r.pricing_source !== 'b2b';
+      const eligible = r.pricing_source !== "b2b";
       if (!prev) {
         perItem.set(r.product_id, {
           bundle_id: row.bundle_id,
           bundle_name: row.bundle_name,
           bundle_discount_amount: r.bundle_discount_amount,
           bundle_discount_eligible: eligible,
-          block_reason: eligible ? null : 'b2b_price_applied',
+          block_reason: eligible ? null : "b2b_price_applied",
         });
       } else {
         // Soma descontos; mantém referência do bundle de maior aporte.

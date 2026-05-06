@@ -54,7 +54,7 @@ async function safeCount(build: () => any): Promise<number> {
 
 export async function fetchFinanceAlertCounts(): Promise<FinanceAlertCounts> {
   try {
-    const { supabaseAdmin } = await import('@/integrations/supabase/client.server');
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const stale24h = hoursAgoISO(24);
     const since30dISO = hoursAgoISO(24 * 30);
     const since7dISO = hoursAgoISO(24 * 7);
@@ -62,7 +62,7 @@ export async function fetchFinanceAlertCounts(): Promise<FinanceAlertCounts> {
 
     // ---------- Margem / custo (reaproveita finance.functions) ----------
     try {
-      const { getFinanceQuickCounts } = await import('./finance.functions');
+      const { getFinanceQuickCounts } = await import("./finance.functions");
       const fc = await getFinanceQuickCounts();
       out.productsWithoutCost = fc.productsWithoutCost;
       out.productsBelowMinMargin = fc.productsBelowMinMargin;
@@ -72,11 +72,11 @@ export async function fetchFinanceAlertCounts(): Promise<FinanceAlertCounts> {
     // Pedidos pagos (últimos 30 dias) com algum item de margem negativa
     try {
       const { data: negItems } = await supabaseAdmin
-        .from('order_items')
-        .select('order_id, orders!inner(payment_status, paid_at)')
-        .lt('gross_margin_amount', 0)
-        .eq('orders.payment_status', 'paid')
-        .gte('orders.paid_at', since30dISO)
+        .from("order_items")
+        .select("order_id, orders!inner(payment_status, paid_at)")
+        .lt("gross_margin_amount", 0)
+        .eq("orders.payment_status", "paid")
+        .gte("orders.paid_at", since30dISO)
         .limit(2000);
       const ids = new Set<string>();
       for (const r of (negItems ?? []) as Array<{ order_id: string }>) {
@@ -88,34 +88,34 @@ export async function fetchFinanceAlertCounts(): Promise<FinanceAlertCounts> {
     // ---------- Notas fiscais (count exact, leve) ----------
     out.invoicesPending = await safeCount(() =>
       supabaseAdmin
-        .from('orders')
-        .select('id', { count: 'exact', head: true })
-        .eq('payment_status', 'paid')
-        .eq('invoice_status', 'pendente_emissao'),
+        .from("orders")
+        .select("id", { count: "exact", head: true })
+        .eq("payment_status", "paid")
+        .eq("invoice_status", "pendente_emissao"),
     );
     out.invoicesPendingOver24h = await safeCount(() =>
       supabaseAdmin
-        .from('orders')
-        .select('id', { count: 'exact', head: true })
-        .eq('payment_status', 'paid')
-        .eq('invoice_status', 'pendente_emissao')
-        .lt('paid_at', stale24h),
+        .from("orders")
+        .select("id", { count: "exact", head: true })
+        .eq("payment_status", "paid")
+        .eq("invoice_status", "pendente_emissao")
+        .lt("paid_at", stale24h),
     );
     out.invoicesPendingB2bOver24h = await safeCount(() =>
       supabaseAdmin
-        .from('orders')
-        .select('id', { count: 'exact', head: true })
-        .eq('payment_status', 'paid')
-        .eq('order_type', 'b2b')
-        .in('invoice_status', ['pendente_emissao', 'nao_necessaria'])
-        .lt('paid_at', stale24h),
+        .from("orders")
+        .select("id", { count: "exact", head: true })
+        .eq("payment_status", "paid")
+        .eq("order_type", "b2b")
+        .in("invoice_status", ["pendente_emissao", "nao_necessaria"])
+        .lt("paid_at", stale24h),
     );
     out.invoicesError = await safeCount(() =>
       supabaseAdmin
-        .from('orders')
-        .select('id', { count: 'exact', head: true })
-        .eq('payment_status', 'paid')
-        .eq('invoice_status', 'erro_emissao'),
+        .from("orders")
+        .select("id", { count: "exact", head: true })
+        .eq("payment_status", "paid")
+        .eq("invoice_status", "erro_emissao"),
     );
 
     // ---------- Mercado Pago — taxa real x estimada x desconhecida ----------
@@ -123,10 +123,10 @@ export async function fetchFinanceAlertCounts(): Promise<FinanceAlertCounts> {
     // necessárias com limite defensivo de 2k linhas.)
     try {
       const { data: mpRows } = await supabaseAdmin
-        .from('orders')
-        .select('mp_fee_amount, estimated_fee_amount')
-        .eq('payment_status', 'paid')
-        .gte('paid_at', since30dISO)
+        .from("orders")
+        .select("mp_fee_amount, estimated_fee_amount")
+        .eq("payment_status", "paid")
+        .gte("paid_at", since30dISO)
         .limit(2000);
       for (const r of (mpRows ?? []) as Array<{
         mp_fee_amount: number | string | null;
@@ -142,10 +142,10 @@ export async function fetchFinanceAlertCounts(): Promise<FinanceAlertCounts> {
     // Webhooks MP com erro nos últimos 7 dias
     out.mpWebhookErrors7d = await safeCount(() =>
       supabaseAdmin
-        .from('payment_webhook_events')
-        .select('id', { count: 'exact', head: true })
-        .gte('created_at', since7dISO)
-        .not('processing_error', 'is', null),
+        .from("payment_webhook_events")
+        .select("id", { count: "exact", head: true })
+        .gte("created_at", since7dISO)
+        .not("processing_error", "is", null),
     );
 
     return out;

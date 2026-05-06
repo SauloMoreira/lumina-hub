@@ -1,40 +1,40 @@
-import { createFileRoute, Link } from '@tanstack/react-router';
-import { useQuery } from '@tanstack/react-query';
-import { useState } from 'react';
-import { ArrowLeft, ShoppingCart, AlertCircle, CheckCircle2, PackagePlus } from 'lucide-react';
-import { toast } from 'sonner';
-import { StoreLayout } from '@/components/layout/StoreLayout';
-import { Button } from '@/components/ui/button';
-import { formatBRL } from '@/lib/domain';
-import { useCart } from '@/stores/cartStore';
+import { createFileRoute, Link } from "@tanstack/react-router";
+import { useQuery } from "@tanstack/react-query";
+import { useState } from "react";
+import { ArrowLeft, ShoppingCart, AlertCircle, CheckCircle2, PackagePlus } from "lucide-react";
+import { toast } from "sonner";
+import { StoreLayout } from "@/components/layout/StoreLayout";
+import { Button } from "@/components/ui/button";
+import { formatBRL } from "@/lib/domain";
+import { useCart } from "@/stores/cartStore";
 import {
   getPublicBundleBySlug,
   type BundleAvailability,
   type BundleItemPublic,
-} from '@/server/productBundles.functions';
+} from "@/server/productBundles.functions";
 
-export const Route = createFileRoute('/combo/$slug')({
+export const Route = createFileRoute("/combo/$slug")({
   component: ComboDetailPage,
   head: ({ params }) => ({
     meta: [
       { title: `Combo ${params.slug} — Led Maricá` },
-      { name: 'description', content: 'Combo de produtos selecionados pela Led Maricá.' },
+      { name: "description", content: "Combo de produtos selecionados pela Led Maricá." },
     ],
   }),
 });
 
 const TONE: Record<BundleAvailability, string> = {
-  available: 'bg-emerald-50 text-emerald-700 border-emerald-200',
-  partial: 'bg-amber-50 text-amber-700 border-amber-200',
-  unavailable: 'bg-red-50 text-red-700 border-red-200',
-  needs_review: 'bg-muted text-muted-foreground border-border',
+  available: "bg-emerald-50 text-emerald-700 border-emerald-200",
+  partial: "bg-amber-50 text-amber-700 border-amber-200",
+  unavailable: "bg-red-50 text-red-700 border-red-200",
+  needs_review: "bg-muted text-muted-foreground border-border",
 };
 
 const LABEL: Record<BundleAvailability, string> = {
-  available: 'Disponível',
-  partial: 'Parcialmente disponível',
-  unavailable: 'Indisponível',
-  needs_review: 'Em revisão',
+  available: "Disponível",
+  partial: "Parcialmente disponível",
+  unavailable: "Indisponível",
+  needs_review: "Em revisão",
 };
 
 function ComboDetailPage() {
@@ -44,7 +44,7 @@ function ComboDetailPage() {
   const [adding, setAdding] = useState(false);
 
   const q = useQuery({
-    queryKey: ['public-bundle', slug],
+    queryKey: ["public-bundle", slug],
     queryFn: () => getPublicBundleBySlug({ data: { slug } }),
     staleTime: 30_000,
   });
@@ -79,7 +79,7 @@ function ComboDetailPage() {
   }
 
   const canAddSomething = bundle.items.some(
-    (i) => i.status === 'ok' || i.status === 'no_stock' // permite tentar; loja decide via stock
+    (i) => i.status === "ok" || i.status === "no_stock", // permite tentar; loja decide via stock
   );
 
   function handleAddAll() {
@@ -87,7 +87,7 @@ function ComboDetailPage() {
     let added = 0;
     let skipped = 0;
     for (const it of bundle!.items) {
-      if (it.status === 'inactive' || it.status === 'no_price') {
+      if (it.status === "inactive" || it.status === "no_price") {
         skipped++;
         continue;
       }
@@ -105,31 +105,32 @@ function ComboDetailPage() {
           image: it.product.image,
           stock: it.product.stock_qty,
           freeShippingEligible: it.product.free_shipping_eligible,
-          source: 'b2c',
+          source: "b2c",
         },
         qty,
-        { openDrawer: false }
+        { openDrawer: false },
       );
       added++;
     }
     setAdding(false);
     if (added > 0 && skipped === 0) {
-      toast.success('Itens adicionados ao carrinho');
+      toast.success("Itens adicionados ao carrinho");
       open();
     } else if (added > 0 && skipped > 0) {
-      toast.warning(
-        `Adicionados ${added} item(ns). ${skipped} indisponível(is) foram ignorados.`
-      );
+      toast.warning(`Adicionados ${added} item(ns). ${skipped} indisponível(is) foram ignorados.`);
       open();
     } else {
-      toast.error('Nenhum item disponível para adicionar.');
+      toast.error("Nenhum item disponível para adicionar.");
     }
   }
 
   return (
     <StoreLayout>
       <div className="container max-w-5xl py-8 px-4">
-        <Link to="/combos" className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground mb-4">
+        <Link
+          to="/combos"
+          className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground mb-4"
+        >
           <ArrowLeft className="w-3 h-3" /> Todos os combos
         </Link>
 
@@ -137,7 +138,11 @@ function ComboDetailPage() {
           <div className="space-y-4">
             <div className="aspect-[16/9] bg-surface rounded-xl overflow-hidden border border-border">
               {bundle.image_url ? (
-                <img src={bundle.image_url} alt={bundle.name} className="w-full h-full object-cover" />
+                <img
+                  src={bundle.image_url}
+                  alt={bundle.name}
+                  className="w-full h-full object-cover"
+                />
               ) : (
                 <div className="w-full h-full flex items-center justify-center">
                   <PackagePlus className="w-12 h-12 text-muted-foreground/50" />
@@ -148,7 +153,7 @@ function ComboDetailPage() {
               <span
                 className={`inline-flex items-center gap-1 text-[10px] font-medium px-2 py-0.5 rounded-full border ${TONE[bundle.availability]}`}
               >
-                {bundle.availability === 'available' ? (
+                {bundle.availability === "available" ? (
                   <CheckCircle2 className="w-3 h-3" />
                 ) : (
                   <AlertCircle className="w-3 h-3" />
@@ -156,8 +161,8 @@ function ComboDetailPage() {
                 {LABEL[bundle.availability]}
               </span>
               <span className="text-[11px] text-muted-foreground">
-                {bundle.items_count} {bundle.items_count === 1 ? 'item' : 'itens'} · {bundle.total_units}{' '}
-                {bundle.total_units === 1 ? 'unidade' : 'unidades'}
+                {bundle.items_count} {bundle.items_count === 1 ? "item" : "itens"} ·{" "}
+                {bundle.total_units} {bundle.total_units === 1 ? "unidade" : "unidades"}
               </span>
             </div>
             <h1 className="font-display text-3xl font-bold">{bundle.name}</h1>
@@ -192,12 +197,12 @@ function ComboDetailPage() {
               className="w-full gap-2"
               size="lg"
               onClick={handleAddAll}
-              disabled={!canAddSomething || adding || bundle.availability === 'unavailable'}
+              disabled={!canAddSomething || adding || bundle.availability === "unavailable"}
             >
               <ShoppingCart className="w-4 h-4" />
               Adicionar itens ao carrinho
             </Button>
-            {bundle.availability === 'unavailable' && (
+            {bundle.availability === "unavailable" && (
               <p className="text-[11px] text-red-700">
                 Combo indisponível no momento. Volte em breve.
               </p>
@@ -211,7 +216,7 @@ function ComboDetailPage() {
 
 function ItemRow({ item }: { item: BundleItemPublic }) {
   const lineSubtotal = item.product.final_price * item.quantity;
-  const broken = item.status !== 'ok';
+  const broken = item.status !== "ok";
   return (
     <div className="flex items-center gap-3 p-3">
       <Link
@@ -220,7 +225,11 @@ function ItemRow({ item }: { item: BundleItemPublic }) {
         className="w-16 h-16 rounded bg-surface overflow-hidden flex-shrink-0"
       >
         {item.product.image && (
-          <img src={item.product.image} alt={item.product.name} className="w-full h-full object-cover" />
+          <img
+            src={item.product.image}
+            alt={item.product.name}
+            className="w-full h-full object-cover"
+          />
         )}
       </Link>
       <div className="flex-1 min-w-0">
@@ -237,9 +246,9 @@ function ItemRow({ item }: { item: BundleItemPublic }) {
           {broken && (
             <span className="inline-flex items-center gap-1 text-amber-600">
               <AlertCircle className="w-3 h-3" />
-              {item.status === 'inactive' && 'item inativo'}
-              {item.status === 'no_price' && 'sem preço'}
-              {item.status === 'no_stock' && 'sem estoque'}
+              {item.status === "inactive" && "item inativo"}
+              {item.status === "no_price" && "sem preço"}
+              {item.status === "no_stock" && "sem estoque"}
             </span>
           )}
         </div>

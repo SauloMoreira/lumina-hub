@@ -1,11 +1,11 @@
-import { createFileRoute } from '@tanstack/react-router';
-import { supabaseAdmin } from '@/integrations/supabase/client.server';
+import { createFileRoute } from "@tanstack/react-router";
+import { supabaseAdmin } from "@/integrations/supabase/client.server";
 
 /**
  * Healthcheck público — útil para monitor externo (UptimeRobot etc).
  * Não expõe dado sensível: só sinaliza se a app e o banco estão respondendo.
  */
-export const Route = createFileRoute('/api/public/health')({
+export const Route = createFileRoute("/api/public/health")({
   server: {
     handlers: {
       GET: async () => {
@@ -13,8 +13,8 @@ export const Route = createFileRoute('/api/public/health')({
         let dbOk = false;
         try {
           const { error } = await supabaseAdmin
-            .from('products')
-            .select('id', { count: 'exact', head: true })
+            .from("products")
+            .select("id", { count: "exact", head: true })
             .limit(1);
           dbOk = !error;
         } catch {
@@ -32,8 +32,8 @@ export const Route = createFileRoute('/api/public/health')({
         return new Response(JSON.stringify(body), {
           status: dbOk ? 200 : 503,
           headers: {
-            'Content-Type': 'application/json',
-            'Cache-Control': 'no-store',
+            "Content-Type": "application/json",
+            "Cache-Control": "no-store",
           },
         });
       },

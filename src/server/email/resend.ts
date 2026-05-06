@@ -1,6 +1,6 @@
 // Cliente Resend — usado APENAS no servidor.
 // Nunca importe este arquivo no client.
-import { Resend } from 'resend';
+import { Resend } from "resend";
 
 let _client: Resend | null = null;
 
@@ -39,7 +39,7 @@ export async function sendTransactionalEmail(params: SendEmailParams): Promise<S
   const client = getClient();
   if (!client || !from) {
     // Modo dev / não configurado — não quebra o fluxo
-    console.warn('[email] RESEND_API_KEY ou RESEND_FROM_EMAIL ausente — e-mail não enviado', {
+    console.warn("[email] RESEND_API_KEY ou RESEND_FROM_EMAIL ausente — e-mail não enviado", {
       to: params.to,
       subject: params.subject,
     });
@@ -55,18 +55,18 @@ export async function sendTransactionalEmail(params: SendEmailParams): Promise<S
       text: params.text,
       replyTo: replyTo ?? undefined,
       headers: params.metadata
-        ? { 'X-Entity-Ref-ID': String(params.metadata.orderId ?? params.metadata.type ?? '') }
+        ? { "X-Entity-Ref-ID": String(params.metadata.orderId ?? params.metadata.type ?? "") }
         : undefined,
     });
 
     if (res.error) {
-      console.error('[email] erro Resend', res.error);
-      return { ok: false, error: res.error.message ?? 'Resend error' };
+      console.error("[email] erro Resend", res.error);
+      return { ok: false, error: res.error.message ?? "Resend error" };
     }
     return { ok: true, messageId: res.data?.id };
   } catch (e) {
-    const msg = e instanceof Error ? e.message : 'Erro desconhecido ao enviar e-mail';
-    console.error('[email] exception envio', e);
+    const msg = e instanceof Error ? e.message : "Erro desconhecido ao enviar e-mail";
+    console.error("[email] exception envio", e);
     return { ok: false, error: msg };
   }
 }

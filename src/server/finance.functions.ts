@@ -1,9 +1,9 @@
-import { createServerFn } from '@tanstack/react-start';
-import { z } from 'zod';
-import { requireAdmin } from '@/integrations/supabase/admin-middleware';
+import { createServerFn } from "@tanstack/react-start";
+import { z } from "zod";
+import { requireAdmin } from "@/integrations/supabase/admin-middleware";
 
 async function getSupabaseAdmin() {
-  return (await import('@/integrations/supabase/client.server')).supabaseAdmin;
+  return (await import("@/integrations/supabase/client.server")).supabaseAdmin;
 }
 
 // ============================================================
@@ -64,8 +64,8 @@ export type FinanceMarginRow = {
   margin_percent: number | null;
   b2b_margin_amount: number | null;
   b2b_margin_percent: number | null;
-  status: 'good' | 'attention' | 'critical' | 'no_cost';
-  b2b_status: 'good' | 'attention' | 'critical' | 'no_cost' | 'na';
+  status: "good" | "attention" | "critical" | "no_cost";
+  b2b_status: "good" | "attention" | "critical" | "no_cost" | "na";
   qty_sold: number;
   gross_profit: number;
 };
@@ -77,17 +77,17 @@ export type FinanceMarginRow = {
 async function loadSettings(): Promise<FinanceSettings> {
   const supabaseAdmin = await getSupabaseAdmin();
   const { data, error } = await supabaseAdmin
-    .from('finance_settings')
-    .select('*')
-    .order('created_at', { ascending: true })
+    .from("finance_settings")
+    .select("*")
+    .order("created_at", { ascending: true })
     .limit(1)
     .maybeSingle();
   if (error) throw new Error(error.message);
-  if (!data) throw new Error('finance_settings ausente');
+  if (!data) throw new Error("finance_settings ausente");
   return data as unknown as FinanceSettings;
 }
 
-export const getFinanceSettings = createServerFn({ method: 'GET' })
+export const getFinanceSettings = createServerFn({ method: "GET" })
   .middleware([requireAdmin])
   .handler(async () => loadSettings());
 
@@ -107,16 +107,16 @@ const SettingsInput = z.object({
   mp_fee_default_percent: z.number().min(0).max(100),
 });
 
-export const updateFinanceSettings = createServerFn({ method: 'POST' })
+export const updateFinanceSettings = createServerFn({ method: "POST" })
   .middleware([requireAdmin])
   .inputValidator((input: unknown) => SettingsInput.parse(input))
   .handler(async ({ data }) => {
     const supabaseAdmin = await getSupabaseAdmin();
     const current = await loadSettings();
     const { error } = await supabaseAdmin
-      .from('finance_settings')
+      .from("finance_settings")
       .update(data as never)
-      .eq('id', current.id);
+      .eq("id", current.id);
     if (error) throw new Error(error.message);
     return loadSettings();
   });
@@ -129,14 +129,14 @@ function estimateFee(method: string | null, gross: number, s: FinanceSettings): 
   if (gross <= 0) return 0;
   let pct = s.mp_fee_default_percent;
   let fixed = 0;
-  const m = (method ?? '').toLowerCase();
-  if (m.includes('pix')) {
+  const m = (method ?? "").toLowerCase();
+  if (m.includes("pix")) {
     pct = s.mp_fee_pix_percent;
     fixed = s.mp_fee_pix_fixed;
-  } else if (m.includes('credit') || m.includes('cart') || m.includes('card')) {
+  } else if (m.includes("credit") || m.includes("cart") || m.includes("card")) {
     pct = s.mp_fee_credit_percent;
     fixed = s.mp_fee_credit_fixed;
-  } else if (m.includes('bol') || m.includes('ticket')) {
+  } else if (m.includes("bol") || m.includes("ticket")) {
     pct = s.mp_fee_boleto_percent;
     fixed = s.mp_fee_boleto_fixed;
   }
@@ -151,16 +151,12 @@ const RangeInput = z.object({
   from: z.string().datetime().optional(),
   to: z.string().datetime().optional(),
   preset: z
-    .enum(['today', 'yesterday', 'last_7_days', 'this_month', 'last_month', 'custom'])
-    .default('last_7_days'),
-  orderType: z.enum(['all', 'b2c', 'b2b']).default('all'),
+    .enum(["today", "yesterday", "last_7_days", "this_month", "last_month", "custom"])
+    .default("last_7_days"),
+  orderType: z.enum(["all", "b2c", "b2b"]).default("all"),
 });
 
-function resolveRange(
-  preset: string,
-  from?: string,
-  to?: string,
-): { from: string; to: string } {
+function resolveRange(preset: string, from?: string, to?: string): { from: string; to: string } {
   const now = new Date();
   const startOfDay = (d: Date) => new Date(d.getFullYear(), d.getMonth(), d.getDate());
   const endOfDay = (d: Date) =>
@@ -168,30 +164,30 @@ function resolveRange(
   let f = startOfDay(now);
   let t = endOfDay(now);
   switch (preset) {
-    case 'today':
+    case "today":
       break;
-    case 'yesterday': {
+    case "yesterday": {
       const d = new Date(now);
       d.setDate(d.getDate() - 1);
       f = startOfDay(d);
       t = endOfDay(d);
       break;
     }
-    case 'last_7_days': {
+    case "last_7_days": {
       const d = new Date(now);
       d.setDate(d.getDate() - 6);
       f = startOfDay(d);
       break;
     }
-    case 'this_month':
+    case "this_month":
       f = new Date(now.getFullYear(), now.getMonth(), 1);
       break;
-    case 'last_month': {
+    case "last_month": {
       f = new Date(now.getFullYear(), now.getMonth() - 1, 1);
       t = endOfDay(new Date(now.getFullYear(), now.getMonth(), 0));
       break;
     }
-    case 'custom':
+    case "custom":
       if (from) f = new Date(from);
       if (to) t = new Date(to);
       break;
@@ -199,7 +195,7 @@ function resolveRange(
   return { from: f.toISOString(), to: t.toISOString() };
 }
 
-export const getFinanceOverview = createServerFn({ method: 'POST' })
+export const getFinanceOverview = createServerFn({ method: "POST" })
   .middleware([requireAdmin])
   .inputValidator((input: unknown) => RangeInput.parse(input))
   .handler(async ({ data }): Promise<FinanceOverview> => {
@@ -208,15 +204,15 @@ export const getFinanceOverview = createServerFn({ method: 'POST' })
     const { from, to } = resolveRange(data.preset, data.from, data.to);
 
     let q = supabaseAdmin
-      .from('orders')
+      .from("orders")
       .select(
-        'id, payment_status, total, subtotal, discount, shipping_cost, coupon_code, b2b_discount_total, order_type, payment_method, created_at, paid_at',
+        "id, payment_status, total, subtotal, discount, shipping_cost, coupon_code, b2b_discount_total, order_type, payment_method, created_at, paid_at",
       )
-      .gte('created_at', from)
-      .lte('created_at', to);
+      .gte("created_at", from)
+      .lte("created_at", to);
 
-    if (data.orderType === 'b2b') q = q.eq('order_type', 'b2b');
-    else if (data.orderType === 'b2c') q = q.eq('order_type', 'b2c');
+    if (data.orderType === "b2b") q = q.eq("order_type", "b2b");
+    else if (data.orderType === "b2c") q = q.eq("order_type", "b2c");
 
     const { data: orders, error } = await q;
     if (error) throw new Error(error.message);
@@ -232,9 +228,9 @@ export const getFinanceOverview = createServerFn({ method: 'POST' })
       payment_method: string | null;
     }>;
 
-    const paid = list.filter((o) => o.payment_status === 'paid');
+    const paid = list.filter((o) => o.payment_status === "paid");
     const ordersPaid = paid.length;
-    const ordersPending = list.filter((o) => o.payment_status === 'pending').length;
+    const ordersPending = list.filter((o) => o.payment_status === "pending").length;
     const grossRevenue = paid.reduce((s, o) => s + Number(o.total ?? 0), 0);
     const couponDiscounts = paid
       .filter((o) => o.coupon_code)
@@ -252,19 +248,20 @@ export const getFinanceOverview = createServerFn({ method: 'POST' })
     let itemsWithoutCost = 0;
     if (paid.length > 0) {
       const { data: items, error: itErr } = await supabaseAdmin
-        .from('order_items')
-        .select('order_id, total_cost, cost_source')
-        .in('order_id', paid.map((p) => p.id));
+        .from("order_items")
+        .select("order_id, total_cost, cost_source")
+        .in(
+          "order_id",
+          paid.map((p) => p.id),
+        );
       if (itErr) throw new Error(itErr.message);
       for (const it of items ?? []) {
-        if ((it as { cost_source?: string }).cost_source === 'none') itemsWithoutCost += 1;
+        if ((it as { cost_source?: string }).cost_source === "none") itemsWithoutCost += 1;
         estimatedCogs += Number((it as { total_cost?: number | null }).total_cost ?? 0);
       }
     }
 
-    const estimatedNetRevenue = Number(
-      (grossRevenue - estimatedPaymentFees).toFixed(2),
-    );
+    const estimatedNetRevenue = Number((grossRevenue - estimatedPaymentFees).toFixed(2));
     const estimatedGrossMargin = Number((grossRevenue - estimatedCogs).toFixed(2));
     const estimatedGrossProfit = Number(
       (grossRevenue - estimatedCogs - estimatedPaymentFees).toFixed(2),
@@ -300,19 +297,19 @@ export const getFinanceOverview = createServerFn({ method: 'POST' })
 
 const MarginListInput = z.object({
   search: z.string().max(120).optional(),
-  status: z.enum(['all', 'good', 'attention', 'critical', 'no_cost']).default('all'),
+  status: z.enum(["all", "good", "attention", "critical", "no_cost"]).default("all"),
   page: z.number().int().min(1).default(1),
   pageSize: z.number().int().min(10).max(200).default(50),
 });
 
 function classify(percent: number | null, minPercent: number, criticalPct: number) {
-  if (percent === null) return 'no_cost' as const;
-  if (percent < criticalPct) return 'critical' as const;
-  if (percent < minPercent) return 'attention' as const;
-  return 'good' as const;
+  if (percent === null) return "no_cost" as const;
+  if (percent < criticalPct) return "critical" as const;
+  if (percent < minPercent) return "attention" as const;
+  return "good" as const;
 }
 
-export const getFinanceMargin = createServerFn({ method: 'POST' })
+export const getFinanceMargin = createServerFn({ method: "POST" })
   .middleware([requireAdmin])
   .inputValidator((input: unknown) => MarginListInput.parse(input))
   .handler(async ({ data }) => {
@@ -322,12 +319,12 @@ export const getFinanceMargin = createServerFn({ method: 'POST' })
     const crit = settings.critical_margin_threshold_percent;
 
     let q = supabaseAdmin
-      .from('products')
+      .from("products")
       .select(
-        'id, name, sku, active, price, sale_price, b2b_price, cost_price, min_margin_percent, category_id',
-        { count: 'exact' },
+        "id, name, sku, active, price, sale_price, b2b_price, cost_price, min_margin_percent, category_id",
+        { count: "exact" },
       )
-      .order('name', { ascending: true });
+      .order("name", { ascending: true });
 
     if (data.search && data.search.trim()) {
       const s = `%${data.search.trim()}%`;
@@ -357,9 +354,9 @@ export const getFinanceMargin = createServerFn({ method: 'POST' })
     const catMap = new Map<string, string>();
     if (catIds.length > 0) {
       const { data: cats } = await supabaseAdmin
-        .from('categories')
-        .select('id, name')
-        .in('id', catIds);
+        .from("categories")
+        .select("id, name")
+        .in("id", catIds);
       for (const c of cats ?? []) catMap.set(c.id as string, (c as { name: string }).name);
     }
 
@@ -368,10 +365,10 @@ export const getFinanceMargin = createServerFn({ method: 'POST' })
     const sales = new Map<string, { qty: number; profit: number }>();
     if (ids.length > 0) {
       const { data: items } = await supabaseAdmin
-        .from('order_items')
-        .select('product_id, qty, gross_margin_amount, orders!inner(payment_status)')
-        .in('product_id', ids)
-        .eq('orders.payment_status', 'paid');
+        .from("order_items")
+        .select("product_id, qty, gross_margin_amount, orders!inner(payment_status)")
+        .in("product_id", ids)
+        .eq("orders.payment_status", "paid");
       for (const it of (items ?? []) as Array<{
         product_id: string | null;
         qty: number | null;
@@ -403,8 +400,7 @@ export const getFinanceMargin = createServerFn({ method: 'POST' })
         cost != null && b2bPrice != null && b2bPrice > 0
           ? Number((((b2bPrice - cost) / b2bPrice) * 100).toFixed(2))
           : null;
-      const b2bStatus =
-        b2bPrice == null ? 'na' : classify(b2bMarginPercent, effectiveMin, crit);
+      const b2bStatus = b2bPrice == null ? "na" : classify(b2bMarginPercent, effectiveMin, crit);
 
       const sale = sales.get(p.id) ?? { qty: 0, profit: 0 };
 
@@ -413,7 +409,7 @@ export const getFinanceMargin = createServerFn({ method: 'POST' })
         name: p.name,
         sku: p.sku,
         active: p.active,
-        category_name: p.category_id ? catMap.get(p.category_id) ?? null : null,
+        category_name: p.category_id ? (catMap.get(p.category_id) ?? null) : null,
         price: p.price != null ? Number(p.price) : null,
         sale_price: p.sale_price != null ? Number(p.sale_price) : null,
         b2b_price: b2bPrice,
@@ -431,8 +427,7 @@ export const getFinanceMargin = createServerFn({ method: 'POST' })
       };
     });
 
-    const filtered =
-      data.status === 'all' ? rows : rows.filter((r) => r.status === data.status);
+    const filtered = data.status === "all" ? rows : rows.filter((r) => r.status === data.status);
 
     return {
       rows: filtered,
@@ -452,33 +447,33 @@ const ProductCostInput = z.object({
   min_margin_percent: z.number().min(0).max(100).nullable(),
 });
 
-export const updateProductCost = createServerFn({ method: 'POST' })
+export const updateProductCost = createServerFn({ method: "POST" })
   .middleware([requireAdmin])
   .inputValidator((input: unknown) => ProductCostInput.parse(input))
   .handler(async ({ data, context }) => {
     const supabaseAdmin = await getSupabaseAdmin();
     const { data: prev } = await supabaseAdmin
-      .from('products')
-      .select('name, cost_price, min_margin_percent')
-      .eq('id', data.productId)
+      .from("products")
+      .select("name, cost_price, min_margin_percent")
+      .eq("id", data.productId)
       .maybeSingle();
     const { error } = await supabaseAdmin
-      .from('products')
+      .from("products")
       .update({
         cost_price: data.cost_price,
         min_margin_percent: data.min_margin_percent,
       } as never)
-      .eq('id', data.productId);
+      .eq("id", data.productId);
     if (error) throw new Error(error.message);
     try {
-      const { logAdminAction } = await import('./security/auditLog');
+      const { logAdminAction } = await import("./security/auditLog");
       const ctx = context as { adminUserId?: string; adminEmail?: string | null } | undefined;
-      const productName = (prev as { name?: string } | null)?.name ?? 'Produto';
+      const productName = (prev as { name?: string } | null)?.name ?? "Produto";
       await logAdminAction({
-        adminId: ctx?.adminUserId ?? '00000000-0000-0000-0000-000000000000',
+        adminId: ctx?.adminUserId ?? "00000000-0000-0000-0000-000000000000",
         adminEmail: ctx?.adminEmail ?? null,
-        action: 'product_cost_updated',
-        resourceType: 'product_cost',
+        action: "product_cost_updated",
+        resourceType: "product_cost",
         resourceId: data.productId,
         description: `Custo/margem mínima de "${productName}" atualizado.`,
         before: {
@@ -516,26 +511,26 @@ export type OrderFinanceSummary = {
   paymentMethod: string | null;
 };
 
-export const getOrderFinance = createServerFn({ method: 'POST' })
+export const getOrderFinance = createServerFn({ method: "POST" })
   .middleware([requireAdmin])
   .inputValidator((input: unknown) => OrderFinanceInput.parse(input))
   .handler(async ({ data }): Promise<OrderFinanceSummary> => {
     const supabaseAdmin = await getSupabaseAdmin();
     const settings = await loadSettings();
     const { data: order, error } = await supabaseAdmin
-      .from('orders')
+      .from("orders")
       .select(
-        'id, total, subtotal, discount, shipping_cost, coupon_code, b2b_discount_total, payment_method, order_type',
+        "id, total, subtotal, discount, shipping_cost, coupon_code, b2b_discount_total, payment_method, order_type",
       )
-      .eq('id', data.orderId)
+      .eq("id", data.orderId)
       .maybeSingle();
     if (error) throw new Error(error.message);
-    if (!order) throw new Error('Pedido não encontrado');
+    if (!order) throw new Error("Pedido não encontrado");
 
     const { data: items } = await supabaseAdmin
-      .from('order_items')
-      .select('total_price, total_cost, cost_source')
-      .eq('order_id', data.orderId);
+      .from("order_items")
+      .select("total_price, total_cost, cost_source")
+      .eq("order_id", data.orderId);
 
     let cogs = 0;
     let hasMissingCost = false;
@@ -543,7 +538,7 @@ export const getOrderFinance = createServerFn({ method: 'POST' })
       total_cost: number | null;
       cost_source: string | null;
     }>) {
-      if (it.cost_source === 'none') hasMissingCost = true;
+      if (it.cost_source === "none") hasMissingCost = true;
       cogs += Number(it.total_cost ?? 0);
     }
 
@@ -556,7 +551,9 @@ export const getOrderFinance = createServerFn({ method: 'POST' })
     const couponDiscount = (order as { coupon_code: string | null }).coupon_code
       ? Number((order as { discount: number | null }).discount ?? 0)
       : 0;
-    const b2bDiscount = Number((order as { b2b_discount_total: number | null }).b2b_discount_total ?? 0);
+    const b2bDiscount = Number(
+      (order as { b2b_discount_total: number | null }).b2b_discount_total ?? 0,
+    );
     const shipping = Number((order as { shipping_cost: number | null }).shipping_cost ?? 0);
     const subtotal = Number((order as { subtotal: number | null }).subtotal ?? 0);
 
@@ -577,7 +574,7 @@ export const getOrderFinance = createServerFn({ method: 'POST' })
       grossMarginPercent,
       estimatedGrossProfit,
       hasMissingCost,
-      isB2b: (order as { order_type: string | null }).order_type === 'b2b',
+      isB2b: (order as { order_type: string | null }).order_type === "b2b",
       paymentMethod: (order as { payment_method: string | null }).payment_method,
     };
   });
@@ -593,7 +590,7 @@ export type FinanceQuickCounts = {
   ordersPaidWithMissingCost: number;
 };
 
-export const getFinanceQuickCounts = createServerFn({ method: 'GET' })
+export const getFinanceQuickCounts = createServerFn({ method: "GET" })
   .middleware([requireAdmin])
   .handler(async (): Promise<FinanceQuickCounts> => {
     const supabaseAdmin = await getSupabaseAdmin();
@@ -602,9 +599,9 @@ export const getFinanceQuickCounts = createServerFn({ method: 'GET' })
 
     // Produtos ativos
     const { data: products } = await supabaseAdmin
-      .from('products')
-      .select('id, price, sale_price, b2b_price, cost_price, min_margin_percent')
-      .eq('active', true);
+      .from("products")
+      .select("id, price, sale_price, b2b_price, cost_price, min_margin_percent")
+      .eq("active", true);
 
     let withoutCost = 0;
     let belowMin = 0;
@@ -636,11 +633,11 @@ export const getFinanceQuickCounts = createServerFn({ method: 'GET' })
     const since = new Date();
     since.setDate(since.getDate() - 30);
     const { data: missing } = await supabaseAdmin
-      .from('order_items')
-      .select('order_id, orders!inner(payment_status, paid_at)')
-      .eq('cost_source', 'none')
-      .eq('orders.payment_status', 'paid')
-      .gte('orders.paid_at', since.toISOString());
+      .from("order_items")
+      .select("order_id, orders!inner(payment_status, paid_at)")
+      .eq("cost_source", "none")
+      .eq("orders.payment_status", "paid")
+      .gte("orders.paid_at", since.toISOString());
     const orderIds = new Set<string>();
     for (const m of (missing ?? []) as Array<{ order_id: string }>) {
       orderIds.add(m.order_id);

@@ -12,7 +12,7 @@
  * apenas no sessionStorage do próprio usuário e somem ao fechar o browser.
  */
 
-const STORAGE_KEY = 'lead_tracking_v1';
+const STORAGE_KEY = "lead_tracking_v1";
 
 export type LeadTrackingPayload = {
   utm_source?: string | null;
@@ -31,7 +31,7 @@ export type LeadTrackingPayload = {
 
 function safeWindow() {
   try {
-    return typeof window !== 'undefined' ? window : null;
+    return typeof window !== "undefined" ? window : null;
   } catch {
     return null;
   }
@@ -47,11 +47,11 @@ export function captureTrackingFromCurrentUrl(): void {
     const next: LeadTrackingPayload = { ...existing };
 
     // UTMs — só atualiza se vierem na URL atual (preserva primeira atribuição)
-    const utm_source = params.get('utm_source');
-    const utm_medium = params.get('utm_medium');
-    const utm_campaign = params.get('utm_campaign');
-    const utm_term = params.get('utm_term');
-    const utm_content = params.get('utm_content');
+    const utm_source = params.get("utm_source");
+    const utm_medium = params.get("utm_medium");
+    const utm_campaign = params.get("utm_campaign");
+    const utm_term = params.get("utm_term");
+    const utm_content = params.get("utm_content");
     if (utm_source) next.utm_source = utm_source.slice(0, 200);
     if (utm_medium) next.utm_medium = utm_medium.slice(0, 200);
     if (utm_campaign) next.utm_campaign = utm_campaign.slice(0, 200);
@@ -64,7 +64,7 @@ export function captureTrackingFromCurrentUrl(): void {
 
     // Referrer apenas na primeira visita
     if (!existing.referrer_url) {
-      const ref = win.document?.referrer || '';
+      const ref = win.document?.referrer || "";
       if (ref) next.referrer_url = ref.slice(0, 500);
     }
 

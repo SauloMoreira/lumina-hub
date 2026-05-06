@@ -1,25 +1,40 @@
-import { createFileRoute, Link, useNavigate, useSearch } from '@tanstack/react-router';
-import { useCallback, useEffect, useState } from 'react';
-import { z } from 'zod';
-import { CheckCircle2, Package, Truck, Clock, ShoppingBag, ArrowRight, Loader2, CreditCard, RefreshCw, MapPin, AlertCircle, MessageCircle, Store, Phone } from 'lucide-react';
-import { toast } from 'sonner';
-import { StoreLayout } from '@/components/layout/StoreLayout';
-import { Button } from '@/components/ui/button';
-import { useAuth } from '@/hooks/useAuth';
-import { formatBRL } from '@/lib/domain';
-import { getOrderForCustomer } from '@/server/orderTracking.functions';
-import { createMercadoPagoPreference } from '@/server/payment.functions';
-import { orderStatusLabel } from '@/lib/orderStatus';
-import { redirectToExternalCheckout } from '@/lib/externalCheckout';
-import { buildSeo } from '@/lib/seo';
+import { createFileRoute, Link, useNavigate, useSearch } from "@tanstack/react-router";
+import { useCallback, useEffect, useState } from "react";
+import { z } from "zod";
+import {
+  CheckCircle2,
+  Package,
+  Truck,
+  Clock,
+  ShoppingBag,
+  ArrowRight,
+  Loader2,
+  CreditCard,
+  RefreshCw,
+  MapPin,
+  AlertCircle,
+  MessageCircle,
+  Store,
+  Phone,
+} from "lucide-react";
+import { toast } from "sonner";
+import { StoreLayout } from "@/components/layout/StoreLayout";
+import { Button } from "@/components/ui/button";
+import { useAuth } from "@/hooks/useAuth";
+import { formatBRL } from "@/lib/domain";
+import { getOrderForCustomer } from "@/server/orderTracking.functions";
+import { createMercadoPagoPreference } from "@/server/payment.functions";
+import { orderStatusLabel } from "@/lib/orderStatus";
+import { redirectToExternalCheckout } from "@/lib/externalCheckout";
+import { buildSeo } from "@/lib/seo";
 
 const SearchSchema = z.object({
   token: z.string().min(16).max(128).optional(),
 });
 
-export const Route = createFileRoute('/pedido/$id/confirmacao')({
+export const Route = createFileRoute("/pedido/$id/confirmacao")({
   validateSearch: (s) => SearchSchema.parse(s),
-  head: () => buildSeo({ title: 'Acompanhar pedido', url: '/pedido', noindex: true }),
+  head: () => buildSeo({ title: "Acompanhar pedido", url: "/pedido", noindex: true }),
   component: OrderTrackingPage,
 });
 
@@ -42,7 +57,7 @@ type CustomerOrder = {
   estimatedDelivery: string | null;
   createdAt: string | null;
   paidAt: string | null;
-  deliveryMethod: 'delivery' | 'pickup' | 'local_delivery' | string;
+  deliveryMethod: "delivery" | "pickup" | "local_delivery" | string;
   localDelivery?: { district: string | null; eta: string | null } | null;
   pickup: {
     status: string | null;
@@ -61,67 +76,116 @@ type CustomerOrder = {
     state: string | null;
     zipCode: string | null;
   } | null;
-  items: Array<{ id: string; name: string; image: string | null; qty: number; unitPrice: number; totalPrice: number; bundleName: string | null; bundleDiscountAmount: number }>;
+  items: Array<{
+    id: string;
+    name: string;
+    image: string | null;
+    qty: number;
+    unitPrice: number;
+    totalPrice: number;
+    bundleName: string | null;
+    bundleDiscountAmount: number;
+  }>;
 };
 
 function statusMessage(status: string, paymentStatus: string | null) {
-  if (status === 'shipped' || status === 'out_for_delivery') {
-    return { tone: 'info' as const, title: 'Seu pedido foi enviado', text: 'Acompanhe a entrega pelo código de rastreio.' };
+  if (status === "shipped" || status === "out_for_delivery") {
+    return {
+      tone: "info" as const,
+      title: "Seu pedido foi enviado",
+      text: "Acompanhe a entrega pelo código de rastreio.",
+    };
   }
-  if (status === 'delivered' || status === 'completed') {
-    return { tone: 'success' as const, title: 'Pedido concluído', text: 'Obrigado pela compra!' };
+  if (status === "delivered" || status === "completed") {
+    return { tone: "success" as const, title: "Pedido concluído", text: "Obrigado pela compra!" };
   }
-  if (status === 'cancelled') {
-    return { tone: 'error' as const, title: 'Pedido cancelado', text: 'Este pedido foi cancelado.' };
+  if (status === "cancelled") {
+    return {
+      tone: "error" as const,
+      title: "Pedido cancelado",
+      text: "Este pedido foi cancelado.",
+    };
   }
-  if (paymentStatus === 'paid' || paymentStatus === 'approved') {
-    return { tone: 'success' as const, title: 'Pagamento aprovado!', text: 'Seu pedido está sendo preparado.' };
+  if (paymentStatus === "paid" || paymentStatus === "approved") {
+    return {
+      tone: "success" as const,
+      title: "Pagamento aprovado!",
+      text: "Seu pedido está sendo preparado.",
+    };
   }
-  if (paymentStatus === 'pending' || paymentStatus === 'in_process') {
-    return { tone: 'warn' as const, title: 'Pagamento em análise', text: 'Assim que for aprovado, seu pedido seguirá para processamento.' };
+  if (paymentStatus === "pending" || paymentStatus === "in_process") {
+    return {
+      tone: "warn" as const,
+      title: "Pagamento em análise",
+      text: "Assim que for aprovado, seu pedido seguirá para processamento.",
+    };
   }
-  if (paymentStatus === 'rejected' || paymentStatus === 'failed') {
-    return { tone: 'error' as const, title: 'Pagamento não aprovado', text: 'Você pode tentar realizar o pagamento novamente.' };
+  if (paymentStatus === "rejected" || paymentStatus === "failed") {
+    return {
+      tone: "error" as const,
+      title: "Pagamento não aprovado",
+      text: "Você pode tentar realizar o pagamento novamente.",
+    };
   }
-  return { tone: 'info' as const, title: 'Pedido recebido', text: 'Acompanhe aqui o status do seu pedido.' };
+  return {
+    tone: "info" as const,
+    title: "Pedido recebido",
+    text: "Acompanhe aqui o status do seu pedido.",
+  };
 }
 
 function timelineSteps(status: string, paymentStatus: string | null, deliveryMethod: string) {
-  const isPaid = paymentStatus === 'paid' || paymentStatus === 'approved';
-  const isPreparing = ['preparing', 'shipped', 'out_for_delivery', 'delivered', 'completed', 'ready_for_pickup', 'picked_up'].includes(status);
-  const isShipped = ['shipped', 'out_for_delivery', 'delivered', 'completed', 'ready_for_pickup', 'picked_up'].includes(status);
-  const isDelivered = ['delivered', 'completed', 'picked_up'].includes(status);
-  if (deliveryMethod === 'pickup') {
+  const isPaid = paymentStatus === "paid" || paymentStatus === "approved";
+  const isPreparing = [
+    "preparing",
+    "shipped",
+    "out_for_delivery",
+    "delivered",
+    "completed",
+    "ready_for_pickup",
+    "picked_up",
+  ].includes(status);
+  const isShipped = [
+    "shipped",
+    "out_for_delivery",
+    "delivered",
+    "completed",
+    "ready_for_pickup",
+    "picked_up",
+  ].includes(status);
+  const isDelivered = ["delivered", "completed", "picked_up"].includes(status);
+  if (deliveryMethod === "pickup") {
     return [
-      { icon: CheckCircle2, label: 'Recebido', active: true },
-      { icon: CreditCard, label: 'Pagamento', active: isPaid },
-      { icon: Package, label: 'Preparando', active: isPreparing },
-      { icon: Store, label: 'Pronto p/ retirar', active: isShipped },
-      { icon: CheckCircle2, label: 'Retirado', active: isDelivered },
+      { icon: CheckCircle2, label: "Recebido", active: true },
+      { icon: CreditCard, label: "Pagamento", active: isPaid },
+      { icon: Package, label: "Preparando", active: isPreparing },
+      { icon: Store, label: "Pronto p/ retirar", active: isShipped },
+      { icon: CheckCircle2, label: "Retirado", active: isDelivered },
     ];
   }
-  if (deliveryMethod === 'local_delivery') {
+  if (deliveryMethod === "local_delivery") {
     return [
-      { icon: CheckCircle2, label: 'Recebido', active: true },
-      { icon: CreditCard, label: 'Pagamento', active: isPaid },
-      { icon: Package, label: 'Preparando', active: isPreparing },
-      { icon: Truck, label: 'A caminho', active: isShipped },
-      { icon: CheckCircle2, label: 'Entregue', active: isDelivered },
+      { icon: CheckCircle2, label: "Recebido", active: true },
+      { icon: CreditCard, label: "Pagamento", active: isPaid },
+      { icon: Package, label: "Preparando", active: isPreparing },
+      { icon: Truck, label: "A caminho", active: isShipped },
+      { icon: CheckCircle2, label: "Entregue", active: isDelivered },
     ];
   }
   return [
-    { icon: CheckCircle2, label: 'Recebido', active: true },
-    { icon: CreditCard, label: 'Pagamento', active: isPaid },
-    { icon: Package, label: 'Preparando', active: isPreparing },
-    { icon: Truck, label: 'Enviado', active: isShipped },
-    { icon: CheckCircle2, label: 'Entregue', active: isDelivered },
+    { icon: CheckCircle2, label: "Recebido", active: true },
+    { icon: CreditCard, label: "Pagamento", active: isPaid },
+    { icon: Package, label: "Preparando", active: isPreparing },
+    { icon: Truck, label: "Enviado", active: isShipped },
+    { icon: CheckCircle2, label: "Entregue", active: isDelivered },
   ];
 }
 
 function trackingUrlFor(carrier: string | null, code: string | null): string | null {
   if (!code) return null;
-  const c = (carrier ?? '').toLowerCase();
-  if (c.includes('correio')) return `https://rastreamento.correios.com.br/app/index.php?objeto=${encodeURIComponent(code)}`;
+  const c = (carrier ?? "").toLowerCase();
+  if (c.includes("correio"))
+    return `https://rastreamento.correios.com.br/app/index.php?objeto=${encodeURIComponent(code)}`;
   return null;
 }
 
@@ -136,28 +200,31 @@ function OrderTrackingPage() {
   const [payRedirecting, setPayRedirecting] = useState(false);
   const [notFound, setNotFound] = useState(false);
 
-  const load = useCallback(async (silent = false) => {
-    if (!silent) setFetching(true);
-    else setRefreshing(true);
-    try {
-      const r = await getOrderForCustomer({ data: { id, token: token ?? null } });
-      if (r.ok) {
-        setOrder(r.order);
-        setNotFound(false);
-      } else {
-        setNotFound(true);
+  const load = useCallback(
+    async (silent = false) => {
+      if (!silent) setFetching(true);
+      else setRefreshing(true);
+      try {
+        const r = await getOrderForCustomer({ data: { id, token: token ?? null } });
+        if (r.ok) {
+          setOrder(r.order);
+          setNotFound(false);
+        } else {
+          setNotFound(true);
+        }
+      } finally {
+        setFetching(false);
+        setRefreshing(false);
       }
-    } finally {
-      setFetching(false);
-      setRefreshing(false);
-    }
-  }, [id, token]);
+    },
+    [id, token],
+  );
 
   // Aguarda saber se há sessão (envia Authorization header) ou se há token
   useEffect(() => {
     if (loading) return;
     if (!user && !token) {
-      navigate({ to: '/login' });
+      navigate({ to: "/login" });
       return;
     }
     load(false);
@@ -166,7 +233,7 @@ function OrderTrackingPage() {
   async function startPayment() {
     if (!order || payRedirecting) return;
     if (!user) {
-      toast.error('Faça login para pagar este pedido novamente.');
+      toast.error("Faça login para pagar este pedido novamente.");
       return;
     }
     setPayRedirecting(true);
@@ -176,24 +243,25 @@ function OrderTrackingPage() {
         redirectToExternalCheckout(r.checkoutUrl);
         return;
       }
-      toast.error('Não foi possível iniciar o pagamento. Tente novamente.');
+      toast.error("Não foi possível iniciar o pagamento. Tente novamente.");
       setPayRedirecting(false);
     } catch {
-      toast.error('Não foi possível iniciar o pagamento. Tente novamente.');
+      toast.error("Não foi possível iniciar o pagamento. Tente novamente.");
       setPayRedirecting(false);
     }
   }
 
   async function handleRefresh() {
     await load(true);
-    toast.success('Status atualizado');
+    toast.success("Status atualizado");
   }
 
   if (loading || fetching) {
     return (
       <StoreLayout>
         <div className="container mx-auto px-4 py-12 text-center text-muted-foreground">
-          <Loader2 className="w-5 h-5 animate-spin inline mr-2" />Carregando pedido...
+          <Loader2 className="w-5 h-5 animate-spin inline mr-2" />
+          Carregando pedido...
         </div>
       </StoreLayout>
     );
@@ -206,29 +274,35 @@ function OrderTrackingPage() {
           <AlertCircle className="w-12 h-12 mx-auto mb-3 text-muted-foreground" />
           <h1 className="font-display font-bold text-2xl mb-2">Pedido não encontrado</h1>
           <p className="text-sm text-muted-foreground mb-5">
-            Verifique se o link está completo. Se você fez login com outra conta, a visualização pode estar restrita.
+            Verifique se o link está completo. Se você fez login com outra conta, a visualização
+            pode estar restrita.
           </p>
-          <Button asChild><Link to="/conta/pedidos">Ver meus pedidos</Link></Button>
+          <Button asChild>
+            <Link to="/conta/pedidos">Ver meus pedidos</Link>
+          </Button>
         </div>
       </StoreLayout>
     );
   }
 
   const msg = statusMessage(order.status, order.paymentStatus);
-  const isPickup = order.deliveryMethod === 'pickup';
-  const isLocal = order.deliveryMethod === 'local_delivery';
+  const isPickup = order.deliveryMethod === "pickup";
+  const isLocal = order.deliveryMethod === "local_delivery";
   const steps = timelineSteps(order.status, order.paymentStatus, order.deliveryMethod);
   const trackUrl = trackingUrlFor(order.shippingCarrier, order.trackingCode);
-  const isPaymentPending = order.paymentStatus === 'pending' || order.paymentStatus === 'in_process';
-  const isPaymentRejected = order.paymentStatus === 'rejected' || order.paymentStatus === 'failed';
-  const supportPhone = (import.meta.env.VITE_SUPPORT_WHATSAPP ?? '').toString().replace(/\D/g, '');
-  const whatsUrl = supportPhone ? `https://wa.me/${supportPhone}?text=${encodeURIComponent(`Olá! Sobre o pedido #${order.orderNumber}.`)}` : null;
+  const isPaymentPending =
+    order.paymentStatus === "pending" || order.paymentStatus === "in_process";
+  const isPaymentRejected = order.paymentStatus === "rejected" || order.paymentStatus === "failed";
+  const supportPhone = (import.meta.env.VITE_SUPPORT_WHATSAPP ?? "").toString().replace(/\D/g, "");
+  const whatsUrl = supportPhone
+    ? `https://wa.me/${supportPhone}?text=${encodeURIComponent(`Olá! Sobre o pedido #${order.orderNumber}.`)}`
+    : null;
 
   const toneClass = {
-    success: 'bg-success/10 border-success/30 text-success',
-    warn: 'bg-warning/10 border-warning/30 text-warning',
-    error: 'bg-destructive/10 border-destructive/30 text-destructive',
-    info: 'bg-primary-tint border-primary/30 text-primary',
+    success: "bg-success/10 border-success/30 text-success",
+    warn: "bg-warning/10 border-warning/30 text-warning",
+    error: "bg-destructive/10 border-destructive/30 text-destructive",
+    info: "bg-primary-tint border-primary/30 text-primary",
   }[msg.tone];
 
   return (
@@ -237,14 +311,21 @@ function OrderTrackingPage() {
         {/* Cabeçalho */}
         <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3 mb-6">
           <div>
-            <p className="text-xs text-muted-foreground uppercase tracking-wide font-medium">Pedido</p>
+            <p className="text-xs text-muted-foreground uppercase tracking-wide font-medium">
+              Pedido
+            </p>
             <h1 className="font-display font-bold text-3xl tracking-tight">#{order.orderNumber}</h1>
             <p className="text-sm text-muted-foreground mt-1">
-              {order.createdAt && new Date(order.createdAt).toLocaleString('pt-BR')} · {orderStatusLabel(order.status)}
+              {order.createdAt && new Date(order.createdAt).toLocaleString("pt-BR")} ·{" "}
+              {orderStatusLabel(order.status)}
             </p>
           </div>
           <Button variant="outline" size="sm" onClick={handleRefresh} disabled={refreshing}>
-            {refreshing ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4" />}
+            {refreshing ? (
+              <Loader2 className="w-4 h-4 animate-spin" />
+            ) : (
+              <RefreshCw className="w-4 h-4" />
+            )}
             Atualizar status
           </Button>
         </div>
@@ -256,12 +337,32 @@ function OrderTrackingPage() {
 
           {isPaymentPending && user && (
             <Button onClick={startPayment} disabled={payRedirecting} className="mt-4 h-10">
-              {payRedirecting ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Abrindo...</> : <><CreditCard className="w-4 h-4 mr-2" />Pagar com Mercado Pago</>}
+              {payRedirecting ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Abrindo...
+                </>
+              ) : (
+                <>
+                  <CreditCard className="w-4 h-4 mr-2" />
+                  Pagar com Mercado Pago
+                </>
+              )}
             </Button>
           )}
           {isPaymentRejected && user && (
             <Button onClick={startPayment} disabled={payRedirecting} className="mt-4 h-10">
-              {payRedirecting ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Abrindo...</> : <><CreditCard className="w-4 h-4 mr-2" />Tentar pagar novamente</>}
+              {payRedirecting ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Abrindo...
+                </>
+              ) : (
+                <>
+                  <CreditCard className="w-4 h-4 mr-2" />
+                  Tentar pagar novamente
+                </>
+              )}
             </Button>
           )}
         </div>
@@ -272,10 +373,16 @@ function OrderTrackingPage() {
           <div className="grid grid-cols-5 gap-2">
             {steps.map((s) => (
               <div key={s.label} className="flex flex-col items-center text-center">
-                <div className={`w-10 h-10 rounded-full flex items-center justify-center mb-1.5 ${s.active ? 'bg-primary text-primary-foreground' : 'bg-surface text-text-faint'}`}>
+                <div
+                  className={`w-10 h-10 rounded-full flex items-center justify-center mb-1.5 ${s.active ? "bg-primary text-primary-foreground" : "bg-surface text-text-faint"}`}
+                >
                   <s.icon className="w-4 h-4" />
                 </div>
-                <span className={`text-[11px] sm:text-xs ${s.active ? 'font-medium text-foreground' : 'text-muted-foreground'}`}>{s.label}</span>
+                <span
+                  className={`text-[11px] sm:text-xs ${s.active ? "font-medium text-foreground" : "text-muted-foreground"}`}
+                >
+                  {s.label}
+                </span>
               </div>
             ))}
           </div>
@@ -288,22 +395,53 @@ function OrderTrackingPage() {
             {order.items.map((it) => (
               <div key={it.id} className="py-3 flex items-center gap-3">
                 <div className="w-12 h-12 rounded bg-surface overflow-hidden flex items-center justify-center shrink-0">
-                  {it.image ? <img src={it.image} alt={it.name} className="w-full h-full object-cover" /> : <ShoppingBag className="w-5 h-5 text-text-faint" />}
+                  {it.image ? (
+                    <img src={it.image} alt={it.name} className="w-full h-full object-cover" />
+                  ) : (
+                    <ShoppingBag className="w-5 h-5 text-text-faint" />
+                  )}
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="font-medium text-sm line-clamp-1">{it.name}</p>
-                  <p className="text-xs text-muted-foreground">{it.qty}× {formatBRL(it.unitPrice)}</p>
+                  <p className="text-xs text-muted-foreground">
+                    {it.qty}× {formatBRL(it.unitPrice)}
+                  </p>
                 </div>
                 <div className="font-medium text-sm">{formatBRL(it.totalPrice)}</div>
               </div>
             ))}
           </div>
           <div className="mt-4 pt-4 border-t border-border space-y-1.5 text-sm">
-            <div className="flex justify-between"><span className="text-muted-foreground">Subtotal</span><span>{formatBRL(order.subtotal)}</span></div>
-            {order.discount > 0 && <div className="flex justify-between text-success"><span>Desconto{order.couponCode ? ` (${order.couponCode})` : ''}</span><span>−{formatBRL(order.discount)}</span></div>}
-            {order.bundleDiscountTotal > 0 && <div className="flex justify-between text-success"><span>Desconto de combo</span><span>−{formatBRL(order.bundleDiscountTotal)}</span></div>}
-            <div className="flex justify-between"><span className="text-muted-foreground">{isPickup ? 'Retirada na loja' : isLocal ? `Frete Local Maricá${order.localDelivery?.district ? ` (${order.localDelivery.district})` : ''}` : `Frete${order.shippingService ? ` (${order.shippingService})` : ''}`}</span><span>{order.shippingCost === 0 ? 'Grátis' : formatBRL(order.shippingCost)}</span></div>
-            <div className="flex justify-between font-display font-bold text-lg pt-2 border-t border-border"><span>Total</span><span className="text-primary">{formatBRL(order.total)}</span></div>
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">Subtotal</span>
+              <span>{formatBRL(order.subtotal)}</span>
+            </div>
+            {order.discount > 0 && (
+              <div className="flex justify-between text-success">
+                <span>Desconto{order.couponCode ? ` (${order.couponCode})` : ""}</span>
+                <span>−{formatBRL(order.discount)}</span>
+              </div>
+            )}
+            {order.bundleDiscountTotal > 0 && (
+              <div className="flex justify-between text-success">
+                <span>Desconto de combo</span>
+                <span>−{formatBRL(order.bundleDiscountTotal)}</span>
+              </div>
+            )}
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">
+                {isPickup
+                  ? "Retirada na loja"
+                  : isLocal
+                    ? `Frete Local Maricá${order.localDelivery?.district ? ` (${order.localDelivery.district})` : ""}`
+                    : `Frete${order.shippingService ? ` (${order.shippingService})` : ""}`}
+              </span>
+              <span>{order.shippingCost === 0 ? "Grátis" : formatBRL(order.shippingCost)}</span>
+            </div>
+            <div className="flex justify-between font-display font-bold text-lg pt-2 border-t border-border">
+              <span>Total</span>
+              <span className="text-primary">{formatBRL(order.total)}</span>
+            </div>
           </div>
         </div>
 
@@ -315,9 +453,14 @@ function OrderTrackingPage() {
             </div>
             <ul className="space-y-2 text-sm">
               {order.bundles.map((b) => (
-                <li key={b.bundle_id} className="flex items-center justify-between gap-3 rounded-md border border-border/60 bg-surface/40 px-3 py-2">
+                <li
+                  key={b.bundle_id}
+                  className="flex items-center justify-between gap-3 rounded-md border border-border/60 bg-surface/40 px-3 py-2"
+                >
                   <span className="font-medium truncate">{b.bundle_name}</span>
-                  <span className="text-success font-medium shrink-0">−{formatBRL(b.discount_amount)}</span>
+                  <span className="text-success font-medium shrink-0">
+                    −{formatBRL(b.discount_amount)}
+                  </span>
                 </li>
               ))}
             </ul>
@@ -330,20 +473,35 @@ function OrderTrackingPage() {
         {/* Entrega ou Retirada */}
         <div className="bg-card border border-border rounded-xl p-6 mb-6">
           <div className="flex items-center gap-2 mb-3">
-            {isPickup ? <Store className="w-4 h-4 text-primary" /> : isLocal ? <Truck className="w-4 h-4 text-primary" /> : <MapPin className="w-4 h-4 text-primary" />}
-            <h2 className="font-display font-semibold">{isPickup ? 'Retirada na loja' : isLocal ? 'Frete Local Maricá/RJ' : 'Entrega'}</h2>
+            {isPickup ? (
+              <Store className="w-4 h-4 text-primary" />
+            ) : isLocal ? (
+              <Truck className="w-4 h-4 text-primary" />
+            ) : (
+              <MapPin className="w-4 h-4 text-primary" />
+            )}
+            <h2 className="font-display font-semibold">
+              {isPickup ? "Retirada na loja" : isLocal ? "Frete Local Maricá/RJ" : "Entrega"}
+            </h2>
           </div>
 
           {isPickup ? (
             <div className="text-sm space-y-2">
               {order.pickup?.storeName && <p className="font-medium">{order.pickup.storeName}</p>}
               {order.pickup?.storeAddress && (
-                <p className="text-muted-foreground whitespace-pre-line">{order.pickup.storeAddress}</p>
+                <p className="text-muted-foreground whitespace-pre-line">
+                  {order.pickup.storeAddress}
+                </p>
               )}
               {order.pickup?.storePhone && (
                 <p className="text-muted-foreground flex items-center gap-1.5">
                   <Phone className="w-3.5 h-3.5" />
-                  <a href={`tel:${order.pickup.storePhone.replace(/\D/g, '')}`} className="text-foreground hover:underline">{order.pickup.storePhone}</a>
+                  <a
+                    href={`tel:${order.pickup.storePhone.replace(/\D/g, "")}`}
+                    className="text-foreground hover:underline"
+                  >
+                    {order.pickup.storePhone}
+                  </a>
                 </p>
               )}
               {order.pickup?.instructions && (
@@ -361,32 +519,74 @@ function OrderTrackingPage() {
             <>
               {order.address ? (
                 <div className="text-sm space-y-0.5">
-                  {order.address.recipient && <p className="font-medium">{order.address.recipient}</p>}
+                  {order.address.recipient && (
+                    <p className="font-medium">{order.address.recipient}</p>
+                  )}
                   <p className="text-muted-foreground">
-                    {order.address.street}{order.address.number ? `, ${order.address.number}` : ''}{order.address.complement ? `, ${order.address.complement}` : ''}
+                    {order.address.street}
+                    {order.address.number ? `, ${order.address.number}` : ""}
+                    {order.address.complement ? `, ${order.address.complement}` : ""}
                   </p>
                   <p className="text-muted-foreground">
-                    {[order.address.neighborhood, order.address.city && `${order.address.city}/${order.address.state ?? ''}`].filter(Boolean).join(' · ')}
-                    {order.address.zipCode ? ` · CEP ${order.address.zipCode}` : ''}
+                    {[
+                      order.address.neighborhood,
+                      order.address.city && `${order.address.city}/${order.address.state ?? ""}`,
+                    ]
+                      .filter(Boolean)
+                      .join(" · ")}
+                    {order.address.zipCode ? ` · CEP ${order.address.zipCode}` : ""}
                   </p>
                 </div>
               ) : (
                 <p className="text-sm text-muted-foreground">Endereço não disponível.</p>
               )}
 
-              {(order.shippingCarrier || order.shippingService || order.estimatedDelivery || (isLocal && order.localDelivery)) && (
+              {(order.shippingCarrier ||
+                order.shippingService ||
+                order.estimatedDelivery ||
+                (isLocal && order.localDelivery)) && (
                 <div className="mt-3 pt-3 border-t border-border text-xs text-muted-foreground space-y-0.5">
-                  {isLocal && order.localDelivery?.district && <p>Localidade: <span className="text-foreground">{order.localDelivery.district}</span></p>}
-                  {isLocal && order.localDelivery?.eta && <p>Prazo estimado: <span className="text-foreground">{order.localDelivery.eta}</span></p>}
-                  {!isLocal && order.shippingCarrier && <p>Transportadora: <span className="text-foreground">{order.shippingCarrier}</span></p>}
-                  {order.estimatedDelivery && <p>Previsão: <span className="text-foreground">{new Date(order.estimatedDelivery).toLocaleDateString('pt-BR')}</span></p>}
-                  {order.trackingCode && <p>Código: <span className="text-foreground font-mono">{order.trackingCode}</span></p>}
+                  {isLocal && order.localDelivery?.district && (
+                    <p>
+                      Localidade:{" "}
+                      <span className="text-foreground">{order.localDelivery.district}</span>
+                    </p>
+                  )}
+                  {isLocal && order.localDelivery?.eta && (
+                    <p>
+                      Prazo estimado:{" "}
+                      <span className="text-foreground">{order.localDelivery.eta}</span>
+                    </p>
+                  )}
+                  {!isLocal && order.shippingCarrier && (
+                    <p>
+                      Transportadora:{" "}
+                      <span className="text-foreground">{order.shippingCarrier}</span>
+                    </p>
+                  )}
+                  {order.estimatedDelivery && (
+                    <p>
+                      Previsão:{" "}
+                      <span className="text-foreground">
+                        {new Date(order.estimatedDelivery).toLocaleDateString("pt-BR")}
+                      </span>
+                    </p>
+                  )}
+                  {order.trackingCode && (
+                    <p>
+                      Código:{" "}
+                      <span className="text-foreground font-mono">{order.trackingCode}</span>
+                    </p>
+                  )}
                 </div>
               )}
 
               {trackUrl && (
                 <Button asChild variant="outline" size="sm" className="mt-3">
-                  <a href={trackUrl} target="_blank" rel="noopener noreferrer"><Truck className="w-4 h-4" />Rastrear pedido</a>
+                  <a href={trackUrl} target="_blank" rel="noopener noreferrer">
+                    <Truck className="w-4 h-4" />
+                    Rastrear pedido
+                  </a>
                 </Button>
               )}
             </>
@@ -400,30 +600,53 @@ function OrderTrackingPage() {
             <h2 className="font-display font-semibold">Pagamento</h2>
           </div>
           <div className="text-sm space-y-1">
-            <p className="text-muted-foreground">Método: <span className="text-foreground">Mercado Pago</span></p>
             <p className="text-muted-foreground">
-              Status: <span className="text-foreground">
-                {order.paymentStatus === 'paid' || order.paymentStatus === 'approved' ? 'Aprovado'
-                  : order.paymentStatus === 'pending' || order.paymentStatus === 'in_process' ? 'Pendente'
-                  : order.paymentStatus === 'rejected' || order.paymentStatus === 'failed' ? 'Recusado'
-                  : order.paymentStatus === 'refunded' ? 'Reembolsado'
-                  : '—'}
+              Método: <span className="text-foreground">Mercado Pago</span>
+            </p>
+            <p className="text-muted-foreground">
+              Status:{" "}
+              <span className="text-foreground">
+                {order.paymentStatus === "paid" || order.paymentStatus === "approved"
+                  ? "Aprovado"
+                  : order.paymentStatus === "pending" || order.paymentStatus === "in_process"
+                    ? "Pendente"
+                    : order.paymentStatus === "rejected" || order.paymentStatus === "failed"
+                      ? "Recusado"
+                      : order.paymentStatus === "refunded"
+                        ? "Reembolsado"
+                        : "—"}
               </span>
             </p>
-            {order.paidAt && <p className="text-muted-foreground">Aprovado em: <span className="text-foreground">{new Date(order.paidAt).toLocaleString('pt-BR')}</span></p>}
+            {order.paidAt && (
+              <p className="text-muted-foreground">
+                Aprovado em:{" "}
+                <span className="text-foreground">
+                  {new Date(order.paidAt).toLocaleString("pt-BR")}
+                </span>
+              </p>
+            )}
           </div>
         </div>
 
         <div className="flex flex-col sm:flex-row gap-3">
           {whatsUrl && (
             <Button asChild variant="outline" className="flex-1">
-              <a href={whatsUrl} target="_blank" rel="noopener noreferrer"><MessageCircle className="w-4 h-4" />Falar com atendimento</a>
+              <a href={whatsUrl} target="_blank" rel="noopener noreferrer">
+                <MessageCircle className="w-4 h-4" />
+                Falar com atendimento
+              </a>
             </Button>
           )}
           {user && (
-            <Button asChild variant="outline" className="flex-1"><Link to="/conta/pedidos">Meus pedidos</Link></Button>
+            <Button asChild variant="outline" className="flex-1">
+              <Link to="/conta/pedidos">Meus pedidos</Link>
+            </Button>
           )}
-          <Button asChild className="flex-1"><Link to="/catalogo">Continuar comprando <ArrowRight className="w-4 h-4 ml-1.5" /></Link></Button>
+          <Button asChild className="flex-1">
+            <Link to="/catalogo">
+              Continuar comprando <ArrowRight className="w-4 h-4 ml-1.5" />
+            </Link>
+          </Button>
         </div>
       </div>
     </StoreLayout>

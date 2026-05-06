@@ -1,6 +1,6 @@
-import { supabaseAdmin } from '@/integrations/supabase/client.server';
+import { supabaseAdmin } from "@/integrations/supabase/client.server";
 
-export type FeeSource = 'mercado_pago_real' | 'estimated' | 'unknown';
+export type FeeSource = "mercado_pago_real" | "estimated" | "unknown";
 
 export type MpFeeBreakdown = {
   gross: number | null;
@@ -27,8 +27,10 @@ const round2 = (n: number) => Math.round(n * 100) / 100;
 
 export async function loadFeeConfig(): Promise<MpEstimateConfig> {
   const { data } = await supabaseAdmin
-    .from('finance_settings')
-    .select('mp_fee_default_percent, mp_fee_pix_percent, mp_fee_pix_fixed, mp_fee_credit_percent, mp_fee_credit_fixed, mp_fee_boleto_percent, mp_fee_boleto_fixed')
+    .from("finance_settings")
+    .select(
+      "mp_fee_default_percent, mp_fee_pix_percent, mp_fee_pix_fixed, mp_fee_credit_percent, mp_fee_credit_fixed, mp_fee_boleto_percent, mp_fee_boleto_fixed",
+    )
     .limit(1)
     .maybeSingle();
   return {
@@ -48,15 +50,18 @@ export function estimateFee(
   paymentTypeOrMethod: string | null | undefined,
   cfg: MpEstimateConfig,
 ): number {
-  const t = (paymentTypeOrMethod ?? '').toLowerCase();
+  const t = (paymentTypeOrMethod ?? "").toLowerCase();
   let pct = cfg.default_percent;
   let fixed = cfg.default_fixed;
-  if (t === 'pix' || t.includes('pix')) {
-    pct = cfg.pix_percent; fixed = cfg.pix_fixed;
-  } else if (t === 'credit_card' || t.includes('credit')) {
-    pct = cfg.credit_percent; fixed = cfg.credit_fixed;
-  } else if (t === 'ticket' || t.includes('boleto')) {
-    pct = cfg.boleto_percent; fixed = cfg.boleto_fixed;
+  if (t === "pix" || t.includes("pix")) {
+    pct = cfg.pix_percent;
+    fixed = cfg.pix_fixed;
+  } else if (t === "credit_card" || t.includes("credit")) {
+    pct = cfg.credit_percent;
+    fixed = cfg.credit_fixed;
+  } else if (t === "ticket" || t.includes("boleto")) {
+    pct = cfg.boleto_percent;
+    fixed = cfg.boleto_fixed;
   }
   return round2(gross * (pct / 100) + fixed);
 }
@@ -70,11 +75,12 @@ export async function computeMpFees(payment: {
   payment_method_id?: string | null;
   payment_type_id?: string | null;
 }): Promise<MpFeeBreakdown> {
-  const gross = typeof payment.transaction_amount === 'number' ? round2(payment.transaction_amount) : null;
+  const gross =
+    typeof payment.transaction_amount === "number" ? round2(payment.transaction_amount) : null;
   const cfg = await loadFeeConfig();
   let feeReal: number | null = null;
   let netReal: number | null = null;
-  let source: FeeSource = 'unknown';
+  let source: FeeSource = "unknown";
   let feeDetails: unknown | null = null;
 
   if (Array.isArray(payment.fee_details) && payment.fee_details.length > 0) {
@@ -83,7 +89,7 @@ export async function computeMpFees(payment: {
       feeReal = round2(sum);
       feeDetails = payment.fee_details;
       if (gross != null) netReal = round2(gross - feeReal);
-      source = 'mercado_pago_real';
+      source = "mercado_pago_real";
     }
   }
 
@@ -92,7 +98,7 @@ export async function computeMpFees(payment: {
   if (gross != null && gross > 0) {
     feeEstimated = estimateFee(gross, payment.payment_type_id ?? payment.payment_method_id, cfg);
     netEstimated = round2(gross - feeEstimated);
-    if (source === 'unknown') source = 'estimated';
+    if (source === "unknown") source = "estimated";
   }
 
   return { gross, feeReal, netReal, feeEstimated, netEstimated, feeDetails, source };

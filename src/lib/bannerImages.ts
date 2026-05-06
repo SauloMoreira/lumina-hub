@@ -8,13 +8,13 @@ export function optimizeBannerUrl(
   url: string | null | undefined,
   opts: { width: number; quality?: number },
 ): string {
-  if (!url) return '';
+  if (!url) return "";
   // Já está sendo servido pelo render endpoint
-  if (url.includes('/storage/v1/render/image/')) return url;
+  if (url.includes("/storage/v1/render/image/")) return url;
   // Não é Supabase Storage
-  if (!url.includes('/storage/v1/object/public/')) return url;
-  const rendered = url.replace('/storage/v1/object/public/', '/storage/v1/render/image/public/');
-  const sep = rendered.includes('?') ? '&' : '?';
+  if (!url.includes("/storage/v1/object/public/")) return url;
+  const rendered = url.replace("/storage/v1/object/public/", "/storage/v1/render/image/public/");
+  const sep = rendered.includes("?") ? "&" : "?";
   const q = opts.quality ?? 78;
   return `${rendered}${sep}width=${opts.width}&quality=${q}&format=webp&resize=cover`;
 }

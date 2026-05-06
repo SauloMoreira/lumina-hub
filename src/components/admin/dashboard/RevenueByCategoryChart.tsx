@@ -1,13 +1,13 @@
-import { ResponsiveContainer, PieChart, Pie, Cell, Tooltip, Legend } from 'recharts';
-import type { DashboardData } from '@/server/dashboard.functions';
-import { CHART_COLORS, fmtBRL } from './format';
-import { EmptyChart } from './EmptyChart';
+import { ResponsiveContainer, PieChart, Pie, Cell, Tooltip, Legend } from "recharts";
+import type { DashboardData } from "@/server/dashboard.functions";
+import { CHART_COLORS, fmtBRL } from "./format";
+import { EmptyChart } from "./EmptyChart";
 
 export function RevenueByCategoryChart({
   data,
   hasCategories,
 }: {
-  data: DashboardData['revenueByCategory'];
+  data: DashboardData["revenueByCategory"];
   hasCategories: boolean;
 }) {
   if (!hasCategories) {
@@ -40,8 +40,8 @@ export function RevenueByCategoryChart({
           </Pie>
           <Tooltip
             contentStyle={{
-              background: 'hsl(var(--card))',
-              border: '1px solid hsl(var(--border))',
+              background: "hsl(var(--card))",
+              border: "1px solid hsl(var(--border))",
               borderRadius: 8,
               fontSize: 12,
             }}

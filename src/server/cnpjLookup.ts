@@ -14,37 +14,35 @@ export type CnpjLookupResult =
   | { ok: false; reason: string };
 
 export async function lookupCnpj(cnpj: string): Promise<CnpjLookupResult> {
-  const digits = cnpj.replace(/\D/g, '');
-  if (digits.length !== 14) return { ok: false, reason: 'CNPJ inválido' };
+  const digits = cnpj.replace(/\D/g, "");
+  if (digits.length !== 14) return { ok: false, reason: "CNPJ inválido" };
 
   try {
     const ctrl = new AbortController();
     const t = setTimeout(() => ctrl.abort(), 8000);
     const res = await fetch(`https://receitaws.com.br/v1/cnpj/${digits}`, {
-      headers: { Accept: 'application/json' },
+      headers: { Accept: "application/json" },
       signal: ctrl.signal,
     });
     clearTimeout(t);
 
-    if (res.status === 429) return { ok: false, reason: 'Limite de consultas atingido' };
+    if (res.status === 429) return { ok: false, reason: "Limite de consultas atingido" };
     if (!res.ok) return { ok: false, reason: `Falha na consulta (${res.status})` };
 
     const json = (await res.json()) as Record<string, unknown>;
-    if (json.status === 'ERROR') {
-      return { ok: false, reason: String(json.message ?? 'CNPJ não encontrado') };
+    if (json.status === "ERROR") {
+      return { ok: false, reason: String(json.message ?? "CNPJ não encontrado") };
     }
 
-    const situation = String(json.situacao ?? '').toUpperCase();
-    const legalName = String(json.nome ?? '');
+    const situation = String(json.situacao ?? "").toUpperCase();
+    const legalName = String(json.nome ?? "");
     const tradeName = json.fantasia ? String(json.fantasia) : null;
     const openedRaw = json.abertura ? String(json.abertura) : null; // dd/mm/yyyy
-    const restrictions = json.situacao_especial
-      ? String(json.situacao_especial)
-      : null;
+    const restrictions = json.situacao_especial ? String(json.situacao_especial) : null;
 
     let openedAt: string | null = null;
     if (openedRaw && /^\d{2}\/\d{2}\/\d{4}$/.test(openedRaw)) {
-      const [d, m, y] = openedRaw.split('/');
+      const [d, m, y] = openedRaw.split("/");
       openedAt = `${y}-${m}-${d}`;
     }
 
@@ -60,7 +58,7 @@ export async function lookupCnpj(cnpj: string): Promise<CnpjLookupResult> {
   } catch (err) {
     return {
       ok: false,
-      reason: err instanceof Error ? err.message : 'Erro ao consultar CNPJ',
+      reason: err instanceof Error ? err.message : "Erro ao consultar CNPJ",
     };
   }
 }
@@ -76,8 +74,8 @@ export type AutoApprovalDecision = {
 export function decideAutoApproval(info: CnpjLookupResult): AutoApprovalDecision {
   if (!info.ok) return { approve: false, reason: info.reason };
 
-  if (info.situation !== 'ATIVA') {
-    return { approve: false, reason: `Situação cadastral: ${info.situation || 'desconhecida'}` };
+  if (info.situation !== "ATIVA") {
+    return { approve: false, reason: `Situação cadastral: ${info.situation || "desconhecida"}` };
   }
 
   if (info.restrictions && info.restrictions.trim().length > 0) {
@@ -85,14 +83,14 @@ export function decideAutoApproval(info: CnpjLookupResult): AutoApprovalDecision
   }
 
   if (!info.openedAt) {
-    return { approve: false, reason: 'Data de abertura indisponível' };
+    return { approve: false, reason: "Data de abertura indisponível" };
   }
 
-  const opened = new Date(info.openedAt + 'T00:00:00Z').getTime();
+  const opened = new Date(info.openedAt + "T00:00:00Z").getTime();
   const sixMonthsMs = 1000 * 60 * 60 * 24 * 30 * 6;
   if (Date.now() - opened < sixMonthsMs) {
-    return { approve: false, reason: 'Empresa aberta há menos de 6 meses' };
+    return { approve: false, reason: "Empresa aberta há menos de 6 meses" };
   }
 
-  return { approve: true, reason: 'CNPJ ativo e sem restrições' };
+  return { approve: true, reason: "CNPJ ativo e sem restrições" };
 }

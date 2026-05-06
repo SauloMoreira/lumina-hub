@@ -1,9 +1,9 @@
-import { useEffect, useState } from 'react';
-import { ShieldCheck, ShieldAlert, Loader2, Trash2 } from 'lucide-react';
-import { toast } from 'sonner';
-import { supabase } from '@/integrations/supabase/client';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
+import { useEffect, useState } from "react";
+import { ShieldCheck, ShieldAlert, Loader2, Trash2 } from "lucide-react";
+import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 
 type Factor = { id: string; friendly_name?: string | null; status: string; factor_type: string };
 
@@ -12,7 +12,7 @@ export function MfaSetup() {
   const [factors, setFactors] = useState<Factor[]>([]);
   const [enrolling, setEnrolling] = useState(false);
   const [qr, setQr] = useState<{ factorId: string; qr: string; secret: string } | null>(null);
-  const [code, setCode] = useState('');
+  const [code, setCode] = useState("");
   const [verifying, setVerifying] = useState(false);
 
   const refresh = async () => {
@@ -24,14 +24,16 @@ export function MfaSetup() {
     setLoading(false);
   };
 
-  useEffect(() => { refresh(); }, []);
+  useEffect(() => {
+    refresh();
+  }, []);
 
   const startEnroll = async () => {
     setEnrolling(true);
     try {
       const { data, error } = await supabase.auth.mfa.enroll({
-        factorType: 'totp',
-        friendlyName: `App ${new Date().toLocaleDateString('pt-BR')}`,
+        factorType: "totp",
+        friendlyName: `App ${new Date().toLocaleDateString("pt-BR")}`,
       });
       if (error) throw error;
       setQr({
@@ -40,7 +42,7 @@ export function MfaSetup() {
         secret: (data.totp as any).secret,
       });
     } catch (err: any) {
-      toast.error(err?.message ?? 'Não foi possível iniciar o cadastro de MFA');
+      toast.error(err?.message ?? "Não foi possível iniciar o cadastro de MFA");
     } finally {
       setEnrolling(false);
     }
@@ -50,32 +52,40 @@ export function MfaSetup() {
     if (!qr || code.length !== 6) return;
     setVerifying(true);
     try {
-      const { data: ch, error: chErr } = await supabase.auth.mfa.challenge({ factorId: qr.factorId });
+      const { data: ch, error: chErr } = await supabase.auth.mfa.challenge({
+        factorId: qr.factorId,
+      });
       if (chErr) throw chErr;
       const { error: vErr } = await supabase.auth.mfa.verify({
-        factorId: qr.factorId, challengeId: ch.id, code,
+        factorId: qr.factorId,
+        challengeId: ch.id,
+        code,
       });
       if (vErr) throw vErr;
-      toast.success('MFA ativado com sucesso!');
-      setQr(null); setCode('');
+      toast.success("MFA ativado com sucesso!");
+      setQr(null);
+      setCode("");
       await refresh();
     } catch (err: any) {
-      toast.error(err?.message ?? 'Código inválido');
+      toast.error(err?.message ?? "Código inválido");
     } finally {
       setVerifying(false);
     }
   };
 
   const remove = async (id: string) => {
-    if (!confirm('Remover este fator MFA?')) return;
+    if (!confirm("Remover este fator MFA?")) return;
     const { error } = await supabase.auth.mfa.unenroll({ factorId: id });
     if (error) toast.error(error.message);
-    else { toast.success('Fator removido'); refresh(); }
+    else {
+      toast.success("Fator removido");
+      refresh();
+    }
   };
 
   if (loading) return <div className="text-sm text-muted-foreground">Carregando...</div>;
 
-  const verified = factors.filter((f) => f.status === 'verified');
+  const verified = factors.filter((f) => f.status === "verified");
   const hasMfa = verified.length > 0;
 
   return (
@@ -87,13 +97,11 @@ export function MfaSetup() {
           <ShieldAlert className="w-5 h-5 text-amber-600 mt-0.5" />
         )}
         <div className="flex-1">
-          <h3 className="font-semibold text-sm">
-            Autenticação em dois fatores (TOTP)
-          </h3>
+          <h3 className="font-semibold text-sm">Autenticação em dois fatores (TOTP)</h3>
           <p className="text-xs text-muted-foreground mt-0.5">
             {hasMfa
-              ? 'Sua conta está protegida com MFA.'
-              : 'Adicione uma camada extra de segurança usando um app como Google Authenticator, 1Password ou Authy.'}
+              ? "Sua conta está protegida com MFA."
+              : "Adicione uma camada extra de segurança usando um app como Google Authenticator, 1Password ou Authy."}
           </p>
         </div>
       </div>
@@ -103,7 +111,7 @@ export function MfaSetup() {
           {verified.map((f) => (
             <div key={f.id} className="flex items-center justify-between p-3 border rounded-lg">
               <div>
-                <div className="font-medium text-sm">{f.friendly_name ?? 'TOTP'}</div>
+                <div className="font-medium text-sm">{f.friendly_name ?? "TOTP"}</div>
                 <div className="text-xs text-muted-foreground">
                   {f.factor_type.toUpperCase()} · ativo
                 </div>
@@ -117,17 +125,15 @@ export function MfaSetup() {
       )}
 
       {!qr && (
-        <Button onClick={startEnroll} disabled={enrolling} variant={hasMfa ? 'outline' : 'default'}>
+        <Button onClick={startEnroll} disabled={enrolling} variant={hasMfa ? "outline" : "default"}>
           {enrolling && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
-          {hasMfa ? 'Adicionar outro fator' : 'Ativar MFA'}
+          {hasMfa ? "Adicionar outro fator" : "Ativar MFA"}
         </Button>
       )}
 
       {qr && (
         <div className="border rounded-lg p-4 space-y-3 bg-muted/30">
-          <p className="text-sm">
-            1. Escaneie o QR code no seu app autenticador.
-          </p>
+          <p className="text-sm">1. Escaneie o QR code no seu app autenticador.</p>
           <div className="flex justify-center bg-white p-3 rounded">
             <img src={qr.qr} alt="QR code MFA" className="w-48 h-48" />
           </div>
@@ -145,7 +151,7 @@ export function MfaSetup() {
               inputMode="numeric"
               maxLength={6}
               value={code}
-              onChange={(e) => setCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
+              onChange={(e) => setCode(e.target.value.replace(/\D/g, "").slice(0, 6))}
               placeholder="000000"
               className="font-mono text-center tracking-widest"
             />
@@ -153,7 +159,13 @@ export function MfaSetup() {
               {verifying && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
               Confirmar
             </Button>
-            <Button variant="ghost" onClick={() => { setQr(null); setCode(''); }}>
+            <Button
+              variant="ghost"
+              onClick={() => {
+                setQr(null);
+                setCode("");
+              }}
+            >
               Cancelar
             </Button>
           </div>

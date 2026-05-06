@@ -1,22 +1,22 @@
-import { useEffect, useState } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { ArrowDown, ArrowUp, Loader2, Plus, Save, Trash2 } from 'lucide-react';
-import { toast } from 'sonner';
+import { useEffect, useState } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { ArrowDown, ArrowUp, Loader2, Plus, Save, Trash2 } from "lucide-react";
+import { toast } from "sonner";
 
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-import { Switch } from '@/components/ui/switch';
-import { Card, CardContent } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { IconPicker } from '@/components/admin/IconPicker';
-import { supabase } from '@/integrations/supabase/client';
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Switch } from "@/components/ui/switch";
+import { Card, CardContent } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { IconPicker } from "@/components/admin/IconPicker";
+import { supabase } from "@/integrations/supabase/client";
 import {
   adminListHomepageCards,
   type HomepageCard,
   type HomepageCardType,
-} from '@/lib/homepageBlocks';
+} from "@/lib/homepageBlocks";
 
 interface Props {
   cardType: HomepageCardType;
@@ -29,16 +29,16 @@ interface Props {
 }
 
 const DEFAULT_VARIANTS = [
-  { value: 'from-primary to-primary/70', label: 'Primário' },
-  { value: 'from-orange-500 to-red-500', label: 'Quente (laranja/vermelho)' },
-  { value: 'from-amber-400 to-yellow-500', label: 'Destaque (âmbar)' },
-  { value: 'from-emerald-500 to-teal-500', label: 'Sucesso (verde)' },
-  { value: 'from-violet-500 to-indigo-500', label: 'Tecnologia (violeta)' },
-  { value: 'from-sky-500 to-blue-500', label: 'Confiança (azul)' },
+  { value: "from-primary to-primary/70", label: "Primário" },
+  { value: "from-orange-500 to-red-500", label: "Quente (laranja/vermelho)" },
+  { value: "from-amber-400 to-yellow-500", label: "Destaque (âmbar)" },
+  { value: "from-emerald-500 to-teal-500", label: "Sucesso (verde)" },
+  { value: "from-violet-500 to-indigo-500", label: "Tecnologia (violeta)" },
+  { value: "from-sky-500 to-blue-500", label: "Confiança (azul)" },
 ];
 
 function isHttp(url: string) {
-  return /^(https?:)?\/\//i.test(url) || url.startsWith('/') || url.startsWith('#');
+  return /^(https?:)?\/\//i.test(url) || url.startsWith("/") || url.startsWith("#");
 }
 
 export function HomepageCardsManager({
@@ -46,10 +46,10 @@ export function HomepageCardsManager({
   title,
   description,
   variants = DEFAULT_VARIANTS,
-  linkPlaceholder = '/catalogo',
+  linkPlaceholder = "/catalogo",
 }: Props) {
   const qc = useQueryClient();
-  const queryKey = ['admin-homepage-cards', cardType];
+  const queryKey = ["admin-homepage-cards", cardType];
   const { data, isLoading } = useQuery({
     queryKey,
     queryFn: () => adminListHomepageCards(cardType),
@@ -81,12 +81,12 @@ export function HomepageCardsManager({
   const createMut = useMutation({
     mutationFn: async () => {
       const { data: row, error } = await (supabase as any)
-        .from('homepage_cards')
+        .from("homepage_cards")
         .insert({
           card_type: cardType,
-          title: cardType === 'benefit' ? 'Novo benefício' : 'Novo card promocional',
-          description: '',
-          icon: cardType === 'benefit' ? 'Sparkles' : 'Tag',
+          title: cardType === "benefit" ? "Novo benefício" : "Novo card promocional",
+          description: "",
+          icon: cardType === "benefit" ? "Sparkles" : "Tag",
           visual_variant: variants[0]?.value ?? null,
           sort_order: draft.length,
           is_active: true,
@@ -98,24 +98,24 @@ export function HomepageCardsManager({
     },
     onSuccess: (row) => {
       qc.invalidateQueries({ queryKey });
-      qc.invalidateQueries({ queryKey: ['homepage-cards', cardType] });
+      qc.invalidateQueries({ queryKey: ["homepage-cards", cardType] });
       setDraft((p) => [...p, row]);
-      toast.success('Card criado');
+      toast.success("Card criado");
     },
-    onError: (e: any) => toast.error(e?.message ?? 'Erro ao criar card'),
+    onError: (e: any) => toast.error(e?.message ?? "Erro ao criar card"),
   });
 
   const deleteMut = useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await (supabase as any).from('homepage_cards').delete().eq('id', id);
+      const { error } = await (supabase as any).from("homepage_cards").delete().eq("id", id);
       if (error) throw error;
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey });
-      qc.invalidateQueries({ queryKey: ['homepage-cards', cardType] });
-      toast.success('Card removido');
+      qc.invalidateQueries({ queryKey: ["homepage-cards", cardType] });
+      toast.success("Card removido");
     },
-    onError: (e: any) => toast.error(e?.message ?? 'Erro ao remover'),
+    onError: (e: any) => toast.error(e?.message ?? "Erro ao remover"),
   });
 
   const saveMut = useMutation({
@@ -126,12 +126,12 @@ export function HomepageCardsManager({
           throw new Error(`Link inválido em "${c.title}". Use http(s)://, / ou #.`);
         }
         if (!c.title?.trim()) {
-          throw new Error('Todos os cards precisam de título.');
+          throw new Error("Todos os cards precisam de título.");
         }
       }
       const updates = draft.map((c, i) =>
         (supabase as any)
-          .from('homepage_cards')
+          .from("homepage_cards")
           .update({
             title: c.title?.trim().slice(0, 80),
             description: c.description?.trim().slice(0, 240) || null,
@@ -145,7 +145,7 @@ export function HomepageCardsManager({
             start_date: c.start_date || null,
             end_date: c.end_date || null,
           })
-          .eq('id', c.id),
+          .eq("id", c.id),
       );
       const results = await Promise.all(updates);
       const firstErr = results.find((r: any) => r.error)?.error;
@@ -153,10 +153,10 @@ export function HomepageCardsManager({
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey });
-      qc.invalidateQueries({ queryKey: ['homepage-cards', cardType] });
-      toast.success('Alterações salvas');
+      qc.invalidateQueries({ queryKey: ["homepage-cards", cardType] });
+      toast.success("Alterações salvas");
     },
-    onError: (e: any) => toast.error(e?.message ?? 'Erro ao salvar'),
+    onError: (e: any) => toast.error(e?.message ?? "Erro ao salvar"),
   });
 
   if (isLoading) {
@@ -175,11 +175,20 @@ export function HomepageCardsManager({
           <p className="text-xs text-muted-foreground">{description}</p>
         </div>
         <div className="flex gap-2">
-          <Button variant="outline" size="sm" onClick={() => createMut.mutate()} disabled={createMut.isPending}>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => createMut.mutate()}
+            disabled={createMut.isPending}
+          >
             <Plus className="w-4 h-4 mr-1" /> Novo card
           </Button>
           <Button size="sm" onClick={() => saveMut.mutate()} disabled={saveMut.isPending}>
-            {saveMut.isPending ? <Loader2 className="w-4 h-4 mr-1 animate-spin" /> : <Save className="w-4 h-4 mr-1" />}
+            {saveMut.isPending ? (
+              <Loader2 className="w-4 h-4 mr-1 animate-spin" />
+            ) : (
+              <Save className="w-4 h-4 mr-1" />
+            )}
             Salvar
           </Button>
         </div>
@@ -193,31 +202,48 @@ export function HomepageCardsManager({
 
       <div className="space-y-3">
         {draft.map((c, i) => (
-          <Card key={c.id} className={c.is_active ? '' : 'opacity-60'}>
+          <Card key={c.id} className={c.is_active ? "" : "opacity-60"}>
             <CardContent className="p-4 space-y-3">
               <div className="flex items-start justify-between gap-3">
                 <div className="flex items-center gap-2 flex-wrap">
                   <Badge variant="secondary" className="text-[10px] uppercase">
-                    {cardType === 'benefit' ? 'Benefício' : 'Promo'}
+                    {cardType === "benefit" ? "Benefício" : "Promo"}
                   </Badge>
-                  {!c.is_active && <Badge variant="outline" className="text-[10px]">Inativo</Badge>}
+                  {!c.is_active && (
+                    <Badge variant="outline" className="text-[10px]">
+                      Inativo
+                    </Badge>
+                  )}
                 </div>
                 <div className="flex items-center gap-1 shrink-0">
-                  <Button variant="ghost" size="icon" onClick={() => move(c.id, -1)} disabled={i === 0}>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => move(c.id, -1)}
+                    disabled={i === 0}
+                  >
                     <ArrowUp className="w-4 h-4" />
                   </Button>
-                  <Button variant="ghost" size="icon" onClick={() => move(c.id, 1)} disabled={i === draft.length - 1}>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => move(c.id, 1)}
+                    disabled={i === draft.length - 1}
+                  >
                     <ArrowDown className="w-4 h-4" />
                   </Button>
                   <div className="flex items-center gap-2 px-2">
                     <Label className="text-xs">Ativo</Label>
-                    <Switch checked={c.is_active} onCheckedChange={(v) => update(c.id, { is_active: v })} />
+                    <Switch
+                      checked={c.is_active}
+                      onCheckedChange={(v) => update(c.id, { is_active: v })}
+                    />
                   </div>
                   <Button
                     variant="ghost"
                     size="icon"
                     onClick={() => {
-                      if (!confirm('Remover este card?')) return;
+                      if (!confirm("Remover este card?")) return;
                       removeLocal(c.id);
                       deleteMut.mutate(c.id);
                     }}
@@ -245,14 +271,14 @@ export function HomepageCardsManager({
                   <Textarea
                     rows={2}
                     maxLength={240}
-                    value={c.description ?? ''}
+                    value={c.description ?? ""}
                     onChange={(e) => update(c.id, { description: e.target.value })}
                   />
                 </div>
                 <div className="space-y-1.5">
                   <Label className="text-xs">Link (opcional)</Label>
                   <Input
-                    value={c.link_url ?? ''}
+                    value={c.link_url ?? ""}
                     onChange={(e) => update(c.id, { link_url: e.target.value || null })}
                     placeholder={linkPlaceholder}
                   />
@@ -260,7 +286,7 @@ export function HomepageCardsManager({
                 <div className="space-y-1.5">
                   <Label className="text-xs">Rótulo do link (opcional)</Label>
                   <Input
-                    value={c.link_label ?? ''}
+                    value={c.link_label ?? ""}
                     onChange={(e) => update(c.id, { link_label: e.target.value || null })}
                   />
                 </div>
@@ -268,7 +294,7 @@ export function HomepageCardsManager({
                   <Label className="text-xs">Variante visual</Label>
                   <select
                     className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-                    value={c.visual_variant ?? ''}
+                    value={c.visual_variant ?? ""}
                     onChange={(e) => update(c.id, { visual_variant: e.target.value || null })}
                   >
                     <option value="">Padrão</option>
@@ -282,20 +308,24 @@ export function HomepageCardsManager({
                 <div className="space-y-1.5">
                   <Label className="text-xs">URL da imagem (opcional)</Label>
                   <Input
-                    value={c.image_url ?? ''}
+                    value={c.image_url ?? ""}
                     onChange={(e) => update(c.id, { image_url: e.target.value || null })}
                     placeholder="https://…"
                   />
                 </div>
-                {cardType === 'promo' && (
+                {cardType === "promo" && (
                   <>
                     <div className="space-y-1.5">
                       <Label className="text-xs">Início da exibição (opcional)</Label>
                       <Input
                         type="datetime-local"
-                        value={c.start_date ? c.start_date.slice(0, 16) : ''}
+                        value={c.start_date ? c.start_date.slice(0, 16) : ""}
                         onChange={(e) =>
-                          update(c.id, { start_date: e.target.value ? new Date(e.target.value).toISOString() : null })
+                          update(c.id, {
+                            start_date: e.target.value
+                              ? new Date(e.target.value).toISOString()
+                              : null,
+                          })
                         }
                       />
                     </div>
@@ -303,9 +333,13 @@ export function HomepageCardsManager({
                       <Label className="text-xs">Fim da exibição (opcional)</Label>
                       <Input
                         type="datetime-local"
-                        value={c.end_date ? c.end_date.slice(0, 16) : ''}
+                        value={c.end_date ? c.end_date.slice(0, 16) : ""}
                         onChange={(e) =>
-                          update(c.id, { end_date: e.target.value ? new Date(e.target.value).toISOString() : null })
+                          update(c.id, {
+                            end_date: e.target.value
+                              ? new Date(e.target.value).toISOString()
+                              : null,
+                          })
                         }
                       />
                     </div>

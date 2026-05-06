@@ -1,37 +1,40 @@
-import { createFileRoute, Link } from '@tanstack/react-router';
-import { useQuery } from '@tanstack/react-query';
-import { PackagePlus, ArrowRight } from 'lucide-react';
-import { StoreLayout } from '@/components/layout/StoreLayout';
-import { listPublicBundles, type BundleAvailability } from '@/server/productBundles.functions';
-import { formatBRL } from '@/lib/domain';
+import { createFileRoute, Link } from "@tanstack/react-router";
+import { useQuery } from "@tanstack/react-query";
+import { PackagePlus, ArrowRight } from "lucide-react";
+import { StoreLayout } from "@/components/layout/StoreLayout";
+import { listPublicBundles, type BundleAvailability } from "@/server/productBundles.functions";
+import { formatBRL } from "@/lib/domain";
 
-export const Route = createFileRoute('/combos')({
+export const Route = createFileRoute("/combos")({
   component: CombosListPage,
   head: () => ({
     meta: [
-      { title: 'Kits e Combos — Led Maricá' },
-      { name: 'description', content: 'Conjuntos de produtos selecionados para facilitar sua compra.' },
+      { title: "Kits e Combos — Led Maricá" },
+      {
+        name: "description",
+        content: "Conjuntos de produtos selecionados para facilitar sua compra.",
+      },
     ],
   }),
 });
 
 const TONE: Record<BundleAvailability, string> = {
-  available: 'bg-emerald-50 text-emerald-700 border-emerald-200',
-  partial: 'bg-amber-50 text-amber-700 border-amber-200',
-  unavailable: 'bg-red-50 text-red-700 border-red-200',
-  needs_review: 'bg-muted text-muted-foreground border-border',
+  available: "bg-emerald-50 text-emerald-700 border-emerald-200",
+  partial: "bg-amber-50 text-amber-700 border-amber-200",
+  unavailable: "bg-red-50 text-red-700 border-red-200",
+  needs_review: "bg-muted text-muted-foreground border-border",
 };
 
 const LABEL: Record<BundleAvailability, string> = {
-  available: 'Disponível',
-  partial: 'Parcialmente disponível',
-  unavailable: 'Indisponível',
-  needs_review: 'Em revisão',
+  available: "Disponível",
+  partial: "Parcialmente disponível",
+  unavailable: "Indisponível",
+  needs_review: "Em revisão",
 };
 
 function CombosListPage() {
   const q = useQuery({
-    queryKey: ['public-bundles'],
+    queryKey: ["public-bundles"],
     queryFn: () => listPublicBundles({ data: {} }),
     staleTime: 30_000,
   });
@@ -44,8 +47,8 @@ function CombosListPage() {
         <header className="mb-8 space-y-2">
           <h1 className="font-display text-3xl font-bold">Kits e Combos</h1>
           <p className="text-sm text-muted-foreground">
-            Conjuntos prontos de produtos para facilitar sua compra. Adicione todos os
-            itens ao carrinho com um clique.
+            Conjuntos prontos de produtos para facilitar sua compra. Adicione todos os itens ao
+            carrinho com um clique.
           </p>
         </header>
 
@@ -89,16 +92,12 @@ function CombosListPage() {
                       {LABEL[b.availability]}
                     </span>
                     <span className="text-[11px] text-muted-foreground">
-                      {b.items_count} {b.items_count === 1 ? 'item' : 'itens'}
+                      {b.items_count} {b.items_count === 1 ? "item" : "itens"}
                     </span>
                   </div>
-                  <h2 className="font-display font-semibold text-base line-clamp-2">
-                    {b.name}
-                  </h2>
+                  <h2 className="font-display font-semibold text-base line-clamp-2">{b.name}</h2>
                   {b.description && (
-                    <p className="text-xs text-muted-foreground line-clamp-2">
-                      {b.description}
-                    </p>
+                    <p className="text-xs text-muted-foreground line-clamp-2">{b.description}</p>
                   )}
                   <div className="mt-auto pt-2 flex items-center justify-between">
                     <div>

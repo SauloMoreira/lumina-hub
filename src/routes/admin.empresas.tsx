@@ -1,21 +1,18 @@
-import { createFileRoute, Link } from '@tanstack/react-router';
-import { useEffect, useState } from 'react';
-import { toast } from 'sonner';
-import { ArrowLeft, Building2, Search, CheckCircle2, ShieldX, XCircle, Clock } from 'lucide-react';
-import { buildSeo } from '@/lib/seo';
-import { formatCNPJ } from '@/lib/cnpj';
-import { AdminLayout } from '@/components/admin/AdminLayout';
-import {
-  adminListCompanies,
-  adminUpdateCompanyStatus,
-} from '@/server/companies.functions';
+import { createFileRoute, Link } from "@tanstack/react-router";
+import { useEffect, useState } from "react";
+import { toast } from "sonner";
+import { ArrowLeft, Building2, Search, CheckCircle2, ShieldX, XCircle, Clock } from "lucide-react";
+import { buildSeo } from "@/lib/seo";
+import { formatCNPJ } from "@/lib/cnpj";
+import { AdminLayout } from "@/components/admin/AdminLayout";
+import { adminListCompanies, adminUpdateCompanyStatus } from "@/server/companies.functions";
 
 type Company = {
   id: string;
   cnpj: string;
   legal_name: string;
   trade_name: string | null;
-  status: 'pending' | 'approved' | 'blocked' | 'rejected';
+  status: "pending" | "approved" | "blocked" | "rejected";
   contact_name: string;
   contact_email: string;
   contact_phone: string;
@@ -24,18 +21,18 @@ type Company = {
   admin_notes: string | null;
 };
 
-type StatusFilter = '' | 'pending' | 'approved' | 'blocked' | 'rejected';
+type StatusFilter = "" | "pending" | "approved" | "blocked" | "rejected";
 
-export const Route = createFileRoute('/admin/empresas')({
-  head: () => buildSeo({ title: 'Empresas B2B', url: '/admin/empresas', noindex: true }),
+export const Route = createFileRoute("/admin/empresas")({
+  head: () => buildSeo({ title: "Empresas B2B", url: "/admin/empresas", noindex: true }),
   component: AdminEmpresasPage,
 });
 
 function AdminEmpresasPage() {
   const [items, setItems] = useState<Company[]>([]);
   const [loading, setLoading] = useState(true);
-  const [filter, setFilter] = useState<StatusFilter>('pending');
-  const [search, setSearch] = useState('');
+  const [filter, setFilter] = useState<StatusFilter>("pending");
+  const [search, setSearch] = useState("");
   const [selected, setSelected] = useState<Company | null>(null);
 
   const load = async () => {
@@ -46,7 +43,7 @@ function AdminEmpresasPage() {
       });
       setItems(companies as Company[]);
     } catch (err) {
-      const msg = err instanceof Error ? err.message : 'Erro ao carregar';
+      const msg = err instanceof Error ? err.message : "Erro ao carregar";
       toast.error(msg);
     } finally {
       setLoading(false);
@@ -60,128 +57,126 @@ function AdminEmpresasPage() {
 
   const updateStatus = async (
     company_id: string,
-    status: 'approved' | 'rejected' | 'blocked' | 'pending',
+    status: "approved" | "rejected" | "blocked" | "pending",
     extras?: { rejection_reason?: string; admin_notes?: string },
   ) => {
     try {
       await adminUpdateCompanyStatus({ data: { company_id, status, ...extras } });
-      toast.success('Status atualizado');
+      toast.success("Status atualizado");
       setSelected(null);
       await load();
     } catch (err) {
-      const msg = err instanceof Error ? err.message : 'Erro ao atualizar';
+      const msg = err instanceof Error ? err.message : "Erro ao atualizar";
       toast.error(msg);
     }
   };
 
   return (
     <AdminLayout title="Empresas B2B">
-    <div className="max-w-7xl mx-auto">
-      <div className="flex items-center justify-between mb-6">
-        <Link
-          to={'/admin' as never}
-          className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition"
-        >
-          <ArrowLeft className="w-4 h-4" /> Voltar ao painel
-        </Link>
-      </div>
-      <div className="flex items-center gap-3 mb-6">
-        <Building2 className="w-6 h-6 text-primary" />
-        <h2 className="text-xl font-display font-bold text-foreground">Empresas cadastradas</h2>
-      </div>
-
-      {/* Filtros */}
-      <div className="flex flex-wrap items-center gap-2 mb-4">
-        {(['pending', 'approved', 'blocked', 'rejected', ''] as StatusFilter[]).map((s) => (
-          <button
-            key={s || 'all'}
-            onClick={() => setFilter(s)}
-            className={`px-3 h-9 rounded-md text-sm border transition ${
-              filter === s
-                ? 'bg-primary text-primary-foreground border-primary'
-                : 'bg-card text-foreground border-border hover:bg-muted'
-            }`}
+      <div className="max-w-7xl mx-auto">
+        <div className="flex items-center justify-between mb-6">
+          <Link
+            to={"/admin" as never}
+            className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition"
           >
-            {labelStatus(s) || 'Todas'}
-          </button>
-        ))}
-        <form
-          onSubmit={(e) => {
-            e.preventDefault();
-            load();
-          }}
-          className="flex-1 min-w-[200px] flex items-center gap-2 ml-auto"
-        >
-          <div className="relative flex-1">
-            <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
-            <input
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              placeholder="Buscar por razão social ou CNPJ"
-              className="w-full h-9 pl-9 pr-3 rounded-md border border-border bg-background text-sm"
-            />
-          </div>
-          <button className="h-9 px-3 rounded-md bg-primary text-primary-foreground text-sm font-medium">
-            Buscar
-          </button>
-        </form>
-      </div>
-
-      {/* Tabela */}
-      <div className="bg-card border border-border rounded-lg overflow-hidden">
-        <div className="grid grid-cols-12 gap-3 px-4 py-2 text-xs uppercase tracking-wider text-muted-foreground border-b border-border bg-muted/40">
-          <div className="col-span-4">Empresa</div>
-          <div className="col-span-3">CNPJ</div>
-          <div className="col-span-3">Responsável</div>
-          <div className="col-span-2 text-right">Status</div>
+            <ArrowLeft className="w-4 h-4" /> Voltar ao painel
+          </Link>
         </div>
-        {loading ? (
-          <div className="p-6 text-sm text-muted-foreground">Carregando...</div>
-        ) : items.length === 0 ? (
-          <div className="p-6 text-sm text-muted-foreground">Nenhuma empresa encontrada.</div>
-        ) : (
-          items.map((c) => (
+        <div className="flex items-center gap-3 mb-6">
+          <Building2 className="w-6 h-6 text-primary" />
+          <h2 className="text-xl font-display font-bold text-foreground">Empresas cadastradas</h2>
+        </div>
+
+        {/* Filtros */}
+        <div className="flex flex-wrap items-center gap-2 mb-4">
+          {(["pending", "approved", "blocked", "rejected", ""] as StatusFilter[]).map((s) => (
             <button
-              key={c.id}
-              onClick={() => setSelected(c)}
-              className="w-full grid grid-cols-12 gap-3 px-4 py-3 text-left text-sm border-b border-border last:border-0 hover:bg-muted/40 transition"
+              key={s || "all"}
+              onClick={() => setFilter(s)}
+              className={`px-3 h-9 rounded-md text-sm border transition ${
+                filter === s
+                  ? "bg-primary text-primary-foreground border-primary"
+                  : "bg-card text-foreground border-border hover:bg-muted"
+              }`}
             >
-              <div className="col-span-4">
-                <div className="font-medium text-foreground">
-                  {c.trade_name || c.legal_name}
-                </div>
-                {c.trade_name && (
-                  <div className="text-xs text-muted-foreground">{c.legal_name}</div>
-                )}
-              </div>
-              <div className="col-span-3 text-foreground/80">{formatCNPJ(c.cnpj)}</div>
-              <div className="col-span-3 text-foreground/80">
-                <div>{c.contact_name}</div>
-                <div className="text-xs text-muted-foreground">{c.contact_email}</div>
-              </div>
-              <div className="col-span-2 text-right">
-                <StatusBadge status={c.status} />
-              </div>
+              {labelStatus(s) || "Todas"}
             </button>
-          ))
+          ))}
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              load();
+            }}
+            className="flex-1 min-w-[200px] flex items-center gap-2 ml-auto"
+          >
+            <div className="relative flex-1">
+              <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+              <input
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="Buscar por razão social ou CNPJ"
+                className="w-full h-9 pl-9 pr-3 rounded-md border border-border bg-background text-sm"
+              />
+            </div>
+            <button className="h-9 px-3 rounded-md bg-primary text-primary-foreground text-sm font-medium">
+              Buscar
+            </button>
+          </form>
+        </div>
+
+        {/* Tabela */}
+        <div className="bg-card border border-border rounded-lg overflow-hidden">
+          <div className="grid grid-cols-12 gap-3 px-4 py-2 text-xs uppercase tracking-wider text-muted-foreground border-b border-border bg-muted/40">
+            <div className="col-span-4">Empresa</div>
+            <div className="col-span-3">CNPJ</div>
+            <div className="col-span-3">Responsável</div>
+            <div className="col-span-2 text-right">Status</div>
+          </div>
+          {loading ? (
+            <div className="p-6 text-sm text-muted-foreground">Carregando...</div>
+          ) : items.length === 0 ? (
+            <div className="p-6 text-sm text-muted-foreground">Nenhuma empresa encontrada.</div>
+          ) : (
+            items.map((c) => (
+              <button
+                key={c.id}
+                onClick={() => setSelected(c)}
+                className="w-full grid grid-cols-12 gap-3 px-4 py-3 text-left text-sm border-b border-border last:border-0 hover:bg-muted/40 transition"
+              >
+                <div className="col-span-4">
+                  <div className="font-medium text-foreground">{c.trade_name || c.legal_name}</div>
+                  {c.trade_name && (
+                    <div className="text-xs text-muted-foreground">{c.legal_name}</div>
+                  )}
+                </div>
+                <div className="col-span-3 text-foreground/80">{formatCNPJ(c.cnpj)}</div>
+                <div className="col-span-3 text-foreground/80">
+                  <div>{c.contact_name}</div>
+                  <div className="text-xs text-muted-foreground">{c.contact_email}</div>
+                </div>
+                <div className="col-span-2 text-right">
+                  <StatusBadge status={c.status} />
+                </div>
+              </button>
+            ))
+          )}
+        </div>
+
+        {/* Drawer simples */}
+        {selected && (
+          <Drawer
+            company={selected}
+            onClose={() => setSelected(null)}
+            onApprove={() => updateStatus(selected.id, "approved")}
+            onReject={(reason) =>
+              updateStatus(selected.id, "rejected", { rejection_reason: reason })
+            }
+            onBlock={() => updateStatus(selected.id, "blocked")}
+            onReactivate={() => updateStatus(selected.id, "approved")}
+            onResetPending={() => updateStatus(selected.id, "pending")}
+          />
         )}
       </div>
-
-      {/* Drawer simples */}
-      {selected && (
-        <Drawer
-          company={selected}
-          onClose={() => setSelected(null)}
-          onApprove={() => updateStatus(selected.id, 'approved')}
-          onReject={(reason) =>
-            updateStatus(selected.id, 'rejected', { rejection_reason: reason })
-          }
-          onBlock={() => updateStatus(selected.id, 'blocked')}
-          onReactivate={() => updateStatus(selected.id, 'approved')}
-          onResetPending={() => updateStatus(selected.id, 'pending')}
-        />
-      )}
-    </div>
     </AdminLayout>
   );
 }
@@ -189,20 +184,20 @@ function AdminEmpresasPage() {
 function labelStatus(s: string) {
   return (
     {
-      pending: 'Pendentes',
-      approved: 'Aprovadas',
-      blocked: 'Bloqueadas',
-      rejected: 'Recusadas',
-    }[s] ?? ''
+      pending: "Pendentes",
+      approved: "Aprovadas",
+      blocked: "Bloqueadas",
+      rejected: "Recusadas",
+    }[s] ?? ""
   );
 }
 
-function StatusBadge({ status }: { status: Company['status'] }) {
+function StatusBadge({ status }: { status: Company["status"] }) {
   const map = {
-    pending: { Icon: Clock, cls: 'bg-warning/15 text-warning', label: 'Pendente' },
-    approved: { Icon: CheckCircle2, cls: 'bg-success/15 text-success', label: 'Aprovada' },
-    blocked: { Icon: ShieldX, cls: 'bg-destructive/15 text-destructive', label: 'Bloqueada' },
-    rejected: { Icon: XCircle, cls: 'bg-destructive/15 text-destructive', label: 'Recusada' },
+    pending: { Icon: Clock, cls: "bg-warning/15 text-warning", label: "Pendente" },
+    approved: { Icon: CheckCircle2, cls: "bg-success/15 text-success", label: "Aprovada" },
+    blocked: { Icon: ShieldX, cls: "bg-destructive/15 text-destructive", label: "Bloqueada" },
+    rejected: { Icon: XCircle, cls: "bg-destructive/15 text-destructive", label: "Recusada" },
   } as const;
   const info = map[status];
   const Icon = info.Icon;
@@ -232,13 +227,15 @@ function Drawer({
   onReactivate: () => void;
   onResetPending: () => void;
 }) {
-  const [reason, setReason] = useState(company.rejection_reason ?? '');
+  const [reason, setReason] = useState(company.rejection_reason ?? "");
   return (
     <div className="fixed inset-0 z-50 flex">
       <div className="flex-1 bg-black/40" onClick={onClose} />
       <div className="w-full max-w-lg bg-background border-l border-border h-full overflow-y-auto p-6">
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-bold text-foreground">{company.trade_name || company.legal_name}</h2>
+          <h2 className="text-lg font-bold text-foreground">
+            {company.trade_name || company.legal_name}
+          </h2>
           <button onClick={onClose} className="text-muted-foreground hover:text-foreground">
             ✕
           </button>
@@ -252,7 +249,7 @@ function Drawer({
           <Info label="Status atual" value={<StatusBadge status={company.status} />} />
         </div>
 
-        {(company.status === 'rejected' || company.status === 'pending') && (
+        {(company.status === "rejected" || company.status === "pending") && (
           <div className="mt-6">
             <label className="text-xs font-medium text-foreground">Motivo (caso recuse)</label>
             <textarea
@@ -265,19 +262,19 @@ function Drawer({
         )}
 
         <div className="mt-6 grid grid-cols-2 gap-2">
-          {company.status !== 'approved' && (
+          {company.status !== "approved" && (
             <button
-              onClick={company.status === 'blocked' ? onReactivate : onApprove}
+              onClick={company.status === "blocked" ? onReactivate : onApprove}
               className="h-10 rounded-md bg-success text-success-foreground font-semibold"
             >
-              {company.status === 'blocked' ? 'Reativar' : 'Aprovar'}
+              {company.status === "blocked" ? "Reativar" : "Aprovar"}
             </button>
           )}
-          {company.status !== 'rejected' && company.status !== 'blocked' && (
+          {company.status !== "rejected" && company.status !== "blocked" && (
             <button
               onClick={() => {
                 if (!reason.trim()) {
-                  toast.error('Informe o motivo da recusa');
+                  toast.error("Informe o motivo da recusa");
                   return;
                 }
                 onReject(reason);
@@ -287,7 +284,7 @@ function Drawer({
               Recusar
             </button>
           )}
-          {company.status === 'approved' && (
+          {company.status === "approved" && (
             <button
               onClick={onBlock}
               className="h-10 rounded-md bg-destructive text-destructive-foreground font-semibold"
@@ -295,7 +292,7 @@ function Drawer({
               Bloquear
             </button>
           )}
-          {company.status !== 'pending' && (
+          {company.status !== "pending" && (
             <button
               onClick={onResetPending}
               className="h-10 rounded-md border border-border text-foreground font-medium col-span-2"

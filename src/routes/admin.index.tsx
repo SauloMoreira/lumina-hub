@@ -1,6 +1,6 @@
-import { createFileRoute } from '@tanstack/react-router';
-import { useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { createFileRoute } from "@tanstack/react-router";
+import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import {
   DollarSign,
   ShoppingBag,
@@ -11,39 +11,33 @@ import {
   Percent,
   Package,
   RotateCcw,
-} from 'lucide-react';
+} from "lucide-react";
 
-import { AdminLayout } from '@/components/admin/AdminLayout';
-import { getAdminDashboard } from '@/server/dashboard.functions';
+import { AdminLayout } from "@/components/admin/AdminLayout";
+import { getAdminDashboard } from "@/server/dashboard.functions";
 import {
   DateRangeFilter,
   computeRange,
   type DashboardRange,
-} from '@/components/admin/dashboard/DateRangeFilter';
-import { DashboardMetricCard } from '@/components/admin/dashboard/DashboardMetricCard';
-import { SalesChart } from '@/components/admin/dashboard/SalesChart';
-import { OrderStatusChart } from '@/components/admin/dashboard/OrderStatusChart';
-import { PaymentStatusChart } from '@/components/admin/dashboard/PaymentStatusChart';
-import { TopProductsChart } from '@/components/admin/dashboard/TopProductsChart';
-import { AverageTicketChart } from '@/components/admin/dashboard/AverageTicketChart';
-import { RevenueByCategoryChart } from '@/components/admin/dashboard/RevenueByCategoryChart';
-import { EmailEventsCard } from '@/components/admin/dashboard/EmailEventsCard';
-import { WebhookHealthCard } from '@/components/admin/dashboard/WebhookHealthCard';
-import { fmtBRL, fmtInt, fmtPct } from '@/components/admin/dashboard/format';
+} from "@/components/admin/dashboard/DateRangeFilter";
+import { DashboardMetricCard } from "@/components/admin/dashboard/DashboardMetricCard";
+import { SalesChart } from "@/components/admin/dashboard/SalesChart";
+import { OrderStatusChart } from "@/components/admin/dashboard/OrderStatusChart";
+import { PaymentStatusChart } from "@/components/admin/dashboard/PaymentStatusChart";
+import { TopProductsChart } from "@/components/admin/dashboard/TopProductsChart";
+import { AverageTicketChart } from "@/components/admin/dashboard/AverageTicketChart";
+import { RevenueByCategoryChart } from "@/components/admin/dashboard/RevenueByCategoryChart";
+import { EmailEventsCard } from "@/components/admin/dashboard/EmailEventsCard";
+import { WebhookHealthCard } from "@/components/admin/dashboard/WebhookHealthCard";
+import { fmtBRL, fmtInt, fmtPct } from "@/components/admin/dashboard/format";
 
-export const Route = createFileRoute('/admin/')({ component: AdminDashboard });
+export const Route = createFileRoute("/admin/")({ component: AdminDashboard });
 
 function AdminDashboard() {
-  const [range, setRange] = useState<DashboardRange>(() => computeRange('last7'));
+  const [range, setRange] = useState<DashboardRange>(() => computeRange("last7"));
 
-  const {
-    data,
-    isLoading,
-    isFetching,
-    error,
-    refetch,
-  } = useQuery({
-    queryKey: ['admin-dashboard', range.start, range.end],
+  const { data, isLoading, isFetching, error, refetch } = useQuery({
+    queryKey: ["admin-dashboard", range.start, range.end],
     queryFn: () => getAdminDashboard({ data: { start: range.start, end: range.end } }),
     staleTime: 60_000,
   });
@@ -60,7 +54,7 @@ function AdminDashboard() {
           disabled={isFetching}
           className="text-xs flex items-center gap-1.5 px-3 py-1.5 rounded-md border border-border bg-card hover:bg-muted disabled:opacity-50"
         >
-          <RotateCcw className={`w-3.5 h-3.5 ${isFetching ? 'animate-spin' : ''}`} />
+          <RotateCcw className={`w-3.5 h-3.5 ${isFetching ? "animate-spin" : ""}`} />
           Atualizar
         </button>
       }
@@ -82,35 +76,35 @@ function AdminDashboard() {
           label="Receita bruta"
           accent="primary"
           loading={isLoading}
-          value={cards ? fmtBRL(cards.grossRevenue) : '—'}
+          value={cards ? fmtBRL(cards.grossRevenue) : "—"}
           hint="Pedidos pagos no período"
         />
         <DashboardMetricCard
           icon={ShoppingBag}
           label="Total de pedidos"
           loading={isLoading}
-          value={cards ? fmtInt(cards.totalOrders) : '—'}
+          value={cards ? fmtInt(cards.totalOrders) : "—"}
         />
         <DashboardMetricCard
           icon={CheckCircle2}
           label="Pedidos pagos"
           accent="success"
           loading={isLoading}
-          value={cards ? fmtInt(cards.paidOrders) : '—'}
+          value={cards ? fmtInt(cards.paidOrders) : "—"}
         />
         <DashboardMetricCard
           icon={Clock}
           label="Pedidos pendentes"
           accent="warn"
           loading={isLoading}
-          value={cards ? fmtInt(cards.pendingOrders) : '—'}
+          value={cards ? fmtInt(cards.pendingOrders) : "—"}
         />
         <DashboardMetricCard
           icon={XCircle}
           label="Recusados / Cancelados"
           accent="danger"
           loading={isLoading}
-          value={cards ? fmtInt(cards.failedOrders) : '—'}
+          value={cards ? fmtInt(cards.failedOrders) : "—"}
           hint={
             cards && cards.refundedOrders > 0
               ? `+ ${fmtInt(cards.refundedOrders)} reembolso/chargeback`
@@ -121,20 +115,20 @@ function AdminDashboard() {
           icon={TrendingUp}
           label="Ticket médio"
           loading={isLoading}
-          value={cards ? fmtBRL(cards.avgTicket) : '—'}
+          value={cards ? fmtBRL(cards.avgTicket) : "—"}
         />
         <DashboardMetricCard
           icon={Percent}
           label="Taxa de aprovação"
           loading={isLoading}
-          value={cards ? fmtPct(cards.paymentApprovalRate) : '—'}
+          value={cards ? fmtPct(cards.paymentApprovalRate) : "—"}
           hint="Aprovados / tentativas (aprovados + recusados)"
         />
         <DashboardMetricCard
           icon={Package}
           label="Produtos vendidos"
           loading={isLoading}
-          value={cards ? fmtInt(cards.productsSold) : '—'}
+          value={cards ? fmtInt(cards.productsSold) : "—"}
           hint="Unidades em pedidos pagos"
         />
       </div>
@@ -218,19 +212,15 @@ function ChartCard({
   return (
     <section
       className={[
-        'bg-card border border-border rounded-xl p-5 flex flex-col gap-3',
-        className ?? '',
-      ].join(' ')}
+        "bg-card border border-border rounded-xl p-5 flex flex-col gap-3",
+        className ?? "",
+      ].join(" ")}
     >
       <header>
         <h2 className="font-display font-semibold text-base">{title}</h2>
         {subtitle && <p className="text-xs text-muted-foreground mt-0.5">{subtitle}</p>}
       </header>
-      {loading ? (
-        <div className="h-64 bg-muted/40 animate-pulse rounded-lg" />
-      ) : (
-        children
-      )}
+      {loading ? <div className="h-64 bg-muted/40 animate-pulse rounded-lg" /> : children}
     </section>
   );
 }

@@ -1,9 +1,9 @@
-import { createServerFn } from '@tanstack/react-start';
-import { z } from 'zod';
-import { requireAdmin } from '@/integrations/supabase/admin-middleware';
+import { createServerFn } from "@tanstack/react-start";
+import { z } from "zod";
+import { requireAdmin } from "@/integrations/supabase/admin-middleware";
 
 async function getSupabaseAdmin() {
-  return (await import('@/integrations/supabase/client.server')).supabaseAdmin;
+  return (await import("@/integrations/supabase/client.server")).supabaseAdmin;
 }
 
 // ============================================================
@@ -12,17 +12,17 @@ async function getSupabaseAdmin() {
 
 const FiltersSchema = z.object({
   preset: z.enum([
-    'today',
-    'yesterday',
-    'last_7_days',
-    'last_30_days',
-    'this_month',
-    'last_month',
-    'custom',
+    "today",
+    "yesterday",
+    "last_7_days",
+    "last_30_days",
+    "this_month",
+    "last_month",
+    "custom",
   ]),
   start: z.string().optional(),
   end: z.string().optional(),
-  orderType: z.enum(['all', 'b2c', 'b2b']).default('all'),
+  orderType: z.enum(["all", "b2c", "b2b"]).default("all"),
   paymentStatus: z.string().nullable().optional(),
   paymentMethod: z.string().nullable().optional(),
   deliveryMethod: z.string().nullable().optional(),
@@ -33,12 +33,12 @@ const FiltersSchema = z.object({
   campaignId: z.string().uuid().nullable().optional(),
   couponCode: z.string().nullable().optional(),
   originContext: z.string().nullable().optional(),
-  attribution: z.enum(['all', 'attributed', 'unattributed']).default('all'),
+  attribution: z.enum(["all", "attributed", "unattributed"]).default("all"),
 });
 
 export type CampaignFilters = z.infer<typeof FiltersSchema>;
 
-const PAID = ['approved', 'paid'];
+const PAID = ["approved", "paid"];
 
 function startOfDay(d: Date) {
   const x = new Date(d);
@@ -53,34 +53,34 @@ function endOfDay(d: Date) {
 function resolveRange(f: CampaignFilters): { from: Date; to: Date } {
   const now = new Date();
   switch (f.preset) {
-    case 'today':
+    case "today":
       return { from: startOfDay(now), to: endOfDay(now) };
-    case 'yesterday': {
+    case "yesterday": {
       const y = new Date(now);
       y.setDate(now.getDate() - 1);
       return { from: startOfDay(y), to: endOfDay(y) };
     }
-    case 'last_7_days': {
+    case "last_7_days": {
       const x = new Date(now);
       x.setDate(now.getDate() - 6);
       return { from: startOfDay(x), to: endOfDay(now) };
     }
-    case 'last_30_days': {
+    case "last_30_days": {
       const x = new Date(now);
       x.setDate(now.getDate() - 29);
       return { from: startOfDay(x), to: endOfDay(now) };
     }
-    case 'this_month':
+    case "this_month":
       return {
         from: startOfDay(new Date(now.getFullYear(), now.getMonth(), 1)),
         to: endOfDay(now),
       };
-    case 'last_month': {
+    case "last_month": {
       const f1 = new Date(now.getFullYear(), now.getMonth() - 1, 1);
       const t1 = new Date(now.getFullYear(), now.getMonth(), 0);
       return { from: startOfDay(f1), to: endOfDay(t1) };
     }
-    case 'custom': {
+    case "custom": {
       const from = f.start ? new Date(f.start) : startOfDay(now);
       const to = f.end ? new Date(f.end) : endOfDay(now);
       return { from: startOfDay(from), to: endOfDay(to) };
@@ -162,35 +162,38 @@ type CampaignRow = {
 // Helpers de atribuição
 // ============================================================
 
-export type AttributionSource =
-  | 'utm_campaign'
-  | 'coupon_campaign'
-  | 'origin_context'
-  | 'none';
+export type AttributionSource = "utm_campaign" | "coupon_campaign" | "origin_context" | "none";
 
-function pickAttribution(o: OrderRow, couponToCampaign: Map<string, string>): {
+function pickAttribution(
+  o: OrderRow,
+  couponToCampaign: Map<string, string>,
+): {
   source: AttributionSource;
   campaignKey: string | null;
   campaignLabel: string;
 } {
   const utm = safeStr(o.utm_campaign);
   if (utm) {
-    return { source: 'utm_campaign', campaignKey: utm.toLowerCase(), campaignLabel: utm };
+    return { source: "utm_campaign", campaignKey: utm.toLowerCase(), campaignLabel: utm };
   }
   const code = safeStr(o.coupon_code);
   if (code && couponToCampaign.has(code.toUpperCase())) {
     const label = couponToCampaign.get(code.toUpperCase())!;
     return {
-      source: 'coupon_campaign',
+      source: "coupon_campaign",
       campaignKey: `coupon:${code.toUpperCase()}`,
       campaignLabel: label,
     };
   }
   const ctx = safeStr(o.origin_context);
   if (ctx) {
-    return { source: 'origin_context', campaignKey: `ctx:${ctx.toLowerCase()}`, campaignLabel: ctx };
+    return {
+      source: "origin_context",
+      campaignKey: `ctx:${ctx.toLowerCase()}`,
+      campaignLabel: ctx,
+    };
   }
-  return { source: 'none', campaignKey: null, campaignLabel: 'Sem atribuição' };
+  return { source: "none", campaignKey: null, campaignLabel: "Sem atribuição" };
 }
 
 function originBucket(o: OrderRow): {
@@ -203,13 +206,13 @@ function originBucket(o: OrderRow): {
   const c = safeStr(o.origin_context);
   if (s || m) {
     return {
-      source: s ?? 'sem_source',
-      medium: m ?? 'sem_medium',
-      context: c ?? '—',
+      source: s ?? "sem_source",
+      medium: m ?? "sem_medium",
+      context: c ?? "—",
     };
   }
-  if (c) return { source: 'sem atribuição', medium: '—', context: c };
-  return { source: 'sem atribuição', medium: '—', context: '—' };
+  if (c) return { source: "sem atribuição", medium: "—", context: c };
+  return { source: "sem atribuição", medium: "—", context: "—" };
 }
 
 // ============================================================
@@ -222,27 +225,27 @@ async function fetchPaidOrders(
 ): Promise<OrderRow[]> {
   const supabaseAdmin = await getSupabaseAdmin();
   let q = supabaseAdmin
-    .from('orders')
+    .from("orders")
     .select(
-      'id, order_number, status, payment_status, payment_method, delivery_method, order_type, ' +
-        'total, subtotal, discount, shipping_cost, coupon_code, company_id, company_name, ' +
-        'utm_source, utm_medium, utm_campaign, utm_content, utm_term, origin_context, origin_page, ' +
-        'mp_fee_amount, estimated_fee_amount, payment_fee_source, user_id, created_at, paid_at',
+      "id, order_number, status, payment_status, payment_method, delivery_method, order_type, " +
+        "total, subtotal, discount, shipping_cost, coupon_code, company_id, company_name, " +
+        "utm_source, utm_medium, utm_campaign, utm_content, utm_term, origin_context, origin_page, " +
+        "mp_fee_amount, estimated_fee_amount, payment_fee_source, user_id, created_at, paid_at",
     )
-    .gte('created_at', range.from.toISOString())
-    .lte('created_at', range.to.toISOString())
-    .in('payment_status', PAID)
-    .order('created_at', { ascending: false });
+    .gte("created_at", range.from.toISOString())
+    .lte("created_at", range.to.toISOString())
+    .in("payment_status", PAID)
+    .order("created_at", { ascending: false });
 
-  if (filters.orderType !== 'all') q = q.eq('order_type', filters.orderType);
-  if (filters.paymentMethod) q = q.eq('payment_method', filters.paymentMethod);
-  if (filters.deliveryMethod) q = q.eq('delivery_method', filters.deliveryMethod);
-  if (filters.status) q = q.eq('status', filters.status);
-  if (filters.utmSource) q = q.eq('utm_source', filters.utmSource);
-  if (filters.utmMedium) q = q.eq('utm_medium', filters.utmMedium);
-  if (filters.utmCampaign) q = q.eq('utm_campaign', filters.utmCampaign);
-  if (filters.couponCode) q = q.eq('coupon_code', filters.couponCode);
-  if (filters.originContext) q = q.eq('origin_context', filters.originContext);
+  if (filters.orderType !== "all") q = q.eq("order_type", filters.orderType);
+  if (filters.paymentMethod) q = q.eq("payment_method", filters.paymentMethod);
+  if (filters.deliveryMethod) q = q.eq("delivery_method", filters.deliveryMethod);
+  if (filters.status) q = q.eq("status", filters.status);
+  if (filters.utmSource) q = q.eq("utm_source", filters.utmSource);
+  if (filters.utmMedium) q = q.eq("utm_medium", filters.utmMedium);
+  if (filters.utmCampaign) q = q.eq("utm_campaign", filters.utmCampaign);
+  if (filters.couponCode) q = q.eq("coupon_code", filters.couponCode);
+  if (filters.originContext) q = q.eq("origin_context", filters.originContext);
 
   // limite defensivo
   q = q.limit(2000);
@@ -256,9 +259,9 @@ async function fetchItemsCostForOrders(orderIds: string[]): Promise<ItemCostRow[
   if (orderIds.length === 0) return [];
   const supabaseAdmin = await getSupabaseAdmin();
   const { data, error } = await supabaseAdmin
-    .from('order_items')
-    .select('order_id, total_price, total_cost, cost_source')
-    .in('order_id', orderIds);
+    .from("order_items")
+    .select("order_id, total_price, total_cost, cost_source")
+    .in("order_id", orderIds);
   if (error) throw new Response(`order_items query failed: ${error.message}`, { status: 500 });
   return (data ?? []) as unknown as ItemCostRow[];
 }
@@ -266,11 +269,11 @@ async function fetchItemsCostForOrders(orderIds: string[]): Promise<ItemCostRow[
 async function fetchActiveCampaigns(): Promise<CampaignRow[]> {
   const supabaseAdmin = await getSupabaseAdmin();
   const { data, error } = await supabaseAdmin
-    .from('marketing_campaigns')
+    .from("marketing_campaigns")
     .select(
-      'id, name, status, channel, starts_at, ends_at, utm_source, utm_medium, utm_campaign, coupon_id',
+      "id, name, status, channel, starts_at, ends_at, utm_source, utm_medium, utm_campaign, coupon_id",
     )
-    .order('created_at', { ascending: false })
+    .order("created_at", { ascending: false })
     .limit(500);
   if (error) throw new Response(`campaigns query failed: ${error.message}`, { status: 500 });
   return (data ?? []) as unknown as CampaignRow[];
@@ -283,13 +286,14 @@ async function fetchCouponCampaignMap(campaigns: CampaignRow[]): Promise<Map<str
   const out = new Map<string, string>();
   if (ids.length === 0) return out;
   const supabaseAdmin = await getSupabaseAdmin();
-  const { data, error } = await supabaseAdmin
-    .from('coupons')
-    .select('id, code')
-    .in('id', ids);
+  const { data, error } = await supabaseAdmin.from("coupons").select("id, code").in("id", ids);
   if (error) return out;
   const codeById = new Map<string, string>();
-  for (const c of data ?? []) codeById.set(String((c as { id: string }).id), String((c as { code: string }).code).toUpperCase());
+  for (const c of data ?? [])
+    codeById.set(
+      String((c as { id: string }).id),
+      String((c as { code: string }).code).toUpperCase(),
+    );
   for (const camp of campaigns) {
     if (camp.coupon_id && codeById.has(camp.coupon_id)) {
       out.set(codeById.get(camp.coupon_id)!, camp.name);
@@ -298,17 +302,18 @@ async function fetchCouponCampaignMap(campaigns: CampaignRow[]): Promise<Map<str
   return out;
 }
 
-async function fetchLeadsByCampaign(
-  range: { from: Date; to: Date },
-): Promise<Map<string, { total: number; hot: number; won: number; lost: number }>> {
+async function fetchLeadsByCampaign(range: {
+  from: Date;
+  to: Date;
+}): Promise<Map<string, { total: number; hot: number; won: number; lost: number }>> {
   const out = new Map<string, { total: number; hot: number; won: number; lost: number }>();
   const supabaseAdmin = await getSupabaseAdmin();
   const { data, error } = await supabaseAdmin
-    .from('leads')
-    .select('utm_campaign, status, score_temperature, created_at')
-    .gte('created_at', range.from.toISOString())
-    .lte('created_at', range.to.toISOString())
-    .not('utm_campaign', 'is', null)
+    .from("leads")
+    .select("utm_campaign, status, score_temperature, created_at")
+    .gte("created_at", range.from.toISOString())
+    .lte("created_at", range.to.toISOString())
+    .not("utm_campaign", "is", null)
     .limit(5000);
   if (error || !data) return out;
   for (const r of data as Array<{
@@ -316,29 +321,30 @@ async function fetchLeadsByCampaign(
     status: string | null;
     score_temperature: string | null;
   }>) {
-    const key = (safeStr(r.utm_campaign) ?? '').toLowerCase();
+    const key = (safeStr(r.utm_campaign) ?? "").toLowerCase();
     if (!key) continue;
     const cur = out.get(key) ?? { total: 0, hot: 0, won: 0, lost: 0 };
     cur.total += 1;
-    if (r.score_temperature === 'quente') cur.hot += 1;
-    if (r.status === 'ganho' || r.status === 'won') cur.won += 1;
-    if (r.status === 'perdido' || r.status === 'lost') cur.lost += 1;
+    if (r.score_temperature === "quente") cur.hot += 1;
+    if (r.status === "ganho" || r.status === "won") cur.won += 1;
+    if (r.status === "perdido" || r.status === "lost") cur.lost += 1;
     out.set(key, cur);
   }
   return out;
 }
 
-async function fetchAbandonedByCampaign(
-  range: { from: Date; to: Date },
-): Promise<Map<string, { abandoned: number; recovered: number; abandonedValue: number }>> {
+async function fetchAbandonedByCampaign(range: {
+  from: Date;
+  to: Date;
+}): Promise<Map<string, { abandoned: number; recovered: number; abandonedValue: number }>> {
   const out = new Map<string, { abandoned: number; recovered: number; abandonedValue: number }>();
   const supabaseAdmin = await getSupabaseAdmin();
   const { data, error } = await supabaseAdmin
-    .from('abandoned_carts')
-    .select('utm_campaign, recovered_at, subtotal_amount, abandoned_at')
-    .gte('abandoned_at', range.from.toISOString())
-    .lte('abandoned_at', range.to.toISOString())
-    .not('utm_campaign', 'is', null)
+    .from("abandoned_carts")
+    .select("utm_campaign, recovered_at, subtotal_amount, abandoned_at")
+    .gte("abandoned_at", range.from.toISOString())
+    .lte("abandoned_at", range.to.toISOString())
+    .not("utm_campaign", "is", null)
     .limit(5000);
   if (error || !data) return out;
   for (const r of data as Array<{
@@ -346,7 +352,7 @@ async function fetchAbandonedByCampaign(
     recovered_at: string | null;
     subtotal_amount: number | string | null;
   }>) {
-    const key = (safeStr(r.utm_campaign) ?? '').toLowerCase();
+    const key = (safeStr(r.utm_campaign) ?? "").toLowerCase();
     if (!key) continue;
     const cur = out.get(key) ?? { abandoned: 0, recovered: 0, abandonedValue: 0 };
     cur.abandoned += 1;
@@ -433,7 +439,7 @@ export type AttributedOrderRow = {
   mpFee: number;
   estimatedProfit: number;
   marginPercent: number | null;
-  calcStatus: 'ok' | 'sem_custo' | 'parcial';
+  calcStatus: "ok" | "sem_custo" | "parcial";
 };
 
 export type AttributionQuality = {
@@ -449,7 +455,7 @@ export type AttributionQuality = {
 // Server functions
 // ============================================================
 
-export const getCampaignCards = createServerFn({ method: 'POST' })
+export const getCampaignCards = createServerFn({ method: "POST" })
   .middleware([requireAdmin])
   .inputValidator((input) => FiltersSchema.parse(input))
   .handler(async ({ data }) => {
@@ -483,7 +489,7 @@ export const getCampaignCards = createServerFn({ method: 'POST' })
       const fee = feeOf(o);
       const cost = costByOrder.get(o.id) ?? 0;
       const profit = rev - fee - cost - num(o.shipping_cost);
-      if (att.source === 'none') {
+      if (att.source === "none") {
         unattributedOrders += 1;
       } else {
         attributedOrders += 1;
@@ -530,7 +536,8 @@ export const getCampaignCards = createServerFn({ method: 'POST' })
     const totalOrders = orders.length;
     const attributionRate = totalOrders === 0 ? 0 : (attributedOrders / totalOrders) * 100;
     const avgTicket = attributedOrders === 0 ? 0 : totalRevenueAttributed / attributedOrders;
-    const estimatedMargin = totalRevenueAttributed === 0 ? 0 : (totalProfit / totalRevenueAttributed) * 100;
+    const estimatedMargin =
+      totalRevenueAttributed === 0 ? 0 : (totalProfit / totalRevenueAttributed) * 100;
 
     const cards: CampaignCards = {
       attributedRevenue,
@@ -549,7 +556,7 @@ export const getCampaignCards = createServerFn({ method: 'POST' })
     return cards;
   });
 
-export const getCampaignPerformance = createServerFn({ method: 'POST' })
+export const getCampaignPerformance = createServerFn({ method: "POST" })
   .middleware([requireAdmin])
   .inputValidator((input) => FiltersSchema.parse(input))
   .handler(async ({ data }) => {
@@ -581,9 +588,9 @@ export const getCampaignPerformance = createServerFn({ method: 'POST' })
     const map = new Map<string, Agg>();
     for (const o of orders) {
       const att = pickAttribution(o, couponMap);
-      if (data.attribution === 'attributed' && att.source === 'none') continue;
-      if (data.attribution === 'unattributed' && att.source !== 'none') continue;
-      const key = att.campaignKey ?? '__none__';
+      if (data.attribution === "attributed" && att.source === "none") continue;
+      if (data.attribution === "unattributed" && att.source !== "none") continue;
+      const key = att.campaignKey ?? "__none__";
       const cur = map.get(key) ?? {
         label: att.campaignLabel,
         source: att.source,
@@ -648,7 +655,7 @@ export const getCampaignPerformance = createServerFn({ method: 'POST' })
     return rows;
   });
 
-export const getOriginPerformance = createServerFn({ method: 'POST' })
+export const getOriginPerformance = createServerFn({ method: "POST" })
   .middleware([requireAdmin])
   .inputValidator((input) => FiltersSchema.parse(input))
   .handler(async ({ data }) => {
@@ -692,7 +699,7 @@ export const getOriginPerformance = createServerFn({ method: 'POST' })
       cur.orders += 1;
       cur.revenue += rev;
       cur.profit += rev - fee - cost - num(o.shipping_cost);
-      if (o.order_type === 'b2b') cur.ordersB2B += 1;
+      if (o.order_type === "b2b") cur.ordersB2B += 1;
       else cur.ordersB2C += 1;
       map.set(key, cur);
     }
@@ -700,23 +707,23 @@ export const getOriginPerformance = createServerFn({ method: 'POST' })
     // Lead/abandoned por origem (utm_source) — agregar separadamente
     const supabaseAdmin = await getSupabaseAdmin();
     const { data: leadsData } = await supabaseAdmin
-      .from('leads')
-      .select('utm_source, utm_medium')
-      .gte('created_at', range.from.toISOString())
-      .lte('created_at', range.to.toISOString())
+      .from("leads")
+      .select("utm_source, utm_medium")
+      .gte("created_at", range.from.toISOString())
+      .lte("created_at", range.to.toISOString())
       .limit(5000);
     const leadCount = new Map<string, number>();
     for (const r of leadsData ?? []) {
-      const k = `${safeStr((r as { utm_source: string | null }).utm_source) ?? 'sem atribuição'}|${
-        safeStr((r as { utm_medium: string | null }).utm_medium) ?? '—'
+      const k = `${safeStr((r as { utm_source: string | null }).utm_source) ?? "sem atribuição"}|${
+        safeStr((r as { utm_medium: string | null }).utm_medium) ?? "—"
       }`;
       leadCount.set(k, (leadCount.get(k) ?? 0) + 1);
     }
     const { data: abData } = await supabaseAdmin
-      .from('abandoned_carts')
-      .select('utm_source, utm_medium, recovered_at')
-      .gte('abandoned_at', range.from.toISOString())
-      .lte('abandoned_at', range.to.toISOString())
+      .from("abandoned_carts")
+      .select("utm_source, utm_medium, recovered_at")
+      .gte("abandoned_at", range.from.toISOString())
+      .lte("abandoned_at", range.to.toISOString())
       .limit(5000);
     const abCount = new Map<string, { ab: number; rec: number }>();
     for (const r of abData ?? []) {
@@ -725,7 +732,7 @@ export const getOriginPerformance = createServerFn({ method: 'POST' })
         utm_medium: string | null;
         recovered_at: string | null;
       };
-      const k = `${safeStr(row.utm_source) ?? 'sem atribuição'}|${safeStr(row.utm_medium) ?? '—'}`;
+      const k = `${safeStr(row.utm_source) ?? "sem atribuição"}|${safeStr(row.utm_medium) ?? "—"}`;
       const cur = abCount.get(k) ?? { ab: 0, rec: 0 };
       cur.ab += 1;
       if (row.recovered_at) cur.rec += 1;
@@ -761,7 +768,7 @@ const PageSchema = FiltersSchema.extend({
   pageSize: z.number().int().min(1).max(200).default(50),
 });
 
-export const getAttributedOrders = createServerFn({ method: 'POST' })
+export const getAttributedOrders = createServerFn({ method: "POST" })
   .middleware([requireAdmin])
   .inputValidator((input) => PageSchema.parse(input))
   .handler(async ({ data }) => {
@@ -776,25 +783,25 @@ export const getAttributedOrders = createServerFn({ method: 'POST' })
     const sourceByOrder = new Map<string, string>();
     for (const it of items) {
       costByOrder.set(it.order_id, (costByOrder.get(it.order_id) ?? 0) + num(it.total_cost));
-      if (it.cost_source && it.cost_source !== 'none') sourceByOrder.set(it.order_id, 'ok');
-      else if (!sourceByOrder.has(it.order_id)) sourceByOrder.set(it.order_id, 'sem_custo');
+      if (it.cost_source && it.cost_source !== "none") sourceByOrder.set(it.order_id, "ok");
+      else if (!sourceByOrder.has(it.order_id)) sourceByOrder.set(it.order_id, "sem_custo");
     }
 
     const filtered: AttributedOrderRow[] = [];
     for (const o of orders) {
       const att = pickAttribution(o, couponMap);
-      if (data.attribution === 'attributed' && att.source === 'none') continue;
-      if (data.attribution === 'unattributed' && att.source !== 'none') continue;
+      if (data.attribution === "attributed" && att.source === "none") continue;
+      if (data.attribution === "unattributed" && att.source !== "none") continue;
       const rev = num(o.total);
       const fee = feeOf(o);
       const cost = costByOrder.get(o.id) ?? 0;
       const profit = rev - fee - cost - num(o.shipping_cost);
-      const cs = sourceByOrder.get(o.id) ?? 'sem_custo';
+      const cs = sourceByOrder.get(o.id) ?? "sem_custo";
       filtered.push({
         id: o.id,
         order_number: o.order_number,
         created_at: o.created_at,
-        customer: o.company_name ?? o.customer_name ?? '—',
+        customer: o.company_name ?? o.customer_name ?? "—",
         order_type: o.order_type,
         campaignLabel: att.campaignLabel,
         utm_source: o.utm_source,
@@ -808,7 +815,7 @@ export const getAttributedOrders = createServerFn({ method: 'POST' })
         mpFee: fee,
         estimatedProfit: profit,
         marginPercent: rev === 0 ? null : (profit / rev) * 100,
-        calcStatus: cs === 'ok' ? 'ok' : 'sem_custo',
+        calcStatus: cs === "ok" ? "ok" : "sem_custo",
       });
     }
 
@@ -818,7 +825,7 @@ export const getAttributedOrders = createServerFn({ method: 'POST' })
     return { rows: slice, total, page: data.page, pageSize: data.pageSize };
   });
 
-export const getAttributionQuality = createServerFn({ method: 'POST' })
+export const getAttributionQuality = createServerFn({ method: "POST" })
   .middleware([requireAdmin])
   .inputValidator((input) => FiltersSchema.parse(input))
   .handler(async ({ data }) => {
@@ -834,9 +841,9 @@ export const getAttributionQuality = createServerFn({ method: 'POST' })
     for (const o of orders) {
       if (safeStr(o.utm_source) || safeStr(o.utm_campaign) || safeStr(o.utm_medium)) withUtm += 1;
       const att = pickAttribution(o, couponMap);
-      if (att.source === 'utm_campaign') withCampaign += 1;
-      else if (att.source === 'coupon_campaign') withCoupon += 1;
-      else if (att.source === 'none') unattributed += 1;
+      if (att.source === "utm_campaign") withCampaign += 1;
+      else if (att.source === "coupon_campaign") withCoupon += 1;
+      else if (att.source === "none") unattributed += 1;
     }
     const total = orders.length;
     const result: AttributionQuality = {
@@ -855,48 +862,48 @@ export const getAttributionQuality = createServerFn({ method: 'POST' })
 // ============================================================
 
 function csvEscape(v: unknown): string {
-  if (v == null) return '';
+  if (v == null) return "";
   const s = String(v);
   if (/[",\n;]/.test(s)) return `"${s.replace(/"/g, '""')}"`;
   return s;
 }
 function toCsv(headers: string[], rows: Array<Array<unknown>>): string {
-  const lines = [headers.map(csvEscape).join(';')];
-  for (const r of rows) lines.push(r.map(csvEscape).join(';'));
-  return '\uFEFF' + lines.join('\n');
+  const lines = [headers.map(csvEscape).join(";")];
+  for (const r of rows) lines.push(r.map(csvEscape).join(";"));
+  return "\uFEFF" + lines.join("\n");
 }
 function brl(n: number) {
-  return n.toFixed(2).replace('.', ',');
+  return n.toFixed(2).replace(".", ",");
 }
 
-export const exportCampaignPerformanceCsv = createServerFn({ method: 'POST' })
+export const exportCampaignPerformanceCsv = createServerFn({ method: "POST" })
   .middleware([requireAdmin])
   .inputValidator((input) => FiltersSchema.parse(input))
   .handler(async ({ data }) => {
     const rows = await getCampaignPerformance({ data });
     const headers = [
-      'Campanha',
-      'Atribuição',
-      'Status',
-      'Canal',
-      'Pedidos',
-      'Receita',
-      'Ticket médio',
-      'Desconto',
-      'Custo dos produtos',
-      'Taxas Mercado Pago',
-      'Lucro estimado',
-      'Margem %',
-      'Leads',
-      'Abandonados',
-      'Recuperados',
-      'Cupons',
+      "Campanha",
+      "Atribuição",
+      "Status",
+      "Canal",
+      "Pedidos",
+      "Receita",
+      "Ticket médio",
+      "Desconto",
+      "Custo dos produtos",
+      "Taxas Mercado Pago",
+      "Lucro estimado",
+      "Margem %",
+      "Leads",
+      "Abandonados",
+      "Recuperados",
+      "Cupons",
     ];
     const body = rows.map((r) => [
       r.campaignLabel,
       r.source,
-      r.status ?? '',
-      r.channel ?? '',
+      r.status ?? "",
+      r.channel ?? "",
       r.orders,
       brl(r.revenue),
       brl(r.avgTicket),
@@ -904,7 +911,7 @@ export const exportCampaignPerformanceCsv = createServerFn({ method: 'POST' })
       brl(r.itemsCost),
       brl(r.mpFees),
       brl(r.estimatedProfit),
-      r.marginPercent == null ? '' : r.marginPercent.toFixed(2).replace('.', ','),
+      r.marginPercent == null ? "" : r.marginPercent.toFixed(2).replace(".", ","),
       r.leads,
       r.abandoned,
       r.recovered,
@@ -913,25 +920,25 @@ export const exportCampaignPerformanceCsv = createServerFn({ method: 'POST' })
     return { content: toCsv(headers, body), filename: `campanhas_${Date.now()}.csv` };
   });
 
-export const exportOriginPerformanceCsv = createServerFn({ method: 'POST' })
+export const exportOriginPerformanceCsv = createServerFn({ method: "POST" })
   .middleware([requireAdmin])
   .inputValidator((input) => FiltersSchema.parse(input))
   .handler(async ({ data }) => {
     const rows = await getOriginPerformance({ data });
     const headers = [
-      'Origem',
-      'Meio',
-      'Contexto',
-      'Pedidos',
-      'Receita',
-      'Ticket médio',
-      'Leads',
-      'Abandonados',
-      'Recuperados',
-      'Lucro estimado',
-      'Margem %',
-      'Pedidos B2B',
-      'Pedidos B2C',
+      "Origem",
+      "Meio",
+      "Contexto",
+      "Pedidos",
+      "Receita",
+      "Ticket médio",
+      "Leads",
+      "Abandonados",
+      "Recuperados",
+      "Lucro estimado",
+      "Margem %",
+      "Pedidos B2B",
+      "Pedidos B2C",
     ];
     const body = rows.map((r) => [
       r.source,
@@ -944,14 +951,14 @@ export const exportOriginPerformanceCsv = createServerFn({ method: 'POST' })
       r.abandoned,
       r.recovered,
       brl(r.estimatedProfit),
-      r.marginPercent == null ? '' : r.marginPercent.toFixed(2).replace('.', ','),
+      r.marginPercent == null ? "" : r.marginPercent.toFixed(2).replace(".", ","),
       r.ordersB2B,
       r.ordersB2C,
     ]);
     return { content: toCsv(headers, body), filename: `origens_${Date.now()}.csv` };
   });
 
-export const exportAttributedOrdersCsv = createServerFn({ method: 'POST' })
+export const exportAttributedOrdersCsv = createServerFn({ method: "POST" })
   .middleware([requireAdmin])
   .inputValidator((input) => FiltersSchema.parse(input))
   .handler(async ({ data }) => {
@@ -959,23 +966,23 @@ export const exportAttributedOrdersCsv = createServerFn({ method: 'POST' })
       data: { ...data, page: 1, pageSize: 200 },
     });
     const headers = [
-      'Data',
-      'Pedido',
-      'Cliente',
-      'Tipo',
-      'Campanha',
-      'UTM source',
-      'UTM medium',
-      'UTM campaign',
-      'UTM content',
-      'UTM term',
-      'Origin context',
-      'Receita',
-      'Desconto',
-      'Taxa Mercado Pago',
-      'Lucro estimado',
-      'Margem %',
-      'Status do cálculo',
+      "Data",
+      "Pedido",
+      "Cliente",
+      "Tipo",
+      "Campanha",
+      "UTM source",
+      "UTM medium",
+      "UTM campaign",
+      "UTM content",
+      "UTM term",
+      "Origin context",
+      "Receita",
+      "Desconto",
+      "Taxa Mercado Pago",
+      "Lucro estimado",
+      "Margem %",
+      "Status do cálculo",
     ];
     const body = res.rows.map((r) => [
       r.created_at,
@@ -983,35 +990,35 @@ export const exportAttributedOrdersCsv = createServerFn({ method: 'POST' })
       r.customer,
       r.order_type,
       r.campaignLabel,
-      r.utm_source ?? '',
-      r.utm_medium ?? '',
-      r.utm_campaign ?? '',
-      r.utm_content ?? '',
-      r.utm_term ?? '',
-      r.origin_context ?? '',
+      r.utm_source ?? "",
+      r.utm_medium ?? "",
+      r.utm_campaign ?? "",
+      r.utm_content ?? "",
+      r.utm_term ?? "",
+      r.origin_context ?? "",
       brl(r.revenue),
       brl(r.discount),
       brl(r.mpFee),
       brl(r.estimatedProfit),
-      r.marginPercent == null ? '' : r.marginPercent.toFixed(2).replace('.', ','),
+      r.marginPercent == null ? "" : r.marginPercent.toFixed(2).replace(".", ","),
       r.calcStatus,
     ]);
     return { content: toCsv(headers, body), filename: `pedidos_atribuidos_${Date.now()}.csv` };
   });
 
-export const exportAttributionQualityCsv = createServerFn({ method: 'POST' })
+export const exportAttributionQualityCsv = createServerFn({ method: "POST" })
   .middleware([requireAdmin])
   .inputValidator((input) => FiltersSchema.parse(input))
   .handler(async ({ data }) => {
     const q = await getAttributionQuality({ data });
-    const headers = ['Indicador', 'Valor'];
+    const headers = ["Indicador", "Valor"];
     const body: Array<[string, string | number]> = [
-      ['Total de pedidos', q.totalOrders],
-      ['Pedidos com UTM', q.withUtm],
-      ['Pedidos com campanha (UTM)', q.withCampaign],
-      ['Pedidos atribuídos por cupom', q.withCouponCampaign],
-      ['Pedidos sem atribuição', q.unattributed],
-      ['Taxa de atribuição (%)', q.attributionRate.toFixed(2).replace('.', ',')],
+      ["Total de pedidos", q.totalOrders],
+      ["Pedidos com UTM", q.withUtm],
+      ["Pedidos com campanha (UTM)", q.withCampaign],
+      ["Pedidos atribuídos por cupom", q.withCouponCampaign],
+      ["Pedidos sem atribuição", q.unattributed],
+      ["Taxa de atribuição (%)", q.attributionRate.toFixed(2).replace(".", ",")],
     ];
     return {
       content: toCsv(headers, body),

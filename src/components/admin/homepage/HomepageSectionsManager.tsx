@@ -1,11 +1,11 @@
-import { useMemo, useState } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { ArrowDown, ArrowUp, Loader2, RotateCcw, AlertTriangle } from 'lucide-react';
-import { toast } from 'sonner';
+import { useMemo, useState } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { ArrowDown, ArrowUp, Loader2, RotateCcw, AlertTriangle } from "lucide-react";
+import { toast } from "sonner";
 
-import { Button } from '@/components/ui/button';
-import { Switch } from '@/components/ui/switch';
-import { Badge } from '@/components/ui/badge';
+import { Button } from "@/components/ui/button";
+import { Switch } from "@/components/ui/switch";
+import { Badge } from "@/components/ui/badge";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -16,7 +16,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
   AlertDialogTrigger,
-} from '@/components/ui/alert-dialog';
+} from "@/components/ui/alert-dialog";
 import {
   adminListHomepageSections,
   adminResetHomepageSections,
@@ -25,55 +25,79 @@ import {
   fetchHomepageFeaturedCategories,
   fetchHomepageShowcasesPublic,
   type HomepageSection,
-} from '@/lib/homepageBlocks';
-import { fetchHomepageSettings } from '@/lib/homepageContent';
+} from "@/lib/homepageBlocks";
+import { fetchHomepageSettings } from "@/lib/homepageContent";
 
 /**
  * Indica para cada section_key se há conteúdo válido para exibir na home pública.
  * Usado apenas para exibir um aviso visual no admin — não bloqueia toggles.
  */
 function useSectionContentSignals() {
-  const benefitCards = useQuery({ queryKey: ['homepage_cards', 'benefit'], queryFn: () => fetchHomepageCards('benefit') });
-  const promoCards = useQuery({ queryKey: ['homepage_cards', 'promo'], queryFn: () => fetchHomepageCards('promo') });
-  const featuredCategories = useQuery({ queryKey: ['homepage_featured_categories'], queryFn: fetchHomepageFeaturedCategories });
-  const showcases = useQuery({ queryKey: ['homepage-showcases'], queryFn: fetchHomepageShowcasesPublic });
-  const settings = useQuery({ queryKey: ['homepage_settings'], queryFn: fetchHomepageSettings });
+  const benefitCards = useQuery({
+    queryKey: ["homepage_cards", "benefit"],
+    queryFn: () => fetchHomepageCards("benefit"),
+  });
+  const promoCards = useQuery({
+    queryKey: ["homepage_cards", "promo"],
+    queryFn: () => fetchHomepageCards("promo"),
+  });
+  const featuredCategories = useQuery({
+    queryKey: ["homepage_featured_categories"],
+    queryFn: fetchHomepageFeaturedCategories,
+  });
+  const showcases = useQuery({
+    queryKey: ["homepage-showcases"],
+    queryFn: fetchHomepageShowcasesPublic,
+  });
+  const settings = useQuery({ queryKey: ["homepage_settings"], queryFn: fetchHomepageSettings });
 
   return useMemo(() => {
     const validShowcases = (showcases.data ?? []).filter((s) => (s.items?.length ?? 0) > 0);
-    const offers = validShowcases.find((s) => s.showcase_type === 'offers');
-    const featured = validShowcases.find((s) => s.showcase_type === 'featured');
-    const others = validShowcases.filter((s) => s.showcase_type !== 'offers' && s.showcase_type !== 'featured');
+    const offers = validShowcases.find((s) => s.showcase_type === "offers");
+    const featured = validShowcases.find((s) => s.showcase_type === "featured");
+    const others = validShowcases.filter(
+      (s) => s.showcase_type !== "offers" && s.showcase_type !== "featured",
+    );
 
     const map: Record<string, { hasContent: boolean; note?: string }> = {
-      promo_bar: { hasContent: !!settings.data?.promo_bar_text, note: 'Cadastre o texto na aba “Barra promocional”.' },
+      promo_bar: {
+        hasContent: !!settings.data?.promo_bar_text,
+        note: "Cadastre o texto na aba “Barra promocional”.",
+      },
       hero: { hasContent: true }, // hero tem fallback hardcoded, sempre seguro
       benefits_cards: {
         hasContent: (benefitCards.data?.length ?? 0) > 0,
-        note: 'Sem cards de benefícios ativos — o bloco usa um fallback padrão.',
+        note: "Sem cards de benefícios ativos — o bloco usa um fallback padrão.",
       },
       promo_cards: {
         hasContent: (promoCards.data?.length ?? 0) > 0,
-        note: 'Sem cards promocionais ativos — o bloco usa um fallback padrão.',
+        note: "Sem cards promocionais ativos — o bloco usa um fallback padrão.",
       },
       featured_categories: {
         hasContent: (featuredCategories.data?.length ?? 0) > 0,
-        note: 'Sem categorias destacadas — o bloco usa as categorias do catálogo como fallback.',
+        note: "Sem categorias destacadas — o bloco usa as categorias do catálogo como fallback.",
       },
       offers_showcase: {
         hasContent: !!offers || true, // tem fallback (deals)
-        note: !offers ? 'Sem vitrine “offers” — o bloco usa as ofertas automáticas como fallback.' : undefined,
+        note: !offers
+          ? "Sem vitrine “offers” — o bloco usa as ofertas automáticas como fallback."
+          : undefined,
       },
       featured_showcase: {
         hasContent: !!featured || true, // tem fallback (featured)
-        note: !featured ? 'Sem vitrine “featured” — o bloco usa os destaques automáticos como fallback.' : undefined,
+        note: !featured
+          ? "Sem vitrine “featured” — o bloco usa os destaques automáticos como fallback."
+          : undefined,
       },
       dynamic_showcases: {
         hasContent: others.length > 0,
-        note: others.length === 0 ? 'Nenhuma vitrine configurável adicional ativa no momento.' : undefined,
+        note:
+          others.length === 0
+            ? "Nenhuma vitrine configurável adicional ativa no momento."
+            : undefined,
       },
-      combos_showcase: { hasContent: false, note: 'Em breve.' },
-      institutional_block: { hasContent: false, note: 'Em breve.' },
+      combos_showcase: { hasContent: false, note: "Em breve." },
+      institutional_block: { hasContent: false, note: "Em breve." },
       main_cta: { hasContent: true },
     };
     return map;
@@ -83,7 +107,7 @@ function useSectionContentSignals() {
 export function HomepageSectionsManager() {
   const qc = useQueryClient();
   const { data: sections, isLoading } = useQuery({
-    queryKey: ['homepage_sections', 'admin'],
+    queryKey: ["homepage_sections", "admin"],
     queryFn: adminListHomepageSections,
   });
   const signals = useSectionContentSignals();
@@ -94,7 +118,7 @@ export function HomepageSectionsManager() {
     [sections],
   );
 
-  const invalidate = () => qc.invalidateQueries({ queryKey: ['homepage_sections'] });
+  const invalidate = () => qc.invalidateQueries({ queryKey: ["homepage_sections"] });
 
   const toggleMutation = useMutation({
     mutationFn: async ({ id, is_active }: { id: string; is_active: boolean }) => {
@@ -102,10 +126,10 @@ export function HomepageSectionsManager() {
     },
     onMutate: ({ id }) => setBusyId(id),
     onSuccess: () => {
-      toast.success('Visibilidade atualizada');
+      toast.success("Visibilidade atualizada");
       invalidate();
     },
-    onError: (e: any) => toast.error(e?.message ?? 'Erro ao atualizar'),
+    onError: (e: any) => toast.error(e?.message ?? "Erro ao atualizar"),
     onSettled: () => setBusyId(null),
   });
 
@@ -116,19 +140,19 @@ export function HomepageSectionsManager() {
       }
     },
     onSuccess: () => {
-      toast.success('Ordem atualizada');
+      toast.success("Ordem atualizada");
       invalidate();
     },
-    onError: (e: any) => toast.error(e?.message ?? 'Erro ao reordenar'),
+    onError: (e: any) => toast.error(e?.message ?? "Erro ao reordenar"),
   });
 
   const resetMutation = useMutation({
     mutationFn: adminResetHomepageSections,
     onSuccess: () => {
-      toast.success('Ordem padrão restaurada');
+      toast.success("Ordem padrão restaurada");
       invalidate();
     },
-    onError: (e: any) => toast.error(e?.message ?? 'Erro ao restaurar'),
+    onError: (e: any) => toast.error(e?.message ?? "Erro ao restaurar"),
   });
 
   function move(section: HomepageSection, dir: -1 | 1) {
@@ -163,7 +187,8 @@ export function HomepageSectionsManager() {
           <h2 className="font-semibold">Ordem das seções</h2>
           <p className="text-xs text-muted-foreground max-w-xl">
             Controle quais seções aparecem na homepage e em que ordem. As seções inativas
-            simplesmente não são renderizadas. Caso a configuração falhe, a home volta à ordem padrão.
+            simplesmente não são renderizadas. Caso a configuração falhe, a home volta à ordem
+            padrão.
           </p>
         </div>
         <AlertDialog>
@@ -177,13 +202,15 @@ export function HomepageSectionsManager() {
             <AlertDialogHeader>
               <AlertDialogTitle>Restaurar ordem padrão?</AlertDialogTitle>
               <AlertDialogDescription>
-                Isso volta todas as seções para a ordem e visibilidade originais.
-                Suas vitrines, cards e categorias não são afetados.
+                Isso volta todas as seções para a ordem e visibilidade originais. Suas vitrines,
+                cards e categorias não são afetados.
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
               <AlertDialogCancel>Cancelar</AlertDialogCancel>
-              <AlertDialogAction onClick={() => resetMutation.mutate()}>Restaurar</AlertDialogAction>
+              <AlertDialogAction onClick={() => resetMutation.mutate()}>
+                Restaurar
+              </AlertDialogAction>
             </AlertDialogFooter>
           </AlertDialogContent>
         </AlertDialog>
@@ -193,8 +220,9 @@ export function HomepageSectionsManager() {
         <div className="rounded-lg border border-amber-300 bg-amber-50 p-3 text-amber-900 text-xs flex items-start gap-2">
           <AlertTriangle className="w-4 h-4 mt-0.5 shrink-0" />
           <span>
-            Atenção: você tem apenas {activeCount} {activeCount === 1 ? 'seção ativa' : 'seções ativas'}.
-            Desativar muitas seções pode deixar a homepage vazia.
+            Atenção: você tem apenas {activeCount}{" "}
+            {activeCount === 1 ? "seção ativa" : "seções ativas"}. Desativar muitas seções pode
+            deixar a homepage vazia.
           </span>
         </div>
       )}
@@ -230,22 +258,31 @@ export function HomepageSectionsManager() {
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 flex-wrap">
                   <span className="font-medium text-sm truncate">{s.title}</span>
-                  <Badge variant="outline" className="text-[10px] uppercase">{s.section_key}</Badge>
+                  <Badge variant="outline" className="text-[10px] uppercase">
+                    {s.section_key}
+                  </Badge>
                   {showEmptyWarning && (
-                    <Badge variant="outline" className="text-[10px] border-amber-400 text-amber-700 gap-1">
+                    <Badge
+                      variant="outline"
+                      className="text-[10px] border-amber-400 text-amber-700 gap-1"
+                    >
                       <AlertTriangle className="w-3 h-3" /> Sem conteúdo
                     </Badge>
                   )}
                 </div>
                 {s.description && (
-                  <p className="text-[11px] text-muted-foreground mt-0.5 line-clamp-2">{s.description}</p>
+                  <p className="text-[11px] text-muted-foreground mt-0.5 line-clamp-2">
+                    {s.description}
+                  </p>
                 )}
                 {showEmptyWarning && sig.note && (
                   <p className="text-[11px] text-amber-700 mt-1">{sig.note}</p>
                 )}
               </div>
               <div className="flex items-center gap-2 shrink-0">
-                <span className="text-[11px] text-muted-foreground">{s.is_active ? 'Visível' : 'Oculta'}</span>
+                <span className="text-[11px] text-muted-foreground">
+                  {s.is_active ? "Visível" : "Oculta"}
+                </span>
                 <Switch
                   checked={s.is_active}
                   disabled={busyId === s.id}

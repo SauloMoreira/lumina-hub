@@ -1,9 +1,7 @@
-import { lazy, Suspense, useEffect, useState } from 'react';
-import { MessageCircle } from 'lucide-react';
+import { lazy, Suspense, useEffect, useState } from "react";
+import { MessageCircle } from "lucide-react";
 
-const ChatWidget = lazy(() =>
-  import('./ChatWidget').then((m) => ({ default: m.ChatWidget })),
-);
+const ChatWidget = lazy(() => import("./ChatWidget").then((m) => ({ default: m.ChatWidget })));
 
 /**
  * Defer mounting ChatWidget until after first paint + idle so it doesn't
@@ -13,12 +11,12 @@ export function ChatWidgetLazy() {
   const [ready, setReady] = useState(false);
 
   useEffect(() => {
-    const hasRic = typeof window.requestIdleCallback === 'function';
+    const hasRic = typeof window.requestIdleCallback === "function";
     const handle: number = hasRic
       ? window.requestIdleCallback(() => setReady(true), { timeout: 2000 })
       : (window.setTimeout(() => setReady(true), 1500) as unknown as number);
     return () => {
-      if (hasRic && typeof window.cancelIdleCallback === 'function') {
+      if (hasRic && typeof window.cancelIdleCallback === "function") {
         window.cancelIdleCallback(handle);
       } else {
         clearTimeout(handle);

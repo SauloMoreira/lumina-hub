@@ -1,4 +1,4 @@
-import { Lightbulb } from 'lucide-react';
+import { Lightbulb } from "lucide-react";
 
 interface Props {
   /** Mostra a frase "Imagem em breve" abaixo da marca. Default true. */
@@ -17,7 +17,7 @@ interface Props {
 export function ProductImagePlaceholder({
   showCaption = true,
   iconSize = 56,
-  className = '',
+  className = "",
 }: Props) {
   return (
     <div
@@ -31,7 +31,7 @@ export function ProductImagePlaceholder({
         className="absolute inset-0 opacity-60"
         style={{
           background:
-            'radial-gradient(circle at 50% 35%, color-mix(in oklab, var(--primary) 12%, transparent), transparent 60%)',
+            "radial-gradient(circle at 50% 35%, color-mix(in oklab, var(--primary) 12%, transparent), transparent 60%)",
         }}
       />
       {/* Linha decorativa diagonal bem discreta */}
@@ -40,7 +40,7 @@ export function ProductImagePlaceholder({
         className="absolute inset-0 opacity-[0.04]"
         style={{
           backgroundImage:
-            'repeating-linear-gradient(135deg, var(--foreground) 0 1px, transparent 1px 14px)',
+            "repeating-linear-gradient(135deg, var(--foreground) 0 1px, transparent 1px 14px)",
         }}
       />
 

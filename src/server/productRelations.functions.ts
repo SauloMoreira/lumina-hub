@@ -1,25 +1,25 @@
-import { createServerFn } from '@tanstack/react-start';
-import { z } from 'zod';
+import { createServerFn } from "@tanstack/react-start";
+import { z } from "zod";
 
 export const RELATION_TYPES = [
-  'related',
-  'frequently_bought_together',
-  'accessory',
-  'replacement',
-  'upsell',
-  'cross_sell',
-  'b2b_recommendation',
+  "related",
+  "frequently_bought_together",
+  "accessory",
+  "replacement",
+  "upsell",
+  "cross_sell",
+  "b2b_recommendation",
 ] as const;
 export type RelationType = (typeof RELATION_TYPES)[number];
 
 export const RELATION_TYPE_LABEL: Record<RelationType, string> = {
-  related: 'Produto relacionado',
-  frequently_bought_together: 'Compre junto',
-  accessory: 'Acessório',
-  replacement: 'Produto substituto',
-  upsell: 'Venda adicional',
-  cross_sell: 'Venda complementar',
-  b2b_recommendation: 'Recomendação para empresas',
+  related: "Produto relacionado",
+  frequently_bought_together: "Compre junto",
+  accessory: "Acessório",
+  replacement: "Produto substituto",
+  upsell: "Venda adicional",
+  cross_sell: "Venda complementar",
+  b2b_recommendation: "Recomendação para empresas",
 };
 
 export type RelatedProduct = {
@@ -34,7 +34,7 @@ export type RelatedProduct = {
   retail_price: number;
   sale_price: number | null;
   applied_price: number;
-  pricing_source: 'b2b' | 'retail';
+  pricing_source: "b2b" | "retail";
   b2b_min_quantity: number | null;
   stock_qty: number;
   free_shipping_eligible: boolean;
@@ -49,7 +49,7 @@ export type ComplementaryProduct = {
   retail_price: number;
   sale_price: number | null;
   applied_price: number;
-  pricing_source: 'b2b' | 'retail';
+  pricing_source: "b2b" | "retail";
   stock_qty: number;
   free_shipping_eligible: boolean;
   match_count: number;
@@ -59,11 +59,11 @@ export type ComplementaryProduct = {
 // Helpers internos
 // ----------------------------------------------------------------------------
 async function getOptionalUserId(): Promise<string | null> {
-  const { supabaseAdmin } = await import('@/integrations/supabase/client.server');
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   try {
-    const { getRequestHeader } = await import('@tanstack/react-start/server');
-    const auth = getRequestHeader('Authorization') || getRequestHeader('authorization');
-    if (auth && auth.toLowerCase().startsWith('bearer ')) {
+    const { getRequestHeader } = await import("@tanstack/react-start/server");
+    const auth = getRequestHeader("Authorization") || getRequestHeader("authorization");
+    if (auth && auth.toLowerCase().startsWith("bearer ")) {
       const token = auth.slice(7).trim();
       const { data: userRes } = await supabaseAdmin.auth.getUser(token);
       return userRes.user?.id ?? null;
@@ -76,15 +76,15 @@ async function getOptionalUserId(): Promise<string | null> {
 
 async function requireAdmin(): Promise<string> {
   const userId = await getOptionalUserId();
-  if (!userId) throw new Error('not_authenticated');
-  const { supabaseAdmin } = await import('@/integrations/supabase/client.server');
+  if (!userId) throw new Error("not_authenticated");
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   const { data, error } = await supabaseAdmin
-    .from('profiles')
-    .select('role')
-    .eq('id', userId)
+    .from("profiles")
+    .select("role")
+    .eq("id", userId)
     .maybeSingle();
   if (error) throw error;
-  if (!data || data.role !== 'admin') throw new Error('not_authorized');
+  if (!data || data.role !== "admin") throw new Error("not_authorized");
   return userId;
 }
 
@@ -96,12 +96,12 @@ const GetForProductInput = z.object({
   limit: z.number().int().min(1).max(24).optional(),
 });
 
-export const getRelationsForProduct = createServerFn({ method: 'POST' })
+export const getRelationsForProduct = createServerFn({ method: "POST" })
   .inputValidator((i: unknown) => GetForProductInput.parse(i))
   .handler(async ({ data }) => {
     const userId = await getOptionalUserId();
-    const { supabaseAdmin } = await import('@/integrations/supabase/client.server');
-    const { data: rows, error } = await supabaseAdmin.rpc('get_product_relations_public', {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: rows, error } = await supabaseAdmin.rpc("get_product_relations_public", {
       _product_id: data.productId,
       _user_id: userId ?? undefined,
       _limit: data.limit ?? 12,
@@ -118,12 +118,12 @@ const GetForCartInput = z.object({
   limit: z.number().int().min(1).max(12).optional(),
 });
 
-export const getCartComplementary = createServerFn({ method: 'POST' })
+export const getCartComplementary = createServerFn({ method: "POST" })
   .inputValidator((i: unknown) => GetForCartInput.parse(i))
   .handler(async ({ data }) => {
     const userId = await getOptionalUserId();
-    const { supabaseAdmin } = await import('@/integrations/supabase/client.server');
-    const { data: rows, error } = await supabaseAdmin.rpc('get_cart_complementary_products', {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: rows, error } = await supabaseAdmin.rpc("get_cart_complementary_products", {
       _product_ids: data.productIds,
       _user_id: userId ?? undefined,
       _limit: data.limit ?? 6,
@@ -156,20 +156,20 @@ export type AdminRelationRow = {
 
 const AdminListInput = z.object({ productId: z.string().uuid() });
 
-export const adminListRelations = createServerFn({ method: 'POST' })
+export const adminListRelations = createServerFn({ method: "POST" })
   .inputValidator((i: unknown) => AdminListInput.parse(i))
   .handler(async ({ data }) => {
     await requireAdmin();
-    const { supabaseAdmin } = await import('@/integrations/supabase/client.server');
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data: rows, error } = await supabaseAdmin
-      .from('product_relations')
+      .from("product_relations")
       .select(
         `id, product_id, related_product_id, relation_type, sort_order, is_active, created_at,
          related:products!product_relations_related_product_id_fkey (id, name, slug, sku, brand, active, images)`,
       )
-      .eq('product_id', data.productId)
-      .order('sort_order', { ascending: true })
-      .order('created_at', { ascending: false });
+      .eq("product_id", data.productId)
+      .order("sort_order", { ascending: true })
+      .order("created_at", { ascending: false });
     if (error) throw error;
     return ((rows ?? []) as Array<Record<string, any>>).map((r) => ({
       id: r.id,
@@ -187,7 +187,10 @@ export const adminListRelations = createServerFn({ method: 'POST' })
             sku: r.related.sku,
             brand: r.related.brand,
             active: r.related.active,
-            image: Array.isArray(r.related.images) && r.related.images.length > 0 ? r.related.images[0] : null,
+            image:
+              Array.isArray(r.related.images) && r.related.images.length > 0
+                ? r.related.images[0]
+                : null,
           }
         : null,
     })) as AdminRelationRow[];
@@ -203,15 +206,15 @@ const AdminCreateInput = z.object({
   sortOrder: z.number().int().min(0).max(9999).optional(),
 });
 
-export const adminCreateRelation = createServerFn({ method: 'POST' })
+export const adminCreateRelation = createServerFn({ method: "POST" })
   .inputValidator((i: unknown) => AdminCreateInput.parse(i))
   .handler(async ({ data }) => {
     await requireAdmin();
     if (data.productId === data.relatedProductId) {
-      throw new Error('cannot_relate_to_self');
+      throw new Error("cannot_relate_to_self");
     }
-    const { supabaseAdmin } = await import('@/integrations/supabase/client.server');
-    const { error } = await supabaseAdmin.from('product_relations').insert({
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { error } = await supabaseAdmin.from("product_relations").insert({
       product_id: data.productId,
       related_product_id: data.relatedProductId,
       relation_type: data.relationType,
@@ -219,7 +222,7 @@ export const adminCreateRelation = createServerFn({ method: 'POST' })
       is_active: true,
     });
     if (error) {
-      if ((error as any).code === '23505') throw new Error('relation_already_exists');
+      if ((error as any).code === "23505") throw new Error("relation_already_exists");
       throw error;
     }
     return { ok: true };
@@ -232,7 +235,7 @@ const AdminUpdateInput = z.object({
   relationType: z.enum(RELATION_TYPES).optional(),
 });
 
-export const adminUpdateRelation = createServerFn({ method: 'POST' })
+export const adminUpdateRelation = createServerFn({ method: "POST" })
   .inputValidator((i: unknown) => AdminUpdateInput.parse(i))
   .handler(async ({ data }) => {
     await requireAdmin();
@@ -245,20 +248,20 @@ export const adminUpdateRelation = createServerFn({ method: 'POST' })
     if (data.isActive !== undefined) patch.is_active = data.isActive;
     if (data.relationType !== undefined) patch.relation_type = data.relationType;
     if (Object.keys(patch).length === 0) return { ok: true };
-    const { supabaseAdmin } = await import('@/integrations/supabase/client.server');
-    const { error } = await supabaseAdmin.from('product_relations').update(patch).eq('id', data.id);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { error } = await supabaseAdmin.from("product_relations").update(patch).eq("id", data.id);
     if (error) throw error;
     return { ok: true };
   });
 
 const AdminDeleteInput = z.object({ id: z.string().uuid() });
 
-export const adminDeleteRelation = createServerFn({ method: 'POST' })
+export const adminDeleteRelation = createServerFn({ method: "POST" })
   .inputValidator((i: unknown) => AdminDeleteInput.parse(i))
   .handler(async ({ data }) => {
     await requireAdmin();
-    const { supabaseAdmin } = await import('@/integrations/supabase/client.server');
-    const { error } = await supabaseAdmin.from('product_relations').delete().eq('id', data.id);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { error } = await supabaseAdmin.from("product_relations").delete().eq("id", data.id);
     if (error) throw error;
     return { ok: true };
   });
@@ -272,20 +275,20 @@ const AdminSearchInput = z.object({
   limit: z.number().int().min(1).max(20).optional(),
 });
 
-export const adminSearchProductsForRelation = createServerFn({ method: 'POST' })
+export const adminSearchProductsForRelation = createServerFn({ method: "POST" })
   .inputValidator((i: unknown) => AdminSearchInput.parse(i))
   .handler(async ({ data }) => {
     await requireAdmin();
-    const { supabaseAdmin } = await import('@/integrations/supabase/client.server');
-    const term = `%${data.query.replace(/[%_]/g, '\\$&')}%`;
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const term = `%${data.query.replace(/[%_]/g, "\\$&")}%`;
     let q = supabaseAdmin
-      .from('products')
-      .select('id, name, slug, sku, brand, active, images, price, sale_price')
+      .from("products")
+      .select("id, name, slug, sku, brand, active, images, price, sale_price")
       .or(`name.ilike.${term},sku.ilike.${term},gtin_ean.ilike.${term}`)
-      .order('active', { ascending: false })
-      .order('name', { ascending: true })
+      .order("active", { ascending: false })
+      .order("name", { ascending: true })
       .limit(data.limit ?? 10);
-    if (data.excludeProductId) q = q.neq('id', data.excludeProductId);
+    if (data.excludeProductId) q = q.neq("id", data.excludeProductId);
     const { data: rows, error } = await q;
     if (error) throw error;
     return ((rows ?? []) as Array<Record<string, any>>).map((r) => ({

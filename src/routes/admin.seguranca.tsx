@@ -1,32 +1,46 @@
-import { createFileRoute } from '@tanstack/react-router';
-import { useQuery } from '@tanstack/react-query';
-import { useState } from 'react';
-import { toast } from 'sonner';
+import { createFileRoute } from "@tanstack/react-router";
+import { useQuery } from "@tanstack/react-query";
+import { useState } from "react";
+import { toast } from "sonner";
 import {
-  Shield, ShieldAlert, ShieldCheck, AlertTriangle, Activity,
-  Webhook, KeyRound, Users, RefreshCw, ScrollText, Download, Ban,
-} from 'lucide-react';
+  Shield,
+  ShieldAlert,
+  ShieldCheck,
+  AlertTriangle,
+  Activity,
+  Webhook,
+  KeyRound,
+  Users,
+  RefreshCw,
+  ScrollText,
+  Download,
+  Ban,
+} from "lucide-react";
 
-import { AdminLayout } from '@/components/admin/AdminLayout';
-import { Card, CardContent } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { getSecurityOverview, listAdminAuditLog, exportAdminAuditCsv } from '@/server/security.functions';
+import { AdminLayout } from "@/components/admin/AdminLayout";
+import { Card, CardContent } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import {
+  getSecurityOverview,
+  listAdminAuditLog,
+  exportAdminAuditCsv,
+} from "@/server/security.functions";
 
-export const Route = createFileRoute('/admin/seguranca')({
+export const Route = createFileRoute("/admin/seguranca")({
   component: AdminSecurityPage,
 });
 
 function AdminSecurityPage() {
   const [exporting, setExporting] = useState(false);
   const { data, isLoading, refetch, isFetching } = useQuery({
-    queryKey: ['security-overview'],
+    queryKey: ["security-overview"],
     queryFn: () => getSecurityOverview({ data: undefined as never }),
     refetchInterval: 60_000,
   });
 
   const { data: audit } = useQuery({
-    queryKey: ['admin-audit-log'],
+    queryKey: ["admin-audit-log"],
     queryFn: () => listAdminAuditLog({ data: { limit: 50 } }),
     refetchInterval: 60_000,
   });
@@ -35,16 +49,16 @@ function AdminSecurityPage() {
     setExporting(true);
     try {
       const res = await exportAdminAuditCsv({ data: { days: 90 } });
-      const blob = new Blob([res.csv], { type: 'text/csv;charset=utf-8' });
+      const blob = new Blob([res.csv], { type: "text/csv;charset=utf-8" });
       const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
+      const a = document.createElement("a");
       a.href = url;
       a.download = `auditoria-admin-${new Date().toISOString().slice(0, 10)}.csv`;
       a.click();
       URL.revokeObjectURL(url);
       toast.success(`${res.count} registros exportados`);
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Falha ao exportar');
+      toast.error(err instanceof Error ? err.message : "Falha ao exportar");
     } finally {
       setExporting(false);
     }
@@ -55,7 +69,7 @@ function AdminSecurityPage() {
       title="Central de Segurança"
       action={
         <Button variant="outline" size="sm" onClick={() => refetch()} disabled={isFetching}>
-          <RefreshCw className={`w-4 h-4 ${isFetching ? 'animate-spin' : ''}`} />
+          <RefreshCw className={`w-4 h-4 ${isFetching ? "animate-spin" : ""}`} />
           Atualizar
         </Button>
       }
@@ -78,14 +92,14 @@ function AdminSecurityPage() {
               label="Assinaturas inválidas"
               value={data.webhookStats.invalidSignature}
               hint="MP webhook"
-              tone={data.webhookStats.invalidSignature > 0 ? 'warn' : 'good'}
+              tone={data.webhookStats.invalidSignature > 0 ? "warn" : "good"}
             />
             <Kpi
               icon={<Activity className="w-5 h-5" />}
               label="Eventos segurança (7d)"
               value={data.secStats.total}
               hint={`${data.secStats.bySeverity.error ?? 0} críticos`}
-              tone={(data.secStats.bySeverity.error ?? 0) > 0 ? 'warn' : 'default'}
+              tone={(data.secStats.bySeverity.error ?? 0) > 0 ? "warn" : "default"}
             />
             <Kpi
               icon={<AlertTriangle className="w-5 h-5" />}
@@ -99,16 +113,23 @@ function AdminSecurityPage() {
           {/* MFA admins */}
           <Card>
             <CardContent className="p-6">
-              <SectionTitle icon={<KeyRound className="w-4 h-4" />} title="MFA dos administradores" />
+              <SectionTitle
+                icon={<KeyRound className="w-4 h-4" />}
+                title="MFA dos administradores"
+              />
               <p className="text-sm text-muted-foreground mb-4">
-                Recomendado: todos os admins com MFA (TOTP) ativado. Ative em <code>/conta</code> &rsaquo; Segurança.
+                Recomendado: todos os admins com MFA (TOTP) ativado. Ative em <code>/conta</code>{" "}
+                &rsaquo; Segurança.
               </p>
               <div className="space-y-2">
                 {data.adminMfa.length === 0 && (
                   <div className="text-sm text-muted-foreground">Nenhum admin encontrado.</div>
                 )}
                 {data.adminMfa.map((a) => (
-                  <div key={a.id} className="flex items-center justify-between py-2 border-b last:border-0">
+                  <div
+                    key={a.id}
+                    className="flex items-center justify-between py-2 border-b last:border-0"
+                  >
                     <div>
                       <div className="font-medium text-sm">{a.name ?? a.email}</div>
                       <div className="text-xs text-muted-foreground">{a.email}</div>
@@ -133,7 +154,10 @@ function AdminSecurityPage() {
           {/* Eventos de segurança */}
           <Card>
             <CardContent className="p-6">
-              <SectionTitle icon={<Shield className="w-4 h-4" />} title="Eventos de segurança recentes" />
+              <SectionTitle
+                icon={<Shield className="w-4 h-4" />}
+                title="Eventos de segurança recentes"
+              />
               {data.secRecent.length === 0 ? (
                 <div className="text-sm text-muted-foreground py-6 text-center">
                   Nenhum evento de segurança nos últimos 7 dias 🎉
@@ -157,9 +181,13 @@ function AdminSecurityPage() {
                             {fmt(e.created_at)}
                           </td>
                           <td className="py-2 pr-3 font-mono text-xs">{e.type}</td>
-                          <td className="py-2 pr-3"><SeverityPill s={e.severity} /></td>
-                          <td className="py-2 pr-3 text-xs truncate max-w-[200px]">{e.identifier ?? '—'}</td>
-                          <td className="py-2 text-xs">{e.message ?? '—'}</td>
+                          <td className="py-2 pr-3">
+                            <SeverityPill s={e.severity} />
+                          </td>
+                          <td className="py-2 pr-3 text-xs truncate max-w-[200px]">
+                            {e.identifier ?? "—"}
+                          </td>
+                          <td className="py-2 text-xs">{e.message ?? "—"}</td>
                         </tr>
                       ))}
                     </tbody>
@@ -195,18 +223,26 @@ function AdminSecurityPage() {
                           <td className="py-2 pr-3 whitespace-nowrap text-xs text-muted-foreground">
                             {fmt(w.created_at)}
                           </td>
-                          <td className="py-2 pr-3 font-mono text-xs">{w.type ?? '—'}</td>
-                          <td className="py-2 pr-3 text-xs">{w.live_mode ? 'sim' : 'não'}</td>
+                          <td className="py-2 pr-3 font-mono text-xs">{w.type ?? "—"}</td>
+                          <td className="py-2 pr-3 text-xs">{w.live_mode ? "sim" : "não"}</td>
                           <td className="py-2 pr-3">
                             {w.processed ? (
-                              <Badge variant="secondary" className="text-xs">processado</Badge>
+                              <Badge variant="secondary" className="text-xs">
+                                processado
+                              </Badge>
                             ) : w.processing_error ? (
-                              <Badge variant="destructive" className="text-xs">falha</Badge>
+                              <Badge variant="destructive" className="text-xs">
+                                falha
+                              </Badge>
                             ) : (
-                              <Badge variant="outline" className="text-xs">pendente</Badge>
+                              <Badge variant="outline" className="text-xs">
+                                pendente
+                              </Badge>
                             )}
                           </td>
-                          <td className="py-2 text-xs text-destructive">{w.processing_error ?? '—'}</td>
+                          <td className="py-2 text-xs text-destructive">
+                            {w.processing_error ?? "—"}
+                          </td>
                         </tr>
                       ))}
                     </tbody>
@@ -227,7 +263,10 @@ function AdminSecurityPage() {
               ) : (
                 <div className="grid sm:grid-cols-2 md:grid-cols-3 gap-3">
                   {Object.entries(data.rlStats.byAction).map(([action, count]) => (
-                    <div key={action} className="flex items-center justify-between p-3 border rounded-lg">
+                    <div
+                      key={action}
+                      className="flex items-center justify-between p-3 border rounded-lg"
+                    >
                       <span className="text-sm font-medium">{action}</span>
                       <Badge variant="secondary">{count}</Badge>
                     </div>
@@ -240,7 +279,10 @@ function AdminSecurityPage() {
           {/* Top identificadores bloqueados */}
           <Card>
             <CardContent className="p-6">
-              <SectionTitle icon={<Ban className="w-4 h-4" />} title="Top identificadores bloqueados (24h)" />
+              <SectionTitle
+                icon={<Ban className="w-4 h-4" />}
+                title="Top identificadores bloqueados (24h)"
+              />
               {data.rlStats.topIdentifiers.length === 0 ? (
                 <div className="text-sm text-muted-foreground py-6 text-center">
                   Nenhum bloqueio registrado.
@@ -248,13 +290,19 @@ function AdminSecurityPage() {
               ) : (
                 <div className="space-y-2">
                   {data.rlStats.topIdentifiers.map((t) => (
-                    <div key={t.identifier} className="flex items-center justify-between p-3 border rounded-lg">
+                    <div
+                      key={t.identifier}
+                      className="flex items-center justify-between p-3 border rounded-lg"
+                    >
                       <span className="font-mono text-xs truncate max-w-[70%]">{t.identifier}</span>
-                      <Badge variant={t.count > 10 ? 'destructive' : 'secondary'}>{t.count} hits</Badge>
+                      <Badge variant={t.count > 10 ? "destructive" : "secondary"}>
+                        {t.count} hits
+                      </Badge>
                     </div>
                   ))}
                   <p className="text-xs text-muted-foreground pt-2">
-                    Identificadores com muitos hits podem indicar tentativas de força bruta ou abuso.
+                    Identificadores com muitos hits podem indicar tentativas de força bruta ou
+                    abuso.
                   </p>
                 </div>
               )}
@@ -265,10 +313,13 @@ function AdminSecurityPage() {
           <Card>
             <CardContent className="p-6">
               <div className="flex items-center justify-between mb-3">
-                <SectionTitle icon={<ScrollText className="w-4 h-4" />} title="Auditoria de ações admin" />
+                <SectionTitle
+                  icon={<ScrollText className="w-4 h-4" />}
+                  title="Auditoria de ações admin"
+                />
                 <Button variant="outline" size="sm" onClick={handleExport} disabled={exporting}>
                   <Download className="w-4 h-4" />
-                  {exporting ? 'Exportando...' : 'Exportar CSV (90d)'}
+                  {exporting ? "Exportando..." : "Exportar CSV (90d)"}
                 </Button>
               </div>
               {!audit || audit.events.length === 0 ? (
@@ -291,14 +342,25 @@ function AdminSecurityPage() {
                     <tbody>
                       {audit.events.map((e) => (
                         <tr key={e.id} className="border-b last:border-0">
-                          <td className="py-2 pr-3 whitespace-nowrap text-xs text-muted-foreground">{fmt(e.created_at)}</td>
-                          <td className="py-2 pr-3 text-xs">{e.admin_email ?? (e.admin_id ? e.admin_id.slice(0, 8) : 'sistema')}</td>
-                          <td className="py-2 pr-3"><Badge variant="outline" className="text-[10px] uppercase">{e.action}</Badge></td>
-                          <td className="py-2 pr-3 font-mono text-xs">
-                            {e.resource_type}{e.resource_id ? `:${e.resource_id.slice(0, 8)}` : ''}
+                          <td className="py-2 pr-3 whitespace-nowrap text-xs text-muted-foreground">
+                            {fmt(e.created_at)}
                           </td>
-                          <td className="py-2 pr-3 text-xs max-w-[300px] truncate">{e.description ?? '—'}</td>
-                          <td className="py-2 text-xs text-muted-foreground">{e.ip ?? '—'}</td>
+                          <td className="py-2 pr-3 text-xs">
+                            {e.admin_email ?? (e.admin_id ? e.admin_id.slice(0, 8) : "sistema")}
+                          </td>
+                          <td className="py-2 pr-3">
+                            <Badge variant="outline" className="text-[10px] uppercase">
+                              {e.action}
+                            </Badge>
+                          </td>
+                          <td className="py-2 pr-3 font-mono text-xs">
+                            {e.resource_type}
+                            {e.resource_id ? `:${e.resource_id.slice(0, 8)}` : ""}
+                          </td>
+                          <td className="py-2 pr-3 text-xs max-w-[300px] truncate">
+                            {e.description ?? "—"}
+                          </td>
+                          <td className="py-2 text-xs text-muted-foreground">{e.ip ?? "—"}</td>
                         </tr>
                       ))}
                     </tbody>
@@ -314,15 +376,24 @@ function AdminSecurityPage() {
 }
 
 function Kpi({
-  icon, label, value, hint, tone,
+  icon,
+  label,
+  value,
+  hint,
+  tone,
 }: {
-  icon: React.ReactNode; label: string; value: number; hint?: string;
-  tone?: 'default' | 'good' | 'warn';
+  icon: React.ReactNode;
+  label: string;
+  value: number;
+  hint?: string;
+  tone?: "default" | "good" | "warn";
 }) {
   const toneClass =
-    tone === 'good' ? 'text-emerald-600 bg-emerald-500/10'
-    : tone === 'warn' ? 'text-amber-600 bg-amber-500/10'
-    : 'text-primary bg-primary/10';
+    tone === "good"
+      ? "text-emerald-600 bg-emerald-500/10"
+      : tone === "warn"
+        ? "text-amber-600 bg-amber-500/10"
+        : "text-primary bg-primary/10";
   return (
     <Card>
       <CardContent className="p-4">
@@ -350,12 +421,12 @@ function SectionTitle({ icon, title }: { icon: React.ReactNode; title: string })
 
 function SeverityPill({ s }: { s: string }) {
   const map: Record<string, string> = {
-    error: 'bg-red-500/15 text-red-700 border-red-500/20',
-    warn: 'bg-amber-500/15 text-amber-700 border-amber-500/20',
-    info: 'bg-sky-500/15 text-sky-700 border-sky-500/20',
+    error: "bg-red-500/15 text-red-700 border-red-500/20",
+    warn: "bg-amber-500/15 text-amber-700 border-amber-500/20",
+    info: "bg-sky-500/15 text-sky-700 border-sky-500/20",
   };
   return (
-    <Badge variant="outline" className={`text-[10px] uppercase ${map[s] ?? ''}`}>
+    <Badge variant="outline" className={`text-[10px] uppercase ${map[s] ?? ""}`}>
       {s}
     </Badge>
   );
@@ -363,7 +434,7 @@ function SeverityPill({ s }: { s: string }) {
 
 function fmt(d: string) {
   try {
-    return new Date(d).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' });
+    return new Date(d).toLocaleString("pt-BR", { dateStyle: "short", timeStyle: "short" });
   } catch {
     return d;
   }

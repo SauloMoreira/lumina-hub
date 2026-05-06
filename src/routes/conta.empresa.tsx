@@ -1,17 +1,17 @@
-import { createFileRoute, Link, redirect } from '@tanstack/react-router';
-import { useEffect, useState } from 'react';
-import { Building2, CheckCircle2, Clock, ShieldX, XCircle } from 'lucide-react';
-import { supabase } from '@/integrations/supabase/client';
-import { buildSeo } from '@/lib/seo';
-import { formatCNPJ } from '@/lib/cnpj';
-import { getMyCompany } from '@/server/companies.functions';
+import { createFileRoute, Link, redirect } from "@tanstack/react-router";
+import { useEffect, useState } from "react";
+import { Building2, CheckCircle2, Clock, ShieldX, XCircle } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { buildSeo } from "@/lib/seo";
+import { formatCNPJ } from "@/lib/cnpj";
+import { getMyCompany } from "@/server/companies.functions";
 
 type Company = {
   id: string;
   cnpj: string;
   legal_name: string;
   trade_name: string | null;
-  status: 'pending' | 'approved' | 'blocked' | 'rejected';
+  status: "pending" | "approved" | "blocked" | "rejected";
   contact_name: string;
   contact_email: string;
   contact_phone: string;
@@ -20,15 +20,14 @@ type Company = {
   created_at: string;
 };
 
-export const Route = createFileRoute('/conta/empresa')({
-  head: () =>
-    buildSeo({ title: 'Minha empresa', url: '/conta/empresa', noindex: true }),
+export const Route = createFileRoute("/conta/empresa")({
+  head: () => buildSeo({ title: "Minha empresa", url: "/conta/empresa", noindex: true }),
   beforeLoad: async () => {
     const { data } = await supabase.auth.getSession();
     if (!data.session) {
       throw redirect({
-        to: '/login',
-        search: { redirect: '/conta/empresa' } as never,
+        to: "/login",
+        search: { redirect: "/conta/empresa" } as never,
       });
     }
   },
@@ -51,9 +50,7 @@ function MinhaEmpresaPage() {
   }, []);
 
   if (loading) {
-    return (
-      <div className="max-w-3xl mx-auto px-4 py-16 text-muted-foreground">Carregando...</div>
-    );
+    return <div className="max-w-3xl mx-auto px-4 py-16 text-muted-foreground">Carregando...</div>;
   }
 
   if (!company) {
@@ -65,7 +62,7 @@ function MinhaEmpresaPage() {
           Cadastre seu CNPJ para acessar preços B2B e condições especiais.
         </p>
         <Link
-          to={'/cadastro-empresa' as never}
+          to={"/cadastro-empresa" as never}
           className="inline-flex mt-5 h-11 px-5 rounded-md bg-primary text-primary-foreground font-semibold items-center"
         >
           Cadastrar empresa
@@ -90,7 +87,7 @@ function MinhaEmpresaPage() {
         {company.approved_at && (
           <Row
             label="Aprovada em"
-            value={new Date(company.approved_at).toLocaleDateString('pt-BR')}
+            value={new Date(company.approved_at).toLocaleDateString("pt-BR")}
           />
         )}
       </div>
@@ -103,37 +100,31 @@ function MinhaEmpresaPage() {
   );
 }
 
-function StatusCard({
-  status,
-  reason,
-}: {
-  status: Company['status'];
-  reason: string | null;
-}) {
+function StatusCard({ status, reason }: { status: Company["status"]; reason: string | null }) {
   const map = {
     pending: {
       Icon: Clock,
-      tone: 'bg-warning/10 border-warning/40',
-      title: 'Cadastro em análise',
-      body: 'Assim que aprovado, você terá acesso às condições comerciais B2B.',
+      tone: "bg-warning/10 border-warning/40",
+      title: "Cadastro em análise",
+      body: "Assim que aprovado, você terá acesso às condições comerciais B2B.",
     },
     approved: {
       Icon: CheckCircle2,
-      tone: 'bg-success/10 border-success/40',
-      title: 'Empresa aprovada',
-      body: 'Você já pode comprar com preço empresa nos produtos com condição B2B.',
+      tone: "bg-success/10 border-success/40",
+      title: "Empresa aprovada",
+      body: "Você já pode comprar com preço empresa nos produtos com condição B2B.",
     },
     blocked: {
       Icon: ShieldX,
-      tone: 'bg-destructive/10 border-destructive/40',
-      title: 'Acesso B2B bloqueado',
-      body: 'Seu acesso B2B está temporariamente indisponível. Entre em contato com a loja.',
+      tone: "bg-destructive/10 border-destructive/40",
+      title: "Acesso B2B bloqueado",
+      body: "Seu acesso B2B está temporariamente indisponível. Entre em contato com a loja.",
     },
     rejected: {
       Icon: XCircle,
-      tone: 'bg-destructive/10 border-destructive/40',
-      title: 'Cadastro recusado',
-      body: reason ?? 'Entre em contato com o atendimento para mais informações.',
+      tone: "bg-destructive/10 border-destructive/40",
+      title: "Cadastro recusado",
+      body: reason ?? "Entre em contato com o atendimento para mais informações.",
     },
   } as const;
   const info = map[status];

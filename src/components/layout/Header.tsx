@@ -1,12 +1,12 @@
-import { Link } from '@tanstack/react-router';
-import { ShoppingCart, User as UserIcon, Menu, Sparkles, Shield } from 'lucide-react';
-import { useCart } from '@/stores/cartStore';
-import { useAuth } from '@/hooks/useAuth';
-import { useIsAdmin } from '@/hooks/useIsAdmin';
-import { Button } from '@/components/ui/button';
-import { STORE_NAME } from '@/lib/domain';
-import { SearchAutocomplete } from '@/components/store/SearchAutocomplete';
-import logoNavbar from '@/assets/logo-navbar.png';
+import { Link } from "@tanstack/react-router";
+import { ShoppingCart, User as UserIcon, Menu, Sparkles, Shield } from "lucide-react";
+import { useCart } from "@/stores/cartStore";
+import { useAuth } from "@/hooks/useAuth";
+import { useIsAdmin } from "@/hooks/useIsAdmin";
+import { Button } from "@/components/ui/button";
+import { STORE_NAME } from "@/lib/domain";
+import { SearchAutocomplete } from "@/components/store/SearchAutocomplete";
+import logoNavbar from "@/assets/logo-navbar.png";
 
 export function Header() {
   const cart = useCart();
@@ -15,11 +15,20 @@ export function Header() {
   const count = cart.count();
 
   return (
-    <header className="sticky top-0 z-50 bg-card border-b border-border" style={{ boxShadow: '0 1px 4px rgba(15,23,42,.06)' }}>
+    <header
+      className="sticky top-0 z-50 bg-card border-b border-border"
+      style={{ boxShadow: "0 1px 4px rgba(15,23,42,.06)" }}
+    >
       <div className="container mx-auto px-4 h-16 flex items-center gap-4 sm:gap-6">
         {/* Logo */}
         <Link to="/" className="flex items-center shrink-0" aria-label={STORE_NAME}>
-          <img src={logoNavbar} alt={STORE_NAME} loading="eager" decoding="async" className="h-11 w-auto object-contain" />
+          <img
+            src={logoNavbar}
+            alt={STORE_NAME}
+            loading="eager"
+            decoding="async"
+            className="h-11 w-auto object-contain"
+          />
         </Link>
 
         {/* Busca desktop */}
@@ -27,9 +36,28 @@ export function Header() {
 
         {/* Nav links desktop */}
         <nav className="hidden lg:flex items-center gap-5 text-sm font-medium text-muted-foreground">
-          <Link to="/" className="hover:text-foreground transition-colors" activeProps={{ className: 'text-primary' }} activeOptions={{ exact: true }}>Início</Link>
-          <Link to="/catalogo" className="hover:text-foreground transition-colors" activeProps={{ className: 'text-primary' }}>Catálogo</Link>
-          <Link to={'/atacado' as any} className="hover:text-foreground transition-colors" activeProps={{ className: 'text-primary' }}>Atacado</Link>
+          <Link
+            to="/"
+            className="hover:text-foreground transition-colors"
+            activeProps={{ className: "text-primary" }}
+            activeOptions={{ exact: true }}
+          >
+            Início
+          </Link>
+          <Link
+            to="/catalogo"
+            className="hover:text-foreground transition-colors"
+            activeProps={{ className: "text-primary" }}
+          >
+            Catálogo
+          </Link>
+          <Link
+            to={"/atacado" as any}
+            className="hover:text-foreground transition-colors"
+            activeProps={{ className: "text-primary" }}
+          >
+            Atacado
+          </Link>
         </nav>
 
         {/* Ações */}
@@ -38,16 +66,20 @@ export function Header() {
             variant="outline"
             size="sm"
             className="hidden md:inline-flex h-9 gap-1.5 border-primary/30 text-primary hover:bg-primary-tint hover:text-primary"
-            onClick={() => { if (typeof window !== 'undefined') window.dispatchEvent(new Event('open-chat')); }}
+            onClick={() => {
+              if (typeof window !== "undefined") window.dispatchEvent(new Event("open-chat"));
+            }}
           >
             <Sparkles className="w-3.5 h-3.5" /> Falar com IA
           </Button>
           {isAdmin && (
-            <Link to={'/admin' as any} aria-label="Admin">
-              <Button variant="ghost" size="icon" className="h-9 w-9 text-primary"><Shield className="w-5 h-5" /></Button>
+            <Link to={"/admin" as any} aria-label="Admin">
+              <Button variant="ghost" size="icon" className="h-9 w-9 text-primary">
+                <Shield className="w-5 h-5" />
+              </Button>
             </Link>
           )}
-          <Link to={user ? '/conta' : '/login'} aria-label="Conta">
+          <Link to={user ? "/conta" : "/login"} aria-label="Conta">
             <Button variant="ghost" size="icon" className="h-9 w-9">
               <UserIcon className="w-5 h-5" />
             </Button>

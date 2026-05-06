@@ -1,7 +1,7 @@
-import { createServerFn } from '@tanstack/react-start';
-import { z } from 'zod';
-import { supabaseAdmin } from '@/integrations/supabase/client.server';
-import { requireAdmin } from '@/integrations/supabase/admin-middleware';
+import { createServerFn } from "@tanstack/react-start";
+import { z } from "zod";
+import { supabaseAdmin } from "@/integrations/supabase/client.server";
+import { requireAdmin } from "@/integrations/supabase/admin-middleware";
 
 const InputSchema = z.object({
   name: z.string().min(1).max(200),
@@ -23,7 +23,7 @@ const BoostResultSchema = ResultSchema.extend({
       z.object({
         question: z.string().min(3).max(200),
         answer: z.string().min(3).max(600),
-      })
+      }),
     )
     .min(2)
     .max(6),
@@ -49,67 +49,73 @@ function buildUserPrompt(data: z.infer<typeof InputSchema>): string {
     data.description ? `Descrição atual: ${data.description}` : null,
   ]
     .filter(Boolean)
-    .join('\n');
+    .join("\n");
 }
 
 async function callAiGateway(body: Record<string, unknown>) {
   const apiKey = process.env.LOVABLE_API_KEY;
-  if (!apiKey) throw new Error('LOVABLE_API_KEY não configurada');
-  const res = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
-    method: 'POST',
-    headers: { Authorization: `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
+  if (!apiKey) throw new Error("LOVABLE_API_KEY não configurada");
+  const res = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+    method: "POST",
+    headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
     body: JSON.stringify(body),
   });
-  if (res.status === 429) throw new Error('Limite de requisições atingido. Tente novamente em instantes.');
-  if (res.status === 402) throw new Error('Créditos da IA esgotados.');
+  if (res.status === 429)
+    throw new Error("Limite de requisições atingido. Tente novamente em instantes.");
+  if (res.status === 402) throw new Error("Créditos da IA esgotados.");
   if (!res.ok) {
     const txt = await res.text();
-    console.error('AI gateway error', res.status, txt);
+    console.error("AI gateway error", res.status, txt);
     throw new Error(`Erro do provedor de IA (${res.status})`);
   }
   return res.json();
 }
 
 /** Geração rápida (botão manual no admin) — sem FAQ. */
-export const improveProductSeo = createServerFn({ method: 'POST' })
+export const improveProductSeo = createServerFn({ method: "POST" })
   .middleware([requireAdmin])
   .inputValidator((raw: unknown) => InputSchema.parse(raw))
   .handler(async ({ data }) => {
     try {
       const json = await callAiGateway({
-        model: 'google/gemini-2.5-flash',
+        model: "google/gemini-2.5-flash",
         messages: [
-          { role: 'system', content: SYSTEM_PROMPT },
-          { role: 'user', content: buildUserPrompt(data) },
+          { role: "system", content: SYSTEM_PROMPT },
+          { role: "user", content: buildUserPrompt(data) },
         ],
         tools: [
           {
-            type: 'function',
+            type: "function",
             function: {
-              name: 'set_product_seo',
-              description: 'Define os campos de SEO otimizados para o produto.',
+              name: "set_product_seo",
+              description: "Define os campos de SEO otimizados para o produto.",
               parameters: {
-                type: 'object',
+                type: "object",
                 properties: {
-                  title: { type: 'string', description: 'Título SEO até 60 caracteres' },
-                  description: { type: 'string', description: 'Meta description até 160 caracteres' },
-                  keywords: { type: 'string', description: 'Palavras-chave separadas por vírgula' },
+                  title: { type: "string", description: "Título SEO até 60 caracteres" },
+                  description: {
+                    type: "string",
+                    description: "Meta description até 160 caracteres",
+                  },
+                  keywords: { type: "string", description: "Palavras-chave separadas por vírgula" },
                 },
-                required: ['title', 'description', 'keywords'],
+                required: ["title", "description", "keywords"],
                 additionalProperties: false,
               },
             },
           },
         ],
-        tool_choice: { type: 'function', function: { name: 'set_product_seo' } },
+        tool_choice: { type: "function", function: { name: "set_product_seo" } },
       });
       const argsRaw = json.choices?.[0]?.message?.tool_calls?.[0]?.function?.arguments;
-      if (!argsRaw) return { ok: false as const, error: 'Resposta da IA sem dados estruturados' };
-      const parsed = ResultSchema.parse(typeof argsRaw === 'string' ? JSON.parse(argsRaw) : argsRaw);
+      if (!argsRaw) return { ok: false as const, error: "Resposta da IA sem dados estruturados" };
+      const parsed = ResultSchema.parse(
+        typeof argsRaw === "string" ? JSON.parse(argsRaw) : argsRaw,
+      );
       return { ok: true as const, ...parsed };
     } catch (e) {
-      console.error('improveProductSeo error', e);
-      return { ok: false as const, error: e instanceof Error ? e.message : 'Erro desconhecido' };
+      console.error("improveProductSeo error", e);
+      return { ok: false as const, error: e instanceof Error ? e.message : "Erro desconhecido" };
     }
   });
 
@@ -118,17 +124,19 @@ const BoostInputSchema = z.object({
 });
 
 /** SEO Booster automático: gera title/description/keywords + FAQ e grava direto no produto. */
-export const boostProductSeoAuto = createServerFn({ method: 'POST' })
+export const boostProductSeoAuto = createServerFn({ method: "POST" })
   .middleware([requireAdmin])
   .inputValidator((raw: unknown) => BoostInputSchema.parse(raw))
   .handler(async ({ data }) => {
     try {
       const { data: product, error: pErr } = await supabaseAdmin
-        .from('products')
-        .select('id, name, description, brand, price, category_id, specs, categories:category_id(name)')
-        .eq('id', data.productId)
+        .from("products")
+        .select(
+          "id, name, description, brand, price, category_id, specs, categories:category_id(name)",
+        )
+        .eq("id", data.productId)
         .maybeSingle();
-      if (pErr || !product) return { ok: false as const, error: 'Produto não encontrado' };
+      if (pErr || !product) return { ok: false as const, error: "Produto não encontrado" };
 
       const promptInput = {
         name: product.name,
@@ -139,50 +147,52 @@ export const boostProductSeoAuto = createServerFn({ method: 'POST' })
       };
 
       const json = await callAiGateway({
-        model: 'google/gemini-2.5-flash',
+        model: "google/gemini-2.5-flash",
         messages: [
-          { role: 'system', content: SYSTEM_PROMPT_BOOST },
-          { role: 'user', content: buildUserPrompt(promptInput) },
+          { role: "system", content: SYSTEM_PROMPT_BOOST },
+          { role: "user", content: buildUserPrompt(promptInput) },
         ],
         tools: [
           {
-            type: 'function',
+            type: "function",
             function: {
-              name: 'set_product_seo_full',
-              description: 'Define SEO completo do produto incluindo FAQ.',
+              name: "set_product_seo_full",
+              description: "Define SEO completo do produto incluindo FAQ.",
               parameters: {
-                type: 'object',
+                type: "object",
                 properties: {
-                  title: { type: 'string' },
-                  description: { type: 'string' },
-                  keywords: { type: 'string' },
+                  title: { type: "string" },
+                  description: { type: "string" },
+                  keywords: { type: "string" },
                   faq: {
-                    type: 'array',
+                    type: "array",
                     minItems: 2,
                     maxItems: 6,
                     items: {
-                      type: 'object',
+                      type: "object",
                       properties: {
-                        question: { type: 'string' },
-                        answer: { type: 'string' },
+                        question: { type: "string" },
+                        answer: { type: "string" },
                       },
-                      required: ['question', 'answer'],
+                      required: ["question", "answer"],
                       additionalProperties: false,
                     },
                   },
                 },
-                required: ['title', 'description', 'keywords', 'faq'],
+                required: ["title", "description", "keywords", "faq"],
                 additionalProperties: false,
               },
             },
           },
         ],
-        tool_choice: { type: 'function', function: { name: 'set_product_seo_full' } },
+        tool_choice: { type: "function", function: { name: "set_product_seo_full" } },
       });
 
       const argsRaw = json.choices?.[0]?.message?.tool_calls?.[0]?.function?.arguments;
-      if (!argsRaw) return { ok: false as const, error: 'Resposta da IA sem dados estruturados' };
-      const parsed = BoostResultSchema.parse(typeof argsRaw === 'string' ? JSON.parse(argsRaw) : argsRaw);
+      if (!argsRaw) return { ok: false as const, error: "Resposta da IA sem dados estruturados" };
+      const parsed = BoostResultSchema.parse(
+        typeof argsRaw === "string" ? JSON.parse(argsRaw) : argsRaw,
+      );
 
       const currentSpecs = (product.specs as Record<string, unknown> | null) ?? {};
       const newSpecs = {
@@ -192,14 +202,14 @@ export const boostProductSeoAuto = createServerFn({ method: 'POST' })
       };
 
       const { error: uErr } = await supabaseAdmin
-        .from('products')
+        .from("products")
         .update({
           seo_title: parsed.title,
           seo_description: parsed.description,
           seo_keywords: parsed.keywords,
           specs: newSpecs,
         })
-        .eq('id', data.productId);
+        .eq("id", data.productId);
       if (uErr) return { ok: false as const, error: uErr.message };
 
       return {
@@ -210,7 +220,7 @@ export const boostProductSeoAuto = createServerFn({ method: 'POST' })
         faqCount: parsed.faq.length,
       };
     } catch (e) {
-      console.error('boostProductSeoAuto error', e);
-      return { ok: false as const, error: e instanceof Error ? e.message : 'Erro desconhecido' };
+      console.error("boostProductSeoAuto error", e);
+      return { ok: false as const, error: e instanceof Error ? e.message : "Erro desconhecido" };
     }
   });

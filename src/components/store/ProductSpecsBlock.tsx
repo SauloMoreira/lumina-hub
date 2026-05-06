@@ -1,8 +1,8 @@
-import { useQuery } from '@tanstack/react-query';
-import { getPublicProductAttributes } from '@/server/productAttributes.functions';
-import { getPublicAttributeLabels } from '@/server/productAttributeLabels.functions';
-import { formatAttributeDisplay } from '@/lib/productAttributes';
-import { buildLabelLookup } from '@/lib/attributeLabels';
+import { useQuery } from "@tanstack/react-query";
+import { getPublicProductAttributes } from "@/server/productAttributes.functions";
+import { getPublicAttributeLabels } from "@/server/productAttributeLabels.functions";
+import { formatAttributeDisplay } from "@/lib/productAttributes";
+import { buildLabelLookup } from "@/lib/attributeLabels";
 
 type Props = { productId: string };
 
@@ -13,7 +13,7 @@ type Props = { productId: string };
  */
 export function ProductSpecsBlock({ productId }: Props) {
   const { data, isLoading } = useQuery({
-    queryKey: ['product-specs-public', productId],
+    queryKey: ["product-specs-public", productId],
     queryFn: () => getPublicProductAttributes({ data: { productId } }),
     staleTime: 5 * 60 * 1000,
   });
@@ -21,7 +21,7 @@ export function ProductSpecsBlock({ productId }: Props) {
   const attrKeys = (data ?? []).map((a) => a.attribute_key);
 
   const { data: labels } = useQuery({
-    queryKey: ['public-attribute-labels', attrKeys.sort().join(',')],
+    queryKey: ["public-attribute-labels", attrKeys.sort().join(",")],
     queryFn: () =>
       attrKeys.length > 0
         ? getPublicAttributeLabels({ data: { attributeKeys: attrKeys } })
@@ -66,7 +66,7 @@ export function ProductSpecsBlock({ productId }: Props) {
                 ) : (
                   <>
                     {technical}
-                    {attr.attribute_key === 'color_temperature' && (
+                    {attr.attribute_key === "color_temperature" && (
                       <ColorTempHint kelvin={attr.attribute_value} />
                     )}
                   </>
@@ -84,8 +84,8 @@ function ColorTempHint({ kelvin }: { kelvin: string }) {
   const k = Number(kelvin);
   if (!Number.isFinite(k)) return null;
   let label: string | null = null;
-  if (k <= 3500) label = 'Luz quente';
-  else if (k <= 5000) label = 'Luz neutra';
-  else label = 'Luz fria';
+  if (k <= 3500) label = "Luz quente";
+  else if (k <= 5000) label = "Luz neutra";
+  else label = "Luz fria";
   return <span className="ml-2 text-xs text-muted-foreground font-normal">— {label}</span>;
 }

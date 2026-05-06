@@ -1,18 +1,18 @@
 // Server-only rate limit helper. Uses Postgres (rate_limit_events + check_rate_limit RPC).
 // NÃO importar em client-side.
-import { supabaseAdmin } from '@/integrations/supabase/client.server';
-import { getRequest } from '@tanstack/react-start/server';
+import { supabaseAdmin } from "@/integrations/supabase/client.server";
+import { getRequest } from "@tanstack/react-start/server";
 
 export type RateLimitAction =
-  | 'login'
-  | 'signup'
-  | 'password_reset'
-  | 'contact'
-  | 'chat'
-  | 'coupon'
-  | 'webhook_invalid'
-  | 'admin_action'
-  | 'lead_handoff';
+  | "login"
+  | "signup"
+  | "password_reset"
+  | "contact"
+  | "chat"
+  | "coupon"
+  | "webhook_invalid"
+  | "admin_action"
+  | "lead_handoff";
 
 export interface RateLimitConfig {
   maxAttempts: number;
@@ -47,19 +47,19 @@ export async function checkRateLimit(
   config?: Partial<RateLimitConfig>,
 ): Promise<RateLimitResult> {
   const cfg = { ...DEFAULT_LIMITS[action], ...config };
-  const ident = (identifier ?? '').trim().slice(0, 200);
+  const ident = (identifier ?? "").trim().slice(0, 200);
   if (!ident) {
     return { allowed: false, currentCount: 0, retryAfterSeconds: cfg.windowSeconds };
   }
   try {
-    const { data, error } = await supabaseAdmin.rpc('check_rate_limit', {
+    const { data, error } = await supabaseAdmin.rpc("check_rate_limit", {
       _identifier: ident,
       _action: action,
       _max_attempts: cfg.maxAttempts,
       _window_seconds: cfg.windowSeconds,
     });
     if (error || !data || !Array.isArray(data) || data.length === 0) {
-      console.error('[rateLimit] rpc error', error);
+      console.error("[rateLimit] rpc error", error);
       return { allowed: true, currentCount: 0, retryAfterSeconds: 0 };
     }
     const row = data[0] as { allowed: boolean; current_count: number; retry_after_seconds: number };
@@ -69,7 +69,7 @@ export async function checkRateLimit(
       retryAfterSeconds: row.retry_after_seconds ?? 0,
     };
   } catch (e) {
-    console.error('[rateLimit] exception', e);
+    console.error("[rateLimit] exception", e);
     return { allowed: true, currentCount: 0, retryAfterSeconds: 0 };
   }
 }
@@ -85,22 +85,22 @@ export async function enforceRateLimit(
   const r = await checkRateLimit(identifier, action, config);
   if (!r.allowed) {
     void logSecurityEvent({
-      type: 'rate_limit_exceeded',
-      severity: 'warn',
+      type: "rate_limit_exceeded",
+      severity: "warn",
       identifier,
       message: `Rate limit excedido em ${action}`,
       metadata: { action, currentCount: r.currentCount, retryAfterSeconds: r.retryAfterSeconds },
     });
     throw new Response(
       JSON.stringify({
-        error: 'Muitas tentativas. Aguarde alguns minutos e tente novamente.',
+        error: "Muitas tentativas. Aguarde alguns minutos e tente novamente.",
         retryAfter: r.retryAfterSeconds,
       }),
       {
         status: 429,
         headers: {
-          'Content-Type': 'application/json',
-          'Retry-After': String(r.retryAfterSeconds),
+          "Content-Type": "application/json",
+          "Retry-After": String(r.retryAfterSeconds),
         },
       },
     );
@@ -114,13 +114,13 @@ export async function enforceRateLimit(
 export function getClientIdentifier(): string {
   try {
     const req = getRequest();
-    const cf = req.headers.get('cf-connecting-ip');
+    const cf = req.headers.get("cf-connecting-ip");
     if (cf) return cf.trim();
-    const xff = req.headers.get('x-forwarded-for');
-    if (xff) return xff.split(',')[0]!.trim();
-    return 'unknown';
+    const xff = req.headers.get("x-forwarded-for");
+    if (xff) return xff.split(",")[0]!.trim();
+    return "unknown";
   } catch {
-    return 'unknown';
+    return "unknown";
   }
 }
 
@@ -129,15 +129,15 @@ export function getClientIdentifier(): string {
 // =====================================================================
 export interface SecurityEventInput {
   type:
-    | 'csp_violation'
-    | 'auth_failure'
-    | 'webhook_invalid_signature'
-    | 'rate_limit_exceeded'
-    | 'admin_action'
-    | 'ssrf_blocked'
-    | 'forbidden_access'
-    | 'webhook_processed';
-  severity?: 'info' | 'warn' | 'error';
+    | "csp_violation"
+    | "auth_failure"
+    | "webhook_invalid_signature"
+    | "rate_limit_exceeded"
+    | "admin_action"
+    | "ssrf_blocked"
+    | "forbidden_access"
+    | "webhook_processed";
+  severity?: "info" | "warn" | "error";
   identifier?: string | null;
   message?: string | null;
   metadata?: Record<string, unknown> | null;
@@ -145,14 +145,14 @@ export interface SecurityEventInput {
 
 export async function logSecurityEvent(input: SecurityEventInput): Promise<void> {
   try {
-    await supabaseAdmin.rpc('log_security_event', {
+    await supabaseAdmin.rpc("log_security_event", {
       _type: input.type,
-      _severity: input.severity ?? 'info',
-      _identifier: input.identifier ?? '',
-      _message: input.message ?? '',
+      _severity: input.severity ?? "info",
+      _identifier: input.identifier ?? "",
+      _message: input.message ?? "",
       _metadata: (input.metadata ?? {}) as never,
     });
   } catch (e) {
-    console.error('[security] log error', e);
+    console.error("[security] log error", e);
   }
 }

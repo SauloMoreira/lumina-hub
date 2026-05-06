@@ -1,5 +1,5 @@
-import { create } from 'zustand';
-import { persist } from 'zustand/middleware';
+import { create } from "zustand";
+import { persist } from "zustand/middleware";
 
 export interface CookiePreferences {
   necessary: true;
@@ -24,7 +24,7 @@ interface CookieState {
   closePreferences: () => void;
 }
 
-const CURRENT_VERSION = '1.0.0';
+const CURRENT_VERSION = "1.0.0";
 
 export const useCookieStore = create<CookieState>()(
   persist(
@@ -56,7 +56,12 @@ export const useCookieStore = create<CookieState>()(
           consented: true,
           consentDate: new Date().toISOString(),
           consentVersion: CURRENT_VERSION,
-          preferences: { necessary: true, analytics: false, marketing: false, personalization: false },
+          preferences: {
+            necessary: true,
+            analytics: false,
+            marketing: false,
+            personalization: false,
+          },
           showBanner: false,
           showPreferences: false,
         }),
@@ -75,13 +80,18 @@ export const useCookieStore = create<CookieState>()(
         set({
           consented: false,
           consentDate: null,
-          preferences: { necessary: true, analytics: false, marketing: false, personalization: false },
+          preferences: {
+            necessary: true,
+            analytics: false,
+            marketing: false,
+            personalization: false,
+          },
           showBanner: true,
         }),
 
       openPreferences: () => set({ showPreferences: true }),
       closePreferences: () => set({ showPreferences: false }),
     }),
-    { name: 'lm-cookie-consent', version: 1 }
-  )
+    { name: "lm-cookie-consent", version: 1 },
+  ),
 );

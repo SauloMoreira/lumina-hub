@@ -1,23 +1,17 @@
-import { useMemo, useState } from 'react';
-import { Calendar } from 'lucide-react';
+import { useMemo, useState } from "react";
+import { Calendar } from "lucide-react";
 
-export type DashboardPeriod =
-  | 'today'
-  | 'last7'
-  | 'last30'
-  | 'thisMonth'
-  | 'lastMonth'
-  | 'custom';
+export type DashboardPeriod = "today" | "last7" | "last30" | "thisMonth" | "lastMonth" | "custom";
 
 export type DashboardRange = { start: string; end: string; period: DashboardPeriod };
 
 const PRESETS: { value: DashboardPeriod; label: string }[] = [
-  { value: 'today', label: 'Hoje' },
-  { value: 'last7', label: 'Últimos 7 dias' },
-  { value: 'last30', label: 'Últimos 30 dias' },
-  { value: 'thisMonth', label: 'Mês atual' },
-  { value: 'lastMonth', label: 'Mês anterior' },
-  { value: 'custom', label: 'Personalizado' },
+  { value: "today", label: "Hoje" },
+  { value: "last7", label: "Últimos 7 dias" },
+  { value: "last30", label: "Últimos 30 dias" },
+  { value: "thisMonth", label: "Mês atual" },
+  { value: "lastMonth", label: "Mês anterior" },
+  { value: "custom", label: "Personalizado" },
 ];
 
 function startOfDay(d: Date) {
@@ -37,32 +31,32 @@ export function computeRange(period: DashboardPeriod, customStart?: string, cust
   let end: Date = endOfDay(now);
 
   switch (period) {
-    case 'today':
+    case "today":
       start = startOfDay(now);
       break;
-    case 'last7': {
+    case "last7": {
       const s = new Date(now);
       s.setDate(s.getDate() - 6);
       start = startOfDay(s);
       break;
     }
-    case 'last30': {
+    case "last30": {
       const s = new Date(now);
       s.setDate(s.getDate() - 29);
       start = startOfDay(s);
       break;
     }
-    case 'thisMonth':
+    case "thisMonth":
       start = startOfDay(new Date(now.getFullYear(), now.getMonth(), 1));
       break;
-    case 'lastMonth': {
+    case "lastMonth": {
       const s = new Date(now.getFullYear(), now.getMonth() - 1, 1);
       const e = new Date(now.getFullYear(), now.getMonth(), 0);
       start = startOfDay(s);
       end = endOfDay(e);
       break;
     }
-    case 'custom':
+    case "custom":
       start = customStart ? startOfDay(new Date(customStart)) : startOfDay(now);
       end = customEnd ? endOfDay(new Date(customEnd)) : endOfDay(now);
       break;
@@ -79,11 +73,11 @@ export function DateRangeFilter({ value, onChange }: Props) {
   const [customStart, setCustomStart] = useState(value.start.slice(0, 10));
   const [customEnd, setCustomEnd] = useState(value.end.slice(0, 10));
 
-  const showCustom = value.period === 'custom';
+  const showCustom = value.period === "custom";
 
   const apply = (period: DashboardPeriod) => {
-    if (period === 'custom') {
-      onChange(computeRange('custom', customStart, customEnd));
+    if (period === "custom") {
+      onChange(computeRange("custom", customStart, customEnd));
     } else {
       onChange(computeRange(period));
     }
@@ -106,11 +100,11 @@ export function DateRangeFilter({ value, onChange }: Props) {
             type="button"
             onClick={() => apply(p.value)}
             className={[
-              'px-3 py-1.5 rounded-md text-xs font-medium transition-colors border',
+              "px-3 py-1.5 rounded-md text-xs font-medium transition-colors border",
               value.period === p.value
-                ? 'bg-primary text-primary-foreground border-primary'
-                : 'bg-card text-muted-foreground border-border hover:text-foreground hover:bg-muted',
-            ].join(' ')}
+                ? "bg-primary text-primary-foreground border-primary"
+                : "bg-card text-muted-foreground border-border hover:text-foreground hover:bg-muted",
+            ].join(" ")}
           >
             {p.label}
           </button>
@@ -133,7 +127,7 @@ export function DateRangeFilter({ value, onChange }: Props) {
           />
           <button
             type="button"
-            onClick={() => onChange(computeRange('custom', customStart, customEnd))}
+            onClick={() => onChange(computeRange("custom", customStart, customEnd))}
             className="px-3 py-1 rounded-md text-xs font-medium bg-foreground text-background hover:opacity-90"
           >
             Aplicar

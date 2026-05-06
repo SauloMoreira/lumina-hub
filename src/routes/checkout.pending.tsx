@@ -1,9 +1,9 @@
-import { createFileRoute, Link, useSearch } from '@tanstack/react-router';
-import { Clock, ArrowRight } from 'lucide-react';
-import { z } from 'zod';
-import { StoreLayout } from '@/components/layout/StoreLayout';
-import { Button } from '@/components/ui/button';
-import { buildSeo } from '@/lib/seo';
+import { createFileRoute, Link, useSearch } from "@tanstack/react-router";
+import { Clock, ArrowRight } from "lucide-react";
+import { z } from "zod";
+import { StoreLayout } from "@/components/layout/StoreLayout";
+import { Button } from "@/components/ui/button";
+import { buildSeo } from "@/lib/seo";
 
 const searchSchema = z.object({
   order_id: z.string().uuid().optional(),
@@ -11,14 +11,14 @@ const searchSchema = z.object({
   status: z.string().optional(),
 });
 
-export const Route = createFileRoute('/checkout/pending')({
-  head: () => buildSeo({ title: 'Pagamento pendente', url: '/checkout/pending', noindex: true }),
+export const Route = createFileRoute("/checkout/pending")({
+  head: () => buildSeo({ title: "Pagamento pendente", url: "/checkout/pending", noindex: true }),
   validateSearch: (s) => searchSchema.parse(s),
   component: PendingPage,
 });
 
 function PendingPage() {
-  const { order_id } = useSearch({ from: '/checkout/pending' });
+  const { order_id } = useSearch({ from: "/checkout/pending" });
   return (
     <StoreLayout>
       <div className="container mx-auto px-4 py-12 max-w-xl text-center">
@@ -27,8 +27,9 @@ function PendingPage() {
         </div>
         <h1 className="font-display font-bold text-3xl mb-2">Pagamento em análise</h1>
         <p className="text-muted-foreground mb-2">
-          Seu pagamento está em processamento. Isso é normal para boleto, Pix com aprovação manual ou análise antifraude.
-          Assim que for aprovado, atualizaremos o status do seu pedido automaticamente.
+          Seu pagamento está em processamento. Isso é normal para boleto, Pix com aprovação manual
+          ou análise antifraude. Assim que for aprovado, atualizaremos o status do seu pedido
+          automaticamente.
         </p>
         <p className="text-xs text-muted-foreground mb-6">
           Enviamos as atualizações do pedido para o seu e-mail cadastrado.

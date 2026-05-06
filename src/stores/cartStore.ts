@@ -1,12 +1,12 @@
-import { create } from 'zustand';
-import { persist } from 'zustand/middleware';
-import type { CartLine } from '@/lib/domain';
+import { create } from "zustand";
+import { persist } from "zustand/middleware";
+import type { CartLine } from "@/lib/domain";
 
 type CartState = {
   items: CartLine[];
   isOpen: boolean;
-  lastSource: 'b2b' | 'b2c' | null;
-  addItem: (line: Omit<CartLine, 'qty'>, qty?: number, opts?: { openDrawer?: boolean }) => void;
+  lastSource: "b2b" | "b2c" | null;
+  addItem: (line: Omit<CartLine, "qty">, qty?: number, opts?: { openDrawer?: boolean }) => void;
   removeItem: (productId: string) => void;
   updateQty: (productId: string, qty: number) => void;
   clear: () => void;
@@ -28,7 +28,7 @@ export const useCart = create<CartState>()(
         set((s) => {
           const desired = Math.max(1, qty ?? line.minQty ?? 1);
           const openDrawer = opts?.openDrawer ?? true;
-          const nextLastSource: 'b2b' | 'b2c' = line.source === 'b2b' ? 'b2b' : 'b2c';
+          const nextLastSource: "b2b" | "b2c" = line.source === "b2b" ? "b2b" : "b2c";
           const existing = s.items.find((i) => i.productId === line.productId);
           if (existing) {
             const nextQty = Math.min(existing.qty + desired, line.stock || existing.stock);
@@ -46,17 +46,14 @@ export const useCart = create<CartState>()(
                       source: line.source ?? i.source,
                       qty: nextQty,
                     }
-                  : i
+                  : i,
               ),
               isOpen: openDrawer ? true : s.isOpen,
               lastSource: nextLastSource,
             };
           }
           return {
-            items: [
-              ...s.items,
-              { ...line, qty: Math.min(desired, line.stock || desired) },
-            ],
+            items: [...s.items, { ...line, qty: Math.min(desired, line.stock || desired) }],
             isOpen: openDrawer ? true : s.isOpen,
             lastSource: nextLastSource,
           };
@@ -68,7 +65,7 @@ export const useCart = create<CartState>()(
           items: s.items.map((i) =>
             i.productId === productId
               ? { ...i, qty: Math.max(1, Math.min(qty, i.stock || qty)) }
-              : i
+              : i,
           ),
         })),
       clear: () => set({ items: [] }),
@@ -77,15 +74,15 @@ export const useCart = create<CartState>()(
       toggle: () => set((s) => ({ isOpen: !s.isOpen })),
       count: () => get().items.reduce((acc, i) => acc + i.qty, 0),
       subtotal: () => get().items.reduce((acc, i) => acc + i.price * i.qty, 0),
-      hasB2bItems: () => get().items.some((i) => i.source === 'b2b'),
+      hasB2bItems: () => get().items.some((i) => i.source === "b2b"),
     }),
-    { name: 'led-marica-cart', partialize: (s) => ({ items: s.items, lastSource: s.lastSource }) }
-  )
+    { name: "led-marica-cart", partialize: (s) => ({ items: s.items, lastSource: s.lastSource }) },
+  ),
 );
 
 /** Valida regras B2B (mínimo + múltiplo) de uma linha do carrinho. */
 export function validateB2bLine(item: CartLine): { ok: true } | { ok: false; reason: string } {
-  if (item.source !== 'b2b') return { ok: true };
+  if (item.source !== "b2b") return { ok: true };
   const min = item.minQty ?? 1;
   const mult = item.qtyMultiple ?? 1;
   if (item.qty < min) {

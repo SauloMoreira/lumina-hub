@@ -1,27 +1,27 @@
-import { createFileRoute, Link, useNavigate, redirect } from '@tanstack/react-router';
-import { useState } from 'react';
-import { toast } from 'sonner';
-import { Building2, ShieldCheck, Tag, CheckCircle2 } from 'lucide-react';
-import { z } from 'zod';
-import { supabase } from '@/integrations/supabase/client';
-import { buildSeo } from '@/lib/seo';
-import { formatCNPJ, isValidCNPJ, onlyDigits } from '@/lib/cnpj';
-import { createCompany } from '@/server/companies.functions';
+import { createFileRoute, Link, useNavigate, redirect } from "@tanstack/react-router";
+import { useState } from "react";
+import { toast } from "sonner";
+import { Building2, ShieldCheck, Tag, CheckCircle2 } from "lucide-react";
+import { z } from "zod";
+import { supabase } from "@/integrations/supabase/client";
+import { buildSeo } from "@/lib/seo";
+import { formatCNPJ, isValidCNPJ, onlyDigits } from "@/lib/cnpj";
+import { createCompany } from "@/server/companies.functions";
 
-export const Route = createFileRoute('/cadastro-empresa')({
+export const Route = createFileRoute("/cadastro-empresa")({
   head: () =>
     buildSeo({
-      title: 'Cadastrar empresa (CNPJ)',
+      title: "Cadastrar empresa (CNPJ)",
       description:
-        'Cadastre sua empresa para acessar preços de atacado e condições B2B na Led Maricá.',
-      url: '/cadastro-empresa',
+        "Cadastre sua empresa para acessar preços de atacado e condições B2B na Led Maricá.",
+      url: "/cadastro-empresa",
     }),
   beforeLoad: async () => {
     const { data } = await supabase.auth.getSession();
     if (!data.session) {
       throw redirect({
-        to: '/login',
-        search: { redirect: '/cadastro-empresa' } as never,
+        to: "/login",
+        search: { redirect: "/cadastro-empresa" } as never,
       });
     }
   },
@@ -29,14 +29,14 @@ export const Route = createFileRoute('/cadastro-empresa')({
 });
 
 const schema = z.object({
-  cnpj: z.string().refine((v) => isValidCNPJ(v), 'CNPJ inválido'),
-  legal_name: z.string().trim().min(2, 'Informe a razão social').max(200),
+  cnpj: z.string().refine((v) => isValidCNPJ(v), "CNPJ inválido"),
+  legal_name: z.string().trim().min(2, "Informe a razão social").max(200),
   trade_name: z.string().trim().max(200).optional(),
   state_registration: z.string().trim().max(40).optional(),
-  contact_name: z.string().trim().min(2, 'Informe o responsável').max(120),
+  contact_name: z.string().trim().min(2, "Informe o responsável").max(120),
   contact_role: z.string().trim().max(80).optional(),
-  contact_email: z.string().trim().email('E-mail inválido').max(255),
-  contact_phone: z.string().trim().min(8, 'Informe o telefone').max(40),
+  contact_email: z.string().trim().email("E-mail inválido").max(255),
+  contact_phone: z.string().trim().min(8, "Informe o telefone").max(40),
   address_zipcode: z.string().trim().max(20).optional(),
   address_street: z.string().trim().max(200).optional(),
   address_number: z.string().trim().max(20).optional(),
@@ -49,21 +49,21 @@ const schema = z.object({
 type FormState = z.infer<typeof schema>;
 
 const initial: FormState = {
-  cnpj: '',
-  legal_name: '',
-  trade_name: '',
-  state_registration: '',
-  contact_name: '',
-  contact_role: '',
-  contact_email: '',
-  contact_phone: '',
-  address_zipcode: '',
-  address_street: '',
-  address_number: '',
-  address_complement: '',
-  address_neighborhood: '',
-  address_city: '',
-  address_state: '',
+  cnpj: "",
+  legal_name: "",
+  trade_name: "",
+  state_registration: "",
+  contact_name: "",
+  contact_role: "",
+  contact_email: "",
+  contact_phone: "",
+  address_zipcode: "",
+  address_street: "",
+  address_number: "",
+  address_complement: "",
+  address_neighborhood: "",
+  address_city: "",
+  address_state: "",
 };
 
 function CadastroEmpresaPage() {
@@ -90,7 +90,7 @@ function CadastroEmpresaPage() {
         e[i.path[0] as string] = i.message;
       });
       setErrors(e);
-      toast.error('Confira os campos do formulário.');
+      toast.error("Confira os campos do formulário.");
       return;
     }
     setErrors({});
@@ -100,14 +100,16 @@ function CadastroEmpresaPage() {
         data: { ...r.data, cnpj: onlyDigits(r.data.cnpj) },
       });
       const approved = Boolean((res as { auto_approved?: boolean })?.auto_approved);
-      const reason = String((res as { reason?: string })?.reason ?? '');
-      toast.success(approved ? 'Empresa aprovada automaticamente!' : 'Cadastro enviado para aprovação!');
+      const reason = String((res as { reason?: string })?.reason ?? "");
+      toast.success(
+        approved ? "Empresa aprovada automaticamente!" : "Cadastro enviado para aprovação!",
+      );
       setSuccess({ approved, reason });
       setTimeout(() => {
-        navigate({ to: '/conta/empresa' as never });
+        navigate({ to: "/conta/empresa" as never });
       }, 3500);
     } catch (err) {
-      const msg = err instanceof Error ? err.message : 'Falha ao cadastrar';
+      const msg = err instanceof Error ? err.message : "Falha ao cadastrar";
       toast.error(msg);
     } finally {
       setLoading(false);
@@ -122,17 +124,15 @@ function CadastroEmpresaPage() {
             <CheckCircle2 className="w-9 h-9" />
           </div>
           <h1 className="text-2xl font-display font-bold text-foreground mb-2">
-            {success.approved ? 'Empresa aprovada!' : 'Cadastro enviado!'}
+            {success.approved ? "Empresa aprovada!" : "Cadastro enviado!"}
           </h1>
           <p className="text-sm text-muted-foreground mb-2">
             {success.approved
-              ? 'Validamos seu CNPJ na Receita e seu acesso B2B já está liberado. Os preços de atacado aparecerão automaticamente para você.'
-              : 'Recebemos os dados. Nosso time vai analisar e liberar os preços B2B em breve. Você receberá um e-mail assim que for aprovado.'}
+              ? "Validamos seu CNPJ na Receita e seu acesso B2B já está liberado. Os preços de atacado aparecerão automaticamente para você."
+              : "Recebemos os dados. Nosso time vai analisar e liberar os preços B2B em breve. Você receberá um e-mail assim que for aprovado."}
           </p>
           {success.reason && (
-            <p className="text-xs text-muted-foreground mb-6 italic">
-              {success.reason}
-            </p>
+            <p className="text-xs text-muted-foreground mb-6 italic">{success.reason}</p>
           )}
           <div className="text-xs text-muted-foreground">
             Redirecionando para "Minha empresa"...
@@ -149,12 +149,10 @@ function CadastroEmpresaPage() {
           <div className="inline-flex items-center gap-2 bg-primary/10 text-primary px-3 py-1.5 rounded-full text-xs font-semibold mb-3">
             <Building2 className="w-4 h-4" /> Área para empresas
           </div>
-          <h1 className="text-3xl font-display font-bold text-foreground">
-            Cadastre sua empresa
-          </h1>
+          <h1 className="text-3xl font-display font-bold text-foreground">Cadastre sua empresa</h1>
           <p className="text-muted-foreground mt-2">
-            Após a aprovação você terá acesso a preços de atacado, condições B2B
-            e negociação direta com nosso comercial.
+            Após a aprovação você terá acesso a preços de atacado, condições B2B e negociação direta
+            com nosso comercial.
           </p>
         </div>
 
@@ -176,9 +174,13 @@ function CadastroEmpresaPage() {
                   ✓ Aprovação automática (acesso B2B liberado na hora) se:
                 </p>
                 <ul className="text-xs text-muted-foreground list-disc pl-4 space-y-0.5">
-                  <li>CNPJ com situação <strong>ATIVA</strong> na Receita Federal</li>
+                  <li>
+                    CNPJ com situação <strong>ATIVA</strong> na Receita Federal
+                  </li>
                   <li>Sem situação especial ou restrições</li>
-                  <li>Empresa aberta há <strong>mais de 6 meses</strong></li>
+                  <li>
+                    Empresa aberta há <strong>mais de 6 meses</strong>
+                  </li>
                 </ul>
               </div>
               <div>
@@ -213,15 +215,15 @@ function CadastroEmpresaPage() {
               />
             </Field>
             <Field label="Razão social *" error={errors.legal_name}>
-              <input value={form.legal_name} onChange={set('legal_name')} className={input} />
+              <input value={form.legal_name} onChange={set("legal_name")} className={input} />
             </Field>
             <Field label="Nome fantasia" error={errors.trade_name}>
-              <input value={form.trade_name} onChange={set('trade_name')} className={input} />
+              <input value={form.trade_name} onChange={set("trade_name")} className={input} />
             </Field>
             <Field label="Inscrição estadual" error={errors.state_registration}>
               <input
                 value={form.state_registration}
-                onChange={set('state_registration')}
+                onChange={set("state_registration")}
                 className={input}
               />
             </Field>
@@ -229,16 +231,16 @@ function CadastroEmpresaPage() {
 
           <Section title="Responsável">
             <Field label="Nome do responsável *" error={errors.contact_name}>
-              <input value={form.contact_name} onChange={set('contact_name')} className={input} />
+              <input value={form.contact_name} onChange={set("contact_name")} className={input} />
             </Field>
             <Field label="Cargo / função" error={errors.contact_role}>
-              <input value={form.contact_role} onChange={set('contact_role')} className={input} />
+              <input value={form.contact_role} onChange={set("contact_role")} className={input} />
             </Field>
             <Field label="E-mail corporativo *" error={errors.contact_email}>
               <input
                 type="email"
                 value={form.contact_email}
-                onChange={set('contact_email')}
+                onChange={set("contact_email")}
                 className={input}
               />
             </Field>
@@ -246,7 +248,7 @@ function CadastroEmpresaPage() {
               <input
                 type="tel"
                 value={form.contact_phone}
-                onChange={set('contact_phone')}
+                onChange={set("contact_phone")}
                 className={input}
               />
             </Field>
@@ -256,14 +258,14 @@ function CadastroEmpresaPage() {
             <Field label="CEP" error={errors.address_zipcode}>
               <input
                 value={form.address_zipcode}
-                onChange={set('address_zipcode')}
+                onChange={set("address_zipcode")}
                 className={input}
               />
             </Field>
             <Field label="Rua / Logradouro" error={errors.address_street}>
               <input
                 value={form.address_street}
-                onChange={set('address_street')}
+                onChange={set("address_street")}
                 className={input}
               />
             </Field>
@@ -271,14 +273,14 @@ function CadastroEmpresaPage() {
               <Field label="Número" error={errors.address_number}>
                 <input
                   value={form.address_number}
-                  onChange={set('address_number')}
+                  onChange={set("address_number")}
                   className={input}
                 />
               </Field>
               <Field label="Complemento" error={errors.address_complement}>
                 <input
                   value={form.address_complement}
-                  onChange={set('address_complement')}
+                  onChange={set("address_complement")}
                   className={input}
                 />
               </Field>
@@ -286,7 +288,7 @@ function CadastroEmpresaPage() {
             <Field label="Bairro" error={errors.address_neighborhood}>
               <input
                 value={form.address_neighborhood}
-                onChange={set('address_neighborhood')}
+                onChange={set("address_neighborhood")}
                 className={input}
               />
             </Field>
@@ -295,7 +297,7 @@ function CadastroEmpresaPage() {
                 <Field label="Cidade" error={errors.address_city}>
                   <input
                     value={form.address_city}
-                    onChange={set('address_city')}
+                    onChange={set("address_city")}
                     className={input}
                   />
                 </Field>
@@ -303,9 +305,9 @@ function CadastroEmpresaPage() {
               <Field label="UF" error={errors.address_state}>
                 <input
                   value={form.address_state}
-                  onChange={set('address_state')}
+                  onChange={set("address_state")}
                   maxLength={2}
-                  className={input + ' uppercase'}
+                  className={input + " uppercase"}
                 />
               </Field>
             </div>
@@ -317,12 +319,12 @@ function CadastroEmpresaPage() {
               disabled={loading}
               className="w-full h-12 rounded-md bg-primary text-primary-foreground font-semibold hover:brightness-110 transition disabled:opacity-50"
             >
-              {loading ? 'Enviando...' : 'Enviar cadastro para aprovação'}
+              {loading ? "Enviando..." : "Enviar cadastro para aprovação"}
             </button>
             <p className="text-xs text-muted-foreground text-center mt-3">
-              Após o envio, nosso time analisa o cadastro e libera os preços B2B.
-              Você pode acompanhar o status em{' '}
-              <Link to={'/conta/empresa' as never} className="text-primary underline">
+              Após o envio, nosso time analisa o cadastro e libera os preços B2B. Você pode
+              acompanhar o status em{" "}
+              <Link to={"/conta/empresa" as never} className="text-primary underline">
                 Minha empresa
               </Link>
               .
@@ -335,7 +337,7 @@ function CadastroEmpresaPage() {
 }
 
 const input =
-  'w-full h-10 px-3 rounded-md border border-border bg-background text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary/40';
+  "w-full h-10 px-3 rounded-md border border-border bg-background text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary/40";
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (

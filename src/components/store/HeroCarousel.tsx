@@ -1,7 +1,7 @@
-import { useEffect, useRef, useState } from 'react';
-import { Link } from '@tanstack/react-router';
-import { ChevronLeft, ChevronRight, ArrowRight } from 'lucide-react';
-import { optimizeBannerUrl } from '@/lib/bannerImages';
+import { useEffect, useRef, useState } from "react";
+import { Link } from "@tanstack/react-router";
+import { ChevronLeft, ChevronRight, ArrowRight } from "lucide-react";
+import { optimizeBannerUrl } from "@/lib/bannerImages";
 
 export type HeroBanner = {
   id: string;
@@ -60,20 +60,23 @@ export function HeroCarousel({ banners }: { banners: HeroBanner[] }) {
       <div className="relative h-[260px] xs:h-[300px] sm:h-[380px] md:h-[440px] lg:h-[480px]">
         {banners.map((b, i) => {
           const active = i === idx;
-          const isInternal = b.cta_link?.startsWith('/');
+          const isInternal = b.cta_link?.startsWith("/");
           // Só montamos imagens dos demais slides após autoplay/interação
           const shouldRender = i === 0 || interacted || idx !== 0;
           const desktopSrc = optimizeBannerUrl(b.image_desktop, { width: 1280, quality: 75 });
           const desktopSrc2x = optimizeBannerUrl(b.image_desktop, { width: 1920, quality: 72 });
           const tabletSrc = optimizeBannerUrl(b.image_desktop, { width: 1024, quality: 75 });
-          const mobileSrc = optimizeBannerUrl(b.image_mobile ?? b.image_desktop, { width: 720, quality: 72 });
+          const mobileSrc = optimizeBannerUrl(b.image_mobile ?? b.image_desktop, {
+            width: 720,
+            quality: 72,
+          });
           return (
             <div
               key={b.id}
               className="absolute inset-0 transition-opacity duration-500"
               style={{
                 opacity: active ? 1 : 0,
-                pointerEvents: active ? 'auto' : 'none',
+                pointerEvents: active ? "auto" : "none",
                 backgroundColor: b.bg_color ?? undefined,
               }}
               role="group"
@@ -92,8 +95,8 @@ export function HeroCarousel({ banners }: { banners: HeroBanner[] }) {
                     alt={b.title}
                     width={1280}
                     height={512}
-                    loading={i === 0 ? 'eager' : 'lazy'}
-                    fetchPriority={i === 0 ? 'high' : 'auto'}
+                    loading={i === 0 ? "eager" : "lazy"}
+                    fetchPriority={i === 0 ? "high" : "auto"}
                     decoding="async"
                     className="w-full h-full object-cover"
                   />
@@ -104,12 +107,15 @@ export function HeroCarousel({ banners }: { banners: HeroBanner[] }) {
                 className="absolute inset-0 pointer-events-none"
                 style={{
                   background:
-                    'linear-gradient(90deg, rgba(0,0,0,.55) 0%, rgba(0,0,0,.35) 40%, rgba(0,0,0,0) 70%)',
+                    "linear-gradient(90deg, rgba(0,0,0,.55) 0%, rgba(0,0,0,.35) 40%, rgba(0,0,0,0) 70%)",
                 }}
               />
 
               <div className="relative h-full container mx-auto px-4 md:px-8 flex items-center">
-                <div className="max-w-full sm:max-w-xl" style={{ color: b.text_color ?? '#FFFFFF' }}>
+                <div
+                  className="max-w-full sm:max-w-xl"
+                  style={{ color: b.text_color ?? "#FFFFFF" }}
+                >
                   {b.badge && (
                     <span className="inline-flex items-center px-2.5 py-0.5 sm:px-3 sm:py-1 rounded-full bg-accent text-accent-foreground text-[10px] sm:text-xs font-bold uppercase tracking-wider mb-2 sm:mb-4 shadow-md">
                       {b.badge}
@@ -117,7 +123,7 @@ export function HeroCarousel({ banners }: { banners: HeroBanner[] }) {
                   )}
                   <h2
                     className="font-display font-extrabold text-xl sm:text-3xl md:text-5xl leading-tight tracking-tight mb-2 sm:mb-3 drop-shadow-lg break-words"
-                    style={{ color: b.title_color ?? b.text_color ?? '#FFFFFF' }}
+                    style={{ color: b.title_color ?? b.text_color ?? "#FFFFFF" }}
                   >
                     {b.title}
                   </h2>
@@ -131,8 +137,10 @@ export function HeroCarousel({ banners }: { banners: HeroBanner[] }) {
                       {b.description}
                     </p>
                   )}
-                  {b.cta_label && b.cta_link && active && (
-                    isInternal ? (
+                  {b.cta_label &&
+                    b.cta_link &&
+                    active &&
+                    (isInternal ? (
                       <Link
                         to={b.cta_link as any}
                         className="inline-flex items-center gap-2 h-10 sm:h-12 px-4 sm:px-6 rounded-pill bg-accent text-accent-foreground font-semibold text-xs sm:text-sm shadow-elevated hover:brightness-110 transition"
@@ -148,8 +156,7 @@ export function HeroCarousel({ banners }: { banners: HeroBanner[] }) {
                         {b.cta_label}
                         <ArrowRight className="w-4 h-4" />
                       </a>
-                    )
-                  )}
+                    ))}
                 </div>
               </div>
             </div>
@@ -190,7 +197,7 @@ export function HeroCarousel({ banners }: { banners: HeroBanner[] }) {
                 aria-label={`Ir para slide ${i + 1}`}
                 aria-current={i === idx}
                 className={`h-1.5 rounded-full transition-all ${
-                  i === idx ? 'w-8 bg-white' : 'w-2 bg-white/50 hover:bg-white/80'
+                  i === idx ? "w-8 bg-white" : "w-2 bg-white/50 hover:bg-white/80"
                 }`}
               />
             ))}

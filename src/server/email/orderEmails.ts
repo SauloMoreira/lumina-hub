@@ -4,16 +4,16 @@
 // - Renderiza template, envia via transport (Resend hoje, Lovable Emails depois)
 // - NUNCA lança: falha de e-mail não pode quebrar fluxo de pedido/pagamento
 
-import { supabaseAdmin } from '@/integrations/supabase/client.server';
-import { sendTransactionalEmail } from './transport';
-import { buildOrderEmailTemplate, type EmailMessageType } from './templates';
+import { supabaseAdmin } from "@/integrations/supabase/client.server";
+import { sendTransactionalEmail } from "./transport";
+import { buildOrderEmailTemplate, type EmailMessageType } from "./templates";
 
 function getSiteUrl(): string {
-  return (process.env.SITE_URL ?? '').replace(/\/$/, '') || 'https://localhost';
+  return (process.env.SITE_URL ?? "").replace(/\/$/, "") || "https://localhost";
 }
 
 function getStoreName(): string {
-  return process.env.STORE_NAME ?? 'Nossa Loja';
+  return process.env.STORE_NAME ?? "Nossa Loja";
 }
 
 function getSupportEmail(): string | null {
@@ -29,29 +29,29 @@ interface SendOrderEmailOptions {
 
 export async function sendOrderEmail(opts: SendOrderEmailOptions): Promise<{
   ok: boolean;
-  skipped?: 'already_sent' | 'no_email' | 'order_not_found';
+  skipped?: "already_sent" | "no_email" | "order_not_found";
   error?: string;
 }> {
   try {
     // 1) Carregar pedido + itens
     const { data: order, error: orderErr } = await supabaseAdmin
-      .from('orders')
+      .from("orders")
       .select(
-        'id, order_number, user_id, status, payment_status, subtotal, discount, shipping_cost, total, tracking_code, address_snapshot, public_access_token, delivery_method, pickup_store_name, pickup_store_address, pickup_store_phone, pickup_instructions, local_delivery_district, local_delivery_eta, shipping_carrier, shipping_service, bundle_discount_total, order_items(product_name, qty, unit_price, total_price)'
+        "id, order_number, user_id, status, payment_status, subtotal, discount, shipping_cost, total, tracking_code, address_snapshot, public_access_token, delivery_method, pickup_store_name, pickup_store_address, pickup_store_phone, pickup_instructions, local_delivery_district, local_delivery_eta, shipping_carrier, shipping_service, bundle_discount_total, order_items(product_name, qty, unit_price, total_price)",
       )
-      .eq('id', opts.orderId)
+      .eq("id", opts.orderId)
       .single();
 
     if (orderErr || !order) {
-      console.error('[email] pedido não encontrado', opts.orderId, orderErr);
-      return { ok: false, skipped: 'order_not_found' };
+      console.error("[email] pedido não encontrado", opts.orderId, orderErr);
+      return { ok: false, skipped: "order_not_found" };
     }
 
     // 2) Buscar e-mail e nome do cliente (profiles)
     const { data: profile } = await supabaseAdmin
-      .from('profiles')
-      .select('email, name')
-      .eq('id', order.user_id)
+      .from("profiles")
+      .select("email, name")
+      .eq("id", order.user_id)
       .single();
 
     // Fallback: tentar address_snapshot
@@ -62,31 +62,31 @@ export async function sendOrderEmail(opts: SendOrderEmailOptions): Promise<{
     const customerName = profile?.name ?? snap?.recipient ?? null;
 
     if (!customerEmail) {
-      console.warn('[email] cliente sem e-mail', { orderId: order.id, userId: order.user_id });
-      return { ok: false, skipped: 'no_email' };
+      console.warn("[email] cliente sem e-mail", { orderId: order.id, userId: order.user_id });
+      return { ok: false, skipped: "no_email" };
     }
 
     // 3) Idempotência
     if (!opts.force) {
       const { data: existing } = await supabaseAdmin
-        .from('email_events')
-        .select('id')
-        .eq('order_id', order.id)
-        .eq('type', opts.type)
-        .eq('status', 'sent')
+        .from("email_events")
+        .select("id")
+        .eq("order_id", order.id)
+        .eq("type", opts.type)
+        .eq("status", "sent")
         .maybeSingle();
       if (existing) {
-        return { ok: true, skipped: 'already_sent' };
+        return { ok: true, skipped: "already_sent" };
       }
     }
 
     // 4) Renderizar template — link inclui token público para acesso sem login
     const tokenQuery = order.public_access_token
       ? `?token=${encodeURIComponent(order.public_access_token)}`
-      : '';
+      : "";
     const orderUrl = `${getSiteUrl()}/pedido/${order.id}/confirmacao${tokenQuery}`;
     const retryUrl =
-      opts.type === 'payment_failed'
+      opts.type === "payment_failed"
         ? `${getSiteUrl()}/checkout/failure?order_id=${order.id}`
         : null;
 
@@ -98,7 +98,10 @@ export async function sendOrderEmail(opts: SendOrderEmailOptions): Promise<{
     }));
 
     const orderAny = order as any;
-    const deliveryMethod = (orderAny.delivery_method ?? 'delivery') as 'delivery' | 'pickup' | 'local_delivery';
+    const deliveryMethod = (orderAny.delivery_method ?? "delivery") as
+      | "delivery"
+      | "pickup"
+      | "local_delivery";
 
     const { subject, html, text } = buildOrderEmailTemplate({
       storeName: getStoreName(),
@@ -116,37 +119,39 @@ export async function sendOrderEmail(opts: SendOrderEmailOptions): Promise<{
       trackingCode: order.tracking_code ?? null,
       messageType: opts.type,
       deliveryMethod,
-      pickup: deliveryMethod === 'pickup'
-        ? {
-            storeName: orderAny.pickup_store_name ?? null,
-            storeAddress: orderAny.pickup_store_address ?? null,
-            storePhone: orderAny.pickup_store_phone ?? null,
-            instructions: orderAny.pickup_instructions ?? null,
-            readyEta: null,
-          }
-        : null,
-      localDelivery: deliveryMethod === 'local_delivery'
-        ? {
-            district: orderAny.local_delivery_district ?? null,
-            eta: orderAny.local_delivery_eta ?? null,
-            service: orderAny.shipping_service ?? null,
-          }
-        : null,
+      pickup:
+        deliveryMethod === "pickup"
+          ? {
+              storeName: orderAny.pickup_store_name ?? null,
+              storeAddress: orderAny.pickup_store_address ?? null,
+              storePhone: orderAny.pickup_store_phone ?? null,
+              instructions: orderAny.pickup_instructions ?? null,
+              readyEta: null,
+            }
+          : null,
+      localDelivery:
+        deliveryMethod === "local_delivery"
+          ? {
+              district: orderAny.local_delivery_district ?? null,
+              eta: orderAny.local_delivery_eta ?? null,
+              service: orderAny.shipping_service ?? null,
+            }
+          : null,
     });
 
     // 5) Registrar pending (provider real é resolvido no transport)
-    const initialProvider = (process.env.EMAIL_PROVIDER ?? 'resend').toLowerCase();
+    const initialProvider = (process.env.EMAIL_PROVIDER ?? "resend").toLowerCase();
     const { data: eventRow } = await supabaseAdmin
-      .from('email_events')
+      .from("email_events")
       .insert({
         order_id: order.id,
         customer_email: customerEmail,
         type: opts.type,
         subject,
         provider: initialProvider,
-        status: 'pending',
+        status: "pending",
       })
-      .select('id')
+      .select("id")
       .single();
 
     // 6) Enviar
@@ -162,31 +167,31 @@ export async function sendOrderEmail(opts: SendOrderEmailOptions): Promise<{
     if (eventRow?.id) {
       if (result.ok) {
         await supabaseAdmin
-          .from('email_events')
+          .from("email_events")
           .update({
-            status: result.skipped ? 'skipped' : 'sent',
+            status: result.skipped ? "skipped" : "sent",
             provider: result.provider,
             provider_message_id: result.messageId ?? null,
             sent_at: new Date().toISOString(),
           })
-          .eq('id', eventRow.id);
+          .eq("id", eventRow.id);
       } else {
         await supabaseAdmin
-          .from('email_events')
+          .from("email_events")
           .update({
-            status: 'failed',
+            status: "failed",
             provider: result.provider,
-            error_message: result.error ?? 'unknown',
+            error_message: result.error ?? "unknown",
           })
-          .eq('id', eventRow.id);
+          .eq("id", eventRow.id);
       }
     }
 
     return { ok: result.ok, error: result.error };
   } catch (e) {
     // NUNCA propagar — não pode quebrar fluxo de pedido/pagamento
-    const msg = e instanceof Error ? e.message : 'erro desconhecido';
-    console.error('[email] sendOrderEmail exception', e);
+    const msg = e instanceof Error ? e.message : "erro desconhecido";
+    console.error("[email] sendOrderEmail exception", e);
     return { ok: false, error: msg };
   }
 }

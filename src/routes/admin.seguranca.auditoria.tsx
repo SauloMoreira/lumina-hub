@@ -1,106 +1,127 @@
-import { createFileRoute } from '@tanstack/react-router';
-import { useQuery } from '@tanstack/react-query';
-import { useMemo, useState } from 'react';
-import { toast } from 'sonner';
+import { createFileRoute } from "@tanstack/react-router";
+import { useQuery } from "@tanstack/react-query";
+import { useMemo, useState } from "react";
+import { toast } from "sonner";
 import {
-  ScrollText, Download, RefreshCw, Search, Filter, ChevronRight, ChevronDown,
-} from 'lucide-react';
+  ScrollText,
+  Download,
+  RefreshCw,
+  Search,
+  Filter,
+  ChevronRight,
+  ChevronDown,
+} from "lucide-react";
 
-import { AdminLayout } from '@/components/admin/AdminLayout';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
+import { AdminLayout } from "@/components/admin/AdminLayout";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import {
-  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
-} from '@/components/ui/select';
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import {
   searchAdminAuditLog,
   getAdminAuditLogDetail,
   getAdminAuditFilterOptions,
   exportAdminAuditCsv,
-} from '@/server/security.functions';
+} from "@/server/security.functions";
 
-export const Route = createFileRoute('/admin/seguranca/auditoria')({
+export const Route = createFileRoute("/admin/seguranca/auditoria")({
   component: AdminAuditLogPage,
 });
 
 const PERIOD_OPTIONS = [
-  { value: '7', label: 'Últimos 7 dias' },
-  { value: '30', label: 'Últimos 30 dias' },
-  { value: '60', label: 'Últimos 60 dias' },
-  { value: '90', label: 'Últimos 90 dias' },
-  { value: '180', label: 'Últimos 180 dias' },
-  { value: '365', label: 'Último ano' },
+  { value: "7", label: "Últimos 7 dias" },
+  { value: "30", label: "Últimos 30 dias" },
+  { value: "60", label: "Últimos 60 dias" },
+  { value: "90", label: "Últimos 90 dias" },
+  { value: "180", label: "Últimos 180 dias" },
+  { value: "365", label: "Último ano" },
 ];
 
 const RESOURCE_LABELS: Record<string, string> = {
-  product: 'Produtos',
-  home_banner: 'Banners',
-  coupon: 'Cupons',
-  bundle: 'Combos',
-  bundle_item: 'Itens de combo',
-  company: 'Empresas B2B',
-  homepage_settings: 'Homepage',
-  finance_settings: 'Financeiro',
-  order: 'Pedidos',
-  invoice: 'Notas fiscais',
-  marketing_integration: 'Integrações',
-  banner_image: 'Imagem de banner',
-  fiscal_settings: 'Fiscal',
+  product: "Produtos",
+  home_banner: "Banners",
+  coupon: "Cupons",
+  bundle: "Combos",
+  bundle_item: "Itens de combo",
+  company: "Empresas B2B",
+  homepage_settings: "Homepage",
+  finance_settings: "Financeiro",
+  order: "Pedidos",
+  invoice: "Notas fiscais",
+  marketing_integration: "Integrações",
+  banner_image: "Imagem de banner",
+  fiscal_settings: "Fiscal",
 };
 
 function fmtDate(iso: string) {
-  return new Date(iso).toLocaleString('pt-BR', {
-    day: '2-digit', month: '2-digit', year: 'numeric',
-    hour: '2-digit', minute: '2-digit',
+  return new Date(iso).toLocaleString("pt-BR", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
   });
 }
 
 function resourceLabel(t: string | null | undefined) {
-  if (!t) return '—';
-  return RESOURCE_LABELS[t] ?? t.replace(/_/g, ' ');
+  if (!t) return "—";
+  return RESOURCE_LABELS[t] ?? t.replace(/_/g, " ");
 }
 
-function actionTone(action: string): 'default' | 'destructive' | 'outline' | 'secondary' {
-  if (action.includes('deleted') || action.includes('cancelled') || action.includes('blocked') || action.includes('rejected')) {
-    return 'destructive';
+function actionTone(action: string): "default" | "destructive" | "outline" | "secondary" {
+  if (
+    action.includes("deleted") ||
+    action.includes("cancelled") ||
+    action.includes("blocked") ||
+    action.includes("rejected")
+  ) {
+    return "destructive";
   }
-  if (action.includes('created') || action.includes('approved') || action.includes('unblocked')) {
-    return 'default';
+  if (action.includes("created") || action.includes("approved") || action.includes("unblocked")) {
+    return "default";
   }
-  return 'secondary';
+  return "secondary";
 }
 
 function AdminAuditLogPage() {
-  const [days, setDays] = useState('30');
-  const [resourceType, setResourceType] = useState<string>('all');
-  const [action, setAction] = useState<string>('all');
-  const [adminId, setAdminId] = useState<string>('all');
-  const [search, setSearch] = useState('');
-  const [searchInput, setSearchInput] = useState('');
+  const [days, setDays] = useState("30");
+  const [resourceType, setResourceType] = useState<string>("all");
+  const [action, setAction] = useState<string>("all");
+  const [adminId, setAdminId] = useState<string>("all");
+  const [search, setSearch] = useState("");
+  const [searchInput, setSearchInput] = useState("");
   const [page, setPage] = useState(1);
   const [expanded, setExpanded] = useState<string | null>(null);
   const [exporting, setExporting] = useState(false);
   const pageSize = 50;
 
-  const filterPayload = useMemo(() => ({
-    days: Number(days),
-    resourceType: resourceType === 'all' ? undefined : resourceType,
-    action: action === 'all' ? undefined : action,
-    adminId: adminId === 'all' ? undefined : adminId,
-    search: search.trim() || undefined,
-    page,
-    pageSize,
-  }), [days, resourceType, action, adminId, search, page]);
+  const filterPayload = useMemo(
+    () => ({
+      days: Number(days),
+      resourceType: resourceType === "all" ? undefined : resourceType,
+      action: action === "all" ? undefined : action,
+      adminId: adminId === "all" ? undefined : adminId,
+      search: search.trim() || undefined,
+      page,
+      pageSize,
+    }),
+    [days, resourceType, action, adminId, search, page],
+  );
 
   const { data, isLoading, isFetching, refetch } = useQuery({
-    queryKey: ['admin-audit-search', filterPayload],
+    queryKey: ["admin-audit-search", filterPayload],
     queryFn: () => searchAdminAuditLog({ data: filterPayload }),
   });
 
   const { data: filterOptions } = useQuery({
-    queryKey: ['admin-audit-filter-options'],
+    queryKey: ["admin-audit-filter-options"],
     queryFn: () => getAdminAuditFilterOptions({ data: undefined as never }),
     staleTime: 60_000,
   });
@@ -111,22 +132,22 @@ function AdminAuditLogPage() {
       const res = await exportAdminAuditCsv({
         data: {
           days: Number(days),
-          resourceType: resourceType === 'all' ? undefined : resourceType,
-          action: action === 'all' ? undefined : action,
-          adminId: adminId === 'all' ? undefined : adminId,
+          resourceType: resourceType === "all" ? undefined : resourceType,
+          action: action === "all" ? undefined : action,
+          adminId: adminId === "all" ? undefined : adminId,
           search: search.trim() || undefined,
         },
       });
-      const blob = new Blob([res.csv], { type: 'text/csv;charset=utf-8' });
+      const blob = new Blob([res.csv], { type: "text/csv;charset=utf-8" });
       const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
+      const a = document.createElement("a");
       a.href = url;
       a.download = `auditoria-${new Date().toISOString().slice(0, 10)}.csv`;
       a.click();
       URL.revokeObjectURL(url);
       toast.success(`${res.count} registros exportados`);
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Falha ao exportar');
+      toast.error(err instanceof Error ? err.message : "Falha ao exportar");
     } finally {
       setExporting(false);
     }
@@ -141,11 +162,11 @@ function AdminAuditLogPage() {
       action={
         <div className="flex gap-2">
           <Button variant="outline" size="sm" onClick={() => refetch()} disabled={isFetching}>
-            <RefreshCw className={`w-4 h-4 ${isFetching ? 'animate-spin' : ''}`} />
+            <RefreshCw className={`w-4 h-4 ${isFetching ? "animate-spin" : ""}`} />
             Atualizar
           </Button>
           <Button size="sm" onClick={handleExport} disabled={exporting}>
-            <Download className="w-4 h-4" /> {exporting ? 'Exportando…' : 'Exportar CSV'}
+            <Download className="w-4 h-4" /> {exporting ? "Exportando…" : "Exportar CSV"}
           </Button>
         </div>
       }
@@ -159,47 +180,91 @@ function AdminAuditLogPage() {
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-3">
-              <Select value={days} onValueChange={(v) => { setDays(v); setPage(1); }}>
-                <SelectTrigger><SelectValue placeholder="Período" /></SelectTrigger>
+              <Select
+                value={days}
+                onValueChange={(v) => {
+                  setDays(v);
+                  setPage(1);
+                }}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Período" />
+                </SelectTrigger>
                 <SelectContent>
                   {PERIOD_OPTIONS.map((p) => (
-                    <SelectItem key={p.value} value={p.value}>{p.label}</SelectItem>
+                    <SelectItem key={p.value} value={p.value}>
+                      {p.label}
+                    </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
 
-              <Select value={resourceType} onValueChange={(v) => { setResourceType(v); setPage(1); }}>
-                <SelectTrigger><SelectValue placeholder="Módulo" /></SelectTrigger>
+              <Select
+                value={resourceType}
+                onValueChange={(v) => {
+                  setResourceType(v);
+                  setPage(1);
+                }}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Módulo" />
+                </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">Todos os módulos</SelectItem>
                   {(filterOptions?.resourceTypes ?? []).map((r) => (
-                    <SelectItem key={r} value={r}>{resourceLabel(r)}</SelectItem>
+                    <SelectItem key={r} value={r}>
+                      {resourceLabel(r)}
+                    </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
 
-              <Select value={action} onValueChange={(v) => { setAction(v); setPage(1); }}>
-                <SelectTrigger><SelectValue placeholder="Ação" /></SelectTrigger>
+              <Select
+                value={action}
+                onValueChange={(v) => {
+                  setAction(v);
+                  setPage(1);
+                }}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Ação" />
+                </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">Todas as ações</SelectItem>
                   {(filterOptions?.actions ?? []).map((a) => (
-                    <SelectItem key={a} value={a}>{a}</SelectItem>
+                    <SelectItem key={a} value={a}>
+                      {a}
+                    </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
 
-              <Select value={adminId} onValueChange={(v) => { setAdminId(v); setPage(1); }}>
-                <SelectTrigger><SelectValue placeholder="Administrador" /></SelectTrigger>
+              <Select
+                value={adminId}
+                onValueChange={(v) => {
+                  setAdminId(v);
+                  setPage(1);
+                }}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Administrador" />
+                </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">Todos os admins</SelectItem>
                   {(filterOptions?.admins ?? []).map((a) => (
-                    <SelectItem key={a.id} value={a.id}>{a.email ?? a.id.slice(0, 8)}</SelectItem>
+                    <SelectItem key={a.id} value={a.id}>
+                      {a.email ?? a.id.slice(0, 8)}
+                    </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
 
               <form
-                onSubmit={(e) => { e.preventDefault(); setSearch(searchInput); setPage(1); }}
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  setSearch(searchInput);
+                  setPage(1);
+                }}
                 className="relative"
               >
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
@@ -221,7 +286,7 @@ function AdminAuditLogPage() {
                 <ScrollText className="w-4 h-4" /> Histórico
               </span>
               <span className="text-xs text-muted-foreground font-normal">
-                {total} {total === 1 ? 'registro' : 'registros'}
+                {total} {total === 1 ? "registro" : "registros"}
               </span>
             </CardTitle>
           </CardHeader>
@@ -267,14 +332,16 @@ function AdminAuditLogPage() {
                 </span>
                 <div className="flex gap-2">
                   <Button
-                    variant="outline" size="sm"
+                    variant="outline"
+                    size="sm"
                     onClick={() => setPage((p) => Math.max(1, p - 1))}
                     disabled={page <= 1}
                   >
                     Anterior
                   </Button>
                   <Button
-                    variant="outline" size="sm"
+                    variant="outline"
+                    size="sm"
                     onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
                     disabled={page >= totalPages}
                   >
@@ -305,38 +372,50 @@ interface AuditEvent {
 }
 
 function AuditRow({
-  event, expanded, onToggle,
-}: { event: AuditEvent; expanded: boolean; onToggle: () => void }) {
+  event,
+  expanded,
+  onToggle,
+}: {
+  event: AuditEvent;
+  expanded: boolean;
+  onToggle: () => void;
+}) {
   const { data: detail, isLoading } = useQuery({
-    queryKey: ['audit-detail', event.id],
+    queryKey: ["audit-detail", event.id],
     queryFn: () => getAdminAuditLogDetail({ data: { id: event.id } }),
     enabled: expanded,
     staleTime: Infinity,
   });
 
   const sourceLabel =
-    event.source === 'trigger_user' ? 'Admin' :
-    event.source === 'trigger_system' ? 'Sistema' :
-    'Servidor';
+    event.source === "trigger_user"
+      ? "Admin"
+      : event.source === "trigger_system"
+        ? "Sistema"
+        : "Servidor";
 
   return (
     <>
       <tr
-        className={`border-b last:border-0 hover:bg-muted/40 cursor-pointer transition-colors ${expanded ? 'bg-muted/40' : ''}`}
+        className={`border-b last:border-0 hover:bg-muted/40 cursor-pointer transition-colors ${expanded ? "bg-muted/40" : ""}`}
         onClick={onToggle}
       >
         <td className="py-2 pr-2 text-muted-foreground">
           {expanded ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
         </td>
-        <td className="py-2 pr-3 whitespace-nowrap text-xs text-muted-foreground">{fmtDate(event.created_at)}</td>
+        <td className="py-2 pr-3 whitespace-nowrap text-xs text-muted-foreground">
+          {fmtDate(event.created_at)}
+        </td>
         <td className="py-2 pr-3 text-xs">
-          {event.admin_email ?? (event.admin_id ? event.admin_id.slice(0, 8) : 'sistema')}
+          {event.admin_email ?? (event.admin_id ? event.admin_id.slice(0, 8) : "sistema")}
         </td>
         <td className="py-2 pr-3">
-          <Badge variant={actionTone(event.action)} className="text-[10px] uppercase">{event.action}</Badge>
+          <Badge variant={actionTone(event.action)} className="text-[10px] uppercase">
+            {event.action}
+          </Badge>
         </td>
         <td className="py-2 pr-3 text-xs">{resourceLabel(event.resource_type)}</td>
-        <td className="py-2 pr-3 text-xs max-w-[400px] truncate">{event.description ?? '—'}</td>
+        <td className="py-2 pr-3 text-xs max-w-[400px] truncate">{event.description ?? "—"}</td>
         <td className="py-2 text-xs text-muted-foreground">{sourceLabel}</td>
       </tr>
       {expanded && (
@@ -345,7 +424,9 @@ function AuditRow({
             {isLoading ? (
               <p className="text-xs text-muted-foreground">Carregando detalhe…</p>
             ) : detail?.event ? (
-              <AuditDetail event={detail.event as AuditEvent & { before: unknown; after: unknown }} />
+              <AuditDetail
+                event={detail.event as AuditEvent & { before: unknown; after: unknown }}
+              />
             ) : (
               <p className="text-xs text-muted-foreground">Sem detalhes adicionais.</p>
             )}
@@ -356,9 +437,7 @@ function AuditRow({
   );
 }
 
-function AuditDetail({
-  event,
-}: { event: AuditEvent & { before: unknown; after: unknown } }) {
+function AuditDetail({ event }: { event: AuditEvent & { before: unknown; after: unknown } }) {
   const before = event.before as Record<string, unknown> | null;
   const after = event.after as Record<string, unknown> | null;
 
@@ -368,7 +447,7 @@ function AuditDetail({
     const keys = new Set([...Object.keys(before), ...Object.keys(after)]);
     const out: Array<{ key: string; before: unknown; after: unknown }> = [];
     for (const k of keys) {
-      if (k === 'updated_at' || k === 'created_at') continue;
+      if (k === "updated_at" || k === "created_at") continue;
       const b = (before as Record<string, unknown>)[k];
       const a = (after as Record<string, unknown>)[k];
       if (JSON.stringify(b) !== JSON.stringify(a)) out.push({ key: k, before: b, after: a });
@@ -379,10 +458,10 @@ function AuditDetail({
   return (
     <div className="space-y-3 text-xs">
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        <DetailField label="ID do recurso" value={event.resource_id ?? '—'} mono />
-        <DetailField label="IP" value={event.ip ?? '—'} mono />
+        <DetailField label="ID do recurso" value={event.resource_id ?? "—"} mono />
+        <DetailField label="IP" value={event.ip ?? "—"} mono />
         <DetailField label="Origem" value={event.source} />
-        <DetailField label="User-agent" value={event.user_agent ?? '—'} className="truncate" />
+        <DetailField label="User-agent" value={event.user_agent ?? "—"} className="truncate" />
       </div>
 
       {diff && diff.length > 0 && (
@@ -394,11 +473,15 @@ function AuditDetail({
                 <code className="text-muted-foreground">{d.key}</code>
                 <div>
                   <p className="text-[10px] text-muted-foreground uppercase">Antes</p>
-                  <pre className="text-xs whitespace-pre-wrap break-all">{formatValue(d.before)}</pre>
+                  <pre className="text-xs whitespace-pre-wrap break-all">
+                    {formatValue(d.before)}
+                  </pre>
                 </div>
                 <div>
                   <p className="text-[10px] text-muted-foreground uppercase">Depois</p>
-                  <pre className="text-xs whitespace-pre-wrap break-all">{formatValue(d.after)}</pre>
+                  <pre className="text-xs whitespace-pre-wrap break-all">
+                    {formatValue(d.after)}
+                  </pre>
                 </div>
               </div>
             ))}
@@ -434,19 +517,27 @@ function AuditDetail({
 }
 
 function DetailField({
-  label, value, mono, className,
-}: { label: string; value: string; mono?: boolean; className?: string }) {
+  label,
+  value,
+  mono,
+  className,
+}: {
+  label: string;
+  value: string;
+  mono?: boolean;
+  className?: string;
+}) {
   return (
     <div className={className}>
       <p className="text-[10px] text-muted-foreground uppercase">{label}</p>
-      <p className={mono ? 'font-mono' : ''}>{value}</p>
+      <p className={mono ? "font-mono" : ""}>{value}</p>
     </div>
   );
 }
 
 function formatValue(v: unknown): string {
-  if (v === null || v === undefined) return '—';
-  if (typeof v === 'string') return v;
-  if (typeof v === 'number' || typeof v === 'boolean') return String(v);
+  if (v === null || v === undefined) return "—";
+  if (typeof v === "string") return v;
+  if (typeof v === "number" || typeof v === "boolean") return String(v);
   return JSON.stringify(v, null, 2);
 }

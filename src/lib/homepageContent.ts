@@ -1,4 +1,4 @@
-import { supabase } from '@/integrations/supabase/client';
+import { supabase } from "@/integrations/supabase/client";
 
 export type HomepageSettings = {
   id: string;
@@ -50,9 +50,9 @@ export type HomepageSettings = {
 
 export async function fetchHomepageSettings(): Promise<HomepageSettings | null> {
   const { data, error } = await (supabase as any)
-    .from('homepage_settings')
-    .select('*')
-    .order('created_at', { ascending: true })
+    .from("homepage_settings")
+    .select("*")
+    .order("created_at", { ascending: true })
     .limit(1)
     .maybeSingle();
   if (error) throw error;

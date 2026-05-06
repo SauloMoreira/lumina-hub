@@ -49,7 +49,7 @@ export type CartLine = {
   freeShippingEligible?: boolean;
   minQty?: number;
   qtyMultiple?: number;
-  source?: 'b2c' | 'b2b';
+  source?: "b2c" | "b2b";
 };
 
 /**
@@ -60,7 +60,7 @@ export type CartLine = {
  */
 export function snapQty(
   qty: number,
-  opts: { minQty?: number; qtyMultiple?: number; stock: number }
+  opts: { minQty?: number; qtyMultiple?: number; stock: number },
 ): number {
   const min = Math.max(1, opts.minQty ?? 1);
   const mult = Math.max(1, opts.qtyMultiple ?? 1);
@@ -77,18 +77,18 @@ export function snapQty(
 }
 
 export const formatBRL = (value: number) =>
-  value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+  value.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 
 export const FREE_SHIPPING_THRESHOLD = 199;
-export const STORE_WHATSAPP = '5521982126467';
-export const STORE_NAME = 'Led Maricá';
+export const STORE_WHATSAPP = "5521982126467";
+export const STORE_NAME = "Led Maricá";
 
 /**
  * Calcula se o carrinho atingiu a regra de frete grátis.
  * Regra: somente produtos elegíveis contam para o subtotal mínimo.
  */
 export function calcFreeShippingProgress(
-  items: Array<{ price: number; qty: number; freeShippingEligible?: boolean }>
+  items: Array<{ price: number; qty: number; freeShippingEligible?: boolean }>,
 ) {
   const eligibleSubtotal = items
     .filter((i) => i.freeShippingEligible)

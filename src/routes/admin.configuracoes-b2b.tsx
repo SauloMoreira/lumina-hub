@@ -1,16 +1,17 @@
-import { createFileRoute, Link } from '@tanstack/react-router';
-import { useEffect, useState } from 'react';
-import { toast } from 'sonner';
-import { ArrowLeft, Briefcase, Loader2, Save, Ticket, AlertCircle } from 'lucide-react';
-import { buildSeo } from '@/lib/seo';
-import { AdminLayout } from '@/components/admin/AdminLayout';
-import { Button } from '@/components/ui/button';
-import { Switch } from '@/components/ui/switch';
-import { Label } from '@/components/ui/label';
-import { adminGetB2bSettings, adminUpdateB2bSettings } from '@/server/b2bSettings.functions';
+import { createFileRoute, Link } from "@tanstack/react-router";
+import { useEffect, useState } from "react";
+import { toast } from "sonner";
+import { ArrowLeft, Briefcase, Loader2, Save, Ticket, AlertCircle } from "lucide-react";
+import { buildSeo } from "@/lib/seo";
+import { AdminLayout } from "@/components/admin/AdminLayout";
+import { Button } from "@/components/ui/button";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
+import { adminGetB2bSettings, adminUpdateB2bSettings } from "@/server/b2bSettings.functions";
 
-export const Route = createFileRoute('/admin/configuracoes-b2b')({
-  head: () => buildSeo({ title: 'Configurações B2B', url: '/admin/configuracoes-b2b', noindex: true }),
+export const Route = createFileRoute("/admin/configuracoes-b2b")({
+  head: () =>
+    buildSeo({ title: "Configurações B2B", url: "/admin/configuracoes-b2b", noindex: true }),
   component: AdminB2bSettingsPage,
 });
 
@@ -25,7 +26,7 @@ function AdminB2bSettingsPage() {
         const { settings } = await adminGetB2bSettings();
         setAllowCoupon(settings.allow_coupon_in_b2b);
       } catch (err) {
-        toast.error(err instanceof Error ? err.message : 'Erro ao carregar configurações.');
+        toast.error(err instanceof Error ? err.message : "Erro ao carregar configurações.");
       } finally {
         setLoading(false);
       }
@@ -36,9 +37,9 @@ function AdminB2bSettingsPage() {
     setSaving(true);
     try {
       await adminUpdateB2bSettings({ data: { allow_coupon_in_b2b: allowCoupon } });
-      toast.success('Configurações salvas.');
+      toast.success("Configurações salvas.");
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Erro ao salvar.');
+      toast.error(err instanceof Error ? err.message : "Erro ao salvar.");
     } finally {
       setSaving(false);
     }
@@ -48,7 +49,7 @@ function AdminB2bSettingsPage() {
     <AdminLayout title="Configurações B2B">
       <div className="max-w-3xl mx-auto">
         <Link
-          to={'/admin' as never}
+          to={"/admin" as never}
           className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition mb-6"
         >
           <ArrowLeft className="w-4 h-4" /> Voltar ao painel
@@ -99,9 +100,13 @@ function AdminB2bSettingsPage() {
             <div className="pt-4 border-t border-border flex justify-end">
               <Button onClick={handleSave} disabled={saving} className="h-10">
                 {saving ? (
-                  <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Salvando…</>
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" /> Salvando…
+                  </>
                 ) : (
-                  <><Save className="w-4 h-4 mr-2" /> Salvar configurações</>
+                  <>
+                    <Save className="w-4 h-4 mr-2" /> Salvar configurações
+                  </>
                 )}
               </Button>
             </div>

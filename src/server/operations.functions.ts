@@ -1,5 +1,5 @@
-import { createServerFn } from '@tanstack/react-start';
-import { requireAdmin } from '@/integrations/supabase/admin-middleware';
+import { createServerFn } from "@tanstack/react-start";
+import { requireAdmin } from "@/integrations/supabase/admin-middleware";
 
 /**
  * Agrega todos os contadores e alertas usados pelo
@@ -10,8 +10,8 @@ import { requireAdmin } from '@/integrations/supabase/admin-middleware';
  * trafegar listas grandes.
  */
 
-export type Severity = 'low' | 'medium' | 'high';
-export type CardStatus = 'ok' | 'warn' | 'danger' | 'unknown';
+export type Severity = "low" | "medium" | "high";
+export type CardStatus = "ok" | "warn" | "danger" | "unknown";
 
 export type OperationsCard = {
   id: string;
@@ -60,12 +60,9 @@ function hoursAgoISO(h: number): string {
   return new Date(Date.now() - h * 3600 * 1000).toISOString();
 }
 
-async function safeCount(
-  build: () => any,
-  filter: (q: any) => any,
-): Promise<number> {
+async function safeCount(build: () => any, filter: (q: any) => any): Promise<number> {
   try {
-    const q = filter(build().select('*', { count: 'exact', head: true }));
+    const q = filter(build().select("*", { count: "exact", head: true }));
     const { count, error } = await q;
     if (error) return 0;
     return count ?? 0;
@@ -74,10 +71,10 @@ async function safeCount(
   }
 }
 
-export const getAdminOperations = createServerFn({ method: 'GET' })
+export const getAdminOperations = createServerFn({ method: "GET" })
   .middleware([requireAdmin])
   .handler(async (): Promise<OperationsData> => {
-    const { supabaseAdmin } = await import('@/integrations/supabase/client.server');
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const todayISO = startOfTodayISO();
     const stale24h = hoursAgoISO(24);
 
@@ -85,57 +82,54 @@ export const getAdminOperations = createServerFn({ method: 'GET' })
     // Pedidos
     // ============================================================
     const paidAwaitingShipping = await safeCount(
-      () => supabaseAdmin.from('orders'),
-      (q) =>
-        q
-          .eq('payment_status', 'paid')
-          .in('status', ['paid', 'confirmed', 'preparing']),
+      () => supabaseAdmin.from("orders"),
+      (q) => q.eq("payment_status", "paid").in("status", ["paid", "confirmed", "preparing"]),
     );
     const paidStuck24h = await safeCount(
-      () => supabaseAdmin.from('orders'),
+      () => supabaseAdmin.from("orders"),
       (q) =>
         q
-          .eq('payment_status', 'paid')
-          .in('status', ['paid', 'confirmed', 'preparing'])
-          .lt('updated_at', stale24h),
+          .eq("payment_status", "paid")
+          .in("status", ["paid", "confirmed", "preparing"])
+          .lt("updated_at", stale24h),
     );
     const ordersAwaitingPayment = await safeCount(
-      () => supabaseAdmin.from('orders'),
-      (q) => q.in('payment_status', ['pending', 'in_process', 'preference_created']),
+      () => supabaseAdmin.from("orders"),
+      (q) => q.in("payment_status", ["pending", "in_process", "preference_created"]),
     );
 
     // ============================================================
     // Leads
     // ============================================================
     const newLeads = await safeCount(
-      () => supabaseAdmin.from('leads'),
-      (q) => q.in('status', ['novo', 'new']),
+      () => supabaseAdmin.from("leads"),
+      (q) => q.in("status", ["novo", "new"]),
     );
     const leadsNoResponse24h = await safeCount(
-      () => supabaseAdmin.from('leads'),
-      (q) => q.in('status', ['novo', 'new']).lt('created_at', stale24h),
+      () => supabaseAdmin.from("leads"),
+      (q) => q.in("status", ["novo", "new"]).lt("created_at", stale24h),
     );
 
     // ============================================================
     // B2B
     // ============================================================
     const pendingCompanies = await safeCount(
-      () => supabaseAdmin.from('companies'),
-      (q) => q.eq('status', 'pending'),
+      () => supabaseAdmin.from("companies"),
+      (q) => q.eq("status", "pending"),
     );
     const openNegotiations = await safeCount(
-      () => supabaseAdmin.from('b2b_negotiations'),
-      (q) => q.in('status', ['nova', 'em_andamento']),
+      () => supabaseAdmin.from("b2b_negotiations"),
+      (q) => q.in("status", ["nova", "em_andamento"]),
     );
 
     // Pedidos B2B pagos aguardando separação
     const b2bPaidAwaitingShipping = await safeCount(
-      () => supabaseAdmin.from('orders'),
+      () => supabaseAdmin.from("orders"),
       (q) =>
         q
-          .eq('order_type', 'b2b')
-          .eq('payment_status', 'paid')
-          .in('status', ['paid', 'confirmed', 'preparing']),
+          .eq("order_type", "b2b")
+          .eq("payment_status", "paid")
+          .in("status", ["paid", "confirmed", "preparing"]),
     );
 
     // Receita / ticket médio B2B do dia + total economizado em B2B hoje
@@ -145,11 +139,11 @@ export const getAdminOperations = createServerFn({ method: 'GET' })
     let b2bDiscountGivenToday = 0;
     try {
       const { data: b2bPaid } = await supabaseAdmin
-        .from('orders')
-        .select('total, b2b_discount_total')
-        .eq('order_type', 'b2b')
-        .eq('payment_status', 'paid')
-        .gte('paid_at', startOfTodayISO());
+        .from("orders")
+        .select("total, b2b_discount_total")
+        .eq("order_type", "b2b")
+        .eq("payment_status", "paid")
+        .gte("paid_at", startOfTodayISO());
       b2bOrdersPaidToday = (b2bPaid ?? []).length;
       b2bRevenueToday = (b2bPaid ?? []).reduce((s, o) => s + Number(o.total ?? 0), 0);
       b2bDiscountGivenToday = (b2bPaid ?? []).reduce(
@@ -163,11 +157,13 @@ export const getAdminOperations = createServerFn({ method: 'GET' })
     let b2bAllowsCoupon = false;
     try {
       const { data: bs } = await supabaseAdmin
-        .from('b2b_settings')
-        .select('allow_coupon_in_b2b')
+        .from("b2b_settings")
+        .select("allow_coupon_in_b2b")
         .limit(1)
         .maybeSingle();
-      b2bAllowsCoupon = Boolean((bs as { allow_coupon_in_b2b?: boolean } | null)?.allow_coupon_in_b2b);
+      b2bAllowsCoupon = Boolean(
+        (bs as { allow_coupon_in_b2b?: boolean } | null)?.allow_coupon_in_b2b,
+      );
     } catch {}
 
     // Revisão Comercial — contadores de catálogo (varejo + B2B)
@@ -178,21 +174,23 @@ export const getAdminOperations = createServerFn({ method: 'GET' })
       b2bCriticalMargin: 0,
     };
     try {
-      const { computeCommercialReview } = await import('@/lib/commercialReview');
+      const { computeCommercialReview } = await import("@/lib/commercialReview");
       const { data: financeS } = await supabaseAdmin
-        .from('finance_settings')
-        .select('default_min_margin_percent')
+        .from("finance_settings")
+        .select("default_min_margin_percent")
         .limit(1)
         .maybeSingle();
       const defMin =
-        Number((financeS as { default_min_margin_percent?: number | string | null } | null)
-          ?.default_min_margin_percent) || 25;
+        Number(
+          (financeS as { default_min_margin_percent?: number | string | null } | null)
+            ?.default_min_margin_percent,
+        ) || 25;
       const { data: prodList } = await supabaseAdmin
-        .from('products')
+        .from("products")
         .select(
-          'id, price, sale_price, cost_price, min_margin_percent, b2b_enabled, b2b_price, b2b_min_qty',
+          "id, price, sale_price, cost_price, min_margin_percent, b2b_enabled, b2b_price, b2b_min_qty",
         )
-        .eq('active', true)
+        .eq("active", true)
         .limit(2000);
       for (const p of (prodList ?? []) as Array<{
         id: string;
@@ -218,10 +216,10 @@ export const getAdminOperations = createServerFn({ method: 'GET' })
           defMin,
         );
         const codes = new Set(r.issues.map((i) => i.code));
-        if (codes.has('critical_margin')) commercial.productsCriticalMargin += 1;
-        if (codes.has('attention_margin')) commercial.productsAttentionMargin += 1;
-        if (codes.has('negative_margin')) commercial.productsNegativeMargin += 1;
-        if (codes.has('b2b_critical')) commercial.b2bCriticalMargin += 1;
+        if (codes.has("critical_margin")) commercial.productsCriticalMargin += 1;
+        if (codes.has("attention_margin")) commercial.productsAttentionMargin += 1;
+        if (codes.has("negative_margin")) commercial.productsNegativeMargin += 1;
+        if (codes.has("b2b_critical")) commercial.b2bCriticalMargin += 1;
       }
     } catch {}
 
@@ -229,7 +227,7 @@ export const getAdminOperations = createServerFn({ method: 'GET' })
     let stalledWithStock = 0;
     let highMovementLowMargin = 0;
     try {
-      const { data: cr } = await supabaseAdmin.rpc('get_commercial_review_counters');
+      const { data: cr } = await supabaseAdmin.rpc("get_commercial_review_counters");
       const j = (cr ?? {}) as Record<string, number>;
       stalledWithStock = Number(j.stalled_with_stock ?? 0);
       highMovementLowMargin = Number(j.high_movement_low_margin ?? 0);
@@ -245,7 +243,7 @@ export const getAdminOperations = createServerFn({ method: 'GET' })
     let highMovementLowStock = 0;
     let stockNoMin = 0;
     try {
-      const { data: counters } = await supabaseAdmin.rpc('get_stock_counters');
+      const { data: counters } = await supabaseAdmin.rpc("get_stock_counters");
       const j = (counters ?? {}) as Record<string, number>;
       lowStock = Number(j.low_stock ?? 0);
       productsOutOfStock = Number(j.out_of_stock ?? 0);
@@ -255,75 +253,65 @@ export const getAdminOperations = createServerFn({ method: 'GET' })
     } catch {}
 
     const productsNoImage = await safeCount(
-      () => supabaseAdmin.from('products'),
-      (q) =>
-        q
-          .eq('active', true)
-          .or('images.is.null,images.eq.{}'),
+      () => supabaseAdmin.from("products"),
+      (q) => q.eq("active", true).or("images.is.null,images.eq.{}"),
     );
     const productsNoPrice = await safeCount(
-      () => supabaseAdmin.from('products'),
-      (q) => q.eq('active', true).or('price.is.null,price.eq.0'),
+      () => supabaseAdmin.from("products"),
+      (q) => q.eq("active", true).or("price.is.null,price.eq.0"),
     );
     const productsNoWeight = await safeCount(
-      () => supabaseAdmin.from('products'),
-      (q) => q.eq('active', true).or('weight_kg.is.null,weight_kg.eq.0'),
+      () => supabaseAdmin.from("products"),
+      (q) => q.eq("active", true).or("weight_kg.is.null,weight_kg.eq.0"),
     );
     const productsNoCategory = await safeCount(
-      () => supabaseAdmin.from('products'),
-      (q) => q.eq('active', true).is('category_id', null),
+      () => supabaseAdmin.from("products"),
+      (q) => q.eq("active", true).is("category_id", null),
     );
     const productsNoSeo = await safeCount(
-      () => supabaseAdmin.from('products'),
-      (q) =>
-        q
-          .eq('active', true)
-          .or('seo_title.is.null,seo_description.is.null'),
+      () => supabaseAdmin.from("products"),
+      (q) => q.eq("active", true).or("seo_title.is.null,seo_description.is.null"),
     );
 
     // B2B: preço sem qty mínima e vice-versa
     const b2bPriceNoMinQty = await safeCount(
-      () => supabaseAdmin.from('products'),
+      () => supabaseAdmin.from("products"),
       (q) =>
         q
-          .eq('active', true)
-          .eq('b2b_enabled', true)
-          .not('b2b_price', 'is', null)
-          .or('b2b_min_qty.is.null,b2b_min_qty.eq.0'),
+          .eq("active", true)
+          .eq("b2b_enabled", true)
+          .not("b2b_price", "is", null)
+          .or("b2b_min_qty.is.null,b2b_min_qty.eq.0"),
     );
     const b2bMinQtyNoPrice = await safeCount(
-      () => supabaseAdmin.from('products'),
+      () => supabaseAdmin.from("products"),
       (q) =>
         q
-          .eq('active', true)
-          .eq('b2b_enabled', true)
-          .not('b2b_min_qty', 'is', null)
-          .gt('b2b_min_qty', 0)
-          .is('b2b_price', null),
+          .eq("active", true)
+          .eq("b2b_enabled", true)
+          .not("b2b_min_qty", "is", null)
+          .gt("b2b_min_qty", 0)
+          .is("b2b_price", null),
     );
 
     // ============================================================
     // Logística — bairros frete local
     // ============================================================
     const localZonesActive = await safeCount(
-      () => supabaseAdmin.from('local_delivery_zones'),
-      (q) => q.eq('is_active', true),
+      () => supabaseAdmin.from("local_delivery_zones"),
+      (q) => q.eq("is_active", true),
     );
     const localZonesNoPrice = await safeCount(
-      () => supabaseAdmin.from('local_delivery_zones'),
-      (q) =>
-        q
-          .eq('is_active', true)
-          .eq('inherits_parent_price', false)
-          .is('shipping_price', null),
+      () => supabaseAdmin.from("local_delivery_zones"),
+      (q) => q.eq("is_active", true).eq("inherits_parent_price", false).is("shipping_price", null),
     );
 
     // Retirada na loja sem endereço
     let pickupMissingAddress = 0;
     try {
       const { data: cs } = await supabaseAdmin
-        .from('company_settings')
-        .select('pickup_enabled, pickup_address')
+        .from("company_settings")
+        .select("pickup_enabled, pickup_address")
         .limit(1)
         .maybeSingle();
       if (cs?.pickup_enabled && !cs?.pickup_address) {
@@ -333,98 +321,95 @@ export const getAdminOperations = createServerFn({ method: 'GET' })
 
     // Webhook MP com erro
     const webhookErrors = await safeCount(
-      () => supabaseAdmin.from('payment_webhook_events'),
-      (q) =>
-        q
-          .gte('created_at', hoursAgoISO(24 * 7))
-          .not('processing_error', 'is', null),
+      () => supabaseAdmin.from("payment_webhook_events"),
+      (q) => q.gte("created_at", hoursAgoISO(24 * 7)).not("processing_error", "is", null),
     );
 
     // Notas fiscais
     const stale24hInv = stale24h;
     const invoicesPending = await safeCount(
-      () => supabaseAdmin.from('orders'),
-      (q) => q.eq('payment_status', 'paid').eq('invoice_status', 'pendente_emissao'),
+      () => supabaseAdmin.from("orders"),
+      (q) => q.eq("payment_status", "paid").eq("invoice_status", "pendente_emissao"),
     );
     const invoicesError = await safeCount(
-      () => supabaseAdmin.from('orders'),
-      (q) => q.eq('payment_status', 'paid').eq('invoice_status', 'erro_emissao'),
+      () => supabaseAdmin.from("orders"),
+      (q) => q.eq("payment_status", "paid").eq("invoice_status", "erro_emissao"),
     );
     const invoicesOverdue = await safeCount(
-      () => supabaseAdmin.from('orders'),
+      () => supabaseAdmin.from("orders"),
       (q) =>
         q
-          .eq('payment_status', 'paid')
-          .eq('invoice_status', 'pendente_emissao')
-          .lt('paid_at', stale24hInv),
+          .eq("payment_status", "paid")
+          .eq("invoice_status", "pendente_emissao")
+          .lt("paid_at", stale24hInv),
     );
     const invoicesB2bMissing = await safeCount(
-      () => supabaseAdmin.from('orders'),
+      () => supabaseAdmin.from("orders"),
       (q) =>
         q
-          .eq('payment_status', 'paid')
-          .eq('order_type', 'b2b')
-          .in('invoice_status', ['nao_necessaria', 'pendente_emissao']),
+          .eq("payment_status", "paid")
+          .eq("order_type", "b2b")
+          .in("invoice_status", ["nao_necessaria", "pendente_emissao"]),
     );
 
     // ============================================================
     // Operação de hoje
     // ============================================================
     const ordersCreatedToday = await safeCount(
-      () => supabaseAdmin.from('orders'),
-      (q) => q.gte('created_at', todayISO),
+      () => supabaseAdmin.from("orders"),
+      (q) => q.gte("created_at", todayISO),
     );
     const ordersPaidToday = await safeCount(
-      () => supabaseAdmin.from('orders'),
-      (q) => q.eq('payment_status', 'paid').gte('paid_at', todayISO),
+      () => supabaseAdmin.from("orders"),
+      (q) => q.eq("payment_status", "paid").gte("paid_at", todayISO),
     );
     let revenueToday = 0;
     let productsSoldToday = 0;
     let avgTicketToday = 0;
     try {
       const { data: paid } = await supabaseAdmin
-        .from('orders')
-        .select('id, total')
-        .eq('payment_status', 'paid')
-        .gte('paid_at', todayISO);
+        .from("orders")
+        .select("id, total")
+        .eq("payment_status", "paid")
+        .gte("paid_at", todayISO);
       const ids = (paid ?? []).map((o) => o.id);
       revenueToday = (paid ?? []).reduce((s, o) => s + Number(o.total ?? 0), 0);
       avgTicketToday = (paid ?? []).length > 0 ? revenueToday / (paid as any[]).length : 0;
       if (ids.length > 0) {
         const { data: items } = await supabaseAdmin
-          .from('order_items')
-          .select('qty')
-          .in('order_id', ids);
+          .from("order_items")
+          .select("qty")
+          .in("order_id", ids);
         productsSoldToday = (items ?? []).reduce((s, it) => s + Number(it.qty ?? 0), 0);
       }
     } catch {}
 
     const leadsToday = await safeCount(
-      () => supabaseAdmin.from('leads'),
-      (q) => q.gte('created_at', todayISO),
+      () => supabaseAdmin.from("leads"),
+      (q) => q.gte("created_at", todayISO),
     );
     const b2bNegotiationsToday = await safeCount(
-      () => supabaseAdmin.from('b2b_negotiations'),
-      (q) => q.gte('created_at', todayISO),
+      () => supabaseAdmin.from("b2b_negotiations"),
+      (q) => q.gte("created_at", todayISO),
     );
 
     // Carrinhos abandonados
     const abandonedNew = await safeCount(
-      () => supabaseAdmin.from('abandoned_carts'),
-      (q) => q.in('status', ['novo', 'contato_enviado']),
+      () => supabaseAdmin.from("abandoned_carts"),
+      (q) => q.in("status", ["novo", "contato_enviado"]),
     );
     const abandonedStuck24h = await safeCount(
-      () => supabaseAdmin.from('abandoned_carts'),
-      (q) => q.in('status', ['novo', 'contato_enviado']).lt('abandoned_at', stale24h),
+      () => supabaseAdmin.from("abandoned_carts"),
+      (q) => q.in("status", ["novo", "contato_enviado"]).lt("abandoned_at", stale24h),
     );
     let abandonedHighValue = 0;
     let abandonedTotalValue = 0;
     let abandonedB2bCount = 0;
     try {
       const { data: ac } = await supabaseAdmin
-        .from('abandoned_carts')
-        .select('subtotal_amount, company_id')
-        .in('status', ['novo', 'contato_enviado'])
+        .from("abandoned_carts")
+        .select("subtotal_amount, company_id")
+        .in("status", ["novo", "contato_enviado"])
         .limit(500);
       (ac ?? []).forEach((c) => {
         const v = Number(c.subtotal_amount ?? 0);
@@ -447,7 +432,7 @@ export const getAdminOperations = createServerFn({ method: 'GET' })
       b2bMissingSeo: false,
     };
     try {
-      const { fetchSeoQuickCounts } = await import('./seoInsights.server');
+      const { fetchSeoQuickCounts } = await import("./seoInsights.server");
       seo = await fetchSeoQuickCounts();
     } catch {}
 
@@ -467,22 +452,22 @@ export const getAdminOperations = createServerFn({ method: 'GET' })
     let activeBadFormatCount = 0;
     try {
       const { data: integs } = await supabaseAdmin
-        .from('marketing_integrations')
-        .select('provider, account_id, enabled');
+        .from("marketing_integrations")
+        .select("provider, account_id, enabled");
       const ID_PATTERNS: Record<string, RegExp> = {
-        ga4: new RegExp('^G-[A-Z0-9]{6,}$', 'i'),
-        gtm: new RegExp('^GTM-[A-Z0-9]{4,}$', 'i'),
-        meta_pixel: new RegExp('^[0-9]{6,20}$'),
-        tiktok_pixel: new RegExp('^[A-Z0-9]{15,30}$', 'i'),
-        clarity: new RegExp('^[a-z0-9]{6,20}$', 'i'),
-        google_ads: new RegExp('^AW-[0-9]{6,}$', 'i'),
+        ga4: new RegExp("^G-[A-Z0-9]{6,}$", "i"),
+        gtm: new RegExp("^GTM-[A-Z0-9]{4,}$", "i"),
+        meta_pixel: new RegExp("^[0-9]{6,20}$"),
+        tiktok_pixel: new RegExp("^[A-Z0-9]{15,30}$", "i"),
+        clarity: new RegExp("^[a-z0-9]{6,20}$", "i"),
+        google_ads: new RegExp("^AW-[0-9]{6,}$", "i"),
       };
       (integs ?? []).forEach((i: any) => {
-        if (i.provider === 'ga4') hasGa4 = true;
-        if (i.provider === 'meta_pixel') hasMetaPixel = true;
+        if (i.provider === "ga4") hasGa4 = true;
+        if (i.provider === "meta_pixel") hasMetaPixel = true;
         if (i.enabled) {
           const re = ID_PATTERNS[i.provider];
-          if (re && !re.test(String(i.account_id ?? '').trim())) {
+          if (re && !re.test(String(i.account_id ?? "").trim())) {
             activeBadFormatCount += 1;
           }
         }
@@ -507,7 +492,7 @@ export const getAdminOperations = createServerFn({ method: 'GET' })
       taxRegimeMissing: false,
     };
     try {
-      const { fetchFiscalQuickCounts } = await import('./fiscalInsights.server');
+      const { fetchFiscalQuickCounts } = await import("./fiscalInsights.server");
       fiscal = await fetchFiscalQuickCounts();
     } catch {}
 
@@ -533,399 +518,398 @@ export const getAdminOperations = createServerFn({ method: 'GET' })
       mpWebhookErrors7d: 0,
     };
     try {
-      const { fetchFinanceAlertCounts } = await import('./financeAlerts.server');
+      const { fetchFinanceAlertCounts } = await import("./financeAlerts.server");
       financeAlerts = await fetchFinanceAlertCounts();
     } catch {}
 
     // Qualidade do cadastro de produtos (helper isolado)
-    let productQuality = { activeBelow70: 0, featuredBelow70: 0, ruim: 0, missingTech: 0 };
+    const productQuality = { activeBelow70: 0, featuredBelow70: 0, ruim: 0, missingTech: 0 };
     try {
-      const { computeProductQuality } = await import('@/lib/productQuality');
+      const { computeProductQuality } = await import("@/lib/productQuality");
       const { data } = await supabaseAdmin
-        .from('products')
-        .select('id, name, tags, featured, description, specs, seo_title, seo_description, slug, ncm, weight_kg, height_cm, width_cm, length_cm, cost_price, category_id, images, product_images(alt_text, original_url), product_attributes(attribute_key, attribute_value, attribute_unit, is_visible)')
-        .eq('active', true)
+        .from("products")
+        .select(
+          "id, name, tags, featured, description, specs, seo_title, seo_description, slug, ncm, weight_kg, height_cm, width_cm, length_cm, cost_price, category_id, images, product_images(alt_text, original_url), product_attributes(attribute_key, attribute_value, attribute_unit, is_visible)",
+        )
+        .eq("active", true)
         .limit(1000);
       for (const p of (data ?? []) as any[]) {
         const q = computeProductQuality(p);
         if (q.score < 70) productQuality.activeBelow70++;
         if (p.featured && q.score < 70) productQuality.featuredBelow70++;
-        if (q.classification === 'ruim') productQuality.ruim++;
-        if (q.issues.some((i) => i.code === 'no_tech_attrs')) productQuality.missingTech++;
+        if (q.classification === "ruim") productQuality.ruim++;
+        if (q.issues.some((i) => i.code === "no_tech_attrs")) productQuality.missingTech++;
       }
     } catch {}
 
     const cards: OperationsCard[] = [
       {
-        id: 'paid-awaiting-shipping',
-        title: 'Pedidos pagos aguardando separação',
-        description: 'Pedidos já pagos que precisam ser separados para entrega ou retirada.',
+        id: "paid-awaiting-shipping",
+        title: "Pedidos pagos aguardando separação",
+        description: "Pedidos já pagos que precisam ser separados para entrega ou retirada.",
         qty: paidAwaitingShipping,
-        status:
-          paidAwaitingShipping === 0
-            ? 'ok'
-            : paidStuck24h > 0
-              ? 'danger'
-              : 'warn',
-        ctaLabel: 'Ver pedidos',
-        ctaHref: '/admin/pedidos',
-        group: 'Pedidos',
+        status: paidAwaitingShipping === 0 ? "ok" : paidStuck24h > 0 ? "danger" : "warn",
+        ctaLabel: "Ver pedidos",
+        ctaHref: "/admin/pedidos",
+        group: "Pedidos",
       },
       {
-        id: 'orders-awaiting-payment',
-        title: 'Pedidos aguardando pagamento',
-        description: 'Pedidos criados mas ainda sem confirmação de pagamento.',
+        id: "orders-awaiting-payment",
+        title: "Pedidos aguardando pagamento",
+        description: "Pedidos criados mas ainda sem confirmação de pagamento.",
         qty: ordersAwaitingPayment,
-        status: ordersAwaitingPayment === 0 ? 'ok' : 'warn',
-        ctaLabel: 'Ver pedidos',
-        ctaHref: '/admin/pedidos',
-        group: 'Pedidos',
+        status: ordersAwaitingPayment === 0 ? "ok" : "warn",
+        ctaLabel: "Ver pedidos",
+        ctaHref: "/admin/pedidos",
+        group: "Pedidos",
       },
       {
-        id: 'new-leads',
-        title: 'Leads novos',
-        description: 'Leads que chegaram e ainda não foram trabalhados.',
+        id: "new-leads",
+        title: "Leads novos",
+        description: "Leads que chegaram e ainda não foram trabalhados.",
         qty: newLeads,
-        status:
-          newLeads === 0 ? 'ok' : leadsNoResponse24h > 0 ? 'danger' : 'warn',
-        ctaLabel: 'Responder leads',
-        ctaHref: '/admin/leads',
-        group: 'Clientes e leads',
+        status: newLeads === 0 ? "ok" : leadsNoResponse24h > 0 ? "danger" : "warn",
+        ctaLabel: "Responder leads",
+        ctaHref: "/admin/leads",
+        group: "Clientes e leads",
       },
       {
-        id: 'leads-no-response',
-        title: 'Leads sem resposta há +24h',
-        description: 'Leads que estão parados há mais de um dia. Risco de perder a venda.',
+        id: "leads-no-response",
+        title: "Leads sem resposta há +24h",
+        description: "Leads que estão parados há mais de um dia. Risco de perder a venda.",
         qty: leadsNoResponse24h,
-        status: leadsNoResponse24h === 0 ? 'ok' : 'danger',
-        ctaLabel: 'Responder leads',
-        ctaHref: '/admin/leads',
-        group: 'Clientes e leads',
+        status: leadsNoResponse24h === 0 ? "ok" : "danger",
+        ctaLabel: "Responder leads",
+        ctaHref: "/admin/leads",
+        group: "Clientes e leads",
       },
       {
-        id: 'pending-companies',
-        title: 'Empresas B2B pendentes',
-        description: 'Empresas aguardando aprovação para acessar preços de atacado.',
+        id: "pending-companies",
+        title: "Empresas B2B pendentes",
+        description: "Empresas aguardando aprovação para acessar preços de atacado.",
         qty: pendingCompanies,
-        status: pendingCompanies === 0 ? 'ok' : 'warn',
-        ctaLabel: 'Analisar empresas',
-        ctaHref: '/admin/empresas',
-        group: 'B2B',
+        status: pendingCompanies === 0 ? "ok" : "warn",
+        ctaLabel: "Analisar empresas",
+        ctaHref: "/admin/empresas",
+        group: "B2B",
       },
       {
-        id: 'b2b-open-negotiations',
-        title: 'Negociações B2B abertas',
-        description: 'Negociações em andamento que precisam de retorno.',
+        id: "b2b-open-negotiations",
+        title: "Negociações B2B abertas",
+        description: "Negociações em andamento que precisam de retorno.",
         qty: openNegotiations,
-        status: openNegotiations === 0 ? 'ok' : 'warn',
-        ctaLabel: 'Ver negociações',
+        status: openNegotiations === 0 ? "ok" : "warn",
+        ctaLabel: "Ver negociações",
         ctaHref: null,
-        group: 'B2B',
+        group: "B2B",
       },
       {
-        id: 'b2b-paid-awaiting',
-        title: 'Pedidos B2B pagos aguardando separação',
-        description: 'Pedidos de empresa já pagos que precisam ser separados — priorize.',
+        id: "b2b-paid-awaiting",
+        title: "Pedidos B2B pagos aguardando separação",
+        description: "Pedidos de empresa já pagos que precisam ser separados — priorize.",
         qty: b2bPaidAwaitingShipping,
-        status: b2bPaidAwaitingShipping === 0 ? 'ok' : 'warn',
-        ctaLabel: 'Ver pedidos',
-        ctaHref: '/admin/pedidos',
-        group: 'B2B',
+        status: b2bPaidAwaitingShipping === 0 ? "ok" : "warn",
+        ctaLabel: "Ver pedidos",
+        ctaHref: "/admin/pedidos",
+        group: "B2B",
       },
       {
-        id: 'b2b-revenue-today',
-        title: 'Vendas B2B pagas hoje',
+        id: "b2b-revenue-today",
+        title: "Vendas B2B pagas hoje",
         description:
           b2bOrdersPaidToday > 0
-            ? `Ticket médio ${new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(b2bAvgTicketToday)} · ${new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(b2bDiscountGivenToday)} concedidos em desconto empresa.`
-            : 'Nenhum pedido B2B pago foi registrado hoje ainda.',
+            ? `Ticket médio ${new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(b2bAvgTicketToday)} · ${new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(b2bDiscountGivenToday)} concedidos em desconto empresa.`
+            : "Nenhum pedido B2B pago foi registrado hoje ainda.",
         qty: b2bOrdersPaidToday,
-        status: 'ok',
-        ctaLabel: 'Ver pedidos B2B',
-        ctaHref: '/admin/pedidos',
-        group: 'B2B',
+        status: "ok",
+        ctaLabel: "Ver pedidos B2B",
+        ctaHref: "/admin/pedidos",
+        group: "B2B",
       },
       {
-        id: 'low-stock',
-        title: 'Produtos com estoque baixo',
-        description: 'Produtos com estoque igual ou abaixo do mínimo definido.',
+        id: "low-stock",
+        title: "Produtos com estoque baixo",
+        description: "Produtos com estoque igual ou abaixo do mínimo definido.",
         qty: lowStock,
-        status: lowStock === 0 ? 'ok' : 'warn',
-        ctaLabel: 'Ver estoque',
-        ctaHref: '/admin/produtos/estoque',
-        group: 'Produtos',
+        status: lowStock === 0 ? "ok" : "warn",
+        ctaLabel: "Ver estoque",
+        ctaHref: "/admin/produtos/estoque",
+        group: "Produtos",
       },
       {
-        id: 'out-of-stock',
-        title: 'Produtos ativos sem estoque',
-        description: 'Produtos publicados mas sem unidades disponíveis.',
+        id: "out-of-stock",
+        title: "Produtos ativos sem estoque",
+        description: "Produtos publicados mas sem unidades disponíveis.",
         qty: productsOutOfStock,
-        status: productsOutOfStock === 0 ? 'ok' : 'danger',
-        ctaLabel: 'Ver produtos zerados',
-        ctaHref: '/admin/produtos/estoque',
-        group: 'Produtos',
+        status: productsOutOfStock === 0 ? "ok" : "danger",
+        ctaLabel: "Ver produtos zerados",
+        ctaHref: "/admin/produtos/estoque",
+        group: "Produtos",
       },
       {
-        id: 'inactive-products',
-        title: 'Produtos parados',
-        description: 'Produtos ativos com estoque mas sem venda no período configurado.',
+        id: "inactive-products",
+        title: "Produtos parados",
+        description: "Produtos ativos com estoque mas sem venda no período configurado.",
         qty: inactiveProducts,
-        status: inactiveProducts === 0 ? 'ok' : 'warn',
-        ctaLabel: 'Ver produtos parados',
-        ctaHref: '/admin/produtos/estoque',
-        group: 'Produtos',
+        status: inactiveProducts === 0 ? "ok" : "warn",
+        ctaLabel: "Ver produtos parados",
+        ctaHref: "/admin/produtos/estoque",
+        group: "Produtos",
       },
       {
-        id: 'high-movement-low-stock',
-        title: 'Alto giro com estoque baixo',
-        description: 'Produtos com boa saída no período cujo estoque já caiu para o nível mínimo.',
+        id: "high-movement-low-stock",
+        title: "Alto giro com estoque baixo",
+        description: "Produtos com boa saída no período cujo estoque já caiu para o nível mínimo.",
         qty: highMovementLowStock,
-        status: highMovementLowStock === 0 ? 'ok' : 'danger',
-        ctaLabel: 'Ver estoque',
-        ctaHref: '/admin/produtos/estoque',
-        group: 'Produtos',
+        status: highMovementLowStock === 0 ? "ok" : "danger",
+        ctaLabel: "Ver estoque",
+        ctaHref: "/admin/produtos/estoque",
+        group: "Produtos",
       },
       {
-        id: 'stock-no-min',
-        title: 'Produtos sem estoque mínimo',
-        description: 'Produtos ativos sem mínimo configurado — sem alerta de reposição.',
+        id: "stock-no-min",
+        title: "Produtos sem estoque mínimo",
+        description: "Produtos ativos sem mínimo configurado — sem alerta de reposição.",
         qty: stockNoMin,
-        status: stockNoMin === 0 ? 'ok' : 'warn',
-        ctaLabel: 'Configurar mínimos',
-        ctaHref: '/admin/produtos/estoque',
-        group: 'Produtos',
+        status: stockNoMin === 0 ? "ok" : "warn",
+        ctaLabel: "Configurar mínimos",
+        ctaHref: "/admin/produtos/estoque",
+        group: "Produtos",
       },
       {
-        id: 'no-image',
-        title: 'Produtos sem imagem',
-        description: 'Produtos publicados sem imagem prejudicam a conversão.',
+        id: "no-image",
+        title: "Produtos sem imagem",
+        description: "Produtos publicados sem imagem prejudicam a conversão.",
         qty: productsNoImage,
-        status: productsNoImage === 0 ? 'ok' : 'warn',
-        ctaLabel: 'Corrigir produtos',
-        ctaHref: '/admin/produtos',
-        group: 'Produtos',
+        status: productsNoImage === 0 ? "ok" : "warn",
+        ctaLabel: "Corrigir produtos",
+        ctaHref: "/admin/produtos",
+        group: "Produtos",
       },
       {
-        id: 'no-price',
-        title: 'Produtos sem preço',
-        description: 'Produtos ativos sem preço configurado não podem ser vendidos.',
+        id: "no-price",
+        title: "Produtos sem preço",
+        description: "Produtos ativos sem preço configurado não podem ser vendidos.",
         qty: productsNoPrice,
-        status: productsNoPrice === 0 ? 'ok' : 'danger',
-        ctaLabel: 'Ver revisão comercial',
-        ctaHref: '/admin/produtos/revisao-comercial',
-        group: 'Produtos',
+        status: productsNoPrice === 0 ? "ok" : "danger",
+        ctaLabel: "Ver revisão comercial",
+        ctaHref: "/admin/produtos/revisao-comercial",
+        group: "Produtos",
       },
       {
-        id: 'no-weight',
-        title: 'Produtos sem peso/dimensão',
-        description: 'Sem essas informações o cálculo de frete pode falhar.',
+        id: "no-weight",
+        title: "Produtos sem peso/dimensão",
+        description: "Sem essas informações o cálculo de frete pode falhar.",
         qty: productsNoWeight,
-        status: productsNoWeight === 0 ? 'ok' : 'warn',
-        ctaLabel: 'Corrigir produtos',
-        ctaHref: '/admin/produtos',
-        group: 'Produtos',
+        status: productsNoWeight === 0 ? "ok" : "warn",
+        ctaLabel: "Corrigir produtos",
+        ctaHref: "/admin/produtos",
+        group: "Produtos",
       },
       {
-        id: 'local-zones-no-price',
-        title: 'Bairros sem valor de frete',
-        description: 'Bairros ativos para entrega local que ainda não têm valor configurado.',
+        id: "local-zones-no-price",
+        title: "Bairros sem valor de frete",
+        description: "Bairros ativos para entrega local que ainda não têm valor configurado.",
         qty: localZonesNoPrice,
-        status: localZonesNoPrice === 0 ? 'ok' : 'danger',
-        ctaLabel: 'Configurar frete',
-        ctaHref: '/admin/settings/frete-local',
-        group: 'Logística',
+        status: localZonesNoPrice === 0 ? "ok" : "danger",
+        ctaLabel: "Configurar frete",
+        ctaHref: "/admin/settings/frete-local",
+        group: "Logística",
       },
       {
-        id: 'abandoned-carts',
-        title: 'Carrinhos abandonados',
+        id: "abandoned-carts",
+        title: "Carrinhos abandonados",
         description:
           abandonedTotalValue > 0
-            ? `Valor total parado: ${new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(abandonedTotalValue)}.`
-            : 'Clientes que adicionaram produtos mas não finalizaram a compra.',
+            ? `Valor total parado: ${new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(abandonedTotalValue)}.`
+            : "Clientes que adicionaram produtos mas não finalizaram a compra.",
         qty: abandonedNew,
         status:
           abandonedNew === 0
-            ? 'ok'
+            ? "ok"
             : abandonedHighValue > 0 || abandonedStuck24h > 0
-              ? 'danger'
-              : 'warn',
-        ctaLabel: 'Ver carrinhos',
-        ctaHref: '/admin/carrinhos-abandonados',
-        group: 'Pedidos',
+              ? "danger"
+              : "warn",
+        ctaLabel: "Ver carrinhos",
+        ctaHref: "/admin/carrinhos-abandonados",
+        group: "Pedidos",
       },
       {
-        id: 'seo-pendencias',
-        title: 'SEO com pendências',
-        description: 'Produtos, categorias ou páginas com SEO incompleto. Corrigir ajuda a aparecer no Google.',
+        id: "seo-pendencias",
+        title: "SEO com pendências",
+        description:
+          "Produtos, categorias ou páginas com SEO incompleto. Corrigir ajuda a aparecer no Google.",
         qty: seoTotalIssues,
-        status: seoTotalIssues === 0
-          ? 'ok'
-          : (seo.homepageMissingSeo || seo.productsNoSeoTitle > 10 ? 'danger' : 'warn'),
-        ctaLabel: 'Ver SEO Insights',
-        ctaHref: '/admin/seo',
-        group: 'Marketing',
+        status:
+          seoTotalIssues === 0
+            ? "ok"
+            : seo.homepageMissingSeo || seo.productsNoSeoTitle > 10
+              ? "danger"
+              : "warn",
+        ctaLabel: "Ver SEO Insights",
+        ctaHref: "/admin/seo",
+        group: "Marketing",
       },
       {
-        id: 'invoices-pending',
-        title: 'Notas fiscais pendentes',
+        id: "invoices-pending",
+        title: "Notas fiscais pendentes",
         description:
           invoicesOverdue > 0
             ? `${invoicesOverdue} pedido(s) pago(s) há +24h sem nota registrada.`
-            : 'Pedidos pagos aguardando registro de NF-e.',
+            : "Pedidos pagos aguardando registro de NF-e.",
         qty: invoicesPending,
         status:
           invoicesPending === 0
-            ? 'ok'
+            ? "ok"
             : invoicesOverdue > 0 || invoicesError > 0
-              ? 'danger'
-              : 'warn',
-        ctaLabel: 'Ver notas fiscais',
-        ctaHref: '/admin/financeiro/notas-fiscais',
-        group: 'Financeiro',
+              ? "danger"
+              : "warn",
+        ctaLabel: "Ver notas fiscais",
+        ctaHref: "/admin/financeiro/notas-fiscais",
+        group: "Financeiro",
       },
       {
-        id: 'fiscal-pending',
-        title: 'Pendências fiscais',
-        description:
-          fiscal.companyFiscalIncomplete
-            ? 'Dados fiscais da empresa incompletos. Configure regime tributário, CFOPs e série padrão de NF-e.'
-            : `${fiscal.productsFiscalIncomplete} produto(s) com dados fiscais incompletos.`,
+        id: "fiscal-pending",
+        title: "Pendências fiscais",
+        description: fiscal.companyFiscalIncomplete
+          ? "Dados fiscais da empresa incompletos. Configure regime tributário, CFOPs e série padrão de NF-e."
+          : `${fiscal.productsFiscalIncomplete} produto(s) com dados fiscais incompletos.`,
         qty: fiscalTotalIssues,
         status:
           fiscalTotalIssues === 0
-            ? 'ok'
+            ? "ok"
             : fiscal.companyFiscalIncomplete || fiscal.paidOrdersWithFiscalIssues > 0
-              ? 'danger'
-              : 'warn',
-        ctaLabel: 'Ver pendências fiscais',
-        ctaHref: '/admin/financeiro/impostos',
-        group: 'Financeiro',
+              ? "danger"
+              : "warn",
+        ctaLabel: "Ver pendências fiscais",
+        ctaHref: "/admin/financeiro/impostos",
+        group: "Financeiro",
       },
       {
-        id: 'finance-margin-critical',
-        title: 'Pedidos com margem crítica',
+        id: "finance-margin-critical",
+        title: "Pedidos com margem crítica",
         description:
           financeAlerts.ordersPaidNegativeMargin > 0
             ? `${financeAlerts.ordersPaidNegativeMargin} pedido(s) pago(s) com margem negativa nos últimos 30 dias.`
-            : 'Nenhum pedido pago com margem negativa nos últimos 30 dias.',
+            : "Nenhum pedido pago com margem negativa nos últimos 30 dias.",
         qty: financeAlerts.ordersPaidNegativeMargin,
-        status: financeAlerts.ordersPaidNegativeMargin === 0 ? 'ok' : 'danger',
-        ctaLabel: 'Ver relatório de margem',
-        ctaHref: '/admin/financeiro/relatorios?tab=margem',
-        group: 'Financeiro',
+        status: financeAlerts.ordersPaidNegativeMargin === 0 ? "ok" : "danger",
+        ctaLabel: "Ver relatório de margem",
+        ctaHref: "/admin/financeiro/relatorios?tab=margem",
+        group: "Financeiro",
       },
       {
-        id: 'finance-products-no-cost',
-        title: 'Produtos ativos sem custo cadastrado',
+        id: "finance-products-no-cost",
+        title: "Produtos ativos sem custo cadastrado",
         description:
           financeAlerts.productsWithoutCost > 0
             ? `${financeAlerts.productsWithoutCost} produto(s) ativo(s) sem cost_price — margem não pode ser calculada.`
-            : 'Todos os produtos ativos têm custo cadastrado.',
+            : "Todos os produtos ativos têm custo cadastrado.",
         qty: financeAlerts.productsWithoutCost,
         status:
           financeAlerts.productsWithoutCost === 0
-            ? 'ok'
+            ? "ok"
             : financeAlerts.ordersPaidWithMissingCost > 0
-              ? 'danger'
-              : 'warn',
-        ctaLabel: 'Ver revisão comercial',
-        ctaHref: '/admin/produtos/revisao-comercial',
-        group: 'Financeiro',
+              ? "danger"
+              : "warn",
+        ctaLabel: "Ver revisão comercial",
+        ctaHref: "/admin/produtos/revisao-comercial",
+        group: "Financeiro",
       },
       {
-        id: 'finance-mp-fee-unknown',
-        title: 'Pagamentos com taxa Mercado Pago desconhecida',
+        id: "finance-mp-fee-unknown",
+        title: "Pagamentos com taxa Mercado Pago desconhecida",
         description:
           financeAlerts.mpPaidNoFee30d > 0
             ? `${financeAlerts.mpPaidNoFee30d} pagamento(s) sem taxa real nem estimada nos últimos 30 dias.`
             : financeAlerts.mpPaidEstimatedFee30d > 0
               ? `${financeAlerts.mpPaidEstimatedFee30d} pagamento(s) usando taxa estimada — webhook pendente.`
-              : 'Todas as taxas Mercado Pago dos últimos 30 dias estão registradas.',
+              : "Todas as taxas Mercado Pago dos últimos 30 dias estão registradas.",
         qty: financeAlerts.mpPaidNoFee30d || financeAlerts.mpPaidEstimatedFee30d,
         status:
           financeAlerts.mpPaidNoFee30d > 0
-            ? 'warn'
+            ? "warn"
             : financeAlerts.mpPaidEstimatedFee30d > 0
-              ? 'warn'
-              : 'ok',
-        ctaLabel: 'Ver Mercado Pago',
-        ctaHref: '/admin/financeiro/relatorios?tab=mercado-pago',
-        group: 'Financeiro',
+              ? "warn"
+              : "ok",
+        ctaLabel: "Ver Mercado Pago",
+        ctaHref: "/admin/financeiro/relatorios?tab=mercado-pago",
+        group: "Financeiro",
       },
       {
-        id: 'products-quality-low',
-        title: 'Produtos com cadastro incompleto',
+        id: "products-quality-low",
+        title: "Produtos com cadastro incompleto",
         description:
           productQuality.activeBelow70 > 0
             ? `${productQuality.activeBelow70} produto(s) ativo(s) com score abaixo de 70 — não podem ser destacados em vitrines.`
-            : 'Todos os produtos ativos têm cadastro adequado.',
+            : "Todos os produtos ativos têm cadastro adequado.",
         qty: productQuality.activeBelow70,
         status:
           productQuality.activeBelow70 === 0
-            ? 'ok'
+            ? "ok"
             : productQuality.featuredBelow70 > 0
-              ? 'danger'
-              : 'warn',
-        ctaLabel: 'Ver qualidade do cadastro',
-        ctaHref: '/admin/produtos/qualidade',
-        group: 'Catálogo',
+              ? "danger"
+              : "warn",
+        ctaLabel: "Ver qualidade do cadastro",
+        ctaHref: "/admin/produtos/qualidade",
+        group: "Catálogo",
       },
       {
-        id: 'commercial-margin-critical',
-        title: 'Produtos com margem de venda crítica',
+        id: "commercial-margin-critical",
+        title: "Produtos com margem de venda crítica",
         description:
           commercial.productsCriticalMargin > 0
             ? `${commercial.productsCriticalMargin} produto(s) ativo(s) com margem abaixo da mínima cadastrada.`
-            : 'Nenhum produto ativo com margem de venda abaixo da mínima.',
+            : "Nenhum produto ativo com margem de venda abaixo da mínima.",
         qty: commercial.productsCriticalMargin,
         status:
           commercial.productsCriticalMargin === 0
-            ? 'ok'
+            ? "ok"
             : commercial.productsNegativeMargin > 0
-              ? 'danger'
-              : 'warn',
-        ctaLabel: 'Ver revisão comercial',
-        ctaHref: '/admin/produtos/revisao-comercial',
-        group: 'Catálogo',
+              ? "danger"
+              : "warn",
+        ctaLabel: "Ver revisão comercial",
+        ctaHref: "/admin/produtos/revisao-comercial",
+        group: "Catálogo",
       },
       {
-        id: 'commercial-b2b-critical',
-        title: 'Produtos com preço B2B crítico',
+        id: "commercial-b2b-critical",
+        title: "Produtos com preço B2B crítico",
         description:
           commercial.b2bCriticalMargin > 0
             ? `${commercial.b2bCriticalMargin} produto(s) com margem B2B abaixo da mínima — atacado pode estar dando prejuízo.`
-            : 'Nenhum produto com margem B2B crítica.',
+            : "Nenhum produto com margem B2B crítica.",
         qty: commercial.b2bCriticalMargin,
-        status: commercial.b2bCriticalMargin === 0 ? 'ok' : 'danger',
-        ctaLabel: 'Ver revisão comercial',
-        ctaHref: '/admin/produtos/revisao-comercial',
-        group: 'Catálogo',
+        status: commercial.b2bCriticalMargin === 0 ? "ok" : "danger",
+        ctaLabel: "Ver revisão comercial",
+        ctaHref: "/admin/produtos/revisao-comercial",
+        group: "Catálogo",
       },
       {
-        id: 'commercial-stalled-with-stock',
-        title: 'Produtos parados com estoque',
+        id: "commercial-stalled-with-stock",
+        title: "Produtos parados com estoque",
         description:
           stalledWithStock > 0
             ? `${stalledWithStock} produto(s) ativo(s) com estoque mas sem venda no período configurado.`
-            : 'Nenhum produto ativo parado no período analisado.',
+            : "Nenhum produto ativo parado no período analisado.",
         qty: stalledWithStock,
-        status: stalledWithStock === 0 ? 'ok' : 'warn',
-        ctaLabel: 'Ver revisão comercial',
-        ctaHref: '/admin/produtos/revisao-comercial',
-        group: 'Catálogo',
+        status: stalledWithStock === 0 ? "ok" : "warn",
+        ctaLabel: "Ver revisão comercial",
+        ctaHref: "/admin/produtos/revisao-comercial",
+        group: "Catálogo",
       },
       {
-        id: 'commercial-high-movement-low-margin',
-        title: 'Alto giro com margem baixa',
+        id: "commercial-high-movement-low-margin",
+        title: "Alto giro com margem baixa",
         description:
           highMovementLowMargin > 0
             ? `${highMovementLowMargin} produto(s) vendendo bem mas com margem abaixo da mínima — atenção ao resultado.`
-            : 'Nenhum produto de alto giro com margem comprometida.',
+            : "Nenhum produto de alto giro com margem comprometida.",
         qty: highMovementLowMargin,
-        status: highMovementLowMargin === 0 ? 'ok' : 'danger',
-        ctaLabel: 'Ver revisão comercial',
-        ctaHref: '/admin/produtos/revisao-comercial',
-        group: 'Catálogo',
+        status: highMovementLowMargin === 0 ? "ok" : "danger",
+        ctaLabel: "Ver revisão comercial",
+        ctaHref: "/admin/produtos/revisao-comercial",
+        group: "Catálogo",
       },
     ];
 
@@ -936,423 +920,424 @@ export const getAdminOperations = createServerFn({ method: 'GET' })
 
     if (paidStuck24h > 0) {
       alerts.push({
-        id: 'paid-stuck',
-        title: 'Pedidos pagos parados há mais de 24h',
+        id: "paid-stuck",
+        title: "Pedidos pagos parados há mais de 24h",
         description: `${paidStuck24h} pedido(s) pago(s) ainda não foram separados. Atrasos comprometem a entrega.`,
-        severity: 'high',
-        ctaLabel: 'Ver pedidos',
-        ctaHref: '/admin/pedidos',
+        severity: "high",
+        ctaLabel: "Ver pedidos",
+        ctaHref: "/admin/pedidos",
       });
     }
     if (productsNoPrice > 0) {
       alerts.push({
-        id: 'alert-no-price',
-        title: 'Produtos ativos sem preço',
+        id: "alert-no-price",
+        title: "Produtos ativos sem preço",
         description: `${productsNoPrice} produto(s) publicado(s) sem preço. O cliente não consegue comprar.`,
-        severity: 'high',
-        ctaLabel: 'Corrigir produtos',
-        ctaHref: '/admin/produtos',
+        severity: "high",
+        ctaLabel: "Corrigir produtos",
+        ctaHref: "/admin/produtos",
       });
     }
     if (localZonesActive === 0) {
       alerts.push({
-        id: 'alert-local-zones-empty',
-        title: 'Frete local sem bairros ativos',
-        description: 'Você ainda não ativou nenhum bairro para entrega local em Maricá.',
-        severity: 'medium',
-        ctaLabel: 'Configurar frete',
-        ctaHref: '/admin/settings/frete-local',
+        id: "alert-local-zones-empty",
+        title: "Frete local sem bairros ativos",
+        description: "Você ainda não ativou nenhum bairro para entrega local em Maricá.",
+        severity: "medium",
+        ctaLabel: "Configurar frete",
+        ctaHref: "/admin/settings/frete-local",
       });
     }
     if (localZonesNoPrice > 0) {
       alerts.push({
-        id: 'alert-local-zones-no-price',
-        title: 'Bairros ativos sem valor de frete',
+        id: "alert-local-zones-no-price",
+        title: "Bairros ativos sem valor de frete",
         description: `${localZonesNoPrice} bairro(s) ativo(s) sem preço de frete. O checkout pode falhar.`,
-        severity: 'high',
-        ctaLabel: 'Configurar frete',
-        ctaHref: '/admin/settings/frete-local',
+        severity: "high",
+        ctaLabel: "Configurar frete",
+        ctaHref: "/admin/settings/frete-local",
       });
     }
     if (pickupMissingAddress > 0) {
       alerts.push({
-        id: 'alert-pickup-no-address',
-        title: 'Retirada na loja sem endereço',
-        description: 'Você ativou a retirada na loja mas não cadastrou o endereço.',
-        severity: 'medium',
-        ctaLabel: 'Configurar empresa',
-        ctaHref: '/admin/settings/company',
+        id: "alert-pickup-no-address",
+        title: "Retirada na loja sem endereço",
+        description: "Você ativou a retirada na loja mas não cadastrou o endereço.",
+        severity: "medium",
+        ctaLabel: "Configurar empresa",
+        ctaHref: "/admin/settings/company",
       });
     }
     if (pendingCompanies > 0) {
       alerts.push({
-        id: 'alert-pending-companies',
-        title: 'Empresas B2B aguardando aprovação',
+        id: "alert-pending-companies",
+        title: "Empresas B2B aguardando aprovação",
         description: `${pendingCompanies} empresa(s) aguardando análise para liberar preços B2B.`,
-        severity: 'medium',
-        ctaLabel: 'Analisar empresas',
-        ctaHref: '/admin/empresas',
+        severity: "medium",
+        ctaLabel: "Analisar empresas",
+        ctaHref: "/admin/empresas",
       });
     }
     if (b2bPriceNoMinQty > 0) {
       alerts.push({
-        id: 'alert-b2b-price-no-min',
-        title: 'Produto B2B sem quantidade mínima',
+        id: "alert-b2b-price-no-min",
+        title: "Produto B2B sem quantidade mínima",
         description: `${b2bPriceNoMinQty} produto(s) com preço B2B mas sem quantidade mínima definida.`,
-        severity: 'medium',
-        ctaLabel: 'Corrigir produtos',
-        ctaHref: '/admin/produtos',
+        severity: "medium",
+        ctaLabel: "Corrigir produtos",
+        ctaHref: "/admin/produtos",
       });
     }
     if (b2bMinQtyNoPrice > 0) {
       alerts.push({
-        id: 'alert-b2b-min-no-price',
-        title: 'Produto B2B sem preço de atacado',
+        id: "alert-b2b-min-no-price",
+        title: "Produto B2B sem preço de atacado",
         description: `${b2bMinQtyNoPrice} produto(s) com quantidade mínima B2B mas sem preço B2B.`,
-        severity: 'medium',
-        ctaLabel: 'Corrigir produtos',
-        ctaHref: '/admin/produtos',
+        severity: "medium",
+        ctaLabel: "Corrigir produtos",
+        ctaHref: "/admin/produtos",
       });
     }
     if (abandonedHighValue > 0) {
       alerts.push({
-        id: 'alert-abandoned-high-value',
-        title: 'Carrinho abandonado de alto valor',
+        id: "alert-abandoned-high-value",
+        title: "Carrinho abandonado de alto valor",
         description: `${abandonedHighValue} carrinho(s) acima de R$ 1.000 aguardando contato pelo WhatsApp.`,
-        severity: 'high',
-        ctaLabel: 'Ver carrinhos',
-        ctaHref: '/admin/carrinhos-abandonados',
+        severity: "high",
+        ctaLabel: "Ver carrinhos",
+        ctaHref: "/admin/carrinhos-abandonados",
       });
     }
     if (abandonedStuck24h > 0) {
       alerts.push({
-        id: 'alert-abandoned-stuck',
-        title: 'Carrinhos sem retorno há +24h',
+        id: "alert-abandoned-stuck",
+        title: "Carrinhos sem retorno há +24h",
         description: `${abandonedStuck24h} carrinho(s) abandonado(s) sem retorno do cliente.`,
-        severity: 'medium',
-        ctaLabel: 'Ver carrinhos',
-        ctaHref: '/admin/carrinhos-abandonados',
+        severity: "medium",
+        ctaLabel: "Ver carrinhos",
+        ctaHref: "/admin/carrinhos-abandonados",
       });
     }
     if (abandonedB2bCount > 0) {
       alerts.push({
-        id: 'alert-abandoned-b2b',
-        title: 'Carrinho B2B abandonado',
+        id: "alert-abandoned-b2b",
+        title: "Carrinho B2B abandonado",
         description: `${abandonedB2bCount} carrinho(s) B2B aguardando recuperação.`,
-        severity: 'medium',
-        ctaLabel: 'Ver carrinhos',
-        ctaHref: '/admin/carrinhos-abandonados',
+        severity: "medium",
+        ctaLabel: "Ver carrinhos",
+        ctaHref: "/admin/carrinhos-abandonados",
       });
     }
     if (productsNoImage > 0) {
       alerts.push({
-        id: 'alert-no-image',
-        title: 'Produtos ativos sem imagem',
+        id: "alert-no-image",
+        title: "Produtos ativos sem imagem",
         description: `${productsNoImage} produto(s) publicado(s) sem imagem. Isso reduz suas vendas.`,
-        severity: 'low',
-        ctaLabel: 'Corrigir produtos',
-        ctaHref: '/admin/produtos',
+        severity: "low",
+        ctaLabel: "Corrigir produtos",
+        ctaHref: "/admin/produtos",
       });
     }
     if (webhookErrors > 0) {
       alerts.push({
-        id: 'alert-webhook-errors',
-        title: 'Webhooks de pagamento com erro',
+        id: "alert-webhook-errors",
+        title: "Webhooks de pagamento com erro",
         description: `${webhookErrors} webhook(s) do Mercado Pago com erro nos últimos 7 dias.`,
-        severity: 'high',
-        ctaLabel: 'Ver detalhes',
-        ctaHref: '/admin',
+        severity: "high",
+        ctaLabel: "Ver detalhes",
+        ctaHref: "/admin",
       });
     }
 
     // SEO alerts
     if (seo.homepageMissingSeo) {
       alerts.push({
-        id: 'alert-seo-home',
-        title: 'Homepage sem SEO configurado',
-        description: 'A homepage está sem título ou descrição SEO — perde tráfego do Google.',
-        severity: 'high',
-        ctaLabel: 'Configurar SEO',
-        ctaHref: '/admin/conteudo/homepage',
+        id: "alert-seo-home",
+        title: "Homepage sem SEO configurado",
+        description: "A homepage está sem título ou descrição SEO — perde tráfego do Google.",
+        severity: "high",
+        ctaLabel: "Configurar SEO",
+        ctaHref: "/admin/conteudo/homepage",
       });
     }
     if (seo.b2bMissingSeo) {
       alerts.push({
-        id: 'alert-seo-b2b',
-        title: 'Vitrine B2B sem SEO',
-        description: 'A página B2B está sem título e descrição SEO configurados.',
-        severity: 'medium',
-        ctaLabel: 'Ver SEO Insights',
-        ctaHref: '/admin/seo',
+        id: "alert-seo-b2b",
+        title: "Vitrine B2B sem SEO",
+        description: "A página B2B está sem título e descrição SEO configurados.",
+        severity: "medium",
+        ctaLabel: "Ver SEO Insights",
+        ctaHref: "/admin/seo",
       });
     }
     if (seo.productsNoSeoTitle > 0 || seo.productsNoSeoDescription > 0) {
       alerts.push({
-        id: 'alert-seo-products',
-        title: 'Produtos com SEO incompleto',
+        id: "alert-seo-products",
+        title: "Produtos com SEO incompleto",
         description: `${seo.productsNoSeoTitle} sem título SEO, ${seo.productsNoSeoDescription} sem meta description.`,
-        severity: 'medium',
-        ctaLabel: 'Ver SEO Insights',
-        ctaHref: '/admin/seo',
+        severity: "medium",
+        ctaLabel: "Ver SEO Insights",
+        ctaHref: "/admin/seo",
       });
     }
     if (seo.categoriesNoDescription > 0) {
       alerts.push({
-        id: 'alert-seo-categories',
-        title: 'Categorias sem descrição',
+        id: "alert-seo-categories",
+        title: "Categorias sem descrição",
         description: `${seo.categoriesNoDescription} categoria(s) sem descrição prejudicam a navegação e o SEO.`,
-        severity: 'low',
-        ctaLabel: 'Ver SEO Insights',
-        ctaHref: '/admin/seo',
+        severity: "low",
+        ctaLabel: "Ver SEO Insights",
+        ctaHref: "/admin/seo",
       });
     }
 
     // Marketing Integrations (pixels/analytics)
     if (!hasGa4) {
       alerts.push({
-        id: 'alert-no-ga4',
-        title: 'Google Analytics 4 não configurado',
-        description: 'Sem GA4 você não mede tráfego, conversões nem origem das vendas.',
-        severity: 'medium',
-        ctaLabel: 'Configurar GA4',
-        ctaHref: '/admin/integracoes',
+        id: "alert-no-ga4",
+        title: "Google Analytics 4 não configurado",
+        description: "Sem GA4 você não mede tráfego, conversões nem origem das vendas.",
+        severity: "medium",
+        ctaLabel: "Configurar GA4",
+        ctaHref: "/admin/integracoes",
       });
     }
     if (!hasMetaPixel) {
       alerts.push({
-        id: 'alert-no-meta-pixel',
-        title: 'Meta Pixel não configurado',
-        description: 'Sem o Meta Pixel, campanhas no Facebook/Instagram não otimizam para vendas.',
-        severity: 'low',
-        ctaLabel: 'Configurar Meta Pixel',
-        ctaHref: '/admin/integracoes',
+        id: "alert-no-meta-pixel",
+        title: "Meta Pixel não configurado",
+        description: "Sem o Meta Pixel, campanhas no Facebook/Instagram não otimizam para vendas.",
+        severity: "low",
+        ctaLabel: "Configurar Meta Pixel",
+        ctaHref: "/admin/integracoes",
       });
     }
     if (activeBadFormatCount > 0) {
       alerts.push({
-        id: 'alert-integrations-bad-format',
-        title: 'Integração ativa com ID inválido',
+        id: "alert-integrations-bad-format",
+        title: "Integração ativa com ID inválido",
         description: `${activeBadFormatCount} integração(ões) ativa(s) com ID em formato inválido — não estão coletando dados.`,
-        severity: 'high',
-        ctaLabel: 'Corrigir integrações',
-        ctaHref: '/admin/integracoes',
+        severity: "high",
+        ctaLabel: "Corrigir integrações",
+        ctaHref: "/admin/integracoes",
       });
     }
     if (b2bPaidAwaitingShipping > 0) {
       alerts.push({
-        id: 'alert-b2b-paid-awaiting',
-        title: 'Pedidos B2B pagos aguardando separação',
+        id: "alert-b2b-paid-awaiting",
+        title: "Pedidos B2B pagos aguardando separação",
         description: `${b2bPaidAwaitingShipping} pedido(s) de empresa pago(s) precisam ser separados — clientes B2B costumam ser exigentes com prazo.`,
-        severity: 'medium',
-        ctaLabel: 'Ver pedidos',
-        ctaHref: '/admin/pedidos',
+        severity: "medium",
+        ctaLabel: "Ver pedidos",
+        ctaHref: "/admin/pedidos",
       });
     }
     if (b2bAllowsCoupon) {
       alerts.push({
-        id: 'alert-b2b-coupon-on',
-        title: 'Cupons permitidos em pedidos B2B',
-        description: 'A configuração atual permite acumular cupom sobre o preço empresa. Revise se realmente quer essa política.',
-        severity: 'low',
-        ctaLabel: 'Revisar configurações B2B',
-        ctaHref: '/admin/configuracoes-b2b',
+        id: "alert-b2b-coupon-on",
+        title: "Cupons permitidos em pedidos B2B",
+        description:
+          "A configuração atual permite acumular cupom sobre o preço empresa. Revise se realmente quer essa política.",
+        severity: "low",
+        ctaLabel: "Revisar configurações B2B",
+        ctaHref: "/admin/configuracoes-b2b",
       });
     }
 
     // Notas fiscais
     if (invoicesOverdue > 0) {
       alerts.push({
-        id: 'alert-invoices-overdue',
-        title: 'Notas fiscais atrasadas (>24h)',
+        id: "alert-invoices-overdue",
+        title: "Notas fiscais atrasadas (>24h)",
         description: `${invoicesOverdue} pedido(s) pago(s) há mais de 24h ainda sem NF-e registrada.`,
-        severity: 'high',
-        ctaLabel: 'Registrar notas',
-        ctaHref: '/admin/financeiro/notas-fiscais?onlyOverdue=1',
+        severity: "high",
+        ctaLabel: "Registrar notas",
+        ctaHref: "/admin/financeiro/notas-fiscais?onlyOverdue=1",
       });
     }
     if (invoicesError > 0) {
       alerts.push({
-        id: 'alert-invoices-error',
-        title: 'Notas fiscais com erro de emissão',
+        id: "alert-invoices-error",
+        title: "Notas fiscais com erro de emissão",
         description: `${invoicesError} pedido(s) marcado(s) com erro de emissão. Verifique e corrija.`,
-        severity: 'high',
-        ctaLabel: 'Ver notas com erro',
-        ctaHref: '/admin/financeiro/notas-fiscais?status=erro_emissao',
+        severity: "high",
+        ctaLabel: "Ver notas com erro",
+        ctaHref: "/admin/financeiro/notas-fiscais?status=erro_emissao",
       });
     }
     if (invoicesB2bMissing > 0) {
       alerts.push({
-        id: 'alert-invoices-b2b-missing',
-        title: 'Pedidos B2B pagos sem nota fiscal',
+        id: "alert-invoices-b2b-missing",
+        title: "Pedidos B2B pagos sem nota fiscal",
         description: `${invoicesB2bMissing} pedido(s) de empresa pago(s) ainda sem NF-e — clientes B2B exigem nota.`,
-        severity: 'high',
-        ctaLabel: 'Ver notas B2B',
-        ctaHref: '/admin/financeiro/notas-fiscais?orderType=b2b&status=sem_nota',
+        severity: "high",
+        ctaLabel: "Ver notas B2B",
+        ctaHref: "/admin/financeiro/notas-fiscais?orderType=b2b&status=sem_nota",
       });
     }
 
     // Financeiro — margem / custo / MP (Onda 5E parte 3)
     if (financeAlerts.ordersPaidNegativeMargin > 0) {
       alerts.push({
-        id: 'alert-finance-negative-margin',
-        title: 'Pedidos pagos com margem negativa',
+        id: "alert-finance-negative-margin",
+        title: "Pedidos pagos com margem negativa",
         description: `${financeAlerts.ordersPaidNegativeMargin} pedido(s) pago(s) nos últimos 30 dias estão dando prejuízo. Revise preços e custos.`,
-        severity: 'high',
-        ctaLabel: 'Ver relatório de margem',
-        ctaHref: '/admin/financeiro/relatorios?tab=margem',
+        severity: "high",
+        ctaLabel: "Ver relatório de margem",
+        ctaHref: "/admin/financeiro/relatorios?tab=margem",
       });
     }
     if (financeAlerts.ordersPaidWithMissingCost > 0) {
       alerts.push({
-        id: 'alert-finance-missing-cost-orders',
-        title: 'Itens vendidos sem custo cadastrado',
+        id: "alert-finance-missing-cost-orders",
+        title: "Itens vendidos sem custo cadastrado",
         description: `${financeAlerts.ordersPaidWithMissingCost} pedido(s) pago(s) recente(s) com item sem custo — margem real impossível de calcular.`,
-        severity: 'high',
-        ctaLabel: 'Ver relatório de margem',
-        ctaHref: '/admin/financeiro/relatorios?tab=margem',
+        severity: "high",
+        ctaLabel: "Ver relatório de margem",
+        ctaHref: "/admin/financeiro/relatorios?tab=margem",
       });
     }
     if (financeAlerts.productsWithoutCost > 0) {
       alerts.push({
-        id: 'alert-finance-products-no-cost',
-        title: 'Produtos ativos sem custo',
+        id: "alert-finance-products-no-cost",
+        title: "Produtos ativos sem custo",
         description: `${financeAlerts.productsWithoutCost} produto(s) ativo(s) sem cost_price. Sem isso a margem fica em branco.`,
-        severity: 'medium',
-        ctaLabel: 'Ver produtos',
-        ctaHref: '/admin/produtos',
+        severity: "medium",
+        ctaLabel: "Ver produtos",
+        ctaHref: "/admin/produtos",
       });
     }
     if (financeAlerts.productsBelowMinMargin > 0) {
       alerts.push({
-        id: 'alert-finance-below-min-margin',
-        title: 'Produtos abaixo da margem mínima',
+        id: "alert-finance-below-min-margin",
+        title: "Produtos abaixo da margem mínima",
         description: `${financeAlerts.productsBelowMinMargin} produto(s) com preço atual abaixo da margem mínima configurada.`,
-        severity: 'medium',
-        ctaLabel: 'Ver relatório de margem',
-        ctaHref: '/admin/financeiro/relatorios?tab=margem',
+        severity: "medium",
+        ctaLabel: "Ver relatório de margem",
+        ctaHref: "/admin/financeiro/relatorios?tab=margem",
       });
     }
     if (financeAlerts.invoicesPendingB2bOver24h > 0) {
       alerts.push({
-        id: 'alert-finance-nf-b2b-overdue',
-        title: 'NF B2B atrasada (>24h)',
+        id: "alert-finance-nf-b2b-overdue",
+        title: "NF B2B atrasada (>24h)",
         description: `${financeAlerts.invoicesPendingB2bOver24h} pedido(s) B2B pago(s) há mais de 24h sem nota fiscal — clientes empresa exigem nota.`,
-        severity: 'high',
-        ctaLabel: 'Ver notas fiscais',
-        ctaHref: '/admin/financeiro/notas-fiscais',
+        severity: "high",
+        ctaLabel: "Ver notas fiscais",
+        ctaHref: "/admin/financeiro/notas-fiscais",
       });
     }
     if (financeAlerts.mpWebhookErrors7d > 0) {
       alerts.push({
-        id: 'alert-finance-mp-webhook-error',
-        title: 'Webhook Mercado Pago com erro',
+        id: "alert-finance-mp-webhook-error",
+        title: "Webhook Mercado Pago com erro",
         description: `${financeAlerts.mpWebhookErrors7d} webhook(s) com erro nos últimos 7 dias. Pagamentos podem não estar sendo confirmados.`,
-        severity: 'high',
-        ctaLabel: 'Ver Mercado Pago',
-        ctaHref: '/admin/financeiro/relatorios?tab=mercado-pago',
+        severity: "high",
+        ctaLabel: "Ver Mercado Pago",
+        ctaHref: "/admin/financeiro/relatorios?tab=mercado-pago",
       });
     }
     if (financeAlerts.mpPaidNoFee30d > 0) {
       alerts.push({
-        id: 'alert-finance-mp-fee-unknown',
-        title: 'Taxa Mercado Pago desconhecida',
+        id: "alert-finance-mp-fee-unknown",
+        title: "Taxa Mercado Pago desconhecida",
         description: `${financeAlerts.mpPaidNoFee30d} pagamento(s) sem taxa real nem estimada — lucro líquido pode estar incorreto.`,
-        severity: 'medium',
-        ctaLabel: 'Ver Mercado Pago',
-        ctaHref: '/admin/financeiro/relatorios?tab=mercado-pago',
+        severity: "medium",
+        ctaLabel: "Ver Mercado Pago",
+        ctaHref: "/admin/financeiro/relatorios?tab=mercado-pago",
       });
     }
     if (financeAlerts.mpPaidEstimatedFee30d > 0) {
       alerts.push({
-        id: 'alert-finance-mp-fee-estimated',
-        title: 'Pagamentos usando taxa MP estimada',
+        id: "alert-finance-mp-fee-estimated",
+        title: "Pagamentos usando taxa MP estimada",
         description: `${financeAlerts.mpPaidEstimatedFee30d} pagamento(s) com taxa estimada — webhook do Mercado Pago ainda não confirmou a taxa real.`,
-        severity: 'low',
-        ctaLabel: 'Ver Mercado Pago',
-        ctaHref: '/admin/financeiro/relatorios?tab=mercado-pago',
+        severity: "low",
+        ctaLabel: "Ver Mercado Pago",
+        ctaHref: "/admin/financeiro/relatorios?tab=mercado-pago",
       });
     }
 
     // Catálogo — qualidade de cadastro
     if (productQuality.featuredBelow70 > 0) {
       alerts.push({
-        id: 'alert-products-featured-low-quality',
-        title: 'Produtos destacados com cadastro incompleto',
+        id: "alert-products-featured-low-quality",
+        title: "Produtos destacados com cadastro incompleto",
         description: `${productQuality.featuredBelow70} produto(s) marcado(s) como destaque têm score de qualidade abaixo de 70. Corrija ou remova o destaque.`,
-        severity: 'high',
-        ctaLabel: 'Ver qualidade do cadastro',
-        ctaHref: '/admin/produtos/qualidade',
+        severity: "high",
+        ctaLabel: "Ver qualidade do cadastro",
+        ctaHref: "/admin/produtos/qualidade",
       });
     }
     if (productQuality.ruim > 0) {
       alerts.push({
-        id: 'alert-products-quality-ruim',
-        title: 'Produtos com qualidade ruim',
+        id: "alert-products-quality-ruim",
+        title: "Produtos com qualidade ruim",
         description: `${productQuality.ruim} produto(s) com score abaixo de 40 — afeta SEO, conversão e cálculo de margem.`,
-        severity: 'medium',
-        ctaLabel: 'Ver qualidade do cadastro',
-        ctaHref: '/admin/produtos/qualidade',
+        severity: "medium",
+        ctaLabel: "Ver qualidade do cadastro",
+        ctaHref: "/admin/produtos/qualidade",
       });
     }
     if (productQuality.missingTech > 0) {
       alerts.push({
-        id: 'alert-products-missing-tech-attrs',
-        title: 'Produtos sem atributos técnicos',
+        id: "alert-products-missing-tech-attrs",
+        title: "Produtos sem atributos técnicos",
         description: `${productQuality.missingTech} produto(s) ativo(s) sem atributos técnicos cadastrados — prejudica busca, filtros e SEO.`,
-        severity: 'low',
-        ctaLabel: 'Ver qualidade do cadastro',
-        ctaHref: '/admin/produtos/qualidade',
+        severity: "low",
+        ctaLabel: "Ver qualidade do cadastro",
+        ctaHref: "/admin/produtos/qualidade",
       });
     }
     if (fiscal.companyFiscalIncomplete) {
       alerts.push({
-        id: 'alert-fiscal-company-data',
-        title: 'Dados fiscais da empresa incompletos',
+        id: "alert-fiscal-company-data",
+        title: "Dados fiscais da empresa incompletos",
         description:
-          'Configure regime tributário, série padrão de NF-e e CFOPs antes de integrar com emissor fiscal.',
-        severity: 'high',
-        ctaLabel: 'Configurar dados fiscais',
-        ctaHref: '/admin/financeiro/impostos',
+          "Configure regime tributário, série padrão de NF-e e CFOPs antes de integrar com emissor fiscal.",
+        severity: "high",
+        ctaLabel: "Configurar dados fiscais",
+        ctaHref: "/admin/financeiro/impostos",
       });
     }
     if (fiscal.paidOrdersWithFiscalIssues > 0) {
       alerts.push({
-        id: 'alert-fiscal-paid-orders',
-        title: 'Pedidos pagos com produto fiscal incompleto',
+        id: "alert-fiscal-paid-orders",
+        title: "Pedidos pagos com produto fiscal incompleto",
         description: `${fiscal.paidOrdersWithFiscalIssues} pedido(s) pago(s) contém item sem dados fiscais mínimos. Revise antes de emitir nota.`,
-        severity: 'high',
-        ctaLabel: 'Ver pendências fiscais',
-        ctaHref: '/admin/financeiro/impostos',
+        severity: "high",
+        ctaLabel: "Ver pendências fiscais",
+        ctaHref: "/admin/financeiro/impostos",
       });
     }
     if (fiscal.productsNoNcm > 0) {
       alerts.push({
-        id: 'alert-fiscal-no-ncm',
-        title: 'Produtos ativos sem NCM',
+        id: "alert-fiscal-no-ncm",
+        title: "Produtos ativos sem NCM",
         description: `${fiscal.productsNoNcm} produto(s) ativo(s) sem código NCM. Necessário para emissão fiscal.`,
-        severity: fiscal.productsNoNcm > 10 ? 'high' : 'medium',
-        ctaLabel: 'Ver produtos',
-        ctaHref: '/admin/financeiro/impostos?filter=no_ncm',
+        severity: fiscal.productsNoNcm > 10 ? "high" : "medium",
+        ctaLabel: "Ver produtos",
+        ctaHref: "/admin/financeiro/impostos?filter=no_ncm",
       });
     }
     if (fiscal.productsNoUnit > 0) {
       alerts.push({
-        id: 'alert-fiscal-no-unit',
-        title: 'Produtos sem unidade comercial',
+        id: "alert-fiscal-no-unit",
+        title: "Produtos sem unidade comercial",
         description: `${fiscal.productsNoUnit} produto(s) ativo(s) sem unidade (UN, CX, KG…).`,
-        severity: 'medium',
-        ctaLabel: 'Ver produtos',
-        ctaHref: '/admin/financeiro/impostos?filter=no_unit',
+        severity: "medium",
+        ctaLabel: "Ver produtos",
+        ctaHref: "/admin/financeiro/impostos?filter=no_unit",
       });
     }
     if (fiscal.productsNoOrigin > 0) {
       alerts.push({
-        id: 'alert-fiscal-no-origin',
-        title: 'Produtos sem origem da mercadoria',
+        id: "alert-fiscal-no-origin",
+        title: "Produtos sem origem da mercadoria",
         description: `${fiscal.productsNoOrigin} produto(s) sem origem definida (nacional, importado…).`,
-        severity: 'medium',
-        ctaLabel: 'Ver produtos',
-        ctaHref: '/admin/financeiro/impostos?filter=no_origin',
+        severity: "medium",
+        ctaLabel: "Ver produtos",
+        ctaHref: "/admin/financeiro/impostos?filter=no_origin",
       });
     }
 

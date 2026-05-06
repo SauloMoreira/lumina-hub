@@ -1,19 +1,19 @@
-import { createServerFn } from '@tanstack/react-start';
-import { z } from 'zod';
-import { requireSupabaseAuth } from '@/integrations/supabase/auth-middleware';
-import { requireAdmin } from '@/integrations/supabase/admin-middleware';
-import { supabaseAdmin } from '@/integrations/supabase/client.server';
-import { logAdminAction } from '@/server/security/auditLog';
+import { createServerFn } from "@tanstack/react-start";
+import { z } from "zod";
+import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { requireAdmin } from "@/integrations/supabase/admin-middleware";
+import { supabaseAdmin } from "@/integrations/supabase/client.server";
+import { logAdminAction } from "@/server/security/auditLog";
 
 export type IntegrationProvider =
-  | 'ga4'
-  | 'gtm'
-  | 'meta_pixel'
-  | 'tiktok_pixel'
-  | 'clarity'
-  | 'google_ads';
+  | "ga4"
+  | "gtm"
+  | "meta_pixel"
+  | "tiktok_pixel"
+  | "clarity"
+  | "google_ads";
 
-export type ConsentCategory = 'analytics' | 'marketing';
+export type ConsentCategory = "analytics" | "marketing";
 
 export interface MarketingIntegration {
   id: string;
@@ -26,8 +26,8 @@ export interface MarketingIntegration {
   updated_at: string;
 }
 
-const PROVIDERS = ['ga4', 'gtm', 'meta_pixel', 'tiktok_pixel', 'clarity', 'google_ads'] as const;
-const CATEGORIES = ['analytics', 'marketing'] as const;
+const PROVIDERS = ["ga4", "gtm", "meta_pixel", "tiktok_pixel", "clarity", "google_ads"] as const;
+const CATEGORIES = ["analytics", "marketing"] as const;
 
 // Validação por provider para evitar IDs malformados
 const ID_PATTERNS: Record<IntegrationProvider, RegExp> = {
@@ -41,11 +41,11 @@ const ID_PATTERNS: Record<IntegrationProvider, RegExp> = {
 
 function validateAccountId(provider: IntegrationProvider, accountId: string): string {
   const cleaned = accountId.trim();
-  if (!cleaned) throw new Error('ID da conta é obrigatório');
-  if (cleaned.length > 80) throw new Error('ID muito longo');
+  if (!cleaned) throw new Error("ID da conta é obrigatório");
+  if (cleaned.length > 80) throw new Error("ID muito longo");
   // bloqueio defensivo contra colagem de scripts
   if (/[<>]|script|javascript:|on\w+=/i.test(cleaned)) {
-    throw new Error('Informe apenas o ID oficial. Scripts personalizados não são permitidos.');
+    throw new Error("Informe apenas o ID oficial. Scripts personalizados não são permitidos.");
   }
   const pattern = ID_PATTERNS[provider];
   if (!pattern.test(cleaned)) {
@@ -59,16 +59,16 @@ const upsertSchema = z.object({
   provider: z.enum(PROVIDERS),
   account_id: z.string().min(1).max(80),
   enabled: z.boolean().default(true),
-  consent_category: z.enum(CATEGORIES).default('analytics'),
+  consent_category: z.enum(CATEGORIES).default("analytics"),
   notes: z.string().max(500).nullable().optional(),
 });
 
 /** Lista pública de integrações ativas (consumida pelo ConditionalScripts no front da loja). */
-export const listPublicIntegrations = createServerFn({ method: 'GET' }).handler(async () => {
+export const listPublicIntegrations = createServerFn({ method: "GET" }).handler(async () => {
   const { data, error } = await supabaseAdmin
-    .from('marketing_integrations')
-    .select('id, provider, account_id, consent_category')
-    .eq('enabled', true);
+    .from("marketing_integrations")
+    .select("id, provider, account_id, consent_category")
+    .eq("enabled", true);
   if (error) throw error;
   return (data ?? []) as Array<{
     id: string;
@@ -79,19 +79,19 @@ export const listPublicIntegrations = createServerFn({ method: 'GET' }).handler(
 });
 
 /** Lista completa para o admin. */
-export const listIntegrations = createServerFn({ method: 'GET' })
+export const listIntegrations = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
     const { supabase } = context;
     const { data, error } = await supabase
-      .from('marketing_integrations')
-      .select('*')
-      .order('provider', { ascending: true });
+      .from("marketing_integrations")
+      .select("*")
+      .order("provider", { ascending: true });
     if (error) throw error;
     return (data ?? []) as MarketingIntegration[];
   });
 
-export const upsertIntegration = createServerFn({ method: 'POST' })
+export const upsertIntegration = createServerFn({ method: "POST" })
   .middleware([requireAdmin])
   .inputValidator((input: unknown) => upsertSchema.parse(input))
   .handler(async ({ data, context }) => {
@@ -108,9 +108,9 @@ export const upsertIntegration = createServerFn({ method: 'POST' })
     let before: MarketingIntegration | null = null;
     if (data.id) {
       const { data: prev } = await supabaseAdmin
-        .from('marketing_integrations')
-        .select('*')
-        .eq('id', data.id)
+        .from("marketing_integrations")
+        .select("*")
+        .eq("id", data.id)
         .maybeSingle();
       before = (prev as MarketingIntegration | null) ?? null;
     }
@@ -118,18 +118,18 @@ export const upsertIntegration = createServerFn({ method: 'POST' })
     let row: MarketingIntegration;
     if (data.id) {
       const { data: updated, error } = await supabaseAdmin
-        .from('marketing_integrations')
+        .from("marketing_integrations")
         .update(payload)
-        .eq('id', data.id)
-        .select('*')
+        .eq("id", data.id)
+        .select("*")
         .single();
       if (error) throw error;
       row = updated as MarketingIntegration;
     } else {
       const { data: inserted, error } = await supabaseAdmin
-        .from('marketing_integrations')
+        .from("marketing_integrations")
         .insert(payload)
-        .select('*')
+        .select("*")
         .single();
       if (error) throw error;
       row = inserted as MarketingIntegration;
@@ -137,20 +137,29 @@ export const upsertIntegration = createServerFn({ method: 'POST' })
 
     // Auditoria — não loga IDs sensíveis em texto, apenas mascara para confirmação visual
     try {
-      const masked = row.account_id.length > 6
-        ? `${row.account_id.slice(0, 4)}…${row.account_id.slice(-2)}`
-        : row.account_id;
+      const masked =
+        row.account_id.length > 6
+          ? `${row.account_id.slice(0, 4)}…${row.account_id.slice(-2)}`
+          : row.account_id;
       await logAdminAction({
         adminId: (context as { adminUserId: string }).adminUserId,
         adminEmail: (context as { adminEmail: string | null }).adminEmail,
-        action: data.id ? 'update' : 'create',
-        resourceType: 'marketing_integration',
+        action: data.id ? "update" : "create",
+        resourceType: "marketing_integration",
         resourceId: row.id,
-        description: `${data.id ? 'Atualizou' : 'Criou'} integração ${row.provider} (${masked}) — ${row.enabled ? 'ativa' : 'inativa'}`,
+        description: `${data.id ? "Atualizou" : "Criou"} integração ${row.provider} (${masked}) — ${row.enabled ? "ativa" : "inativa"}`,
         before: before
-          ? { provider: before.provider, enabled: before.enabled, consent_category: before.consent_category }
+          ? {
+              provider: before.provider,
+              enabled: before.enabled,
+              consent_category: before.consent_category,
+            }
           : null,
-        after: { provider: row.provider, enabled: row.enabled, consent_category: row.consent_category },
+        after: {
+          provider: row.provider,
+          enabled: row.enabled,
+          consent_category: row.consent_category,
+        },
       });
     } catch {
       // auditoria nunca quebra a operação principal
@@ -159,29 +168,29 @@ export const upsertIntegration = createServerFn({ method: 'POST' })
     return row;
   });
 
-export const deleteIntegration = createServerFn({ method: 'POST' })
+export const deleteIntegration = createServerFn({ method: "POST" })
   .middleware([requireAdmin])
   .inputValidator((input: unknown) => z.object({ id: z.string().uuid() }).parse(input))
   .handler(async ({ data, context }) => {
     const { data: prev } = await supabaseAdmin
-      .from('marketing_integrations')
-      .select('*')
-      .eq('id', data.id)
+      .from("marketing_integrations")
+      .select("*")
+      .eq("id", data.id)
       .maybeSingle();
 
-    const { error } = await supabaseAdmin.from('marketing_integrations').delete().eq('id', data.id);
+    const { error } = await supabaseAdmin.from("marketing_integrations").delete().eq("id", data.id);
     if (error) throw error;
 
     try {
       await logAdminAction({
         adminId: (context as { adminUserId: string }).adminUserId,
         adminEmail: (context as { adminEmail: string | null }).adminEmail,
-        action: 'delete',
-        resourceType: 'marketing_integration',
+        action: "delete",
+        resourceType: "marketing_integration",
         resourceId: data.id,
         description: prev
           ? `Removeu integração ${(prev as MarketingIntegration).provider}`
-          : 'Removeu integração',
+          : "Removeu integração",
         before: prev
           ? {
               provider: (prev as MarketingIntegration).provider,
@@ -207,36 +216,34 @@ export const deleteIntegration = createServerFn({ method: 'POST' })
  *
  * Não envia eventos de produção e não persiste nada além de auditoria.
  */
-export const testIntegration = createServerFn({ method: 'POST' })
+export const testIntegration = createServerFn({ method: "POST" })
   .middleware([requireAdmin])
-  .inputValidator((input: unknown) =>
-    z.object({ id: z.string().uuid() }).parse(input),
-  )
+  .inputValidator((input: unknown) => z.object({ id: z.string().uuid() }).parse(input))
   .handler(async ({ data, context }) => {
     const { data: row, error } = await supabaseAdmin
-      .from('marketing_integrations')
-      .select('*')
-      .eq('id', data.id)
+      .from("marketing_integrations")
+      .select("*")
+      .eq("id", data.id)
       .single();
-    if (error || !row) throw new Error('Integração não encontrada');
+    if (error || !row) throw new Error("Integração não encontrada");
 
     const integ = row as MarketingIntegration;
     const formatOk = ID_PATTERNS[integ.provider].test(integ.account_id.trim());
 
-    let reachable: 'ok' | 'unknown' | 'failed' = 'unknown';
-    let detail = '';
+    let reachable: "ok" | "unknown" | "failed" = "unknown";
+    let detail = "";
     try {
       const ac = encodeURIComponent(integ.account_id.trim());
       let url: string | null = null;
       switch (integ.provider) {
-        case 'ga4':
-        case 'google_ads':
+        case "ga4":
+        case "google_ads":
           url = `https://www.googletagmanager.com/gtag/js?id=${ac}`;
           break;
-        case 'gtm':
+        case "gtm":
           url = `https://www.googletagmanager.com/gtm.js?id=${ac}`;
           break;
-        case 'clarity':
+        case "clarity":
           url = `https://www.clarity.ms/tag/${ac}`;
           break;
         // Meta Pixel e TikTok Pixel não expõem endpoints simples sem inicialização JS;
@@ -245,27 +252,27 @@ export const testIntegration = createServerFn({ method: 'POST' })
           url = null;
       }
       if (url) {
-        const resp = await fetch(url, { method: 'GET' });
+        const resp = await fetch(url, { method: "GET" });
         if (resp.ok) {
-          reachable = 'ok';
+          reachable = "ok";
         } else {
-          reachable = 'failed';
+          reachable = "failed";
           detail = `HTTP ${resp.status}`;
         }
       }
     } catch (e: any) {
-      reachable = 'unknown';
-      detail = e?.message ?? '';
+      reachable = "unknown";
+      detail = e?.message ?? "";
     }
 
     try {
       await logAdminAction({
         adminId: (context as { adminUserId: string }).adminUserId,
         adminEmail: (context as { adminEmail: string | null }).adminEmail,
-        action: 'test',
-        resourceType: 'marketing_integration',
+        action: "test",
+        resourceType: "marketing_integration",
         resourceId: integ.id,
-        description: `Testou integração ${integ.provider} — formato:${formatOk ? 'ok' : 'invalido'} alcance:${reachable}`,
+        description: `Testou integração ${integ.provider} — formato:${formatOk ? "ok" : "invalido"} alcance:${reachable}`,
       });
     } catch {
       // ignore

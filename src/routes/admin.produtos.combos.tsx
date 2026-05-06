@@ -1,6 +1,6 @@
-import { createFileRoute, Link } from '@tanstack/react-router';
-import { useState } from 'react';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { createFileRoute, Link } from "@tanstack/react-router";
+import { useState } from "react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   ArrowLeft,
   Plus,
@@ -14,13 +14,13 @@ import {
   ExternalLink,
   Eye,
   EyeOff,
-} from 'lucide-react';
-import { toast } from 'sonner';
-import { AdminLayout } from '@/components/admin/AdminLayout';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Switch } from '@/components/ui/switch';
-import { Textarea } from '@/components/ui/textarea';
+} from "lucide-react";
+import { toast } from "sonner";
+import { AdminLayout } from "@/components/admin/AdminLayout";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Switch } from "@/components/ui/switch";
+import { Textarea } from "@/components/ui/textarea";
 import {
   Dialog,
   DialogContent,
@@ -28,8 +28,8 @@ import {
   DialogHeader,
   DialogTitle,
   DialogDescription,
-} from '@/components/ui/dialog';
-import { formatBRL } from '@/lib/domain';
+} from "@/components/ui/dialog";
+import { formatBRL } from "@/lib/domain";
 import {
   adminListBundles,
   adminCreateBundle,
@@ -43,24 +43,24 @@ import {
   type BundleAdminRow,
   type BundlePublic,
   type BundleAvailability,
-} from '@/server/productBundles.functions';
+} from "@/server/productBundles.functions";
 
-export const Route = createFileRoute('/admin/produtos/combos')({
+export const Route = createFileRoute("/admin/produtos/combos")({
   component: BundlesAdminPage,
 });
 
 const AVAILABILITY_LABEL: Record<BundleAvailability, string> = {
-  available: 'Disponível',
-  partial: 'Parcialmente indisponível',
-  unavailable: 'Indisponível',
-  needs_review: 'Necessita revisão',
+  available: "Disponível",
+  partial: "Parcialmente indisponível",
+  unavailable: "Indisponível",
+  needs_review: "Necessita revisão",
 };
 
 const AVAILABILITY_TONE: Record<BundleAvailability, string> = {
-  available: 'bg-emerald-50 text-emerald-700 border-emerald-200',
-  partial: 'bg-amber-50 text-amber-700 border-amber-200',
-  unavailable: 'bg-red-50 text-red-700 border-red-200',
-  needs_review: 'bg-muted text-muted-foreground border-border',
+  available: "bg-emerald-50 text-emerald-700 border-emerald-200",
+  partial: "bg-amber-50 text-amber-700 border-amber-200",
+  unavailable: "bg-red-50 text-red-700 border-red-200",
+  needs_review: "bg-muted text-muted-foreground border-border",
 };
 
 type BundleMetaPatch = {
@@ -73,7 +73,7 @@ type BundleMetaPatch = {
   startDate?: string | null;
   endDate?: string | null;
   notes?: string | null;
-  discountType?: 'none' | 'fixed_amount' | 'percentage';
+  discountType?: "none" | "fixed_amount" | "percentage";
   discountValue?: number;
 };
 
@@ -85,7 +85,7 @@ function BundlesAdminPage() {
   const qc = useQueryClient();
 
   const listQ = useQuery({
-    queryKey: ['admin-bundles'],
+    queryKey: ["admin-bundles"],
     queryFn: () => adminListBundles({ data: {} }),
     staleTime: 5_000,
   });
@@ -106,8 +106,8 @@ function BundlesAdminPage() {
           </Button>
         </Link>
         <p className="text-sm text-muted-foreground">
-          Agrupe produtos para compra conjunta. Descontos de combo serão aplicados em uma
-          próxima etapa.
+          Agrupe produtos para compra conjunta. Descontos de combo serão aplicados em uma próxima
+          etapa.
         </p>
       </div>
 
@@ -129,22 +129,20 @@ function BundlesAdminPage() {
                     onClick={() => setSelectedId(b.id)}
                     className={`w-full text-left p-2 rounded-md flex items-center gap-2 border ${
                       selectedId === b.id
-                        ? 'bg-accent/40 border-border'
-                        : 'border-transparent hover:bg-accent/30'
+                        ? "bg-accent/40 border-border"
+                        : "border-transparent hover:bg-accent/30"
                     }`}
                   >
                     <BundleListThumb row={b} />
                     <div className="flex-1 min-w-0">
                       <div className="text-sm font-medium truncate flex items-center gap-1">
-                        {b.is_featured && (
-                          <Star className="w-3 h-3 text-amber-500 shrink-0" />
-                        )}
+                        {b.is_featured && <Star className="w-3 h-3 text-amber-500 shrink-0" />}
                         {b.name}
                       </div>
                       <div className="text-[11px] text-muted-foreground truncate">
-                        {b.items_count} {b.items_count === 1 ? 'item' : 'itens'}
-                        {' · '}
-                        {b.is_active ? 'Ativo' : 'Inativo'}
+                        {b.items_count} {b.items_count === 1 ? "item" : "itens"}
+                        {" · "}
+                        {b.is_active ? "Ativo" : "Inativo"}
                       </div>
                     </div>
                   </button>
@@ -161,13 +159,12 @@ function BundlesAdminPage() {
               bundleId={selectedId}
               onDeleted={() => {
                 setSelectedId(null);
-                qc.invalidateQueries({ queryKey: ['admin-bundles'] });
+                qc.invalidateQueries({ queryKey: ["admin-bundles"] });
               }}
             />
           ) : (
             <div className="bg-card border border-border rounded-xl p-10 text-center text-sm text-muted-foreground">
-              Selecione um combo na lista para editar, ou clique em{' '}
-              <strong>Novo combo</strong>.
+              Selecione um combo na lista para editar, ou clique em <strong>Novo combo</strong>.
             </div>
           )}
         </div>
@@ -178,7 +175,7 @@ function BundlesAdminPage() {
         onOpenChange={setCreateOpen}
         onCreated={(id) => {
           setSelectedId(id);
-          qc.invalidateQueries({ queryKey: ['admin-bundles'] });
+          qc.invalidateQueries({ queryKey: ["admin-bundles"] });
         }}
       />
     </AdminLayout>
@@ -215,36 +212,35 @@ function EmptyAdminState({ onCreate }: { onCreate: () => void }) {
 function BundleEditor({ bundleId, onDeleted }: { bundleId: string; onDeleted: () => void }) {
   const qc = useQueryClient();
   const detailQ = useQuery({
-    queryKey: ['admin-bundle', bundleId],
+    queryKey: ["admin-bundle", bundleId],
     queryFn: () => adminGetBundle({ data: { id: bundleId } }),
     staleTime: 0,
   });
 
   const updateMut = useMutation({
-    mutationFn: (vars: BundleMetaPatch & { id: string }) =>
-      adminUpdateBundle({ data: vars }),
+    mutationFn: (vars: BundleMetaPatch & { id: string }) => adminUpdateBundle({ data: vars }),
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ['admin-bundle', bundleId] });
-      qc.invalidateQueries({ queryKey: ['admin-bundles'] });
+      qc.invalidateQueries({ queryKey: ["admin-bundle", bundleId] });
+      qc.invalidateQueries({ queryKey: ["admin-bundles"] });
     },
     onError: (err: any) => {
-      const msg = String(err?.message ?? '');
-      if (msg.includes('slug_already_exists')) toast.error('Já existe um combo com esse slug.');
-      else if (msg.includes('bundle_has_no_items'))
-        toast.error('Adicione produtos antes de ativar o combo.');
-      else if (msg.includes('bundle_has_broken_items'))
-        toast.error('Há itens obrigatórios sem preço ou inativos. Corrija antes de ativar.');
-      else toast.error('Erro ao salvar.');
+      const msg = String(err?.message ?? "");
+      if (msg.includes("slug_already_exists")) toast.error("Já existe um combo com esse slug.");
+      else if (msg.includes("bundle_has_no_items"))
+        toast.error("Adicione produtos antes de ativar o combo.");
+      else if (msg.includes("bundle_has_broken_items"))
+        toast.error("Há itens obrigatórios sem preço ou inativos. Corrija antes de ativar.");
+      else toast.error("Erro ao salvar.");
     },
   });
 
   const deleteMut = useMutation({
     mutationFn: () => adminDeleteBundle({ data: { id: bundleId } }),
     onSuccess: () => {
-      toast.success('Combo removido');
+      toast.success("Combo removido");
       onDeleted();
     },
-    onError: () => toast.error('Erro ao remover combo'),
+    onError: () => toast.error("Erro ao remover combo"),
   });
 
   if (detailQ.isLoading || !detailQ.data) {
@@ -285,9 +281,9 @@ function BundleMetaForm({
   onDelete: () => void;
 }) {
   const [name, setName] = useState(bundle.name);
-  const [slug, setSlug] = useState(bundle.slug ?? '');
-  const [description, setDescription] = useState(bundle.description ?? '');
-  const [imageUrl, setImageUrl] = useState(bundle.image_url ?? '');
+  const [slug, setSlug] = useState(bundle.slug ?? "");
+  const [description, setDescription] = useState(bundle.description ?? "");
+  const [imageUrl, setImageUrl] = useState(bundle.image_url ?? "");
 
   return (
     <div className="bg-card border border-border rounded-xl p-5 space-y-4">
@@ -328,11 +324,11 @@ function BundleMetaForm({
               setSlug(
                 e.target.value
                   .toLowerCase()
-                  .replace(/[^a-z0-9-]/g, '-')
-                  .replace(/-+/g, '-')
+                  .replace(/[^a-z0-9-]/g, "-")
+                  .replace(/-+/g, "-"),
               )
             }
-            onBlur={() => slug && slug !== (bundle.slug ?? '') && onChange({ slug })}
+            onBlur={() => slug && slug !== (bundle.slug ?? "") && onChange({ slug })}
             placeholder="kit-iluminacao-led"
           />
         </Field>
@@ -344,7 +340,7 @@ function BundleMetaForm({
           value={description}
           onChange={(e) => setDescription(e.target.value)}
           onBlur={() =>
-            description !== (bundle.description ?? '') &&
+            description !== (bundle.description ?? "") &&
             onChange({ description: description || null })
           }
         />
@@ -355,8 +351,7 @@ function BundleMetaForm({
           value={imageUrl}
           onChange={(e) => setImageUrl(e.target.value)}
           onBlur={() =>
-            imageUrl !== (bundle.image_url ?? '') &&
-            onChange({ imageUrl: imageUrl || null })
+            imageUrl !== (bundle.image_url ?? "") && onChange({ imageUrl: imageUrl || null })
           }
           placeholder="https://…"
         />
@@ -397,31 +392,31 @@ function BundleDiscountSection({
   bundle: BundlePublic;
   onChange: (patch: BundleMetaPatch) => void;
 }) {
-  const [type, setType] = useState<NonNullable<BundleMetaPatch['discountType']>>(
-    (bundle.discount_type ?? 'none') as NonNullable<BundleMetaPatch['discountType']>
+  const [type, setType] = useState<NonNullable<BundleMetaPatch["discountType"]>>(
+    (bundle.discount_type ?? "none") as NonNullable<BundleMetaPatch["discountType"]>,
   );
   const [value, setValue] = useState<string>(String(bundle.discount_value ?? 0));
 
   const numValue = Number(value) || 0;
   const eligible = bundle.subtotal;
   const estimated =
-    type === 'fixed_amount'
+    type === "fixed_amount"
       ? Math.min(numValue, eligible)
-      : type === 'percentage'
-      ? Math.min(eligible, Math.round(eligible * (Math.min(numValue, 100) / 100) * 100) / 100)
-      : 0;
+      : type === "percentage"
+        ? Math.min(eligible, Math.round(eligible * (Math.min(numValue, 100) / 100) * 100) / 100)
+        : 0;
   const totalAfter = Math.max(0, eligible - estimated);
-  const overLimit = type === 'percentage' && numValue > BUNDLE_PERCENT_LIMIT;
+  const overLimit = type === "percentage" && numValue > BUNDLE_PERCENT_LIMIT;
   const invalid =
-    type !== 'none' && (numValue <= 0 || (type === 'fixed_amount' && numValue > eligible));
+    type !== "none" && (numValue <= 0 || (type === "fixed_amount" && numValue > eligible));
 
-  function commit(nextType: NonNullable<BundleMetaPatch['discountType']>, nextValue: number) {
-    if (nextType === 'none') {
-      onChange({ discountType: 'none', discountValue: 0 });
+  function commit(nextType: NonNullable<BundleMetaPatch["discountType"]>, nextValue: number) {
+    if (nextType === "none") {
+      onChange({ discountType: "none", discountValue: 0 });
       return;
     }
     if (nextValue <= 0) return;
-    if (nextType === 'percentage' && nextValue > BUNDLE_PERCENT_LIMIT) return;
+    if (nextType === "percentage" && nextValue > BUNDLE_PERCENT_LIMIT) return;
     onChange({ discountType: nextType, discountValue: nextValue });
   }
 
@@ -439,11 +434,11 @@ function BundleDiscountSection({
           <select
             value={type}
             onChange={(e) => {
-              const t = e.target.value as NonNullable<BundleMetaPatch['discountType']>;
+              const t = e.target.value as NonNullable<BundleMetaPatch["discountType"]>;
               setType(t);
-              if (t === 'none') {
-                setValue('0');
-                commit('none', 0);
+              if (t === "none") {
+                setValue("0");
+                commit("none", 0);
               }
             }}
             className="w-full h-10 px-3 rounded-md border border-input bg-background text-sm"
@@ -453,13 +448,13 @@ function BundleDiscountSection({
             <option value="percentage">Percentual (%)</option>
           </select>
         </Field>
-        <Field label={type === 'percentage' ? 'Valor (%)' : 'Valor (R$)'}>
+        <Field label={type === "percentage" ? "Valor (%)" : "Valor (R$)"}>
           <Input
             type="number"
             min={0}
-            step={type === 'percentage' ? 1 : 0.01}
+            step={type === "percentage" ? 1 : 0.01}
             value={value}
-            disabled={type === 'none'}
+            disabled={type === "none"}
             onChange={(e) => setValue(e.target.value)}
             onBlur={() => commit(type, Number(value) || 0)}
           />
@@ -467,10 +462,10 @@ function BundleDiscountSection({
       </div>
 
       <p className="text-[11px] text-muted-foreground">
-        {type === 'fixed_amount' && 'Reduz um valor fixo em reais do subtotal do combo. '}
-        {type === 'percentage' &&
+        {type === "fixed_amount" && "Reduz um valor fixo em reais do subtotal do combo. "}
+        {type === "percentage" &&
           `Reduz uma porcentagem sobre o subtotal dos itens elegíveis. Limite seguro: ${BUNDLE_PERCENT_LIMIT}%. `}
-        {type === 'none' && 'Combo estrutural, sem desconto comercial. '}
+        {type === "none" && "Combo estrutural, sem desconto comercial. "}
         Descontos de combo não acumulam com preço empresa (B2B) por padrão.
       </p>
 
@@ -485,14 +480,24 @@ function BundleDiscountSection({
         </div>
       )}
 
-      {type !== 'none' && bundle.items.length > 0 && (
+      {type !== "none" && bundle.items.length > 0 && (
         <div className="rounded-md border border-border bg-surface/40 p-3 text-xs space-y-1">
           <div className="font-medium text-foreground">Prévia (sem aplicar ainda)</div>
-          <div className="flex justify-between"><span>Subtotal dos itens</span><span>{formatBRL(eligible)}</span></div>
-          <div className="flex justify-between text-emerald-700"><span>Desconto estimado</span><span>− {formatBRL(estimated)}</span></div>
-          <div className="flex justify-between font-semibold border-t border-border pt-1 mt-1"><span>Total estimado do combo</span><span>{formatBRL(totalAfter)}</span></div>
+          <div className="flex justify-between">
+            <span>Subtotal dos itens</span>
+            <span>{formatBRL(eligible)}</span>
+          </div>
+          <div className="flex justify-between text-emerald-700">
+            <span>Desconto estimado</span>
+            <span>− {formatBRL(estimated)}</span>
+          </div>
+          <div className="flex justify-between font-semibold border-t border-border pt-1 mt-1">
+            <span>Total estimado do combo</span>
+            <span>{formatBRL(totalAfter)}</span>
+          </div>
           <div className="text-[10px] text-muted-foreground pt-1">
-            Revise a margem dos produtos antes de aplicar desconto. O backend é a fonte da verdade no carrinho.
+            Revise a margem dos produtos antes de aplicar desconto. O backend é a fonte da verdade
+            no carrinho.
           </div>
         </div>
       )}
@@ -542,7 +547,7 @@ function AvailabilityBadge({ availability }: { availability: BundleAvailability 
     <span
       className={`inline-flex items-center gap-1 text-[10px] font-medium px-2 py-0.5 rounded-full border ${AVAILABILITY_TONE[availability]}`}
     >
-      {availability === 'available' ? (
+      {availability === "available" ? (
         <CheckCircle2 className="w-3 h-3" />
       ) : (
         <AlertCircle className="w-3 h-3" />
@@ -557,11 +562,11 @@ function AvailabilityBadge({ availability }: { availability: BundleAvailability 
 // ----------------------------------------------------------------------------
 function BundleItemsSection({ bundle }: { bundle: BundlePublic }) {
   const qc = useQueryClient();
-  const [search, setSearch] = useState('');
+  const [search, setSearch] = useState("");
   const [showResults, setShowResults] = useState(false);
 
   const searchQ = useQuery({
-    queryKey: ['admin-bundle-search', search],
+    queryKey: ["admin-bundle-search", search],
     queryFn: () => adminSearchProductsForBundle({ data: { query: search, limit: 10 } }),
     enabled: search.trim().length >= 2,
     staleTime: 5_000,
@@ -579,31 +584,35 @@ function BundleItemsSection({ bundle }: { bundle: BundlePublic }) {
         },
       }),
     onSuccess: (res) => {
-      toast.success(res.merged ? 'Quantidade somada' : 'Produto adicionado');
-      setSearch('');
+      toast.success(res.merged ? "Quantidade somada" : "Produto adicionado");
+      setSearch("");
       setShowResults(false);
-      qc.invalidateQueries({ queryKey: ['admin-bundle', bundle.id] });
-      qc.invalidateQueries({ queryKey: ['admin-bundles'] });
+      qc.invalidateQueries({ queryKey: ["admin-bundle", bundle.id] });
+      qc.invalidateQueries({ queryKey: ["admin-bundles"] });
     },
-    onError: () => toast.error('Erro ao adicionar produto'),
+    onError: () => toast.error("Erro ao adicionar produto"),
   });
 
   const removeMut = useMutation({
     mutationFn: (id: string) => adminRemoveBundleItem({ data: { id } }),
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ['admin-bundle', bundle.id] });
-      qc.invalidateQueries({ queryKey: ['admin-bundles'] });
+      qc.invalidateQueries({ queryKey: ["admin-bundle", bundle.id] });
+      qc.invalidateQueries({ queryKey: ["admin-bundles"] });
     },
-    onError: () => toast.error('Erro ao remover'),
+    onError: () => toast.error("Erro ao remover"),
   });
 
   const updateItemMut = useMutation({
-    mutationFn: (vars: { id: string; quantity?: number; sortOrder?: number; isRequired?: boolean }) =>
-      adminUpdateBundleItem({ data: vars }),
+    mutationFn: (vars: {
+      id: string;
+      quantity?: number;
+      sortOrder?: number;
+      isRequired?: boolean;
+    }) => adminUpdateBundleItem({ data: vars }),
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ['admin-bundle', bundle.id] });
+      qc.invalidateQueries({ queryKey: ["admin-bundle", bundle.id] });
     },
-    onError: () => toast.error('Erro ao atualizar item'),
+    onError: () => toast.error("Erro ao atualizar item"),
   });
 
   return (
@@ -613,9 +622,9 @@ function BundleItemsSection({ bundle }: { bundle: BundlePublic }) {
           Produtos do combo
         </h3>
         <p className="text-[11px] text-muted-foreground mt-0.5">
-          Subtotal estimado:{' '}
-          <strong className="text-foreground">{formatBRL(bundle.subtotal)}</strong> ·{' '}
-          {bundle.total_units} {bundle.total_units === 1 ? 'unidade' : 'unidades'}
+          Subtotal estimado:{" "}
+          <strong className="text-foreground">{formatBRL(bundle.subtotal)}</strong> ·{" "}
+          {bundle.total_units} {bundle.total_units === 1 ? "unidade" : "unidades"}
         </p>
       </div>
 
@@ -641,9 +650,7 @@ function BundleItemsSection({ bundle }: { bundle: BundlePublic }) {
               </div>
             )}
             {searchQ.data?.length === 0 && !searchQ.isLoading && (
-              <div className="p-3 text-xs text-muted-foreground">
-                Nenhum produto encontrado.
-              </div>
+              <div className="p-3 text-xs text-muted-foreground">Nenhum produto encontrado.</div>
             )}
             {searchQ.data?.map((p) => (
               <button
@@ -654,15 +661,13 @@ function BundleItemsSection({ bundle }: { bundle: BundlePublic }) {
                 className="w-full text-left flex items-center gap-2 p-2 hover:bg-accent/40 border-b border-border last:border-b-0"
               >
                 <div className="w-9 h-9 rounded bg-surface overflow-hidden">
-                  {p.image && (
-                    <img src={p.image} alt="" className="w-full h-full object-cover" />
-                  )}
+                  {p.image && <img src={p.image} alt="" className="w-full h-full object-cover" />}
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="text-sm font-medium truncate">{p.name}</div>
                   <div className="text-[11px] text-muted-foreground truncate">
-                    {p.sku ? `SKU ${p.sku}` : ''} {p.brand ? `· ${p.brand}` : ''}
-                    {!p.active && ' · inativo'}
+                    {p.sku ? `SKU ${p.sku}` : ""} {p.brand ? `· ${p.brand}` : ""}
+                    {!p.active && " · inativo"}
                   </div>
                 </div>
                 <Plus className="w-4 h-4 text-muted-foreground" />
@@ -682,11 +687,7 @@ function BundleItemsSection({ bundle }: { bundle: BundlePublic }) {
             <div key={it.id} className="flex items-center gap-2 p-2">
               <div className="w-10 h-10 rounded bg-surface overflow-hidden flex-shrink-0">
                 {it.product.image && (
-                  <img
-                    src={it.product.image}
-                    alt=""
-                    className="w-full h-full object-cover"
-                  />
+                  <img src={it.product.image} alt="" className="w-full h-full object-cover" />
                 )}
               </div>
               <div className="flex-1 min-w-0">
@@ -695,12 +696,12 @@ function BundleItemsSection({ bundle }: { bundle: BundlePublic }) {
                   {it.product.sku && <span>SKU {it.product.sku}</span>}
                   <span>{formatBRL(it.product.final_price)}</span>
                   <span>· estoque {it.product.stock_qty}</span>
-                  {it.status !== 'ok' && (
+                  {it.status !== "ok" && (
                     <span className="inline-flex items-center gap-1 text-amber-600">
                       <AlertCircle className="w-3 h-3" />
-                      {it.status === 'inactive' && 'inativo'}
-                      {it.status === 'no_price' && 'sem preço'}
-                      {it.status === 'no_stock' && 'sem estoque'}
+                      {it.status === "inactive" && "inativo"}
+                      {it.status === "no_price" && "sem preço"}
+                      {it.status === "no_stock" && "sem estoque"}
                     </span>
                   )}
                 </div>
@@ -731,7 +732,7 @@ function BundleItemsSection({ bundle }: { bundle: BundlePublic }) {
                 variant="ghost"
                 size="sm"
                 onClick={() => {
-                  if (confirm('Remover este item do combo?')) removeMut.mutate(it.id);
+                  if (confirm("Remover este item do combo?")) removeMut.mutate(it.id);
                 }}
                 className="text-muted-foreground hover:text-destructive h-8 w-8 p-0"
               >
@@ -748,10 +749,10 @@ function BundleItemsSection({ bundle }: { bundle: BundlePublic }) {
 function DiscountFutureNotice() {
   return (
     <div className="rounded-md border border-dashed border-border bg-surface/40 p-3 text-[11px] text-muted-foreground">
-      <strong className="text-foreground">Descontos de combo:</strong> serão aplicados em
-      uma próxima etapa. Nesta fase, o combo apenas agrupa produtos para compra conjunta —
-      o carrinho e o checkout continuam aplicando o preço normal de cada item (e o preço
-      empresa B2B quando aplicável).
+      <strong className="text-foreground">Descontos de combo:</strong> serão aplicados em uma
+      próxima etapa. Nesta fase, o combo apenas agrupa produtos para compra conjunta — o carrinho e
+      o checkout continuam aplicando o preço normal de cada item (e o preço empresa B2B quando
+      aplicável).
     </div>
   );
 }
@@ -768,8 +769,8 @@ function CreateBundleDialog({
   onOpenChange: (v: boolean) => void;
   onCreated: (id: string) => void;
 }) {
-  const [name, setName] = useState('');
-  const [description, setDescription] = useState('');
+  const [name, setName] = useState("");
+  const [description, setDescription] = useState("");
 
   const createMut = useMutation({
     mutationFn: () =>
@@ -780,16 +781,16 @@ function CreateBundleDialog({
         },
       }),
     onSuccess: (res) => {
-      toast.success('Combo criado. Adicione os produtos.');
+      toast.success("Combo criado. Adicione os produtos.");
       onOpenChange(false);
-      setName('');
-      setDescription('');
+      setName("");
+      setDescription("");
       onCreated(res.id);
     },
     onError: (err: any) => {
-      if (String(err?.message ?? '').includes('slug_already_exists'))
-        toast.error('Já existe um combo com esse nome.');
-      else toast.error('Erro ao criar combo');
+      if (String(err?.message ?? "").includes("slug_already_exists"))
+        toast.error("Já existe um combo com esse nome.");
+      else toast.error("Erro ao criar combo");
     },
   });
 
@@ -799,8 +800,7 @@ function CreateBundleDialog({
         <DialogHeader>
           <DialogTitle>Novo combo</DialogTitle>
           <DialogDescription>
-            Crie o combo com nome e descrição. Em seguida, adicione os produtos e
-            quantidades.
+            Crie o combo com nome e descrição. Em seguida, adicione os produtos e quantidades.
           </DialogDescription>
         </DialogHeader>
         <div className="space-y-3">

@@ -1,11 +1,11 @@
-import { Link } from '@tanstack/react-router';
-import { MessageCircle, Instagram, Facebook } from 'lucide-react';
-import { STORE_NAME, STORE_WHATSAPP } from '@/lib/domain';
-import logoFooter from '@/assets/logo-footer.jpg';
+import { Link } from "@tanstack/react-router";
+import { MessageCircle, Instagram, Facebook } from "lucide-react";
+import { STORE_NAME, STORE_WHATSAPP } from "@/lib/domain";
+import logoFooter from "@/assets/logo-footer.jpg";
 
 export function Footer() {
   const openCookiePreferences = () => {
-    void import('@/stores/cookieStore').then(({ useCookieStore }) => {
+    void import("@/stores/cookieStore").then(({ useCookieStore }) => {
       useCookieStore.getState().openPreferences();
     });
   };
@@ -14,7 +14,7 @@ export function Footer() {
     <footer
       className="mt-24 text-slate-100 relative"
       style={{
-        background: 'linear-gradient(135deg, #0F172A 0%, #111827 100%)',
+        background: "linear-gradient(135deg, #0F172A 0%, #111827 100%)",
       }}
     >
       {/* Sutil brilho superior para profundidade */}
@@ -23,7 +23,7 @@ export function Footer() {
         className="absolute inset-x-0 top-0 h-px"
         style={{
           background:
-            'linear-gradient(90deg, transparent 0%, rgba(96,165,250,0.35) 50%, transparent 100%)',
+            "linear-gradient(90deg, transparent 0%, rgba(96,165,250,0.35) 50%, transparent 100%)",
         }}
       />
 
@@ -69,17 +69,52 @@ export function Footer() {
               Links
             </h4>
             <ul className="space-y-3 text-sm text-slate-300">
-              <li><Link to="/catalogo" className="hover:text-[#60A5FA] transition-colors">Catálogo</Link></li>
-              <li><Link to="/contato" className="hover:text-[#60A5FA] transition-colors">Contato</Link></li>
-              <li><Link to="/condicoes-de-uso" className="hover:text-[#60A5FA] transition-colors">Condições de Uso</Link></li>
-              <li><Link to="/meios-de-pagamento" className="hover:text-[#60A5FA] transition-colors">Meios de Pagamento</Link></li>
-              <li><Link to="/reembolso" className="hover:text-[#60A5FA] transition-colors">Reembolso</Link></li>
-              <li><Link to="/troca" className="hover:text-[#60A5FA] transition-colors">Troca</Link></li>
-              <li><Link to="/devolucao" className="hover:text-[#60A5FA] transition-colors">Devolução</Link></li>
-              <li><Link to="/privacidade" className="hover:text-[#60A5FA] transition-colors">Política de Privacidade</Link></li>
               <li>
-                <button type="button" onClick={openCookiePreferences}
-                  className="hover:text-[#60A5FA] transition-colors text-left">
+                <Link to="/catalogo" className="hover:text-[#60A5FA] transition-colors">
+                  Catálogo
+                </Link>
+              </li>
+              <li>
+                <Link to="/contato" className="hover:text-[#60A5FA] transition-colors">
+                  Contato
+                </Link>
+              </li>
+              <li>
+                <Link to="/condicoes-de-uso" className="hover:text-[#60A5FA] transition-colors">
+                  Condições de Uso
+                </Link>
+              </li>
+              <li>
+                <Link to="/meios-de-pagamento" className="hover:text-[#60A5FA] transition-colors">
+                  Meios de Pagamento
+                </Link>
+              </li>
+              <li>
+                <Link to="/reembolso" className="hover:text-[#60A5FA] transition-colors">
+                  Reembolso
+                </Link>
+              </li>
+              <li>
+                <Link to="/troca" className="hover:text-[#60A5FA] transition-colors">
+                  Troca
+                </Link>
+              </li>
+              <li>
+                <Link to="/devolucao" className="hover:text-[#60A5FA] transition-colors">
+                  Devolução
+                </Link>
+              </li>
+              <li>
+                <Link to="/privacidade" className="hover:text-[#60A5FA] transition-colors">
+                  Política de Privacidade
+                </Link>
+              </li>
+              <li>
+                <button
+                  type="button"
+                  onClick={openCookiePreferences}
+                  className="hover:text-[#60A5FA] transition-colors text-left"
+                >
                   Gerenciar cookies
                 </button>
               </li>
@@ -95,7 +130,7 @@ export function Footer() {
               <li>
                 <Link
                   to="/catalogo"
-                  search={{ cat: 'iluminacao-led' } as any}
+                  search={{ cat: "iluminacao-led" } as any}
                   className="hover:text-[#60A5FA] transition-colors"
                 >
                   Iluminação LED
@@ -104,7 +139,7 @@ export function Footer() {
               <li>
                 <Link
                   to="/catalogo"
-                  search={{ cat: 'disjuntores' } as any}
+                  search={{ cat: "disjuntores" } as any}
                   className="hover:text-[#60A5FA] transition-colors"
                 >
                   Disjuntores
@@ -113,7 +148,7 @@ export function Footer() {
               <li>
                 <Link
                   to="/catalogo"
-                  search={{ cat: 'fios-e-cabos' } as any}
+                  search={{ cat: "fios-e-cabos" } as any}
                   className="hover:text-[#60A5FA] transition-colors"
                 >
                   Fios e Cabos
@@ -122,7 +157,7 @@ export function Footer() {
               <li>
                 <Link
                   to="/catalogo"
-                  search={{ cat: 'refletores' } as any}
+                  search={{ cat: "refletores" } as any}
                   className="hover:text-[#60A5FA] transition-colors"
                 >
                   Refletores
@@ -138,7 +173,7 @@ export function Footer() {
             </h4>
             <p className="text-xs text-slate-400 mb-3">Pagamento seguro · até 12x sem juros</p>
             <div className="flex flex-wrap gap-1.5 mb-5">
-              {['Visa', 'Master', 'PIX', 'Boleto'].map((p) => (
+              {["Visa", "Master", "PIX", "Boleto"].map((p) => (
                 <span
                   key={p}
                   className="text-[10px] font-bold tracking-wide bg-white/5 text-slate-200 ring-1 ring-white/10 px-2.5 py-1 rounded-md"

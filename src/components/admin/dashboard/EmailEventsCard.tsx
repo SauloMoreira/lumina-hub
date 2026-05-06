@@ -1,8 +1,8 @@
-import { Mail, MailCheck, MailX, Clock } from 'lucide-react';
-import type { DashboardData } from '@/server/dashboard.functions';
-import { fmtInt, fmtPct } from './format';
+import { Mail, MailCheck, MailX, Clock } from "lucide-react";
+import type { DashboardData } from "@/server/dashboard.functions";
+import { fmtInt, fmtPct } from "./format";
 
-export function EmailEventsCard({ stats }: { stats: DashboardData['emailStats'] }) {
+export function EmailEventsCard({ stats }: { stats: DashboardData["emailStats"] }) {
   if (stats.total === 0) {
     return (
       <div className="text-sm text-muted-foreground py-6 text-center border border-dashed border-border rounded-lg">
@@ -11,10 +11,20 @@ export function EmailEventsCard({ stats }: { stats: DashboardData['emailStats'] 
     );
   }
   const items = [
-    { icon: MailCheck, label: 'Enviados', value: fmtInt(stats.sent), tone: 'text-emerald-600 dark:text-emerald-400' },
-    { icon: Clock, label: 'Pendentes', value: fmtInt(stats.pending), tone: 'text-amber-600 dark:text-amber-400' },
-    { icon: MailX, label: 'Falharam', value: fmtInt(stats.failed), tone: 'text-destructive' },
-    { icon: Mail, label: 'Total', value: fmtInt(stats.total), tone: 'text-foreground' },
+    {
+      icon: MailCheck,
+      label: "Enviados",
+      value: fmtInt(stats.sent),
+      tone: "text-emerald-600 dark:text-emerald-400",
+    },
+    {
+      icon: Clock,
+      label: "Pendentes",
+      value: fmtInt(stats.pending),
+      tone: "text-amber-600 dark:text-amber-400",
+    },
+    { icon: MailX, label: "Falharam", value: fmtInt(stats.failed), tone: "text-destructive" },
+    { icon: Mail, label: "Total", value: fmtInt(stats.total), tone: "text-foreground" },
   ];
   return (
     <div className="space-y-4">
@@ -33,9 +43,11 @@ export function EmailEventsCard({ stats }: { stats: DashboardData['emailStats'] 
         <span className="text-muted-foreground">Taxa de falha</span>
         <span
           className={[
-            'font-semibold tabular-nums',
-            stats.failureRate > 0.05 ? 'text-destructive' : 'text-emerald-600 dark:text-emerald-400',
-          ].join(' ')}
+            "font-semibold tabular-nums",
+            stats.failureRate > 0.05
+              ? "text-destructive"
+              : "text-emerald-600 dark:text-emerald-400",
+          ].join(" ")}
         >
           {fmtPct(stats.failureRate)}
         </span>

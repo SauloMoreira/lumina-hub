@@ -1,7 +1,7 @@
-import { useEffect, useRef, useState } from 'react';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
-import { pickUrl, type ProductImageRow } from '@/lib/productImages';
-import { ProductImagePlaceholder } from '@/components/store/ProductImagePlaceholder';
+import { useEffect, useRef, useState } from "react";
+import { ChevronLeft, ChevronRight } from "lucide-react";
+import { pickUrl, type ProductImageRow } from "@/lib/productImages";
+import { ProductImagePlaceholder } from "@/components/store/ProductImagePlaceholder";
 
 interface Props {
   images: ProductImageRow[];
@@ -25,20 +25,20 @@ export function ProductGallery({ images, productName }: Props) {
   const mainRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    const mq = window.matchMedia('(hover: hover) and (pointer: fine)');
+    const mq = window.matchMedia("(hover: hover) and (pointer: fine)");
     const update = () => setCanHover(mq.matches);
     update();
-    mq.addEventListener('change', update);
-    return () => mq.removeEventListener('change', update);
+    mq.addEventListener("change", update);
+    return () => mq.removeEventListener("change", update);
   }, []);
 
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
-      if (e.key === 'ArrowLeft') setActiveIndex((i) => Math.max(0, i - 1));
-      if (e.key === 'ArrowRight') setActiveIndex((i) => Math.min(sorted.length - 1, i + 1));
+      if (e.key === "ArrowLeft") setActiveIndex((i) => Math.max(0, i - 1));
+      if (e.key === "ArrowRight") setActiveIndex((i) => Math.min(sorted.length - 1, i + 1));
     }
-    window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
   }, [sorted.length]);
 
   if (!sorted.length) {
@@ -53,7 +53,7 @@ export function ProductGallery({ images, productName }: Props) {
 
   const safeIndex = Math.min(activeIndex, sorted.length - 1);
   const current = sorted[safeIndex];
-  const mainSrc = pickUrl(current, 'full') ?? current.original_url;
+  const mainSrc = pickUrl(current, "full") ?? current.original_url;
   const mainAlt = current.alt_text || `${productName} — Led Maricá`;
   const mainTitle = current.title_text || productName;
 
@@ -79,7 +79,7 @@ export function ProductGallery({ images, productName }: Props) {
         {sorted.length > 1 && (
           <div className="hidden md:flex flex-col gap-2 w-[68px] flex-shrink-0">
             {sorted.map((img, i) => {
-              const thumb = pickUrl(img, 'thumb') ?? img.original_url;
+              const thumb = pickUrl(img, "thumb") ?? img.original_url;
               const active = i === safeIndex;
               return (
                 <button
@@ -89,7 +89,9 @@ export function ProductGallery({ images, productName }: Props) {
                   onClick={() => setActiveIndex(i)}
                   aria-label={`Ver imagem ${i + 1}`}
                   className={`w-[68px] h-[68px] rounded-md overflow-hidden bg-surface p-0 transition-colors ${
-                    active ? 'border-2 border-accent' : 'border border-border hover:border-accent/60'
+                    active
+                      ? "border-2 border-accent"
+                      : "border border-border hover:border-accent/60"
                   }`}
                 >
                   <img
@@ -112,7 +114,7 @@ export function ProductGallery({ images, productName }: Props) {
             onMouseLeave={() => setIsZooming(false)}
             onMouseMove={handleMouseMove}
             className="relative w-full aspect-square bg-surface border border-border rounded-lg overflow-hidden select-none"
-            style={{ cursor: isZooming ? 'crosshair' : 'default' }}
+            style={{ cursor: isZooming ? "crosshair" : "default" }}
           >
             <img
               src={mainSrc}
@@ -131,8 +133,20 @@ export function ProductGallery({ images, productName }: Props) {
                 style={{
                   width: LENS_SIZE,
                   height: LENS_SIZE,
-                  left: Math.max(0, Math.min((mainRef.current?.clientWidth ?? 0) - LENS_SIZE, lensPos.x - LENS_SIZE / 2)),
-                  top: Math.max(0, Math.min((mainRef.current?.clientHeight ?? 0) - LENS_SIZE, lensPos.y - LENS_SIZE / 2)),
+                  left: Math.max(
+                    0,
+                    Math.min(
+                      (mainRef.current?.clientWidth ?? 0) - LENS_SIZE,
+                      lensPos.x - LENS_SIZE / 2,
+                    ),
+                  ),
+                  top: Math.max(
+                    0,
+                    Math.min(
+                      (mainRef.current?.clientHeight ?? 0) - LENS_SIZE,
+                      lensPos.y - LENS_SIZE / 2,
+                    ),
+                  ),
                 }}
               />
             )}
@@ -179,7 +193,7 @@ export function ProductGallery({ images, productName }: Props) {
           {sorted.length > 1 && (
             <div className="md:hidden flex gap-2 overflow-x-auto pb-1">
               {sorted.map((img, i) => {
-                const thumb = pickUrl(img, 'thumb') ?? img.original_url;
+                const thumb = pickUrl(img, "thumb") ?? img.original_url;
                 const active = i === safeIndex;
                 return (
                   <button
@@ -188,7 +202,7 @@ export function ProductGallery({ images, productName }: Props) {
                     onClick={() => setActiveIndex(i)}
                     aria-label={`Ver imagem ${i + 1}`}
                     className={`flex-shrink-0 w-16 h-16 rounded-md overflow-hidden bg-surface p-0 transition-colors ${
-                      active ? 'border-2 border-accent' : 'border border-border'
+                      active ? "border-2 border-accent" : "border border-border"
                     }`}
                   >
                     <img
@@ -212,7 +226,7 @@ export function ProductGallery({ images, productName }: Props) {
           className="hidden md:block absolute top-0 left-full ml-4 w-[480px] h-[480px] bg-surface border border-border rounded-lg overflow-hidden shadow-floating z-30"
           style={{
             backgroundImage: `url(${mainSrc})`,
-            backgroundRepeat: 'no-repeat',
+            backgroundRepeat: "no-repeat",
             backgroundSize: `${ZOOM_FACTOR * 100}%`,
             backgroundPosition: `${zoomPos.x}% ${zoomPos.y}%`,
           }}

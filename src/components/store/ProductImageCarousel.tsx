@@ -1,7 +1,7 @@
-import { useEffect, useState } from 'react';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
-import { pickUrl, type ProductImageRow } from '@/lib/productImages';
-import { ProductImagePlaceholder } from '@/components/store/ProductImagePlaceholder';
+import { useEffect, useState } from "react";
+import { ChevronLeft, ChevronRight } from "lucide-react";
+import { pickUrl, type ProductImageRow } from "@/lib/productImages";
+import { ProductImagePlaceholder } from "@/components/store/ProductImagePlaceholder";
 
 interface Props {
   images: ProductImageRow[];
@@ -17,11 +17,11 @@ export function ProductImageCarousel({ images, productName }: Props) {
 
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
-      if (e.key === 'ArrowLeft') setActiveIndex((i) => Math.max(0, i - 1));
-      if (e.key === 'ArrowRight') setActiveIndex((i) => Math.min(sorted.length - 1, i + 1));
+      if (e.key === "ArrowLeft") setActiveIndex((i) => Math.max(0, i - 1));
+      if (e.key === "ArrowRight") setActiveIndex((i) => Math.min(sorted.length - 1, i + 1));
     }
-    window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
   }, [sorted.length]);
 
   if (!sorted.length) {
@@ -33,14 +33,20 @@ export function ProductImageCarousel({ images, productName }: Props) {
   }
 
   const current = sorted[Math.min(activeIndex, sorted.length - 1)];
-  const mainSrc = pickUrl(current, 'full') ?? current.original_url;
+  const mainSrc = pickUrl(current, "full") ?? current.original_url;
   const mainAlt = current.alt_text || `${productName} — Led Maricá`;
   const mainTitle = current.title_text || productName;
 
   return (
     <div className="space-y-3">
       <div className="relative bg-card border border-border rounded-xl aspect-square overflow-hidden group">
-        <img src={mainSrc} alt={mainAlt} title={mainTitle} className="w-full h-full object-cover" loading="eager" />
+        <img
+          src={mainSrc}
+          alt={mainAlt}
+          title={mainTitle}
+          className="w-full h-full object-cover"
+          loading="eager"
+        />
         {sorted.length > 1 && (
           <>
             <span className="absolute top-3 right-3 bg-black/60 text-white text-[11px] font-medium px-2 py-0.5 rounded-full">
@@ -77,7 +83,7 @@ export function ProductImageCarousel({ images, productName }: Props) {
       {sorted.length > 1 && (
         <div className="flex gap-2 overflow-x-auto pb-1">
           {sorted.map((img, i) => {
-            const thumb = pickUrl(img, 'thumb') ?? img.original_url;
+            const thumb = pickUrl(img, "thumb") ?? img.original_url;
             const active = i === activeIndex;
             return (
               <button
@@ -85,9 +91,14 @@ export function ProductImageCarousel({ images, productName }: Props) {
                 type="button"
                 onClick={() => setActiveIndex(i)}
                 aria-label={`Ver imagem ${i + 1}`}
-                className={`flex-shrink-0 w-16 h-16 rounded-md overflow-hidden border-2 transition ${active ? 'border-primary opacity-100' : 'border-transparent opacity-70 hover:opacity-100'}`}
+                className={`flex-shrink-0 w-16 h-16 rounded-md overflow-hidden border-2 transition ${active ? "border-primary opacity-100" : "border-transparent opacity-70 hover:opacity-100"}`}
               >
-                <img src={thumb} alt={img.alt_text || `${productName} ${i + 1}`} className="w-full h-full object-cover" loading="lazy" />
+                <img
+                  src={thumb}
+                  alt={img.alt_text || `${productName} ${i + 1}`}
+                  className="w-full h-full object-cover"
+                  loading="lazy"
+                />
               </button>
             );
           })}
