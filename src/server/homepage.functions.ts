@@ -7,7 +7,7 @@ import { supabaseAdmin } from "@/integrations/supabase/client.server";
  */
 export const fetchHomeBanners = createServerFn({ method: "GET" }).handler(
   async () => {
-    const supabase = createSupabaseServerClient();
+    const supabase = supabaseAdmin;
     const { data, error } = await supabase
       .from("home_banners")
       .select(
