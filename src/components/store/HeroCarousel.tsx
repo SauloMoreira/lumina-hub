@@ -196,10 +196,14 @@ export function HeroCarousel({ banners }: { banners: HeroBanner[] }) {
                 }}
                 aria-label={`Ir para slide ${i + 1}`}
                 aria-current={i === idx}
-                className={`h-1.5 rounded-full transition-all ${
-                  i === idx ? "w-8 bg-white" : "w-2 bg-white/50 hover:bg-white/80"
-                }`}
-              />
+                className={`min-w-[44px] min-h-[44px] flex items-center justify-center`}
+              >
+                <span
+                  className={`block h-1.5 rounded-full transition-all ${
+                    i === idx ? "w-8 bg-white" : "w-2 bg-white/50"
+                  }`}
+                />
+              </button>
             ))}
           </div>
         )}

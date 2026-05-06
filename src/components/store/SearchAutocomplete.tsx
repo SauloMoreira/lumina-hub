@@ -133,8 +133,11 @@ export function SearchAutocomplete({ className, placeholder }: SearchAutocomplet
             onKeyDown={onKeyDown}
             placeholder={placeholder ?? "Busque por lâmpadas, disjuntores, fios…"}
             className="pl-11 pr-10 rounded-pill bg-surface border-border h-10"
+            role="combobox"
             aria-autocomplete="list"
             aria-expanded={showPanel}
+            aria-haspopup="listbox"
+            aria-label="Campo de busca de produtos"
           />
           {loading && (
             <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-faint animate-spin" />
