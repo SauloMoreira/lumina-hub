@@ -496,7 +496,7 @@ function HomePage() {
                     src={logoSrc}
                     alt={logoAlt}
                     loading="eager"
-                    fetchPriority="high"
+                    fetchPriority="auto"
                     decoding="async"
                     width={240}
                     height={88}
