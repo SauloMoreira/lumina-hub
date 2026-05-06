@@ -142,12 +142,13 @@ export const Route = createRootRouteWithContext<MyRouterContext>()({
       { rel: "stylesheet", href: appCss },
       { rel: "preconnect", href: "https://fonts.googleapis.com" },
       { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "anonymous" },
+    ],
+    scripts: [
+      { type: "application/ld+json", children: ORG_JSONLD },
       {
-        rel: "stylesheet",
-        href: "https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&family=Plus+Jakarta+Sans:wght@700;800&display=swap",
+        children: `(function(){var l=document.createElement("link");l.rel="stylesheet";l.href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&family=Plus+Jakarta+Sans:wght@700;800&display=swap";l.media="print";l.onload=function(){l.media="all"};document.head.appendChild(l)})()`,
       },
     ],
-    scripts: [{ type: "application/ld+json", children: ORG_JSONLD }],
   }),
   shellComponent: RootShell,
   component: RootComponent,
