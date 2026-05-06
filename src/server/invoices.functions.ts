@@ -110,7 +110,7 @@ export const listInvoices = createServerFn({ method: "POST" })
         "id, order_number, user_id, total, payment_status, paid_at, created_at, order_type, company_id, company_name, company_cnpj, invoice_status, invoice_number, invoice_series, invoice_access_key, invoice_danfe_url, invoice_xml_url, invoice_issued_at, invoice_required, invoice_registered_at, address_snapshot",
         { count: "exact" },
       )
-      .eq("payment_status", "paid")
+      .in("payment_status", ["paid", "approved"])
       .order("paid_at", { ascending: false, nullsFirst: false });
 
     if (data.status && data.status !== "all") {
@@ -204,28 +204,28 @@ export const getInvoiceSummary = createServerFn({ method: "GET" })
 
     const [pendentes, emitidas, comErro, canceladas, semNota, overdue, b2bSemNota, paidMonth] =
       await Promise.all([
-        count((q) => q.eq("payment_status", "paid").eq("invoice_status", "pendente_emissao")),
-        count((q) => q.eq("payment_status", "paid").eq("invoice_status", "emitida")),
-        count((q) => q.eq("payment_status", "paid").eq("invoice_status", "erro_emissao")),
-        count((q) => q.eq("payment_status", "paid").eq("invoice_status", "cancelada")),
+        count((q) => q.in("payment_status", ["paid", "approved"]).eq("invoice_status", "pendente_emissao")),
+        count((q) => q.in("payment_status", ["paid", "approved"]).eq("invoice_status", "emitida")),
+        count((q) => q.in("payment_status", ["paid", "approved"]).eq("invoice_status", "erro_emissao")),
+        count((q) => q.in("payment_status", ["paid", "approved"]).eq("invoice_status", "cancelada")),
         count((q) =>
           q
-            .eq("payment_status", "paid")
+            .in("payment_status", ["paid", "approved"])
             .in("invoice_status", ["nao_necessaria", "pendente_emissao"]),
         ),
         count((q) =>
           q
-            .eq("payment_status", "paid")
+            .in("payment_status", ["paid", "approved"])
             .eq("invoice_status", "pendente_emissao")
             .lt("paid_at", stale24h),
         ),
         count((q) =>
           q
-            .eq("payment_status", "paid")
+            .in("payment_status", ["paid", "approved"])
             .eq("order_type", "b2b")
             .in("invoice_status", ["nao_necessaria", "pendente_emissao"]),
         ),
-        count((q) => q.eq("payment_status", "paid").gte("paid_at", startMonthISO)),
+        count((q) => q.in("payment_status", ["paid", "approved"]).gte("paid_at", startMonthISO)),
       ]);
 
     return {
@@ -257,17 +257,17 @@ export const getInvoiceQuickCounts = createServerFn({ method: "GET" })
       }
     }
     const [pendentes, comErro, overdue, b2bSemNota] = await Promise.all([
-      count((q) => q.eq("payment_status", "paid").eq("invoice_status", "pendente_emissao")),
-      count((q) => q.eq("payment_status", "paid").eq("invoice_status", "erro_emissao")),
+      count((q) => q.in("payment_status", ["paid", "approved"]).eq("invoice_status", "pendente_emissao")),
+      count((q) => q.in("payment_status", ["paid", "approved"]).eq("invoice_status", "erro_emissao")),
       count((q) =>
         q
-          .eq("payment_status", "paid")
+          .in("payment_status", ["paid", "approved"])
           .eq("invoice_status", "pendente_emissao")
           .lt("paid_at", stale24h),
       ),
       count((q) =>
         q
-          .eq("payment_status", "paid")
+          .in("payment_status", ["paid", "approved"])
           .eq("order_type", "b2b")
           .in("invoice_status", ["nao_necessaria", "pendente_emissao"]),
       ),

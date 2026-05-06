@@ -90,14 +90,14 @@ export async function fetchFinanceAlertCounts(): Promise<FinanceAlertCounts> {
       supabaseAdmin
         .from("orders")
         .select("id", { count: "exact", head: true })
-        .eq("payment_status", "paid")
+        .in("payment_status", ["paid", "approved"])
         .eq("invoice_status", "pendente_emissao"),
     );
     out.invoicesPendingOver24h = await safeCount(() =>
       supabaseAdmin
         .from("orders")
         .select("id", { count: "exact", head: true })
-        .eq("payment_status", "paid")
+        .in("payment_status", ["paid", "approved"])
         .eq("invoice_status", "pendente_emissao")
         .lt("paid_at", stale24h),
     );
@@ -105,7 +105,7 @@ export async function fetchFinanceAlertCounts(): Promise<FinanceAlertCounts> {
       supabaseAdmin
         .from("orders")
         .select("id", { count: "exact", head: true })
-        .eq("payment_status", "paid")
+        .in("payment_status", ["paid", "approved"])
         .eq("order_type", "b2b")
         .in("invoice_status", ["pendente_emissao", "nao_necessaria"])
         .lt("paid_at", stale24h),
@@ -114,7 +114,7 @@ export async function fetchFinanceAlertCounts(): Promise<FinanceAlertCounts> {
       supabaseAdmin
         .from("orders")
         .select("id", { count: "exact", head: true })
-        .eq("payment_status", "paid")
+        .in("payment_status", ["paid", "approved"])
         .eq("invoice_status", "erro_emissao"),
     );
 
@@ -125,7 +125,7 @@ export async function fetchFinanceAlertCounts(): Promise<FinanceAlertCounts> {
       const { data: mpRows } = await supabaseAdmin
         .from("orders")
         .select("mp_fee_amount, estimated_fee_amount")
-        .eq("payment_status", "paid")
+        .in("payment_status", ["paid", "approved"])
         .gte("paid_at", since30dISO)
         .limit(2000);
       for (const r of (mpRows ?? []) as Array<{

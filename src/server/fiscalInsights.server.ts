@@ -175,7 +175,7 @@ export async function fetchFiscalQuickCounts(): Promise<FiscalQuickCounts> {
         .from("orders")
         .select("*", { count: "exact", head: true })
         .in("id", orderIds)
-        .eq("payment_status", "paid");
+        .in("payment_status", ["paid", "approved"]);
       paidOrdersWithFiscalIssues = count ?? 0;
     }
   } catch {}
@@ -514,7 +514,7 @@ export async function fetchPaidOrdersWithFiscalIssues(): Promise<
     .from("orders")
     .select("id")
     .in("id", orderIds)
-    .eq("payment_status", "paid");
+    .in("payment_status", ["paid", "approved"]);
   const okSet = new Set((orders ?? []).map((o: any) => o.id));
   return items
     .filter((i: any) => okSet.has(i.order_id))
