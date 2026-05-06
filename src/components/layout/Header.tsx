@@ -98,7 +98,7 @@ export function Header() {
               </span>
             )}
           </button>
-          <Button variant="ghost" size="icon" className="h-9 w-9 lg:hidden">
+          <Button variant="ghost" size="icon" className="h-9 w-9 lg:hidden" aria-label="Menu de navegação">
             <Menu className="w-5 h-5" />
           </Button>
         </div>
