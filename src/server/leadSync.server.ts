@@ -17,7 +17,7 @@ export async function syncApprovedOrderToLead(orderId: string): Promise<{
 }> {
   try {
     // 1. Buscar pedido
-    const { data: order, error: orderErr } = await supabaseAdmin
+    const { data: orderRaw, error: orderErr } = await supabaseAdmin
       .from("orders")
       .select(
         "id, order_number, user_id, total, status, payment_status, order_type, " +
@@ -28,7 +28,7 @@ export async function syncApprovedOrderToLead(orderId: string): Promise<{
       .eq("id", orderId)
       .single();
 
-    if (orderErr || !order) {
+    if (orderErr || !orderRaw) {
       return { ok: false, leadId: null, action: "error", reason: "order not found" };
     }
 
