@@ -25,6 +25,8 @@ export function Header() {
           <img
             src={logoNavbar}
             alt={STORE_NAME}
+            width={132}
+            height={44}
             loading="eager"
             decoding="async"
             className="h-11 w-auto object-contain"
