@@ -59,6 +59,7 @@ import { Route as AdminCampanhasRouteImport } from './routes/admin.campanhas'
 import { Route as AdminBannersRouteImport } from './routes/admin.banners'
 import { Route as AdminAutomacoesRouteImport } from './routes/admin.automacoes'
 import { Route as AdminProdutosIndexRouteImport } from './routes/admin.produtos.index'
+import { Route as AdminPedidosIndexRouteImport } from './routes/admin.pedidos.index'
 import { Route as AdminInstitutionalPagesIndexRouteImport } from './routes/admin.institutional-pages.index'
 import { Route as PedidoIdConfirmacaoRouteImport } from './routes/pedido.$id.confirmacao'
 import { Route as ApiPublicHealthRouteImport } from './routes/api/public/health'
@@ -336,6 +337,11 @@ const AdminProdutosIndexRoute = AdminProdutosIndexRouteImport.update({
   path: '/admin/produtos/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AdminPedidosIndexRoute = AdminPedidosIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => AdminPedidosRoute,
+} as any)
 const AdminInstitutionalPagesIndexRoute =
   AdminInstitutionalPagesIndexRouteImport.update({
     id: '/admin/institutional-pages/',
@@ -539,6 +545,7 @@ export interface FileRoutesByFullPath {
   '/api/public/health': typeof ApiPublicHealthRoute
   '/pedido/$id/confirmacao': typeof PedidoIdConfirmacaoRoute
   '/admin/institutional-pages/': typeof AdminInstitutionalPagesIndexRoute
+  '/admin/pedidos/': typeof AdminPedidosIndexRoute
   '/admin/produtos/': typeof AdminProdutosIndexRoute
   '/api/public/mercadopago/webhook': typeof ApiPublicMercadopagoWebhookRoute
 }
@@ -578,7 +585,6 @@ export interface FileRoutesByTo {
   '/admin/integracoes': typeof AdminIntegracoesRoute
   '/admin/leads': typeof AdminLeadsRoute
   '/admin/painel-do-dia': typeof AdminPainelDoDiaRoute
-  '/admin/pedidos': typeof AdminPedidosRouteWithChildren
   '/admin/pendencias': typeof AdminPendenciasRoute
   '/admin/seguranca': typeof AdminSegurancaRouteWithChildren
   '/admin/seo': typeof AdminSeoRoute
@@ -615,6 +621,7 @@ export interface FileRoutesByTo {
   '/api/public/health': typeof ApiPublicHealthRoute
   '/pedido/$id/confirmacao': typeof PedidoIdConfirmacaoRoute
   '/admin/institutional-pages': typeof AdminInstitutionalPagesIndexRoute
+  '/admin/pedidos': typeof AdminPedidosIndexRoute
   '/admin/produtos': typeof AdminProdutosIndexRoute
   '/api/public/mercadopago/webhook': typeof ApiPublicMercadopagoWebhookRoute
 }
@@ -692,6 +699,7 @@ export interface FileRoutesById {
   '/api/public/health': typeof ApiPublicHealthRoute
   '/pedido/$id/confirmacao': typeof PedidoIdConfirmacaoRoute
   '/admin/institutional-pages/': typeof AdminInstitutionalPagesIndexRoute
+  '/admin/pedidos/': typeof AdminPedidosIndexRoute
   '/admin/produtos/': typeof AdminProdutosIndexRoute
   '/api/public/mercadopago/webhook': typeof ApiPublicMercadopagoWebhookRoute
 }
@@ -770,6 +778,7 @@ export interface FileRouteTypes {
     | '/api/public/health'
     | '/pedido/$id/confirmacao'
     | '/admin/institutional-pages/'
+    | '/admin/pedidos/'
     | '/admin/produtos/'
     | '/api/public/mercadopago/webhook'
   fileRoutesByTo: FileRoutesByTo
@@ -809,7 +818,6 @@ export interface FileRouteTypes {
     | '/admin/integracoes'
     | '/admin/leads'
     | '/admin/painel-do-dia'
-    | '/admin/pedidos'
     | '/admin/pendencias'
     | '/admin/seguranca'
     | '/admin/seo'
@@ -846,6 +854,7 @@ export interface FileRouteTypes {
     | '/api/public/health'
     | '/pedido/$id/confirmacao'
     | '/admin/institutional-pages'
+    | '/admin/pedidos'
     | '/admin/produtos'
     | '/api/public/mercadopago/webhook'
   id:
@@ -922,6 +931,7 @@ export interface FileRouteTypes {
     | '/api/public/health'
     | '/pedido/$id/confirmacao'
     | '/admin/institutional-pages/'
+    | '/admin/pedidos/'
     | '/admin/produtos/'
     | '/api/public/mercadopago/webhook'
   fileRoutesById: FileRoutesById
@@ -1348,6 +1358,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminProdutosIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/admin/pedidos/': {
+      id: '/admin/pedidos/'
+      path: '/'
+      fullPath: '/admin/pedidos/'
+      preLoaderRoute: typeof AdminPedidosIndexRouteImport
+      parentRoute: typeof AdminPedidosRoute
+    }
     '/admin/institutional-pages/': {
       id: '/admin/institutional-pages/'
       path: '/admin/institutional-pages'
@@ -1549,10 +1566,12 @@ const ContaRouteWithChildren = ContaRoute._addFileChildren(ContaRouteChildren)
 
 interface AdminPedidosRouteChildren {
   AdminPedidosOrderIdRoute: typeof AdminPedidosOrderIdRoute
+  AdminPedidosIndexRoute: typeof AdminPedidosIndexRoute
 }
 
 const AdminPedidosRouteChildren: AdminPedidosRouteChildren = {
   AdminPedidosOrderIdRoute: AdminPedidosOrderIdRoute,
+  AdminPedidosIndexRoute: AdminPedidosIndexRoute,
 }
 
 const AdminPedidosRouteWithChildren = AdminPedidosRoute._addFileChildren(
