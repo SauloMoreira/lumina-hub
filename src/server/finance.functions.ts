@@ -228,7 +228,7 @@ export const getFinanceOverview = createServerFn({ method: "POST" })
       payment_method: string | null;
     }>;
 
-    const paid = list.filter((o) => o.payment_status === "paid");
+    const paid = list.filter((o) => o.payment_status === "paid" || o.payment_status === "approved");
     const ordersPaid = paid.length;
     const ordersPending = list.filter((o) => o.payment_status === "pending").length;
     const grossRevenue = paid.reduce((s, o) => s + Number(o.total ?? 0), 0);
@@ -368,7 +368,7 @@ export const getFinanceMargin = createServerFn({ method: "POST" })
         .from("order_items")
         .select("product_id, qty, gross_margin_amount, orders!inner(payment_status)")
         .in("product_id", ids)
-        .eq("orders.payment_status", "paid");
+        .in("orders.payment_status", ["paid", "approved"]);
       for (const it of (items ?? []) as Array<{
         product_id: string | null;
         qty: number | null;
@@ -636,7 +636,7 @@ export const getFinanceQuickCounts = createServerFn({ method: "GET" })
       .from("order_items")
       .select("order_id, orders!inner(payment_status, paid_at)")
       .eq("cost_source", "none")
-      .eq("orders.payment_status", "paid")
+      .in("orders.payment_status", ["paid", "approved"])
       .gte("orders.paid_at", since.toISOString());
     const orderIds = new Set<string>();
     for (const m of (missing ?? []) as Array<{ order_id: string }>) {
