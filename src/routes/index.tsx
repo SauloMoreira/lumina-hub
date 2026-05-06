@@ -381,7 +381,11 @@ function HomePage() {
   const renderHero = () => (
     <div key="hero">
       {/* CARROSSEL HERO PRINCIPAL */}
-      {banners && banners.length > 0 && <HeroCarousel banners={banners} />}
+      {banners && banners.length > 0 ? (
+        <HeroCarousel banners={banners} />
+      ) : (
+        <div className="w-full h-[260px] xs:h-[300px] sm:h-[380px] md:h-[440px] lg:h-[480px] bg-muted animate-pulse" aria-hidden="true" />
+      )}
 
       {/* HERO INSTITUCIONAL (administrável via /admin/conteudo/homepage) */}
       {(homepage?.hero_is_active ?? true) &&
