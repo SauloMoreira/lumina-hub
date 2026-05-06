@@ -1,5 +1,5 @@
 import { createServerFn } from "@tanstack/react-start";
-import { createSupabaseServerClient } from "@/integrations/supabase/client.server";
+import { supabaseAdmin } from "@/integrations/supabase/client.server";
 
 /**
  * Fetch active home banners server-side so the first banner image
