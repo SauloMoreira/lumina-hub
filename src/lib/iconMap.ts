@@ -85,6 +85,9 @@ const ICON_MAP: Record<string, LucideIcon> = {
   AlertTriangle,
 };
 
+export function getLucideIcon(name: string | null | undefined, fallback: LucideIcon): LucideIcon;
+export function getLucideIcon(name: string | null | undefined, fallback: null): LucideIcon | null;
+export function getLucideIcon(name?: string | null, fallback?: LucideIcon | null): LucideIcon | null;
 export function getLucideIcon(
   name?: string | null,
   fallback?: LucideIcon | null,
