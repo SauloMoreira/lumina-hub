@@ -87,8 +87,8 @@ const ICON_MAP: Record<string, LucideIcon> = {
 
 export function getLucideIcon(
   name?: string | null,
-  fallback: LucideIcon | null = Sparkles,
+  fallback?: LucideIcon | null,
 ): LucideIcon | null {
-  if (!name) return fallback;
-  return ICON_MAP[name] ?? fallback;
+  if (!name) return fallback ?? null;
+  return ICON_MAP[name] ?? fallback ?? null;
 }
