@@ -136,19 +136,16 @@ function ComboDetailPage() {
 
         <div className="grid grid-cols-1 lg:grid-cols-[1fr_360px] gap-6">
           <div className="space-y-4">
-            <div className="aspect-[16/9] bg-surface rounded-xl overflow-hidden border border-border">
-              {bundle.image_url ? (
-                <img
-                  src={bundle.image_url}
-                  alt={bundle.name}
-                  className="w-full h-full object-cover"
-                />
-              ) : (
-                <div className="w-full h-full flex items-center justify-center">
-                  <PackagePlus className="w-12 h-12 text-muted-foreground/50" />
-                </div>
-              )}
-            </div>
+            <ComboGallery
+              images={
+                bundle.images && bundle.images.length > 0
+                  ? bundle.images.map((i) => i.url)
+                  : bundle.image_url
+                    ? [bundle.image_url]
+                    : []
+              }
+              alt={bundle.name}
+            />
             <div className="flex items-center gap-2">
               <span
                 className={`inline-flex items-center gap-1 text-[10px] font-medium px-2 py-0.5 rounded-full border ${TONE[bundle.availability]}`}
