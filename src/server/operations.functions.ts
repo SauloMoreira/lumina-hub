@@ -752,36 +752,23 @@ export const getAdminOperations = createServerFn({ method: "GET" })
       },
       {
         id: "invoices-pending",
-        title: "Notas fiscais pendentes",
+        title: "Controle fiscal externo",
         description:
-          invoicesOverdue > 0
-            ? `${invoicesOverdue} pedido(s) pago(s) há +24h sem nota registrada.`
-            : "Pedidos pagos aguardando registro de NF-e.",
+          "Notas fiscais são emitidas fora do sistema. Use esta tela apenas para acompanhamento manual opcional.",
         qty: invoicesPending,
-        status:
-          invoicesPending === 0
-            ? "ok"
-            : invoicesOverdue > 0 || invoicesError > 0
-              ? "danger"
-              : "warn",
-        ctaLabel: "Ver notas fiscais",
+        status: "ok",
+        ctaLabel: "Ver acompanhamento fiscal",
         ctaHref: "/admin/financeiro/notas-fiscais",
         group: "Financeiro",
       },
       {
         id: "fiscal-pending",
-        title: "Pendências fiscais",
-        description: fiscal.companyFiscalIncomplete
-          ? "Dados fiscais da empresa incompletos. Configure regime tributário, CFOPs e série padrão de NF-e."
-          : `${fiscal.productsFiscalIncomplete} produto(s) com dados fiscais incompletos.`,
+        title: "Informações fiscais opcionais",
+        description:
+          "Campos fiscais (NCM, CFOP, origem, NF) são opcionais — emissão é feita em sistema externo.",
         qty: fiscalTotalIssues,
-        status:
-          fiscalTotalIssues === 0
-            ? "ok"
-            : fiscal.companyFiscalIncomplete || fiscal.paidOrdersWithFiscalIssues > 0
-              ? "danger"
-              : "warn",
-        ctaLabel: "Ver pendências fiscais",
+        status: "ok",
+        ctaLabel: "Ver dados fiscais",
         ctaHref: "/admin/financeiro/impostos",
         group: "Financeiro",
       },
