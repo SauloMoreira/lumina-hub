@@ -8,6 +8,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { trackLeadCaptured } from "@/lib/tracking";
+import ledinhoAvatar from "@/assets/ledinho-mascote.jpeg";
 
 interface Msg {
   role: "user" | "assistant";
@@ -84,7 +85,7 @@ function getOrCreateSession(): string {
 const WELCOME: Msg = {
   role: "assistant",
   content:
-    "Olá! Sou o assistente da **Led Maricá** ⚡\n\nPosso te ajudar a encontrar produtos, tirar dúvidas técnicas ou fazer um orçamento. Como posso ajudar?",
+    "Olá! Sou o **Ledinho**, assistente da **Led Maricá** ⚡\n\nPosso te ajudar a encontrar produtos, tirar dúvidas técnicas ou fazer um orçamento. Como posso ajudar?",
 };
 
 export function ChatWidget() {
@@ -316,8 +317,12 @@ export function ChatWidget() {
           style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
         >
           <div className="flex items-center gap-3 border-b border-border bg-primary px-4 py-3 text-primary-foreground">
-            <div className="flex h-9 w-9 items-center justify-center rounded-full bg-primary-foreground/20">
-              <MessageCircle className="h-5 w-5" />
+            <div className="h-10 w-10 shrink-0 overflow-hidden rounded-full bg-primary-foreground/20 ring-2 ring-primary-foreground/30">
+              <img
+                src={ledinhoAvatar}
+                alt="Ledinho — assistente da Led Maricá"
+                className="h-full w-full object-cover"
+              />
             </div>
             <div className="flex-1">
               <p className="font-display text-sm font-semibold">Atendimento Led Maricá</p>
@@ -329,8 +334,18 @@ export function ChatWidget() {
             {messages.map((m, i) => (
               <div
                 key={i}
-                className={cn("flex", m.role === "user" ? "justify-end" : "justify-start")}
+                className={cn(
+                  "flex items-end gap-2",
+                  m.role === "user" ? "justify-end" : "justify-start",
+                )}
               >
+                {m.role === "assistant" && (
+                  <img
+                    src={ledinhoAvatar}
+                    alt="Ledinho"
+                    className="h-7 w-7 shrink-0 rounded-full object-cover ring-1 ring-border"
+                  />
+                )}
                 <div
                   className={cn(
                     "max-w-[85%] rounded-2xl px-3 py-2 text-sm",
@@ -346,7 +361,12 @@ export function ChatWidget() {
               </div>
             ))}
             {loading && (
-              <div className="flex justify-start">
+              <div className="flex items-end gap-2 justify-start">
+                <img
+                  src={ledinhoAvatar}
+                  alt="Ledinho"
+                  className="h-7 w-7 shrink-0 rounded-full object-cover ring-1 ring-border"
+                />
                 <div className="rounded-2xl border border-border bg-card px-3 py-2">
                   <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
                 </div>
