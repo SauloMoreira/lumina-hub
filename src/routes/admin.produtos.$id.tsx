@@ -24,6 +24,7 @@ import {
 } from "@/components/admin/ProductImageManager";
 import { ProductRelationsSection } from "@/components/admin/ProductRelationsSection";
 import { ProductAttributesSection } from "@/components/admin/ProductAttributesSection";
+import { ProductAiAssistantDialog, type ProductCopyApply } from "@/components/admin/ProductAiAssistantDialog";
 import { boostProductSeoAuto } from "@/server/seo.functions";
 import {
   BarcodeLookupDialog,
