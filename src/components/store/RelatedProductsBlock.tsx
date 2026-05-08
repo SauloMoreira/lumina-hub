@@ -15,48 +15,59 @@ type Props = {
   productId: string;
   /** Não sugerir esses produtos (ex.: itens já no carrinho ou o próprio produto) */
   excludeProductIds?: string[];
-  /** Tipos a exibir; default = todos os tipos com label útil */
-  types?: RelationType[];
+  /** Se true (loja pública), oculta `frequently_bought_together` (renderizado em bloco próprio
+   *  perto do botão de compra) e `b2b_recommendation` (exclusivo da área B2B). */
+  hideBuyTogether?: boolean;
+  /** Se o produto principal está sem estoque, prioriza substitutos no topo. */
+  prioritizeReplacements?: boolean;
   /** Limite total a buscar do servidor */
   limit?: number;
 };
 
-const SECTION_LABEL: Partial<Record<RelationType, { title: string; subtitle?: string }>> = {
+const SECTION_LABEL: Record<RelationType, { title: string; subtitle?: string }> = {
   frequently_bought_together: {
-    title: "Compre junto",
+    title: "Aproveite e compre junto",
     subtitle: "Combinações populares com este produto",
   },
-  accessory: { title: "Você também pode precisar", subtitle: "Acessórios e complementos" },
-  cross_sell: { title: "Você também pode precisar", subtitle: "Itens complementares" },
-  related: { title: "Produtos relacionados", subtitle: "Outras opções para você comparar" },
-  replacement: { title: "Produtos relacionados", subtitle: "Alternativas equivalentes" },
-  upsell: { title: "Produtos relacionados" },
-  b2b_recommendation: { title: "Recomendado para empresas" },
+  accessory: {
+    title: "Acessórios compatíveis",
+    subtitle: "Itens úteis ou necessários para a instalação",
+  },
+  cross_sell: {
+    title: "Complete sua instalação",
+    subtitle: "Produtos que formam uma solução completa",
+  },
+  related: {
+    title: "Produtos relacionados",
+    subtitle: "Outras opções para você comparar",
+  },
+  replacement: {
+    title: "Produtos similares",
+    subtitle: "Alternativas equivalentes para esse item",
+  },
+  upsell: {
+    title: "Você também pode levar",
+    subtitle: "Itens que combinam com o que você está comprando",
+  },
+  b2b_recommendation: {
+    title: "Recomendado para empresas",
+    subtitle: "Sugestões para compras corporativas",
+  },
 };
 
-const SECTION_ORDER: RelationType[] = [
-  "frequently_bought_together",
+const DEFAULT_PUBLIC_ORDER: RelationType[] = [
   "accessory",
   "cross_sell",
   "related",
   "replacement",
-  "upsell",
-  "b2b_recommendation",
 ];
-
-function mergeIntoSection(rel: RelationType): RelationType {
-  // Agrupa cross_sell+accessory e replacement+related para uma UX mais limpa
-  if (rel === "cross_sell") return "accessory";
-  if (rel === "replacement") return "related";
-  if (rel === "upsell") return "related";
-  return rel;
-}
 
 export function RelatedProductsBlock({
   productId,
   excludeProductIds = [],
-  types,
-  limit = 16,
+  hideBuyTogether = true,
+  prioritizeReplacements = false,
+  limit = 24,
 }: Props) {
   const { data, isLoading } = useQuery({
     queryKey: ["product-relations", productId, limit],
@@ -67,34 +78,54 @@ export function RelatedProductsBlock({
   if (isLoading || !data || data.length === 0) return null;
 
   const exclude = new Set(excludeProductIds);
-  const filtered = data.filter((r) => !exclude.has(r.product_id) && r.applied_price > 0);
+  const filtered = data.filter(
+    (r) =>
+      !exclude.has(r.product_id) &&
+      r.applied_price > 0 &&
+      r.stock_qty > 0 &&
+      // ocultos da página pública (renderizados em outros lugares)
+      r.relation_type !== "b2b_recommendation" &&
+      (!hideBuyTogether || r.relation_type !== "frequently_bought_together"),
+  );
   if (filtered.length === 0) return null;
 
-  // Agrupa por seção
+  // Dedupe por produto: mantém a primeira ocorrência seguindo a ordem das seções
+  const order = prioritizeReplacements
+    ? (["replacement", ...DEFAULT_PUBLIC_ORDER.filter((t) => t !== "replacement"), "upsell"] as RelationType[])
+    : ([...DEFAULT_PUBLIC_ORDER, "upsell"] as RelationType[]);
+
+  const seen = new Set<string>();
   const bySection = new Map<RelationType, RelatedProduct[]>();
-  for (const r of filtered) {
-    if (types && !types.includes(r.relation_type)) continue;
-    const key = mergeIntoSection(r.relation_type);
-    if (!bySection.has(key)) bySection.set(key, []);
-    bySection.get(key)!.push(r);
+  for (const t of order) {
+    const items = filtered
+      .filter((r) => r.relation_type === t)
+      .sort((a, b) => a.sort_order - b.sort_order);
+    const dedup = items.filter((p) => {
+      if (seen.has(p.product_id)) return false;
+      seen.add(p.product_id);
+      return true;
+    });
+    if (dedup.length > 0) bySection.set(t, dedup);
   }
 
   if (bySection.size === 0) return null;
 
   return (
     <div className="space-y-10">
-      {SECTION_ORDER.filter((t) => bySection.has(t)).map((sectionType) => {
-        const items = bySection.get(sectionType)!.slice(0, 8);
-        const label = SECTION_LABEL[sectionType] ?? { title: "Produtos relacionados" };
-        return (
-          <RelatedSection
-            key={sectionType}
-            title={label.title}
-            subtitle={label.subtitle}
-            items={items}
-          />
-        );
-      })}
+      {order
+        .filter((t) => bySection.has(t))
+        .map((t) => {
+          const items = bySection.get(t)!.slice(0, 8);
+          const label = SECTION_LABEL[t];
+          return (
+            <RelatedSection
+              key={t}
+              title={label.title}
+              subtitle={label.subtitle}
+              items={items}
+            />
+          );
+        })}
     </div>
   );
 }
@@ -137,7 +168,7 @@ function RelatedCard({ item }: { item: RelatedProduct }) {
       productId: item.product_id,
       name: item.name,
       slug: item.slug,
-      price: item.applied_price, // server vai recalcular B2B no checkout
+      price: item.applied_price,
       image: item.image,
       stock: item.stock_qty,
       freeShippingEligible: item.free_shipping_eligible,

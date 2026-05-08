@@ -30,10 +30,13 @@ export function CartUpsell() {
 
   return (
     <section className="mt-8 bg-card border border-border rounded-xl p-5">
-      <div className="flex items-center gap-2 mb-4">
+      <div className="flex items-center gap-2 mb-1">
         <Sparkles className="w-4 h-4 text-primary" />
-        <h2 className="font-display font-semibold text-lg">Complete sua compra</h2>
+        <h2 className="font-display font-semibold text-lg">Leve também</h2>
       </div>
+      <p className="text-xs text-muted-foreground mb-4">
+        Sugestões que combinam com o que você está comprando.
+      </p>
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-3 xl:grid-cols-6 gap-3">
         {items.map((p) => {
           const isB2b = p.pricing_source === "b2b";

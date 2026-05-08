@@ -13,6 +13,7 @@ import { trackViewProduct, trackAddToCart } from "@/lib/tracking";
 import { ProductGallery } from "@/components/store/ProductGallery";
 import { pickUrl, type ProductImageRow } from "@/lib/productImages";
 import { RelatedProductsBlock } from "@/components/store/RelatedProductsBlock";
+import { BuyTogetherBlock } from "@/components/store/BuyTogetherBlock";
 import { ProductInBundlesBlock } from "@/components/store/ProductInBundlesBlock";
 import { ProductSpecsBlock } from "@/components/store/ProductSpecsBlock";
 
@@ -426,6 +427,10 @@ function ProductPage() {
           </aside>
         </div>
 
+        <div className="mt-8 lg:max-w-[calc(100%-380px)]">
+          <BuyTogetherBlock product={product} />
+        </div>
+
         {(() => {
           const faq = extractFaq(product.specs);
           if (faq.length === 0) return null;
@@ -452,7 +457,11 @@ function ProductPage() {
         </div>
 
         <div className="mt-12">
-          <RelatedProductsBlock productId={product.id} excludeProductIds={[product.id]} />
+          <RelatedProductsBlock
+            productId={product.id}
+            excludeProductIds={[product.id]}
+            prioritizeReplacements={product.stock_qty <= 0}
+          />
         </div>
       </div>
     </StoreLayout>
