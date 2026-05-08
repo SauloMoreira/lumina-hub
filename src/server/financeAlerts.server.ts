@@ -156,7 +156,7 @@ export async function fetchFinanceAlertCounts(): Promise<FinanceAlertCounts> {
       supabaseAdmin
         .from("payment_webhook_events")
         .select("id", { count: "exact", head: true })
-        .gte("created_at", since7dISO)
+        .gte("created_at", webhookSinceISO)
         .not("processing_error", "is", null),
     );
 
