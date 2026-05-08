@@ -150,6 +150,7 @@ async function loadBundlesWithItems(filter: {
   let q = supabaseAdmin.from("product_bundles").select(
     `id, slug, name, description, image_url, is_active, is_featured,
        start_date, end_date, discount_type, discount_value, updated_at,
+       images:product_bundle_images (id, url, sort_order, is_primary, source),
        items:product_bundle_items (
          id, product_id, quantity, sort_order, is_required,
          product:products (
