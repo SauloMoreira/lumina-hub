@@ -2651,6 +2651,47 @@ export type Database = {
           },
         ]
       }
+      product_bundle_images: {
+        Row: {
+          bundle_id: string
+          created_at: string
+          id: string
+          is_primary: boolean
+          sort_order: number
+          source: string
+          updated_at: string
+          url: string
+        }
+        Insert: {
+          bundle_id: string
+          created_at?: string
+          id?: string
+          is_primary?: boolean
+          sort_order?: number
+          source?: string
+          updated_at?: string
+          url: string
+        }
+        Update: {
+          bundle_id?: string
+          created_at?: string
+          id?: string
+          is_primary?: boolean
+          sort_order?: number
+          source?: string
+          updated_at?: string
+          url?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "product_bundle_images_bundle_id_fkey"
+            columns: ["bundle_id"]
+            isOneToOne: false
+            referencedRelation: "product_bundles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       product_bundle_items: {
         Row: {
           bundle_id: string
