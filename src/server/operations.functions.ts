@@ -1175,16 +1175,7 @@ export const getAdminOperations = createServerFn({ method: "GET" })
         ctaHref: "/admin/financeiro/relatorios?tab=margem",
       });
     }
-    if (financeAlerts.invoicesPendingB2bOver24h > 0) {
-      alerts.push({
-        id: "alert-finance-nf-b2b-overdue",
-        title: "NF B2B atrasada (>24h)",
-        description: `${financeAlerts.invoicesPendingB2bOver24h} pedido(s) B2B pago(s) há mais de 24h sem nota fiscal — clientes empresa exigem nota.`,
-        severity: "high",
-        ctaLabel: "Ver notas fiscais",
-        ctaHref: "/admin/financeiro/notas-fiscais",
-      });
-    }
+    // NF B2B fora do sistema — sem alerta bloqueante.
     if (financeAlerts.mpWebhookErrors7d > 0) {
       alerts.push({
         id: "alert-finance-mp-webhook-error",
