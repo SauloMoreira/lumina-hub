@@ -428,13 +428,26 @@ function ProductForm() {
                 </select>
               </Field>
             </div>
-            <Field label="Descrição">
+            <div className="space-y-1.5">
+              <div className="flex items-center justify-between gap-2">
+                <Label className="text-xs">Descrição</Label>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  onClick={() => setAiOpen(true)}
+                  className="border-primary/40 text-primary hover:bg-primary-tint hover:text-primary"
+                >
+                  <Sparkles className="w-3.5 h-3.5 mr-1.5" />
+                  Otimizar com IA
+                </Button>
+              </div>
               <Textarea
                 rows={5}
                 value={form.description}
                 onChange={(e) => setForm({ ...form, description: e.target.value })}
               />
-            </Field>
+            </div>
             <Field label="Tags (separadas por vírgula)">
               <Input
                 value={form.tags}
