@@ -944,6 +944,7 @@ export type Database = {
       }
       finance_settings: {
         Row: {
+          alerts_baseline_at: string
           consider_b2b_discount_in_margin: boolean
           consider_coupon_in_margin: boolean
           consider_shipping_in_margin: boolean
@@ -981,6 +982,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          alerts_baseline_at?: string
           consider_b2b_discount_in_margin?: boolean
           consider_coupon_in_margin?: boolean
           consider_shipping_in_margin?: boolean
@@ -1018,6 +1020,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          alerts_baseline_at?: string
           consider_b2b_discount_in_margin?: boolean
           consider_coupon_in_margin?: boolean
           consider_shipping_in_margin?: boolean

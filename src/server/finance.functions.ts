@@ -629,15 +629,26 @@ export const getFinanceQuickCounts = createServerFn({ method: "GET" })
       }
     }
 
-    // Pedidos pagos recentes (últimos 30 dias) com itens sem custo
+    // Pedidos pagos recentes (últimos 30 dias) com itens sem custo —
+    // respeita o "corte de alertas" para ignorar pedidos de teste/homologação.
     const since = new Date();
     since.setDate(since.getDate() - 30);
+    let sinceISO = since.toISOString();
+    try {
+      const { data: fs } = await supabaseAdmin
+        .from("finance_settings")
+        .select("alerts_baseline_at")
+        .limit(1)
+        .maybeSingle();
+      const baseline = (fs as { alerts_baseline_at?: string } | null)?.alerts_baseline_at;
+      if (baseline && baseline > sinceISO) sinceISO = baseline;
+    } catch {}
     const { data: missing } = await supabaseAdmin
       .from("order_items")
       .select("order_id, orders!inner(payment_status, paid_at)")
       .eq("cost_source", "none")
       .in("orders.payment_status", ["paid", "approved"])
-      .gte("orders.paid_at", since.toISOString());
+      .gte("orders.paid_at", sinceISO);
     const orderIds = new Set<string>();
     for (const m of (missing ?? []) as Array<{ order_id: string }>) {
       orderIds.add(m.order_id);

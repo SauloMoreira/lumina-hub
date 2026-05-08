@@ -1,0 +1,2 @@
+ALTER TABLE public.finance_settings ADD COLUMN IF NOT EXISTS alerts_baseline_at timestamptz NOT NULL DEFAULT now();
+UPDATE public.finance_settings SET alerts_baseline_at = now() WHERE alerts_baseline_at < now();
