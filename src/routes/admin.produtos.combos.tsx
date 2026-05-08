@@ -286,7 +286,7 @@ function BundleMetaForm({
   const [name, setName] = useState(bundle.name);
   const [slug, setSlug] = useState(bundle.slug ?? "");
   const [description, setDescription] = useState(bundle.description ?? "");
-  const [imageUrl, setImageUrl] = useState(bundle.image_url ?? "");
+  
 
   return (
     <div className="bg-card border border-border rounded-xl p-5 space-y-4">
@@ -349,14 +349,7 @@ function BundleMetaForm({
         />
       </Field>
 
-      <BundleImageField
-        value={imageUrl}
-        onChangeText={setImageUrl}
-        onCommit={(url) => {
-          setImageUrl(url);
-          if (url !== (bundle.image_url ?? "")) onChange({ imageUrl: url || null });
-        }}
-      />
+      <BundleImagesGallery bundleId={bundle.id} />
 
       <div className="grid sm:grid-cols-2 gap-3 pt-2 border-t border-border">
         <ToggleRow
