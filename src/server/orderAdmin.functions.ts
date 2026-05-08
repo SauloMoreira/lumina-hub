@@ -20,7 +20,19 @@ const ALLOWED_ORDER_STATUSES = [
   "refunded",
 ] as const;
 
-const ALLOWED_PAYMENT_STATUSES = ["pending", "paid", "failed", "refunded"] as const;
+const ALLOWED_PAYMENT_STATUSES = [
+  "pending",
+  "preference_created",
+  "approved",
+  "paid",
+  "in_process",
+  "in_mediation",
+  "failed",
+  "rejected",
+  "refunded",
+  "charged_back",
+  "cancelled",
+] as const;
 
 type OrderStatus = (typeof ALLOWED_ORDER_STATUSES)[number];
 type PaymentStatus = (typeof ALLOWED_PAYMENT_STATUSES)[number];
