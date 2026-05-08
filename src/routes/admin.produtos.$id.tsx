@@ -24,6 +24,7 @@ import {
 } from "@/components/admin/ProductImageManager";
 import { ProductRelationsSection } from "@/components/admin/ProductRelationsSection";
 import { ProductAttributesSection } from "@/components/admin/ProductAttributesSection";
+import { ProductAiAssistantDialog, type ProductCopyApply } from "@/components/admin/ProductAiAssistantDialog";
 import { boostProductSeoAuto } from "@/server/seo.functions";
 import {
   BarcodeLookupDialog,
@@ -65,6 +66,7 @@ function ProductForm() {
   const [cats, setCats] = useState<Cat[]>([]);
   const imageManagerRef = useRef<ProductImageManagerHandle>(null);
   const [barcodeOpen, setBarcodeOpen] = useState(false);
+  const [aiOpen, setAiOpen] = useState(false);
   const [extra, setExtra] = useState<{
     specs: Record<string, unknown>;
     ncm: string | null;
@@ -426,13 +428,26 @@ function ProductForm() {
                 </select>
               </Field>
             </div>
-            <Field label="Descrição">
+            <div className="space-y-1.5">
+              <div className="flex items-center justify-between gap-2">
+                <Label className="text-xs">Descrição</Label>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  onClick={() => setAiOpen(true)}
+                  className="border-primary/40 text-primary hover:bg-primary-tint hover:text-primary"
+                >
+                  <Sparkles className="w-3.5 h-3.5 mr-1.5" />
+                  Otimizar com IA
+                </Button>
+              </div>
               <Textarea
                 rows={5}
                 value={form.description}
                 onChange={(e) => setForm({ ...form, description: e.target.value })}
               />
-            </Field>
+            </div>
             <Field label="Tags (separadas por vírgula)">
               <Input
                 value={form.tags}
@@ -762,6 +777,37 @@ function ProductForm() {
           seo_keywords: form.seo_keywords,
         }}
         onApply={applyBarcodeData}
+      />
+      <ProductAiAssistantDialog
+        open={aiOpen}
+        onOpenChange={setAiOpen}
+        product={{
+          name: form.name,
+          brand: form.brand || null,
+          category: cats.find((c) => c.id === form.category_id)?.name ?? null,
+          sku: form.sku || null,
+          description: form.description || null,
+          tags: form.tags
+            ? form.tags.split(",").map((t) => t.trim()).filter(Boolean)
+            : null,
+          ncm: extra.ncm,
+          attributes: extra.specs,
+          price: form.price ? Number(form.price) : null,
+          stock: form.stock_qty ? Number(form.stock_qty) : null,
+          imageAlts: extra.product_images
+            .map((p) => p.alt_text)
+            .filter((a): a is string => !!a && a.trim().length > 0),
+        }}
+        onApply={(patch: ProductCopyApply) => {
+          setForm((f) => ({
+            ...f,
+            ...(patch.description !== undefined ? { description: patch.description } : {}),
+            ...(patch.seoTitle !== undefined ? { seo_title: patch.seoTitle } : {}),
+            ...(patch.seoDescription !== undefined ? { seo_description: patch.seoDescription } : {}),
+            ...(patch.seoKeywords !== undefined ? { seo_keywords: patch.seoKeywords } : {}),
+            ...(patch.tags !== undefined ? { tags: patch.tags } : {}),
+          }));
+        }}
       />
     </AdminLayout>
   );
