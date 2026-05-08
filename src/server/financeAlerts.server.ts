@@ -58,6 +58,18 @@ export async function fetchFinanceAlertCounts(): Promise<FinanceAlertCounts> {
     const stale24h = hoursAgoISO(24);
     const since30dISO = hoursAgoISO(24 * 30);
     const since7dISO = hoursAgoISO(24 * 7);
+    // "Corte de alertas" — eventos anteriores são considerados teste/homologação.
+    let baselineISO = "1970-01-01T00:00:00.000Z";
+    try {
+      const { data: fs } = await supabaseAdmin
+        .from("finance_settings")
+        .select("alerts_baseline_at")
+        .limit(1)
+        .maybeSingle();
+      if (fs?.alerts_baseline_at) baselineISO = fs.alerts_baseline_at as string;
+    } catch {}
+    const webhookSinceISO = baselineISO > since7dISO ? baselineISO : since7dISO;
+    const negMarginSinceISO = baselineISO > since30dISO ? baselineISO : since30dISO;
     const out: FinanceAlertCounts = { ...EMPTY };
 
     // ---------- Margem / custo (reaproveita finance.functions) ----------
