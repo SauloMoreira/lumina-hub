@@ -325,8 +325,7 @@ export const getAdminOperations = createServerFn({ method: "GET" })
       (q) => q.gte("created_at", hoursAgoISO(24 * 7)).not("processing_error", "is", null),
     );
 
-    // Notas fiscais
-    const stale24hInv = stale24h;
+    // Notas fiscais — emissão é externa; mantemos só contagens informativas usadas no card.
     const invoicesPending = await safeCount(
       () => supabaseAdmin.from("orders"),
       (q) => q.in("payment_status", ["paid", "approved"]).eq("invoice_status", "pendente_emissao"),
@@ -335,22 +334,8 @@ export const getAdminOperations = createServerFn({ method: "GET" })
       () => supabaseAdmin.from("orders"),
       (q) => q.in("payment_status", ["paid", "approved"]).eq("invoice_status", "erro_emissao"),
     );
-    const invoicesOverdue = await safeCount(
-      () => supabaseAdmin.from("orders"),
-      (q) =>
-        q
-          .in("payment_status", ["paid", "approved"])
-          .eq("invoice_status", "pendente_emissao")
-          .lt("paid_at", stale24hInv),
-    );
-    const invoicesB2bMissing = await safeCount(
-      () => supabaseAdmin.from("orders"),
-      (q) =>
-        q
-          .in("payment_status", ["paid", "approved"])
-          .eq("order_type", "b2b")
-          .in("invoice_status", ["nao_necessaria", "pendente_emissao"]),
-    );
+    void invoicesError;
+    void stale24h;
 
     // ============================================================
     // Operação de hoje
