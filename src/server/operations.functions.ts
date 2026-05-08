@@ -1238,33 +1238,34 @@ export const getAdminOperations = createServerFn({ method: "GET" })
         ctaHref: "/admin/produtos/qualidade",
       });
     }
+    // Dados fiscais — informativo, opcional. Emissão é externa.
     if (fiscal.companyFiscalIncomplete) {
       alerts.push({
         id: "alert-fiscal-company-data",
-        title: "Dados fiscais da empresa incompletos",
+        title: "Dados fiscais da empresa incompletos (opcional)",
         description:
-          "Configure regime tributário, série padrão de NF-e e CFOPs antes de integrar com emissor fiscal.",
-        severity: "high",
-        ctaLabel: "Configurar dados fiscais",
+          "Preenchimento opcional. Útil apenas se quiser registrar dados fiscais para acompanhamento manual — emissão de NF é feita fora do sistema.",
+        severity: "low",
+        ctaLabel: "Configurar (opcional)",
         ctaHref: "/admin/financeiro/impostos",
       });
     }
     if (fiscal.paidOrdersWithFiscalIssues > 0) {
       alerts.push({
         id: "alert-fiscal-paid-orders",
-        title: "Pedidos pagos com produto fiscal incompleto",
-        description: `${fiscal.paidOrdersWithFiscalIssues} pedido(s) pago(s) contém item sem dados fiscais mínimos. Revise antes de emitir nota.`,
-        severity: "high",
-        ctaLabel: "Ver pendências fiscais",
+        title: "Pedidos pagos sem dados fiscais completos",
+        description: `${fiscal.paidOrdersWithFiscalIssues} pedido(s) pago(s) com item sem dados fiscais. Informativo apenas — não bloqueia o pedido. Emissão de NF é externa.`,
+        severity: "low",
+        ctaLabel: "Ver dados fiscais",
         ctaHref: "/admin/financeiro/impostos",
       });
     }
     if (fiscal.productsNoNcm > 0) {
       alerts.push({
         id: "alert-fiscal-no-ncm",
-        title: "Produtos ativos sem NCM",
-        description: `${fiscal.productsNoNcm} produto(s) ativo(s) sem código NCM. Necessário para emissão fiscal.`,
-        severity: fiscal.productsNoNcm > 10 ? "high" : "medium",
+        title: "Produtos sem NCM (opcional)",
+        description: `${fiscal.productsNoNcm} produto(s) ativo(s) sem NCM. Campo opcional — preencha se quiser usar no controle fiscal manual.`,
+        severity: "low",
         ctaLabel: "Ver produtos",
         ctaHref: "/admin/financeiro/impostos?filter=no_ncm",
       });
@@ -1272,9 +1273,9 @@ export const getAdminOperations = createServerFn({ method: "GET" })
     if (fiscal.productsNoUnit > 0) {
       alerts.push({
         id: "alert-fiscal-no-unit",
-        title: "Produtos sem unidade comercial",
-        description: `${fiscal.productsNoUnit} produto(s) ativo(s) sem unidade (UN, CX, KG…).`,
-        severity: "medium",
+        title: "Produtos sem unidade comercial (opcional)",
+        description: `${fiscal.productsNoUnit} produto(s) ativo(s) sem unidade. Campo opcional para acompanhamento fiscal manual.`,
+        severity: "low",
         ctaLabel: "Ver produtos",
         ctaHref: "/admin/financeiro/impostos?filter=no_unit",
       });
@@ -1282,9 +1283,9 @@ export const getAdminOperations = createServerFn({ method: "GET" })
     if (fiscal.productsNoOrigin > 0) {
       alerts.push({
         id: "alert-fiscal-no-origin",
-        title: "Produtos sem origem da mercadoria",
-        description: `${fiscal.productsNoOrigin} produto(s) sem origem definida (nacional, importado…).`,
-        severity: "medium",
+        title: "Produtos sem origem da mercadoria (opcional)",
+        description: `${fiscal.productsNoOrigin} produto(s) sem origem definida. Campo opcional — útil só para controle fiscal manual.`,
+        severity: "low",
         ctaLabel: "Ver produtos",
         ctaHref: "/admin/financeiro/impostos?filter=no_origin",
       });
