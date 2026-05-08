@@ -349,16 +349,14 @@ function BundleMetaForm({
         />
       </Field>
 
-      <Field label="URL da imagem do combo">
-        <Input
-          value={imageUrl}
-          onChange={(e) => setImageUrl(e.target.value)}
-          onBlur={() =>
-            imageUrl !== (bundle.image_url ?? "") && onChange({ imageUrl: imageUrl || null })
-          }
-          placeholder="https://…"
-        />
-      </Field>
+      <BundleImageField
+        value={imageUrl}
+        onChangeText={setImageUrl}
+        onCommit={(url) => {
+          setImageUrl(url);
+          if (url !== (bundle.image_url ?? "")) onChange({ imageUrl: url || null });
+        }}
+      />
 
       <div className="grid sm:grid-cols-2 gap-3 pt-2 border-t border-border">
         <ToggleRow
