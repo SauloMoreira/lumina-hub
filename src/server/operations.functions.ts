@@ -335,7 +335,6 @@ export const getAdminOperations = createServerFn({ method: "GET" })
       (q) => q.in("payment_status", ["paid", "approved"]).eq("invoice_status", "erro_emissao"),
     );
     void invoicesError;
-    void stale24h;
 
     // ============================================================
     // Operação de hoje
