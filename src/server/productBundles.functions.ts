@@ -219,12 +219,27 @@ async function loadBundlesWithItems(filter: {
     const subtotal = items.reduce((acc, it) => acc + it.product.final_price * it.quantity, 0);
     const totalUnits = items.reduce((acc, it) => acc + it.quantity, 0);
 
+    const imageRows = (b.images ?? []) as Array<Record<string, any>>;
+    const images: BundleImage[] = imageRows
+      .map((im) => ({
+        id: im.id as string,
+        url: im.url as string,
+        sort_order: Number(im.sort_order ?? 0),
+        is_primary: !!im.is_primary,
+        source: ((im.source as string) ?? "manual_url") as BundleImage["source"],
+      }))
+      .sort((a, b2) => {
+        if (a.is_primary !== b2.is_primary) return a.is_primary ? -1 : 1;
+        return a.sort_order - b2.sort_order;
+      });
+
     return {
       id: b.id,
       slug: b.slug,
       name: b.name,
       description: b.description,
       image_url: b.image_url,
+      images,
       is_active: !!b.is_active,
       is_featured: !!b.is_featured,
       start_date: b.start_date,
