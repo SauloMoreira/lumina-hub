@@ -627,6 +627,9 @@ function BundleImageField({
       </div>
     </Field>
   );
+}
+
+function ToggleRow({
   label,
   checked,
   onChange,
