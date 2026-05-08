@@ -513,17 +513,75 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
 const ALLOWED_IMAGE_TYPES = ["image/jpeg", "image/png", "image/webp"];
 const MAX_IMAGE_BYTES = 5 * 1024 * 1024;
 
-function BundleImageField({
-  value,
-  onChangeText,
-  onCommit,
-}: {
-  value: string;
-  onChangeText: (v: string) => void;
-  onCommit: (v: string) => void;
-}) {
+function BundleImagesGallery({ bundleId }: { bundleId: string }) {
+  const qc = useQueryClient();
   const inputRef = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
+  const [manualUrl, setManualUrl] = useState("");
+
+  const imagesQ = useQuery({
+    queryKey: ["admin-bundle-images", bundleId],
+    queryFn: () => adminListBundleImages({ data: { bundleId } }),
+    staleTime: 0,
+  });
+
+  const images = imagesQ.data ?? [];
+  const atLimit = images.length >= 4;
+
+  function refresh() {
+    qc.invalidateQueries({ queryKey: ["admin-bundle-images", bundleId] });
+    qc.invalidateQueries({ queryKey: ["admin-bundle", bundleId] });
+    qc.invalidateQueries({ queryKey: ["admin-bundles"] });
+  }
+
+  const addMut = useMutation({
+    mutationFn: (vars: { url: string; source: "manual_upload" | "manual_url" | "ai_generated" }) =>
+      adminAddBundleImage({ data: { bundleId, url: vars.url, source: vars.source } }),
+    onSuccess: () => {
+      toast.success("Imagem adicionada");
+      setManualUrl("");
+      refresh();
+    },
+    onError: (err: unknown) => {
+      const msg = err instanceof Error ? err.message : "";
+      if (msg.includes("bundle_images_limit_reached"))
+        toast.error("Limite de 4 imagens por kit atingido.");
+      else toast.error("Erro ao adicionar imagem");
+    },
+  });
+
+  const removeMut = useMutation({
+    mutationFn: (id: string) => adminRemoveBundleImage({ data: { id } }),
+    onSuccess: () => {
+      toast.success("Imagem removida");
+      refresh();
+    },
+    onError: () => toast.error("Erro ao remover"),
+  });
+
+  const setPrimaryMut = useMutation({
+    mutationFn: (id: string) => adminSetPrimaryBundleImage({ data: { id } }),
+    onSuccess: () => {
+      toast.success("Capa atualizada");
+      refresh();
+    },
+    onError: () => toast.error("Erro ao definir capa"),
+  });
+
+  const reorderMut = useMutation({
+    mutationFn: (orderedIds: string[]) =>
+      adminReorderBundleImages({ data: { bundleId, orderedIds } }),
+    onSuccess: refresh,
+    onError: () => toast.error("Erro ao reordenar"),
+  });
+
+  function move(idx: number, dir: -1 | 1) {
+    const next = [...images];
+    const target = idx + dir;
+    if (target < 0 || target >= next.length) return;
+    [next[idx], next[target]] = [next[target], next[idx]];
+    reorderMut.mutate(next.map((i) => i.id));
+  }
 
   async function handleFile(file: File) {
     if (!ALLOWED_IMAGE_TYPES.includes(file.type)) {
@@ -548,8 +606,7 @@ function BundleImageField({
         .upload(path, file, { contentType: file.type, cacheControl: "31536000", upsert: false });
       if (error) throw new Error(error.message);
       const { data } = supabase.storage.from("product-images").getPublicUrl(path);
-      onCommit(data.publicUrl);
-      toast.success("Imagem enviada");
+      addMut.mutate({ url: data.publicUrl, source: "manual_upload" });
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Falha no upload");
     } finally {
@@ -558,17 +615,123 @@ function BundleImageField({
     }
   }
 
+  function commitManualUrl() {
+    const url = manualUrl.trim();
+    if (!url) return;
+    addMut.mutate({ url, source: "manual_url" });
+  }
+
   return (
-    <Field label="Imagem do combo">
-      <div className="space-y-2">
-        <div className="flex flex-col sm:flex-row gap-2">
+    <Field label={`Imagens do kit (${images.length}/4)`}>
+      <div className="space-y-3">
+        <p className="text-xs text-muted-foreground">
+          Até 4 imagens por kit. A capa aparece na vitrine e como primeira foto na página do
+          combo. JPG, PNG ou WebP até 5 MB.
+        </p>
+
+        {imagesQ.isLoading ? (
+          <div className="text-xs text-muted-foreground flex items-center gap-2">
+            <Loader2 className="w-3 h-3 animate-spin" /> Carregando imagens…
+          </div>
+        ) : images.length === 0 ? (
+          <div className="rounded-md border border-dashed border-border p-4 text-center text-xs text-muted-foreground">
+            Nenhuma imagem cadastrada ainda.
+          </div>
+        ) : (
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            {images.map((img, idx) => (
+              <div
+                key={img.id}
+                className={`relative rounded-md border bg-muted overflow-hidden ${
+                  img.is_primary ? "border-accent ring-2 ring-accent/40" : "border-border"
+                }`}
+              >
+                <div className="aspect-[4/3] w-full bg-muted">
+                  <img
+                    src={img.url}
+                    alt=""
+                    className="w-full h-full object-cover"
+                    onError={(e) => {
+                      (e.currentTarget as HTMLImageElement).style.opacity = "0.3";
+                    }}
+                  />
+                </div>
+                {img.is_primary && (
+                  <span className="absolute top-1 left-1 bg-accent text-accent-foreground text-[10px] font-semibold px-1.5 py-0.5 rounded inline-flex items-center gap-1">
+                    <Star className="w-3 h-3" /> Capa
+                  </span>
+                )}
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (confirm("Remover esta imagem?")) removeMut.mutate(img.id);
+                  }}
+                  className="absolute -top-1.5 -right-1.5 bg-background border border-border rounded-full p-1 shadow hover:bg-muted"
+                  aria-label="Remover imagem"
+                >
+                  <X className="w-3 h-3" />
+                </button>
+                <div className="flex items-center justify-between gap-1 p-1.5 bg-card border-t border-border">
+                  {!img.is_primary ? (
+                    <button
+                      type="button"
+                      onClick={() => setPrimaryMut.mutate(img.id)}
+                      className="text-[10px] text-muted-foreground hover:text-foreground inline-flex items-center gap-1"
+                    >
+                      <Star className="w-3 h-3" /> Capa
+                    </button>
+                  ) : (
+                    <span className="text-[10px] text-accent font-medium">Principal</span>
+                  )}
+                  <div className="flex items-center gap-0.5">
+                    <button
+                      type="button"
+                      disabled={idx === 0}
+                      onClick={() => move(idx, -1)}
+                      className="text-muted-foreground hover:text-foreground disabled:opacity-30 px-1 text-xs"
+                      aria-label="Mover para esquerda"
+                    >
+                      ←
+                    </button>
+                    <button
+                      type="button"
+                      disabled={idx === images.length - 1}
+                      onClick={() => move(idx, 1)}
+                      className="text-muted-foreground hover:text-foreground disabled:opacity-30 px-1 text-xs"
+                      aria-label="Mover para direita"
+                    >
+                      →
+                    </button>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+
+        <div className="flex flex-col sm:flex-row gap-2 pt-1 border-t border-border">
           <Input
-            value={value}
-            onChange={(e) => onChangeText(e.target.value)}
-            onBlur={() => onCommit(value)}
-            placeholder="https://… ou envie um arquivo"
+            value={manualUrl}
+            onChange={(e) => setManualUrl(e.target.value)}
+            placeholder="Cole uma URL de imagem…"
+            disabled={atLimit}
             className="flex-1"
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                e.preventDefault();
+                commitManualUrl();
+              }
+            }}
           />
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            disabled={atLimit || !manualUrl.trim() || addMut.isPending}
+            onClick={commitManualUrl}
+          >
+            <Plus className="w-4 h-4 mr-1" /> Adicionar URL
+          </Button>
           <input
             ref={inputRef}
             type="file"
@@ -583,7 +746,7 @@ function BundleImageField({
             type="button"
             variant="outline"
             size="sm"
-            disabled={uploading}
+            disabled={atLimit || uploading}
             onClick={() => inputRef.current?.click()}
           >
             {uploading ? (
@@ -591,32 +754,14 @@ function BundleImageField({
             ) : (
               <Upload className="w-4 h-4 mr-1" />
             )}
-            {uploading ? "Enviando…" : "Enviar imagem"}
+            {uploading ? "Enviando…" : "Enviar arquivo"}
           </Button>
         </div>
-        {value ? (
-          <div className="relative inline-block">
-            <img
-              src={value}
-              alt="Pré-visualização"
-              className="w-40 h-24 object-cover rounded border border-border bg-muted"
-              onError={(e) => {
-                (e.currentTarget as HTMLImageElement).style.opacity = "0.3";
-              }}
-            />
-            <button
-              type="button"
-              onClick={() => onCommit("")}
-              className="absolute -top-2 -right-2 bg-background border border-border rounded-full p-1 shadow hover:bg-muted"
-              aria-label="Remover imagem"
-            >
-              <X className="w-3 h-3" />
-            </button>
-          </div>
-        ) : null}
-        <p className="text-xs text-muted-foreground">
-          JPG, PNG ou WebP, até 5 MB. Recomendado: imagem horizontal 1200×600px com fundo limpo.
-        </p>
+        {atLimit && (
+          <p className="text-[11px] text-amber-600">
+            Limite de 4 imagens atingido. Remova uma para adicionar outra.
+          </p>
+        )}
       </div>
     </Field>
   );
