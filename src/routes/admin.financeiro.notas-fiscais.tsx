@@ -96,10 +96,10 @@ function FiscalIssuesBanner() {
         <AlertTriangle className="w-5 h-5 text-amber-600 dark:text-amber-400 mt-0.5" />
         <div className="flex-1">
           <p className="font-medium text-sm">
-            {orderIds.length} pedido(s) pago(s) contêm produto com dados fiscais incompletos.
+            {orderIds.length} pedido(s) pago(s) com produto sem dados fiscais completos.
           </p>
           <p className="text-xs text-muted-foreground mt-0.5">
-            Revise os dados fiscais antes de emitir a nota fiscal no sistema externo.
+            Informativo apenas. Os campos fiscais são opcionais — a emissão da NF é feita fora do sistema.
           </p>
           <div className="mt-2 text-xs text-amber-700 dark:text-amber-400 line-clamp-2">
             {data
