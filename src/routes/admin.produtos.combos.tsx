@@ -15,6 +15,8 @@ import {
   ExternalLink,
   Eye,
   EyeOff,
+  Upload,
+  X,
 } from "lucide-react";
 import { toast } from "sonner";
 import { AdminLayout } from "@/components/admin/AdminLayout";
