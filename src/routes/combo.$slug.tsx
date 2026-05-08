@@ -136,19 +136,16 @@ function ComboDetailPage() {
 
         <div className="grid grid-cols-1 lg:grid-cols-[1fr_360px] gap-6">
           <div className="space-y-4">
-            <div className="aspect-[16/9] bg-surface rounded-xl overflow-hidden border border-border">
-              {bundle.image_url ? (
-                <img
-                  src={bundle.image_url}
-                  alt={bundle.name}
-                  className="w-full h-full object-cover"
-                />
-              ) : (
-                <div className="w-full h-full flex items-center justify-center">
-                  <PackagePlus className="w-12 h-12 text-muted-foreground/50" />
-                </div>
-              )}
-            </div>
+            <ComboGallery
+              images={
+                bundle.images && bundle.images.length > 0
+                  ? bundle.images.map((i) => i.url)
+                  : bundle.image_url
+                    ? [bundle.image_url]
+                    : []
+              }
+              alt={bundle.name}
+            />
             <div className="flex items-center gap-2">
               <span
                 className={`inline-flex items-center gap-1 text-[10px] font-medium px-2 py-0.5 rounded-full border ${TONE[bundle.availability]}`}
@@ -254,6 +251,42 @@ function ItemRow({ item }: { item: BundleItemPublic }) {
         </div>
       </div>
       <div className="text-sm font-display font-semibold">{formatBRL(lineSubtotal)}</div>
+    </div>
+  );
+}
+
+function ComboGallery({ images, alt }: { images: string[]; alt: string }) {
+  const [active, setActive] = useState(0);
+  if (images.length === 0) {
+    return (
+      <div className="aspect-[16/9] bg-surface rounded-xl overflow-hidden border border-border flex items-center justify-center">
+        <PackagePlus className="w-12 h-12 text-muted-foreground/50" />
+      </div>
+    );
+  }
+  const current = images[Math.min(active, images.length - 1)];
+  return (
+    <div className="space-y-2">
+      <div className="aspect-[16/9] bg-surface rounded-xl overflow-hidden border border-border">
+        <img src={current} alt={alt} className="w-full h-full object-cover" />
+      </div>
+      {images.length > 1 && (
+        <div className="flex gap-2 overflow-x-auto pb-1">
+          {images.map((url, i) => (
+            <button
+              key={url + i}
+              type="button"
+              onClick={() => setActive(i)}
+              className={`flex-shrink-0 w-20 h-16 rounded-md overflow-hidden bg-surface border-2 ${
+                i === active ? "border-accent" : "border-border hover:border-accent/60"
+              }`}
+              aria-label={`Ver imagem ${i + 1}`}
+            >
+              <img src={url} alt="" className="w-full h-full object-cover" />
+            </button>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

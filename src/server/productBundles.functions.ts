@@ -34,12 +34,21 @@ export type BundleItemPublic = {
 
 export type BundleDiscountType = "none" | "fixed_amount" | "percentage";
 
+export type BundleImage = {
+  id: string;
+  url: string;
+  sort_order: number;
+  is_primary: boolean;
+  source: "manual_upload" | "manual_url" | "ai_generated";
+};
+
 export type BundlePublic = {
   id: string;
   slug: string | null;
   name: string;
   description: string | null;
   image_url: string | null;
+  images: BundleImage[];
   is_active: boolean;
   is_featured: boolean;
   start_date: string | null;
@@ -141,6 +150,7 @@ async function loadBundlesWithItems(filter: {
   let q = supabaseAdmin.from("product_bundles").select(
     `id, slug, name, description, image_url, is_active, is_featured,
        start_date, end_date, discount_type, discount_value, updated_at,
+       images:product_bundle_images (id, url, sort_order, is_primary, source),
        items:product_bundle_items (
          id, product_id, quantity, sort_order, is_required,
          product:products (
@@ -209,12 +219,27 @@ async function loadBundlesWithItems(filter: {
     const subtotal = items.reduce((acc, it) => acc + it.product.final_price * it.quantity, 0);
     const totalUnits = items.reduce((acc, it) => acc + it.quantity, 0);
 
+    const imageRows = (b.images ?? []) as Array<Record<string, any>>;
+    const images: BundleImage[] = imageRows
+      .map((im) => ({
+        id: im.id as string,
+        url: im.url as string,
+        sort_order: Number(im.sort_order ?? 0),
+        is_primary: !!im.is_primary,
+        source: ((im.source as string) ?? "manual_url") as BundleImage["source"],
+      }))
+      .sort((a, b2) => {
+        if (a.is_primary !== b2.is_primary) return a.is_primary ? -1 : 1;
+        return a.sort_order - b2.sort_order;
+      });
+
     return {
       id: b.id,
       slug: b.slug,
       name: b.name,
       description: b.description,
       image_url: b.image_url,
+      images,
       is_active: !!b.is_active,
       is_featured: !!b.is_featured,
       start_date: b.start_date,
@@ -642,4 +667,168 @@ export const adminSearchProductsForBundle = createServerFn({ method: "POST" })
       sale_price: r.sale_price != null ? Number(r.sale_price) : null,
       stock_qty: Number(r.stock_qty ?? 0),
     }));
+  });
+
+// ----------------------------------------------------------------------------
+// ADMIN: imagens do combo (até 4)
+// ----------------------------------------------------------------------------
+export const BUNDLE_IMAGES_LIMIT = 4;
+
+const SourceEnum = z.enum(["manual_upload", "manual_url", "ai_generated"]);
+
+const AdminListImagesInput = z.object({ bundleId: z.string().uuid() });
+
+export const adminListBundleImages = createServerFn({ method: "POST" })
+  .inputValidator((i: unknown) => AdminListImagesInput.parse(i))
+  .handler(async ({ data }) => {
+    await requireAdmin();
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: rows, error } = await supabaseAdmin
+      .from("product_bundle_images")
+      .select("id, url, sort_order, is_primary, source")
+      .eq("bundle_id", data.bundleId)
+      .order("is_primary", { ascending: false })
+      .order("sort_order", { ascending: true });
+    if (error) throw error;
+    return ((rows ?? []) as Array<Record<string, any>>).map<BundleImage>((r) => ({
+      id: r.id,
+      url: r.url,
+      sort_order: Number(r.sort_order ?? 0),
+      is_primary: !!r.is_primary,
+      source: ((r.source as string) ?? "manual_url") as BundleImage["source"],
+    }));
+  });
+
+const AdminAddImageInput = z.object({
+  bundleId: z.string().uuid(),
+  url: z.string().trim().min(1).max(2000),
+  source: SourceEnum.optional(),
+  setPrimary: z.boolean().optional(),
+});
+
+export const adminAddBundleImage = createServerFn({ method: "POST" })
+  .inputValidator((i: unknown) => AdminAddImageInput.parse(i))
+  .handler(async ({ data }) => {
+    await requireAdmin();
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
+    const { data: existing, error: cntErr } = await supabaseAdmin
+      .from("product_bundle_images")
+      .select("id, is_primary, sort_order")
+      .eq("bundle_id", data.bundleId);
+    if (cntErr) throw cntErr;
+    const list = (existing ?? []) as Array<{ id: string; is_primary: boolean; sort_order: number }>;
+    if (list.length >= BUNDLE_IMAGES_LIMIT) throw new Error("bundle_images_limit_reached");
+
+    const hasPrimary = list.some((r) => r.is_primary);
+    const willBePrimary = data.setPrimary === true || !hasPrimary;
+    if (willBePrimary && hasPrimary) {
+      const { error: clearErr } = await supabaseAdmin
+        .from("product_bundle_images")
+        .update({ is_primary: false })
+        .eq("bundle_id", data.bundleId)
+        .eq("is_primary", true);
+      if (clearErr) throw clearErr;
+    }
+
+    const nextOrder = list.reduce((acc, r) => Math.max(acc, r.sort_order), -1) + 1;
+    const { data: row, error } = await supabaseAdmin
+      .from("product_bundle_images")
+      .insert({
+        bundle_id: data.bundleId,
+        url: data.url,
+        source: data.source ?? "manual_url",
+        is_primary: willBePrimary,
+        sort_order: nextOrder,
+      })
+      .select("id")
+      .single();
+    if (error) throw error;
+    return { id: row!.id as string };
+  });
+
+const AdminRemoveImageInput = z.object({ id: z.string().uuid() });
+
+export const adminRemoveBundleImage = createServerFn({ method: "POST" })
+  .inputValidator((i: unknown) => AdminRemoveImageInput.parse(i))
+  .handler(async ({ data }) => {
+    await requireAdmin();
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: row, error: getErr } = await supabaseAdmin
+      .from("product_bundle_images")
+      .select("bundle_id, is_primary")
+      .eq("id", data.id)
+      .maybeSingle();
+    if (getErr) throw getErr;
+    if (!row) return { ok: true };
+    const { error } = await supabaseAdmin
+      .from("product_bundle_images")
+      .delete()
+      .eq("id", data.id);
+    if (error) throw error;
+    if (row.is_primary) {
+      const { data: next } = await supabaseAdmin
+        .from("product_bundle_images")
+        .select("id")
+        .eq("bundle_id", row.bundle_id)
+        .order("sort_order", { ascending: true })
+        .limit(1)
+        .maybeSingle();
+      if (next?.id) {
+        await supabaseAdmin
+          .from("product_bundle_images")
+          .update({ is_primary: true })
+          .eq("id", next.id);
+      }
+    }
+    return { ok: true };
+  });
+
+const AdminSetPrimaryInput = z.object({ id: z.string().uuid() });
+
+export const adminSetPrimaryBundleImage = createServerFn({ method: "POST" })
+  .inputValidator((i: unknown) => AdminSetPrimaryInput.parse(i))
+  .handler(async ({ data }) => {
+    await requireAdmin();
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: row, error: getErr } = await supabaseAdmin
+      .from("product_bundle_images")
+      .select("bundle_id")
+      .eq("id", data.id)
+      .maybeSingle();
+    if (getErr) throw getErr;
+    if (!row) throw new Error("not_found");
+    const { error: clearErr } = await supabaseAdmin
+      .from("product_bundle_images")
+      .update({ is_primary: false })
+      .eq("bundle_id", row.bundle_id)
+      .eq("is_primary", true);
+    if (clearErr) throw clearErr;
+    const { error } = await supabaseAdmin
+      .from("product_bundle_images")
+      .update({ is_primary: true })
+      .eq("id", data.id);
+    if (error) throw error;
+    return { ok: true };
+  });
+
+const AdminReorderInput = z.object({
+  bundleId: z.string().uuid(),
+  orderedIds: z.array(z.string().uuid()).min(1).max(BUNDLE_IMAGES_LIMIT),
+});
+
+export const adminReorderBundleImages = createServerFn({ method: "POST" })
+  .inputValidator((i: unknown) => AdminReorderInput.parse(i))
+  .handler(async ({ data }) => {
+    await requireAdmin();
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    for (let i = 0; i < data.orderedIds.length; i++) {
+      const { error } = await supabaseAdmin
+        .from("product_bundle_images")
+        .update({ sort_order: i })
+        .eq("id", data.orderedIds[i])
+        .eq("bundle_id", data.bundleId);
+      if (error) throw error;
+    }
+    return { ok: true };
   });
