@@ -60,6 +60,26 @@ function hoursAgoISO(h: number): string {
   return new Date(Date.now() - h * 3600 * 1000).toISOString();
 }
 
+/**
+ * Retorna a maior data entre o "corte de alertas" das configurações
+ * financeiras (`finance_settings.alerts_baseline_at`) e a janela
+ * informada (em horas). Eventos anteriores ao corte — tipicamente
+ * erros de teste/homologação já resolvidos — não geram alerta.
+ */
+async function alertsSinceISO(supabaseAdmin: any, hoursWindow: number): Promise<string> {
+  const windowISO = hoursAgoISO(hoursWindow);
+  try {
+    const { data } = await supabaseAdmin
+      .from("finance_settings")
+      .select("alerts_baseline_at")
+      .limit(1)
+      .maybeSingle();
+    const baseline = data?.alerts_baseline_at as string | null | undefined;
+    if (baseline && baseline > windowISO) return baseline;
+  } catch {}
+  return windowISO;
+}
+
 async function safeCount(build: () => any, filter: (q: any) => any): Promise<number> {
   try {
     const q = filter(build().select("*", { count: "exact", head: true }));
