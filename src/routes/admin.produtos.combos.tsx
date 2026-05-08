@@ -517,7 +517,116 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
   );
 }
 
-function ToggleRow({
+const ALLOWED_IMAGE_TYPES = ["image/jpeg", "image/png", "image/webp"];
+const MAX_IMAGE_BYTES = 5 * 1024 * 1024;
+
+function BundleImageField({
+  value,
+  onChangeText,
+  onCommit,
+}: {
+  value: string;
+  onChangeText: (v: string) => void;
+  onCommit: (v: string) => void;
+}) {
+  const inputRef = useRef<HTMLInputElement>(null);
+  const [uploading, setUploading] = useState(false);
+
+  async function handleFile(file: File) {
+    if (!ALLOWED_IMAGE_TYPES.includes(file.type)) {
+      toast.error("Formato inválido. Use JPG, PNG ou WebP.");
+      return;
+    }
+    if (file.size > MAX_IMAGE_BYTES) {
+      toast.error("Arquivo muito grande. Máx 5 MB.");
+      return;
+    }
+    setUploading(true);
+    try {
+      const ext =
+        (file.name.split(".").pop() || "jpg").toLowerCase().replace(/[^a-z0-9]/g, "") || "jpg";
+      const unique =
+        typeof crypto !== "undefined" && "randomUUID" in crypto
+          ? crypto.randomUUID()
+          : `${Date.now()}`;
+      const path = `bundles/${Date.now()}-${unique}.${ext}`;
+      const { error } = await supabase.storage
+        .from("product-images")
+        .upload(path, file, { contentType: file.type, cacheControl: "31536000", upsert: false });
+      if (error) throw new Error(error.message);
+      const { data } = supabase.storage.from("product-images").getPublicUrl(path);
+      onCommit(data.publicUrl);
+      toast.success("Imagem enviada");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Falha no upload");
+    } finally {
+      setUploading(false);
+      if (inputRef.current) inputRef.current.value = "";
+    }
+  }
+
+  return (
+    <Field label="Imagem do combo">
+      <div className="space-y-2">
+        <div className="flex flex-col sm:flex-row gap-2">
+          <Input
+            value={value}
+            onChange={(e) => onChangeText(e.target.value)}
+            onBlur={() => onCommit(value)}
+            placeholder="https://… ou envie um arquivo"
+            className="flex-1"
+          />
+          <input
+            ref={inputRef}
+            type="file"
+            accept="image/jpeg,image/png,image/webp"
+            className="hidden"
+            onChange={(e) => {
+              const f = e.target.files?.[0];
+              if (f) void handleFile(f);
+            }}
+          />
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            disabled={uploading}
+            onClick={() => inputRef.current?.click()}
+          >
+            {uploading ? (
+              <Loader2 className="w-4 h-4 mr-1 animate-spin" />
+            ) : (
+              <Upload className="w-4 h-4 mr-1" />
+            )}
+            {uploading ? "Enviando…" : "Enviar imagem"}
+          </Button>
+        </div>
+        {value ? (
+          <div className="relative inline-block">
+            <img
+              src={value}
+              alt="Pré-visualização"
+              className="w-40 h-24 object-cover rounded border border-border bg-muted"
+              onError={(e) => {
+                (e.currentTarget as HTMLImageElement).style.opacity = "0.3";
+              }}
+            />
+            <button
+              type="button"
+              onClick={() => onCommit("")}
+              className="absolute -top-2 -right-2 bg-background border border-border rounded-full p-1 shadow hover:bg-muted"
+              aria-label="Remover imagem"
+            >
+              <X className="w-3 h-3" />
+            </button>
+          </div>
+        ) : null}
+        <p className="text-xs text-muted-foreground">
+          JPG, PNG ou WebP, até 5 MB. Recomendado: imagem horizontal 1200×600px com fundo limpo.
+        </p>
+      </div>
+    </Field>
+  );
   label,
   checked,
   onChange,
