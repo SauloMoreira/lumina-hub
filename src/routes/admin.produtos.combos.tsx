@@ -644,7 +644,7 @@ function BundleImagesGallery({ bundleId }: { bundleId: string }) {
           </div>
         ) : (
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-            {images.map((img, idx) => (
+            {images.map((img: (typeof images)[number], idx: number) => (
               <div
                 key={img.id}
                 className={`relative rounded-md border bg-muted overflow-hidden ${
