@@ -88,7 +88,7 @@ export async function fetchFinanceAlertCounts(): Promise<FinanceAlertCounts> {
         .select("order_id, orders!inner(payment_status, paid_at)")
         .lt("gross_margin_amount", 0)
         .eq("orders.payment_status", "paid")
-        .gte("orders.paid_at", since30dISO)
+        .gte("orders.paid_at", negMarginSinceISO)
         .limit(2000);
       const ids = new Set<string>();
       for (const r of (negItems ?? []) as Array<{ order_id: string }>) {
