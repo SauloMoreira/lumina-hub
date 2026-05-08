@@ -325,8 +325,7 @@ export const getAdminOperations = createServerFn({ method: "GET" })
       (q) => q.gte("created_at", hoursAgoISO(24 * 7)).not("processing_error", "is", null),
     );
 
-    // Notas fiscais
-    const stale24hInv = stale24h;
+    // Notas fiscais — emissão é externa; mantemos só contagens informativas usadas no card.
     const invoicesPending = await safeCount(
       () => supabaseAdmin.from("orders"),
       (q) => q.in("payment_status", ["paid", "approved"]).eq("invoice_status", "pendente_emissao"),
@@ -335,22 +334,7 @@ export const getAdminOperations = createServerFn({ method: "GET" })
       () => supabaseAdmin.from("orders"),
       (q) => q.in("payment_status", ["paid", "approved"]).eq("invoice_status", "erro_emissao"),
     );
-    const invoicesOverdue = await safeCount(
-      () => supabaseAdmin.from("orders"),
-      (q) =>
-        q
-          .in("payment_status", ["paid", "approved"])
-          .eq("invoice_status", "pendente_emissao")
-          .lt("paid_at", stale24hInv),
-    );
-    const invoicesB2bMissing = await safeCount(
-      () => supabaseAdmin.from("orders"),
-      (q) =>
-        q
-          .in("payment_status", ["paid", "approved"])
-          .eq("order_type", "b2b")
-          .in("invoice_status", ["nao_necessaria", "pendente_emissao"]),
-    );
+    void invoicesError;
 
     // ============================================================
     // Operação de hoje
@@ -752,36 +736,23 @@ export const getAdminOperations = createServerFn({ method: "GET" })
       },
       {
         id: "invoices-pending",
-        title: "Notas fiscais pendentes",
+        title: "Controle fiscal externo",
         description:
-          invoicesOverdue > 0
-            ? `${invoicesOverdue} pedido(s) pago(s) há +24h sem nota registrada.`
-            : "Pedidos pagos aguardando registro de NF-e.",
+          "Notas fiscais são emitidas fora do sistema. Use esta tela apenas para acompanhamento manual opcional.",
         qty: invoicesPending,
-        status:
-          invoicesPending === 0
-            ? "ok"
-            : invoicesOverdue > 0 || invoicesError > 0
-              ? "danger"
-              : "warn",
-        ctaLabel: "Ver notas fiscais",
+        status: "ok",
+        ctaLabel: "Ver acompanhamento fiscal",
         ctaHref: "/admin/financeiro/notas-fiscais",
         group: "Financeiro",
       },
       {
         id: "fiscal-pending",
-        title: "Pendências fiscais",
-        description: fiscal.companyFiscalIncomplete
-          ? "Dados fiscais da empresa incompletos. Configure regime tributário, CFOPs e série padrão de NF-e."
-          : `${fiscal.productsFiscalIncomplete} produto(s) com dados fiscais incompletos.`,
+        title: "Informações fiscais opcionais",
+        description:
+          "Campos fiscais (NCM, CFOP, origem, NF) são opcionais — emissão é feita em sistema externo.",
         qty: fiscalTotalIssues,
-        status:
-          fiscalTotalIssues === 0
-            ? "ok"
-            : fiscal.companyFiscalIncomplete || fiscal.paidOrdersWithFiscalIssues > 0
-              ? "danger"
-              : "warn",
-        ctaLabel: "Ver pendências fiscais",
+        status: "ok",
+        ctaLabel: "Ver dados fiscais",
         ctaHref: "/admin/financeiro/impostos",
         group: "Financeiro",
       },
@@ -1144,37 +1115,8 @@ export const getAdminOperations = createServerFn({ method: "GET" })
       });
     }
 
-    // Notas fiscais
-    if (invoicesOverdue > 0) {
-      alerts.push({
-        id: "alert-invoices-overdue",
-        title: "Notas fiscais atrasadas (>24h)",
-        description: `${invoicesOverdue} pedido(s) pago(s) há mais de 24h ainda sem NF-e registrada.`,
-        severity: "high",
-        ctaLabel: "Registrar notas",
-        ctaHref: "/admin/financeiro/notas-fiscais?onlyOverdue=1",
-      });
-    }
-    if (invoicesError > 0) {
-      alerts.push({
-        id: "alert-invoices-error",
-        title: "Notas fiscais com erro de emissão",
-        description: `${invoicesError} pedido(s) marcado(s) com erro de emissão. Verifique e corrija.`,
-        severity: "high",
-        ctaLabel: "Ver notas com erro",
-        ctaHref: "/admin/financeiro/notas-fiscais?status=erro_emissao",
-      });
-    }
-    if (invoicesB2bMissing > 0) {
-      alerts.push({
-        id: "alert-invoices-b2b-missing",
-        title: "Pedidos B2B pagos sem nota fiscal",
-        description: `${invoicesB2bMissing} pedido(s) de empresa pago(s) ainda sem NF-e — clientes B2B exigem nota.`,
-        severity: "high",
-        ctaLabel: "Ver notas B2B",
-        ctaHref: "/admin/financeiro/notas-fiscais?orderType=b2b&status=sem_nota",
-      });
-    }
+    // Notas fiscais — emissão fora do sistema; sem alertas bloqueantes.
+    // (NF é controle manual opcional. Acompanhamento fica em /admin/financeiro/notas-fiscais.)
 
     // Financeiro — margem / custo / MP (Onda 5E parte 3)
     if (financeAlerts.ordersPaidNegativeMargin > 0) {
@@ -1217,16 +1159,7 @@ export const getAdminOperations = createServerFn({ method: "GET" })
         ctaHref: "/admin/financeiro/relatorios?tab=margem",
       });
     }
-    if (financeAlerts.invoicesPendingB2bOver24h > 0) {
-      alerts.push({
-        id: "alert-finance-nf-b2b-overdue",
-        title: "NF B2B atrasada (>24h)",
-        description: `${financeAlerts.invoicesPendingB2bOver24h} pedido(s) B2B pago(s) há mais de 24h sem nota fiscal — clientes empresa exigem nota.`,
-        severity: "high",
-        ctaLabel: "Ver notas fiscais",
-        ctaHref: "/admin/financeiro/notas-fiscais",
-      });
-    }
+    // NF B2B fora do sistema — sem alerta bloqueante.
     if (financeAlerts.mpWebhookErrors7d > 0) {
       alerts.push({
         id: "alert-finance-mp-webhook-error",
@@ -1289,33 +1222,34 @@ export const getAdminOperations = createServerFn({ method: "GET" })
         ctaHref: "/admin/produtos/qualidade",
       });
     }
+    // Dados fiscais — informativo, opcional. Emissão é externa.
     if (fiscal.companyFiscalIncomplete) {
       alerts.push({
         id: "alert-fiscal-company-data",
-        title: "Dados fiscais da empresa incompletos",
+        title: "Dados fiscais da empresa incompletos (opcional)",
         description:
-          "Configure regime tributário, série padrão de NF-e e CFOPs antes de integrar com emissor fiscal.",
-        severity: "high",
-        ctaLabel: "Configurar dados fiscais",
+          "Preenchimento opcional. Útil apenas se quiser registrar dados fiscais para acompanhamento manual — emissão de NF é feita fora do sistema.",
+        severity: "low",
+        ctaLabel: "Configurar (opcional)",
         ctaHref: "/admin/financeiro/impostos",
       });
     }
     if (fiscal.paidOrdersWithFiscalIssues > 0) {
       alerts.push({
         id: "alert-fiscal-paid-orders",
-        title: "Pedidos pagos com produto fiscal incompleto",
-        description: `${fiscal.paidOrdersWithFiscalIssues} pedido(s) pago(s) contém item sem dados fiscais mínimos. Revise antes de emitir nota.`,
-        severity: "high",
-        ctaLabel: "Ver pendências fiscais",
+        title: "Pedidos pagos sem dados fiscais completos",
+        description: `${fiscal.paidOrdersWithFiscalIssues} pedido(s) pago(s) com item sem dados fiscais. Informativo apenas — não bloqueia o pedido. Emissão de NF é externa.`,
+        severity: "low",
+        ctaLabel: "Ver dados fiscais",
         ctaHref: "/admin/financeiro/impostos",
       });
     }
     if (fiscal.productsNoNcm > 0) {
       alerts.push({
         id: "alert-fiscal-no-ncm",
-        title: "Produtos ativos sem NCM",
-        description: `${fiscal.productsNoNcm} produto(s) ativo(s) sem código NCM. Necessário para emissão fiscal.`,
-        severity: fiscal.productsNoNcm > 10 ? "high" : "medium",
+        title: "Produtos sem NCM (opcional)",
+        description: `${fiscal.productsNoNcm} produto(s) ativo(s) sem NCM. Campo opcional — preencha se quiser usar no controle fiscal manual.`,
+        severity: "low",
         ctaLabel: "Ver produtos",
         ctaHref: "/admin/financeiro/impostos?filter=no_ncm",
       });
@@ -1323,9 +1257,9 @@ export const getAdminOperations = createServerFn({ method: "GET" })
     if (fiscal.productsNoUnit > 0) {
       alerts.push({
         id: "alert-fiscal-no-unit",
-        title: "Produtos sem unidade comercial",
-        description: `${fiscal.productsNoUnit} produto(s) ativo(s) sem unidade (UN, CX, KG…).`,
-        severity: "medium",
+        title: "Produtos sem unidade comercial (opcional)",
+        description: `${fiscal.productsNoUnit} produto(s) ativo(s) sem unidade. Campo opcional para acompanhamento fiscal manual.`,
+        severity: "low",
         ctaLabel: "Ver produtos",
         ctaHref: "/admin/financeiro/impostos?filter=no_unit",
       });
@@ -1333,9 +1267,9 @@ export const getAdminOperations = createServerFn({ method: "GET" })
     if (fiscal.productsNoOrigin > 0) {
       alerts.push({
         id: "alert-fiscal-no-origin",
-        title: "Produtos sem origem da mercadoria",
-        description: `${fiscal.productsNoOrigin} produto(s) sem origem definida (nacional, importado…).`,
-        severity: "medium",
+        title: "Produtos sem origem da mercadoria (opcional)",
+        description: `${fiscal.productsNoOrigin} produto(s) sem origem definida. Campo opcional — útil só para controle fiscal manual.`,
+        severity: "low",
         ctaLabel: "Ver produtos",
         ctaHref: "/admin/financeiro/impostos?filter=no_origin",
       });
