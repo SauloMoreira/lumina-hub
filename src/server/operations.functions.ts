@@ -339,10 +339,12 @@ export const getAdminOperations = createServerFn({ method: "GET" })
       }
     } catch {}
 
-    // Webhook MP com erro
+    // Webhook MP com erro — respeita "corte de alertas" (ignora erros antigos
+    // de teste/homologação, sem apagar nada do log).
+    const webhookSinceISO = await alertsSinceISO(supabaseAdmin, 24 * 7);
     const webhookErrors = await safeCount(
       () => supabaseAdmin.from("payment_webhook_events"),
-      (q) => q.gte("created_at", hoursAgoISO(24 * 7)).not("processing_error", "is", null),
+      (q) => q.gte("created_at", webhookSinceISO).not("processing_error", "is", null),
     );
 
     // Notas fiscais — emissão é externa; mantemos só contagens informativas usadas no card.
