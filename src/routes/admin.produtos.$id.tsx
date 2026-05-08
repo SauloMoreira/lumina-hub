@@ -66,6 +66,7 @@ function ProductForm() {
   const [cats, setCats] = useState<Cat[]>([]);
   const imageManagerRef = useRef<ProductImageManagerHandle>(null);
   const [barcodeOpen, setBarcodeOpen] = useState(false);
+  const [aiOpen, setAiOpen] = useState(false);
   const [extra, setExtra] = useState<{
     specs: Record<string, unknown>;
     ncm: string | null;
