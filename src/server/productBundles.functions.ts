@@ -34,12 +34,21 @@ export type BundleItemPublic = {
 
 export type BundleDiscountType = "none" | "fixed_amount" | "percentage";
 
+export type BundleImage = {
+  id: string;
+  url: string;
+  sort_order: number;
+  is_primary: boolean;
+  source: "manual_upload" | "manual_url" | "ai_generated";
+};
+
 export type BundlePublic = {
   id: string;
   slug: string | null;
   name: string;
   description: string | null;
   image_url: string | null;
+  images: BundleImage[];
   is_active: boolean;
   is_featured: boolean;
   start_date: string | null;
