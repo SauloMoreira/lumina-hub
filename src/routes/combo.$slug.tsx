@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
-import { ArrowLeft, ShoppingCart, AlertCircle, CheckCircle2, PackagePlus } from "lucide-react";
+import { ArrowLeft, ShoppingCart, AlertCircle, CheckCircle2, PackagePlus, Building2, Sparkles, Tag } from "lucide-react";
 import { toast } from "sonner";
 import { StoreLayout } from "@/components/layout/StoreLayout";
 import { Button } from "@/components/ui/button";
@@ -11,7 +11,9 @@ import {
   getPublicBundleBySlug,
   type BundleAvailability,
   type BundleItemPublic,
+  type BundlePublic,
 } from "@/server/productBundles.functions";
+import { KIT_TYPE_BADGES } from "@/lib/kitPricing";
 
 export const Route = createFileRoute("/combo/$slug")({
   component: ComboDetailPage,
@@ -146,7 +148,8 @@ function ComboDetailPage() {
               }
               alt={bundle.name}
             />
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 flex-wrap">
+              <KitTypeBadge bundle={bundle} />
               <span
                 className={`inline-flex items-center gap-1 text-[10px] font-medium px-2 py-0.5 rounded-full border ${TONE[bundle.availability]}`}
               >
@@ -178,18 +181,7 @@ function ComboDetailPage() {
 
           {/* Aside: subtotal + CTA */}
           <aside className="bg-card border border-border rounded-xl p-5 h-fit lg:sticky lg:top-20 space-y-3">
-            <div>
-              <div className="text-xs text-muted-foreground uppercase tracking-wider">
-                Subtotal estimado
-              </div>
-              <div className="font-display text-2xl font-bold text-primary">
-                {formatBRL(bundle.subtotal)}
-              </div>
-              <p className="text-[11px] text-muted-foreground mt-1">
-                Os preços de cada item são aplicados no carrinho. O preço empresa (B2B), quando
-                aplicável, é calculado pelo backend para clientes empresariais aprovados.
-              </p>
-            </div>
+            <KitPricingPanel bundle={bundle} />
             <Button
               className="w-full gap-2"
               size="lg"
@@ -287,6 +279,70 @@ function ComboGallery({ images, alt }: { images: string[]; alt: string }) {
           ))}
         </div>
       )}
+    </div>
+  );
+}
+
+function KitTypeBadge({ bundle }: { bundle: BundlePublic }) {
+  const t = bundle.kit.kit_type;
+  const isB2bSource = bundle.pricing.source === "b2b";
+  const label = isB2bSource ? "Preço empresa" : KIT_TYPE_BADGES[t];
+  const tone = isB2bSource
+    ? "bg-blue-50 text-blue-700 border-blue-200"
+    : t === "promocional"
+      ? "bg-amber-50 text-amber-700 border-amber-200"
+      : t === "b2b"
+        ? "bg-blue-50 text-blue-700 border-blue-200"
+        : "bg-emerald-50 text-emerald-700 border-emerald-200";
+  const Icon = isB2bSource || t === "b2b" ? Building2 : t === "promocional" ? Tag : Sparkles;
+  return (
+    <span
+      className={`inline-flex items-center gap-1 text-[10px] font-medium px-2 py-0.5 rounded-full border ${tone}`}
+    >
+      <Icon className="w-3 h-3" /> {label}
+    </span>
+  );
+}
+
+function KitPricingPanel({ bundle }: { bundle: BundlePublic }) {
+  const p = bundle.pricing;
+  const showStrike = p.savings > 0 && p.appliedPrice < p.retailSum;
+  const minQty = bundle.kit.b2b_min_quantity ?? 1;
+  return (
+    <div className="space-y-2">
+      <div className="text-xs text-muted-foreground uppercase tracking-wider">
+        {p.source === "b2b" ? "Preço empresa" : "Preço do kit"}
+      </div>
+      {showStrike && (
+        <div className="text-sm text-muted-foreground line-through">{formatBRL(p.retailSum)}</div>
+      )}
+      <div className="font-display text-2xl font-bold text-primary">
+        {formatBRL(p.appliedPrice)}
+      </div>
+      {p.savings > 0 && (
+        <div className="text-xs text-emerald-700 font-medium">
+          Economia de {formatBRL(p.savings)}
+        </div>
+      )}
+      {p.unitApprox != null && (
+        <div className="text-[11px] text-muted-foreground">
+          ≈ {formatBRL(p.unitApprox)} por unidade ({p.totalUnits} un)
+        </div>
+      )}
+      {p.source === "b2b" && minQty > 1 && (
+        <div className="text-[11px] text-blue-700">
+          Quantidade mínima para preço empresa: {minQty} kit(s).
+        </div>
+      )}
+      {p.blocked === "not_available_retail" && (
+        <p className="text-[11px] text-amber-700">
+          Este kit é exclusivo para empresas aprovadas.
+        </p>
+      )}
+      <p className="text-[11px] text-muted-foreground pt-1">
+        Os preços por item são aplicados no carrinho. O preço empresa, quando aplicável, é
+        recalculado pelo backend para clientes empresariais aprovados.
+      </p>
     </div>
   );
 }

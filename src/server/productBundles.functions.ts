@@ -90,6 +90,9 @@ export type BundlePublic = {
   items_count: number;
   total_units: number;
   availability: BundleAvailability;
+  /** Resultado da engine de preços do kit (já considera aprovação B2B do solicitante). */
+  pricing: KitPricingResult;
+  is_b2b_approved: boolean;
 };
 
 // Limite seguro de desconto percentual para combos (admin pode rever depois)
@@ -169,6 +172,20 @@ function calcAvailability(items: BundleItemPublic[]): BundleAvailability {
   return someoneShort ? "partial" : "available";
 }
 
+async function resolveB2bApprovalForRequest(): Promise<boolean> {
+  try {
+    const userId = await getOptionalUserId();
+    if (!userId) return false;
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: cid } = await (supabaseAdmin as unknown as {
+      rpc: (n: string, a: unknown) => Promise<{ data: string | null }>;
+    }).rpc("get_user_approved_company_id", { _user_id: userId });
+    return !!cid;
+  } catch {
+    return false;
+  }
+}
+
 async function loadBundlesWithItems(filter: {
   bundleIds?: string[];
   slug?: string;
@@ -211,6 +228,7 @@ async function loadBundlesWithItems(filter: {
   if (error) throw error;
 
   const rows = (data ?? []) as Array<Record<string, any>>;
+  const isB2bApproved = await resolveB2bApprovalForRequest();
   return rows.map((b) => {
     const itemRows = (b.items ?? []) as Array<Record<string, any>>;
     const items: BundleItemPublic[] = itemRows
@@ -285,6 +303,19 @@ async function loadBundlesWithItems(filter: {
       stack_with_b2b: !!b.stack_with_b2b,
     };
 
+    const pricing = computeKitPricing({
+      kit,
+      items: items.map((it) => ({
+        quantity: it.quantity,
+        retail_unit_price: it.product.final_price,
+        b2b_unit_price: it.product.b2b_price,
+        cost_unit_price: it.product.cost_price,
+        b2b_enabled: it.product.b2b_enabled,
+      })),
+      isB2bApproved,
+      kitQuantity: 1,
+    });
+
     return {
       id: b.id,
       slug: b.slug,
@@ -304,6 +335,8 @@ async function loadBundlesWithItems(filter: {
       items_count: items.length,
       total_units: totalUnits,
       availability: calcAvailability(items),
+      pricing,
+      is_b2b_approved: isB2bApproved,
     } satisfies BundlePublic;
   });
 }
@@ -325,8 +358,12 @@ export const listPublicBundles = createServerFn({ method: "POST" })
       limit: data.limit ?? 24,
     });
     const filtered = data.featuredOnly ? bundles.filter((b) => b.is_featured) : bundles;
-    // Apenas combos com pelo menos 1 item válido
-    return filtered.filter((b) => b.items.length > 0);
+    return filtered.filter((b) => {
+      if (b.items.length === 0) return false;
+      // Esconde kits B2B-only de visitantes/clientes não aprovados
+      if (!b.kit.available_retail && !b.is_b2b_approved) return false;
+      return true;
+    });
   });
 
 // ----------------------------------------------------------------------------
