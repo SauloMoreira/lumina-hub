@@ -91,15 +91,15 @@ export function AiImageGeneratorDialog({
         else onOpenChange(v);
       }}
     >
-      <DialogContent className="max-w-xl max-h-[90vh] flex flex-col p-0">
-        <DialogHeader className="px-6 pt-6">
+      <DialogContent className="left-2 right-2 top-2 bottom-2 h-auto w-auto max-w-none translate-x-0 translate-y-0 gap-0 overflow-hidden p-0 sm:left-1/2 sm:right-auto sm:top-1/2 sm:bottom-auto sm:h-[min(90dvh,720px)] sm:w-[min(92vw,640px)] sm:max-w-[640px] sm:translate-x-[-50%] sm:translate-y-[-50%] flex flex-col">
+        <DialogHeader className="shrink-0 px-4 pt-4 pr-12 sm:px-6 sm:pt-6">
           <DialogTitle className="flex items-center gap-2">
             <Sparkles className="w-5 h-5 text-primary" />
             Gerar imagem com IA — {kind === "bundle" ? "Kit" : "Produto"}
           </DialogTitle>
         </DialogHeader>
 
-        <div className="space-y-4 py-2 px-6 overflow-y-auto flex-1 min-h-0">
+        <div className="min-h-0 flex-1 space-y-3 overflow-y-auto px-4 py-3 sm:space-y-4 sm:px-6">
           <div className="rounded-md border border-border bg-muted/40 px-3 py-2 text-xs text-muted-foreground space-y-0.5">
             <div>
               <strong className="text-foreground">{kind === "bundle" ? "Kit" : "Produto"}:</strong>{" "}
@@ -133,10 +133,10 @@ export function AiImageGeneratorDialog({
 
           {dataUrl ? (
             <div className="rounded-md border border-border overflow-hidden bg-muted flex items-center justify-center">
-              <img src={dataUrl} alt="Pré-visualização" className="max-h-[40vh] w-auto object-contain block" />
+              <img src={dataUrl} alt="Pré-visualização" className="block max-h-[30dvh] w-auto object-contain sm:max-h-[36dvh]" />
             </div>
           ) : (
-            <div className="rounded-md border border-dashed border-border h-48 flex items-center justify-center text-xs text-muted-foreground">
+            <div className="rounded-md border border-dashed border-border h-32 sm:h-40 flex items-center justify-center text-xs text-muted-foreground">
               {loading ? (
                 <span className="inline-flex items-center gap-2">
                   <Loader2 className="w-4 h-4 animate-spin" />
@@ -176,7 +176,7 @@ export function AiImageGeneratorDialog({
           </div>
         </div>
 
-        <DialogFooter className="gap-2 sm:gap-2 px-6 pb-6 border-t pt-4 bg-background">
+        <DialogFooter className="shrink-0 gap-2 sm:gap-2 border-t bg-background px-4 py-3 sm:px-6 sm:py-4">
           <Button variant="outline" onClick={handleClose} disabled={applying}>
             <X className="w-4 h-4 mr-1.5" />
             Cancelar
