@@ -1,8 +1,9 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { PackagePlus, ArrowRight } from "lucide-react";
+import { PackagePlus, ArrowRight, Building2, Sparkles } from "lucide-react";
 import { StoreLayout } from "@/components/layout/StoreLayout";
-import { listPublicBundles, type BundleAvailability } from "@/server/productBundles.functions";
+import { listPublicBundles, type BundleAvailability, type BundlePublic } from "@/server/productBundles.functions";
+import { KIT_TYPE_BADGES } from "@/lib/kitPricing";
 import { formatBRL } from "@/lib/domain";
 
 export const Route = createFileRoute("/combos")({
