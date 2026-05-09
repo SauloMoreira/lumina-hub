@@ -15,6 +15,7 @@ import { z } from "zod";
 import { StoreLayout } from "@/components/layout/StoreLayout";
 import { ProductCard } from "@/components/store/ProductCard";
 import { ProductCardSkeleton } from "@/components/ui/shimmer";
+import { KitsCarousel } from "@/components/store/KitsCarousel";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
