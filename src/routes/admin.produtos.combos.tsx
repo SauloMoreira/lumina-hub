@@ -530,7 +530,271 @@ function BundleDiscountSection({
   );
 }
 
-function Field({ label, children }: { label: string; children: React.ReactNode }) {
+function BundleKitConfigSection({
+  bundle,
+  onChange,
+}: {
+  bundle: BundlePublic;
+  onChange: (patch: BundleMetaPatch) => void;
+}) {
+  const k = bundle.kit;
+  // Pré-cálculo (preview) usando engine pura, considerando empresa aprovada
+  const itemsForPricing = bundle.items.map((it) => ({
+    quantity: it.quantity,
+    retail_unit_price: it.product.final_price,
+    b2b_unit_price: it.product.b2b_price,
+    cost_unit_price: it.product.cost_price,
+    b2b_enabled: it.product.b2b_enabled,
+  }));
+  const previewRetail = computeKitPricing({ kit: k, items: itemsForPricing, isB2bApproved: false });
+  const previewB2b = computeKitPricing({
+    kit: k,
+    items: itemsForPricing,
+    isB2bApproved: true,
+    kitQuantity: k.b2b_min_quantity ?? 1,
+  });
+
+  return (
+    <div className="space-y-3 pt-3 border-t border-border">
+      <div className="flex items-center gap-2">
+        <h3 className="text-sm font-semibold">Tipo e preço do kit</h3>
+        <span className="text-[10px] uppercase tracking-wider text-muted-foreground bg-muted px-1.5 py-0.5 rounded">
+          novo
+        </span>
+      </div>
+
+      <div className="grid sm:grid-cols-2 gap-3">
+        <Field label="Tipo de kit">
+          <select
+            value={k.kit_type}
+            onChange={(e) => onChange({ kitType: e.target.value as KitType })}
+            className="w-full h-10 px-3 rounded-md border border-input bg-background text-sm"
+          >
+            {(Object.keys(KIT_TYPE_LABELS) as KitType[]).map((t) => (
+              <option key={t} value={t}>
+                {KIT_TYPE_LABELS[t]}
+              </option>
+            ))}
+          </select>
+        </Field>
+        <Field label="Método de preço (varejo)">
+          <select
+            value={k.pricing_method}
+            onChange={(e) => onChange({ pricingMethod: e.target.value as KitPricingMethod })}
+            className="w-full h-10 px-3 rounded-md border border-input bg-background text-sm"
+          >
+            {(Object.keys(KIT_PRICING_METHOD_LABELS) as KitPricingMethod[]).map((m) => (
+              <option key={m} value={m}>
+                {KIT_PRICING_METHOD_LABELS[m]}
+              </option>
+            ))}
+          </select>
+        </Field>
+      </div>
+
+      {k.pricing_method === "percent_discount" && (
+        <Field label="Desconto (%)">
+          <Input
+            type="number"
+            min={0}
+            max={100}
+            step={1}
+            defaultValue={k.discount_percent ?? 0}
+            onBlur={(e) => onChange({ discountPercent: Number(e.target.value) || 0 })}
+          />
+        </Field>
+      )}
+      {k.pricing_method === "fixed_discount" && (
+        <Field label="Desconto fixo (R$)">
+          <Input
+            type="number"
+            min={0}
+            step={0.01}
+            defaultValue={k.discount_amount ?? 0}
+            onBlur={(e) => onChange({ discountAmount: Number(e.target.value) || 0 })}
+          />
+        </Field>
+      )}
+      {k.pricing_method === "fixed_price" && (
+        <Field label="Preço fechado do kit (R$)">
+          <Input
+            type="number"
+            min={0}
+            step={0.01}
+            defaultValue={k.fixed_price ?? 0}
+            onBlur={(e) => onChange({ fixedPrice: Number(e.target.value) || 0 })}
+          />
+        </Field>
+      )}
+
+      <div className="grid sm:grid-cols-2 gap-3 pt-2 border-t border-border">
+        <ToggleRow
+          label="Disponível no varejo"
+          checked={k.available_retail}
+          onChange={(v) => onChange({ availableRetail: v })}
+          icon={Eye}
+          help="Se desligado, o kit fica visível só para empresas aprovadas (B2B)."
+        />
+        <ToggleRow
+          label="Disponível para empresas (B2B)"
+          checked={k.available_b2b}
+          onChange={(v) => onChange({ availableB2b: v })}
+          icon={Eye}
+          help="Empresas aprovadas verão o preço empresa configurado abaixo."
+        />
+      </div>
+
+      {k.available_b2b && (
+        <div className="space-y-3 pt-2 border-t border-border">
+          <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+            Preço empresa (B2B)
+          </h4>
+          <div className="grid sm:grid-cols-2 gap-3">
+            <Field label="Método de preço B2B">
+              <select
+                value={k.b2b_pricing_method}
+                onChange={(e) =>
+                  onChange({ b2bPricingMethod: e.target.value as KitB2bPricingMethod })
+                }
+                className="w-full h-10 px-3 rounded-md border border-input bg-background text-sm"
+              >
+                {(Object.keys(KIT_B2B_METHOD_LABELS) as KitB2bPricingMethod[]).map((m) => (
+                  <option key={m} value={m}>
+                    {KIT_B2B_METHOD_LABELS[m]}
+                  </option>
+                ))}
+              </select>
+            </Field>
+            <Field label="Qtd mínima de kits para preço B2B">
+              <Input
+                type="number"
+                min={1}
+                step={1}
+                defaultValue={k.b2b_min_quantity ?? 1}
+                onBlur={(e) =>
+                  onChange({ b2bMinQuantity: Math.max(1, Math.floor(Number(e.target.value) || 1)) })
+                }
+              />
+            </Field>
+          </div>
+          {k.b2b_pricing_method === "fixed_price" && (
+            <Field label="Preço B2B fechado do kit (R$)">
+              <Input
+                type="number"
+                min={0}
+                step={0.01}
+                defaultValue={k.b2b_fixed_price ?? 0}
+                onBlur={(e) => onChange({ b2bFixedPrice: Number(e.target.value) || 0 })}
+              />
+            </Field>
+          )}
+          {k.b2b_pricing_method === "extra_discount" && (
+            <Field label="Desconto extra B2B (%) sobre o preço de varejo do kit">
+              <Input
+                type="number"
+                min={0}
+                max={100}
+                step={1}
+                defaultValue={k.b2b_extra_discount_percent ?? 0}
+                onBlur={(e) =>
+                  onChange({ b2bExtraDiscountPercent: Number(e.target.value) || 0 })
+                }
+              />
+            </Field>
+          )}
+        </div>
+      )}
+
+      <div className="grid sm:grid-cols-2 gap-3 pt-2 border-t border-border">
+        <ToggleRow
+          label="Aceita cupom"
+          checked={k.accepts_coupon}
+          onChange={(v) => onChange({ acceptsCoupon: v })}
+          icon={Sparkles}
+          help="Quando ligado, cupons podem ser aplicados sobre o preço do kit."
+        />
+        <ToggleRow
+          label="Acumular com preço B2B do produto"
+          checked={k.stack_with_b2b}
+          onChange={(v) => onChange({ stackWithB2b: v })}
+          icon={Sparkles}
+          help="Cuidado: pode reduzir muito a margem. Use apenas se intencional."
+        />
+      </div>
+
+      {/* Preview de preços */}
+      {bundle.items.length > 0 && (
+        <div className="grid sm:grid-cols-2 gap-3 pt-2">
+          <PricingPreviewCard title="Cliente final (varejo)" pricing={previewRetail} />
+          <PricingPreviewCard title="Empresa aprovada (B2B)" pricing={previewB2b} />
+        </div>
+      )}
+
+      {previewRetail.belowCost && (
+        <div className="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded px-2 py-1.5 flex items-start gap-2">
+          <AlertCircle className="w-3 h-3 mt-0.5 shrink-0" />
+          <span>
+            Atenção: o preço de varejo deste kit está <strong>abaixo do custo</strong> cadastrado dos
+            componentes. Confirme se isso é intencional.
+          </span>
+        </div>
+      )}
+      {previewRetail.marginAvailable === false && (
+        <div className="text-[11px] text-muted-foreground">
+          Alguns componentes não têm custo cadastrado — margem do kit não foi calculada.
+        </div>
+      )}
+    </div>
+  );
+}
+
+function PricingPreviewCard({
+  title,
+  pricing,
+}: {
+  title: string;
+  pricing: ReturnType<typeof computeKitPricing>;
+}) {
+  return (
+    <div className="rounded-md border border-border bg-surface/40 p-3 text-xs space-y-1">
+      <div className="font-medium text-foreground">{title}</div>
+      <div className="flex justify-between">
+        <span>Subtotal varejo</span>
+        <span>{formatBRL(pricing.retailSum)}</span>
+      </div>
+      <div className="flex justify-between font-semibold">
+        <span>Preço aplicado</span>
+        <span>{formatBRL(pricing.appliedPrice)}</span>
+      </div>
+      {pricing.savings > 0 && (
+        <div className="flex justify-between text-emerald-700">
+          <span>Economia</span>
+          <span>− {formatBRL(pricing.savings)}</span>
+        </div>
+      )}
+      {pricing.unitApprox != null && (
+        <div className="text-[10px] text-muted-foreground">
+          ≈ {formatBRL(pricing.unitApprox)} / un ({pricing.totalUnits} un)
+        </div>
+      )}
+      {pricing.marginAvailable && pricing.marginPercent != null && (
+        <div
+          className={`text-[10px] ${pricing.belowCost ? "text-red-600" : "text-muted-foreground"}`}
+        >
+          Margem: {pricing.marginPercent.toFixed(1)}% ({formatBRL(pricing.marginAmount ?? 0)})
+        </div>
+      )}
+      {pricing.blocked && (
+        <div className="text-[10px] text-amber-700">
+          {pricing.blocked === "not_available_retail" && "Não disponível no varejo."}
+          {pricing.blocked === "not_available_b2b" && "Não disponível para B2B."}
+          {pricing.blocked === "below_min_qty" && "Abaixo da quantidade mínima B2B."}
+          {pricing.blocked === "no_items" && "Sem itens."}
+        </div>
+      )}
+    </div>
+  );
+}
   return (
     <label className="block space-y-1">
       <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
