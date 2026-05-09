@@ -567,17 +567,16 @@ export async function computeBundleApplication(
     for (const r of rebateItems) {
       consumed.set(r.product_id, (consumed.get(r.product_id) ?? 0) + r.considered_qty);
       const prev = perItem.get(r.product_id);
-      const eligible = r.pricing_source !== "b2b";
+      const itemEligible = r.bundle_discount_amount > 0 || r.pricing_source !== "b2b";
       if (!prev) {
         perItem.set(r.product_id, {
           bundle_id: row.bundle_id,
           bundle_name: row.bundle_name,
           bundle_discount_amount: r.bundle_discount_amount,
-          bundle_discount_eligible: eligible,
-          block_reason: eligible ? null : "b2b_price_applied",
+          bundle_discount_eligible: itemEligible,
+          block_reason: itemEligible ? null : "b2b_price_applied",
         });
       } else {
-        // Soma descontos; mantém referência do bundle de maior aporte.
         const newAmount = round2(prev.bundle_discount_amount + r.bundle_discount_amount);
         if (r.bundle_discount_amount > prev.bundle_discount_amount) {
           perItem.set(r.product_id, {
