@@ -94,6 +94,19 @@ type BundleMetaPatch = {
   notes?: string | null;
   discountType?: "none" | "fixed_amount" | "percentage";
   discountValue?: number;
+  kitType?: KitType;
+  pricingMethod?: KitPricingMethod;
+  fixedPrice?: number | null;
+  discountPercent?: number | null;
+  discountAmount?: number | null;
+  availableRetail?: boolean;
+  availableB2b?: boolean;
+  b2bPricingMethod?: KitB2bPricingMethod;
+  b2bFixedPrice?: number | null;
+  b2bExtraDiscountPercent?: number | null;
+  b2bMinQuantity?: number;
+  acceptsCoupon?: boolean;
+  stackWithB2b?: boolean;
 };
 
 const BUNDLE_PERCENT_LIMIT = 50;
