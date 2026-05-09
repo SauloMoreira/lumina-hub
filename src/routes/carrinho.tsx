@@ -259,19 +259,10 @@ function CartPage() {
                   )}
                 </span>
               </div>
-              {!freeShip.qualifies && (
+              {freeShip.hasEligibleItems && !freeShip.qualifies && (
                 <p className="text-xs text-muted-foreground">
-                  {freeShip.hasEligibleItems ? (
-                    <>
-                      Faltam <strong>{formatBRL(freeShip.remaining)}</strong> em produtos
-                      participantes para frete grátis.
-                    </>
-                  ) : (
-                    <>
-                      Adicione produtos participantes para aproveitar frete grátis acima de{" "}
-                      {formatBRL(FREE_SHIPPING_THRESHOLD)}.
-                    </>
-                  )}
+                  Faltam <strong>{formatBRL(freeShip.remaining)}</strong> em produtos
+                  participantes para frete grátis.
                 </p>
               )}
               <div className="border-t border-border pt-3 flex justify-between items-end">
