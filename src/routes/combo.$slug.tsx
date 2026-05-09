@@ -178,18 +178,7 @@ function ComboDetailPage() {
 
           {/* Aside: subtotal + CTA */}
           <aside className="bg-card border border-border rounded-xl p-5 h-fit lg:sticky lg:top-20 space-y-3">
-            <div>
-              <div className="text-xs text-muted-foreground uppercase tracking-wider">
-                Subtotal estimado
-              </div>
-              <div className="font-display text-2xl font-bold text-primary">
-                {formatBRL(bundle.subtotal)}
-              </div>
-              <p className="text-[11px] text-muted-foreground mt-1">
-                Os preços de cada item são aplicados no carrinho. O preço empresa (B2B), quando
-                aplicável, é calculado pelo backend para clientes empresariais aprovados.
-              </p>
-            </div>
+            <KitPricingPanel bundle={bundle} />
             <Button
               className="w-full gap-2"
               size="lg"
