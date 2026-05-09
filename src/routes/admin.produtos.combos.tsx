@@ -765,12 +765,69 @@ function BundleImagesGallery({ bundleId, bundleName }: { bundleId: string; bundl
             )}
             {uploading ? "Enviando…" : "Enviar arquivo"}
           </Button>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            disabled={atLimit || aiUploading}
+            onClick={() => setAiOpen(true)}
+          >
+            {aiUploading ? (
+              <Loader2 className="w-4 h-4 mr-1 animate-spin" />
+            ) : (
+              <Sparkles className="w-4 h-4 mr-1" />
+            )}
+            Gerar com IA
+          </Button>
         </div>
         {atLimit && (
           <p className="text-[11px] text-amber-600">
             Limite de 4 imagens atingido. Remova uma para adicionar outra.
           </p>
         )}
+
+        <AiImageGeneratorDialog
+          open={aiOpen}
+          onOpenChange={setAiOpen}
+          kind="bundle"
+          name={bundleName}
+          onApply={async (dataUrl) => {
+            setAiUploading(true);
+            try {
+              const match = dataUrl.match(/^data:([^;]+);base64,(.+)$/);
+              if (!match) throw new Error("Imagem inválida");
+              const contentType = match[1];
+              const bin = atob(match[2]);
+              const bytes = new Uint8Array(bin.length);
+              for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+              const blob = new Blob([bytes], { type: contentType });
+              const ext =
+                (contentType.split("/")[1] || "png").replace(/[^a-z0-9]/g, "") || "png";
+              const unique =
+                typeof crypto !== "undefined" && "randomUUID" in crypto
+                  ? crypto.randomUUID()
+                  : `${Date.now()}`;
+              const path = `bundles/${Date.now()}-${unique}.${ext}`;
+              const { error } = await supabase.storage
+                .from("product-images")
+                .upload(path, blob, {
+                  contentType,
+                  cacheControl: "31536000",
+                  upsert: false,
+                });
+              if (error) throw new Error(error.message);
+              const { data } = supabase.storage.from("product-images").getPublicUrl(path);
+              await new Promise<void>((resolve, reject) =>
+                addMut.mutate(
+                  { url: data.publicUrl, source: "ai_generated" },
+                  { onSuccess: () => resolve(), onError: (e) => reject(e) },
+                ),
+              );
+            } finally {
+              setAiUploading(false);
+            }
+          }}
+        />
       </div>
     </Field>
   );
