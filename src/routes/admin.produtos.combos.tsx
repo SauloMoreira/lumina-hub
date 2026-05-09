@@ -520,7 +520,7 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
 const ALLOWED_IMAGE_TYPES = ["image/jpeg", "image/png", "image/webp"];
 const MAX_IMAGE_BYTES = 5 * 1024 * 1024;
 
-function BundleImagesGallery({ bundleId }: { bundleId: string }) {
+function BundleImagesGallery({ bundleId, bundleName }: { bundleId: string; bundleName: string }) {
   const qc = useQueryClient();
   const inputRef = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
