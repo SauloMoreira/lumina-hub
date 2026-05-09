@@ -228,6 +228,7 @@ async function loadBundlesWithItems(filter: {
   if (error) throw error;
 
   const rows = (data ?? []) as Array<Record<string, any>>;
+  const isB2bApproved = await resolveB2bApprovalForRequest();
   return rows.map((b) => {
     const itemRows = (b.items ?? []) as Array<Record<string, any>>;
     const items: BundleItemPublic[] = itemRows
@@ -302,6 +303,19 @@ async function loadBundlesWithItems(filter: {
       stack_with_b2b: !!b.stack_with_b2b,
     };
 
+    const pricing = computeKitPricing({
+      kit,
+      items: items.map((it) => ({
+        quantity: it.quantity,
+        retail_unit_price: it.product.final_price,
+        b2b_unit_price: it.product.b2b_price,
+        cost_unit_price: it.product.cost_price,
+        b2b_enabled: it.product.b2b_enabled,
+      })),
+      isB2bApproved,
+      kitQuantity: 1,
+    });
+
     return {
       id: b.id,
       slug: b.slug,
@@ -321,6 +335,8 @@ async function loadBundlesWithItems(filter: {
       items_count: items.length,
       total_units: totalUnits,
       availability: calcAvailability(items),
+      pricing,
+      is_b2b_approved: isB2bApproved,
     } satisfies BundlePublic;
   });
 }
