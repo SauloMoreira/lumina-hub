@@ -386,7 +386,8 @@ export async function computeBundleApplication(
       }
 
       const unitPrice = Number(ci.unit_price ?? 0);
-      const lineEligible = ci.pricing_source === "b2b" ? 0 : unitPrice * consideredQty;
+      // line_value = valor pago de fato pela linha (já reflete pricing_source).
+      const lineValue = unitPrice * consideredQty;
       builds.push({
         product_id: ci.product_id,
         required_qty: ci.required_qty,
@@ -394,7 +395,7 @@ export async function computeBundleApplication(
         unit_price: unitPrice,
         pricing_source: ci.pricing_source,
         considered_qty: consideredQty,
-        line_eligible: lineEligible,
+        line_eligible: lineValue,
       });
     }
 
@@ -408,30 +409,104 @@ export async function computeBundleApplication(
       continue;
     }
 
-    const eligibleSubtotalForRebate = builds.reduce((s, b) => s + b.line_eligible, 0);
-    if (eligibleSubtotalForRebate <= 0) {
+    const cfg = kitConfigById.get(row.bundle_id);
+    const useNewEngine = cfg ? !isLegacyKit(cfg) : false;
+
+    // Soma do que o carrinho já cobraria pelo conteúdo de UM kit (com fonte por item).
+    const baselineForKit = builds.reduce((s, b) => s + b.line_eligible, 0);
+    if (baselineForKit <= 0) {
       blocked.push({
         bundle_id: row.bundle_id,
         bundle_name: row.bundle_name,
         status: "not_eligible",
-        reason: "Sem subtotal varejo elegível.",
+        reason: "Sem subtotal elegível.",
       });
       continue;
     }
 
-    // Recalcular desconto local com o subtotal recortado (pode ser menor que estimated_discount
-    // se itens varejo perderam unidades). Usar mesmas regras do RPC.
+    // discount_type/value que vão no detalhamento (legado por compatibilidade).
+    let appliedDiscountType: "fixed_amount" | "percentage" = (row.discount_type === "percentage"
+      ? "percentage"
+      : "fixed_amount");
+    let appliedDiscountValue = Number(row.discount_value ?? 0);
+
     let bundleDiscount = 0;
-    if (row.discount_type === "fixed_amount") {
-      bundleDiscount = Math.min(Math.max(0, Number(row.discount_value)), eligibleSubtotalForRebate);
-    } else if (row.discount_type === "percentage") {
-      const pct = Math.min(Math.max(0, Number(row.discount_value)), 50); // limite de segurança 50%
-      bundleDiscount = Math.min(
-        round2(eligibleSubtotalForRebate * (pct / 100)),
-        eligibleSubtotalForRebate,
-      );
+    let allowAllItems = false; // se true, rateio inclui itens B2B
+
+    if (useNewEngine && cfg) {
+      const items = kitItemsByBundle.get(row.bundle_id) ?? [];
+      const kitInstancesInCart = builds.length > 0
+        ? Math.max(
+            1,
+            Math.min(
+              ...builds.map((b) =>
+                b.required_qty > 0 ? Math.floor(b.cart_qty / b.required_qty) : 1,
+              ),
+            ),
+          )
+        : 1;
+      const result = computeKitPricing({
+        kit: cfg,
+        items,
+        isB2bApproved,
+        kitQuantity: kitInstancesInCart,
+      });
+      if (result.blocked || items.length === 0) {
+        blocked.push({
+          bundle_id: row.bundle_id,
+          bundle_name: row.bundle_name,
+          status: "not_eligible",
+          reason:
+            result.blocked === "below_min_qty"
+              ? `Mínimo B2B: ${cfg.b2b_min_quantity} kit(s).`
+              : result.blocked === "not_available_retail"
+                ? "Kit não disponível no varejo."
+                : result.blocked === "not_available_b2b"
+                  ? "Kit não disponível para empresas."
+                  : "Kit indisponível.",
+        });
+        continue;
+      }
+      // Quando source='b2b' o kit usa preço de empresa; rateio cobre todos os itens.
+      // Quando source='retail' o rateio cobre todos (kit promo aplica sobre o conjunto).
+      bundleDiscount = round2(Math.max(0, baselineForKit - result.appliedPrice));
+      allowAllItems = true;
+      // Reportar tipo/valor coerente com o método aplicado.
+      if (cfg.pricing_method === "fixed_price" || (result.source === "b2b" && cfg.b2b_pricing_method === "fixed_price")) {
+        appliedDiscountType = "fixed_amount";
+        appliedDiscountValue = bundleDiscount;
+      } else if (cfg.pricing_method === "percent_discount") {
+        appliedDiscountType = "percentage";
+        appliedDiscountValue = Number(cfg.discount_percent ?? 0);
+      } else if (cfg.pricing_method === "fixed_discount") {
+        appliedDiscountType = "fixed_amount";
+        appliedDiscountValue = Number(cfg.discount_amount ?? 0);
+      }
+    } else {
+      // Caminho legado — só rateia sobre itens varejo (compat com kits antigos).
+      const eligibleSubtotalRetail = builds
+        .filter((b) => b.pricing_source !== "b2b")
+        .reduce((s, b) => s + b.line_eligible, 0);
+      if (eligibleSubtotalRetail <= 0) {
+        blocked.push({
+          bundle_id: row.bundle_id,
+          bundle_name: row.bundle_name,
+          status: "not_eligible",
+          reason: "Sem subtotal varejo elegível.",
+        });
+        continue;
+      }
+      if (row.discount_type === "fixed_amount") {
+        bundleDiscount = Math.min(Math.max(0, Number(row.discount_value)), eligibleSubtotalRetail);
+      } else if (row.discount_type === "percentage") {
+        const pct = Math.min(Math.max(0, Number(row.discount_value)), 50);
+        bundleDiscount = Math.min(
+          round2(eligibleSubtotalRetail * (pct / 100)),
+          eligibleSubtotalRetail,
+        );
+      }
+      bundleDiscount = round2(bundleDiscount);
     }
-    bundleDiscount = round2(bundleDiscount);
 
     if (bundleDiscount <= 0) {
       blocked.push({
@@ -443,7 +518,7 @@ export async function computeBundleApplication(
       continue;
     }
 
-    // Rateio proporcional entre itens varejo. Itens B2B mantêm 0.
+    // Rateio proporcional. allowAllItems=true (motor novo) inclui itens B2B no rateio.
     const rebateItems: AppliedBundleItem[] = builds.map((b) => ({
       product_id: b.product_id,
       required_qty: b.required_qty,
@@ -454,17 +529,21 @@ export async function computeBundleApplication(
       bundle_discount_amount: 0,
     }));
 
+    const allocBaseTotal = allowAllItems
+      ? builds.reduce((s, b) => s + b.line_eligible, 0)
+      : builds.filter((b) => b.pricing_source !== "b2b").reduce((s, b) => s + b.line_eligible, 0);
+
     let allocated = 0;
     let lastEligibleIdx = -1;
     for (let i = 0; i < builds.length; i++) {
       const b = builds[i];
-      if (b.line_eligible <= 0) continue;
+      const includes = allowAllItems ? b.line_eligible > 0 : b.line_eligible > 0 && b.pricing_source !== "b2b";
+      if (!includes) continue;
       lastEligibleIdx = i;
-      const share = round2((b.line_eligible / eligibleSubtotalForRebate) * bundleDiscount);
+      const share = round2((b.line_eligible / allocBaseTotal) * bundleDiscount);
       rebateItems[i].bundle_discount_amount = share;
       allocated += share;
     }
-    // Ajuste de centavos no último item elegível.
     if (lastEligibleIdx >= 0 && Math.abs(allocated - bundleDiscount) > 0.001) {
       const diff = round2(bundleDiscount - allocated);
       rebateItems[lastEligibleIdx].bundle_discount_amount = round2(
