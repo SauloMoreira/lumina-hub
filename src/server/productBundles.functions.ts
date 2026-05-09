@@ -518,6 +518,15 @@ export const adminCreateBundle = createServerFn({ method: "POST" })
 // ----------------------------------------------------------------------------
 // ADMIN: atualizar
 // ----------------------------------------------------------------------------
+const KitTypeEnum = z.enum(["combinado", "promocional", "b2b", "estrutural"]);
+const KitPricingMethodEnum = z.enum([
+  "sum",
+  "percent_discount",
+  "fixed_discount",
+  "fixed_price",
+]);
+const KitB2bMethodEnum = z.enum(["inherit", "fixed_price", "extra_discount"]);
+
 const AdminUpdateInput = z.object({
   id: z.string().uuid(),
   name: z.string().trim().min(2).max(160).optional(),
@@ -531,6 +540,20 @@ const AdminUpdateInput = z.object({
   notes: z.string().trim().max(2000).optional().nullable(),
   discountType: DiscountTypeEnum.optional(),
   discountValue: z.number().min(0).max(100000).optional(),
+  // Novos campos comerciais do kit
+  kitType: KitTypeEnum.optional(),
+  pricingMethod: KitPricingMethodEnum.optional(),
+  fixedPrice: z.number().min(0).max(1_000_000).nullable().optional(),
+  discountPercent: z.number().min(0).max(100).nullable().optional(),
+  discountAmount: z.number().min(0).max(1_000_000).nullable().optional(),
+  availableRetail: z.boolean().optional(),
+  availableB2b: z.boolean().optional(),
+  b2bPricingMethod: KitB2bMethodEnum.optional(),
+  b2bFixedPrice: z.number().min(0).max(1_000_000).nullable().optional(),
+  b2bExtraDiscountPercent: z.number().min(0).max(100).nullable().optional(),
+  b2bMinQuantity: z.number().int().min(1).max(9999).optional(),
+  acceptsCoupon: z.boolean().optional(),
+  stackWithB2b: z.boolean().optional(),
 });
 
 export const adminUpdateBundle = createServerFn({ method: "POST" })
@@ -538,20 +561,7 @@ export const adminUpdateBundle = createServerFn({ method: "POST" })
   .handler(async ({ data }) => {
     await requireAdmin();
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    type BundlePatch = {
-      name?: string;
-      slug?: string;
-      description?: string | null;
-      image_url?: string | null;
-      is_active?: boolean;
-      is_featured?: boolean;
-      start_date?: string | null;
-      end_date?: string | null;
-      notes?: string | null;
-      discount_type?: BundleDiscountType;
-      discount_value?: number;
-    };
-    const patch: BundlePatch = {};
+    const patch: Record<string, unknown> = {};
     if (data.name !== undefined) patch.name = data.name;
     if (data.slug !== undefined) patch.slug = data.slug;
     if (data.description !== undefined) patch.description = data.description;
