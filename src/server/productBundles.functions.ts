@@ -347,6 +347,10 @@ async function loadBundlesWithItems(filter: {
 const ListPublicInput = z.object({
   limit: z.number().int().min(1).max(48).optional(),
   featuredOnly: z.boolean().optional(),
+  /** Apenas kits com available_b2b=true (vitrine /atacado). */
+  b2bOnly: z.boolean().optional(),
+  /** Apenas kits com available_retail=true (carrosséis varejo). */
+  retailOnly: z.boolean().optional(),
 });
 
 export const listPublicBundles = createServerFn({ method: "POST" })
@@ -362,6 +366,8 @@ export const listPublicBundles = createServerFn({ method: "POST" })
       if (b.items.length === 0) return false;
       // Esconde kits B2B-only de visitantes/clientes não aprovados
       if (!b.kit.available_retail && !b.is_b2b_approved) return false;
+      if (data.b2bOnly && !b.kit.available_b2b) return false;
+      if (data.retailOnly && !b.kit.available_retail) return false;
       return true;
     });
   });

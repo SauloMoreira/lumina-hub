@@ -17,6 +17,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { buildSeo } from "@/lib/seo";
 import { formatCNPJ } from "@/lib/cnpj";
 import { ProductCard } from "@/components/store/ProductCard";
+import { KitsCarousel } from "@/components/store/KitsCarousel";
 import { StoreLayout } from "@/components/layout/StoreLayout";
 import { ProductImagePlaceholder } from "@/components/store/ProductImagePlaceholder";
 import { formatBRL, STORE_WHATSAPP } from "@/lib/domain";
@@ -354,6 +355,16 @@ function AtacadoPage() {
             </p>
           )}
         </section>
+
+        {/* Kits especiais para empresas */}
+        <div className="max-w-6xl mx-auto">
+          <KitsCarousel
+            title="Kits especiais para empresas"
+            subtitle="Condições diferenciadas para compras em volume."
+            mode="b2b"
+            limit={6}
+          />
+        </div>
 
         {/* Benefícios */}
         <section className="max-w-6xl mx-auto px-4 py-10 grid sm:grid-cols-3 gap-4">
