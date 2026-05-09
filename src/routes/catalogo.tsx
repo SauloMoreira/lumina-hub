@@ -765,6 +765,15 @@ function CatalogPage() {
             )}
           </div>
         </div>
+
+        <KitsCarousel
+          title="Confira também nossos kits prontos"
+          subtitle="Produtos combinados para facilitar sua instalação."
+          mode="retail"
+          preferCategorySlug={search.cat}
+          limit={6}
+          className="mt-2"
+        />
       </div>
     </StoreLayout>
   );
