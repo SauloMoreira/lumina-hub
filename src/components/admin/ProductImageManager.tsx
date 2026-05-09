@@ -67,6 +67,7 @@ export const ProductImageManager = forwardRef<ProductImageManagerHandle, Props>(
     const [optimizingId, setOptimizingId] = useState<string | null>(null);
     const [optimizingAll, setOptimizingAll] = useState(false);
     const [enhancingPendingId, setEnhancingPendingId] = useState<string | null>(null);
+    const [aiOpen, setAiOpen] = useState(false);
 
     const {
       data: images = [],
