@@ -87,11 +87,7 @@ function CombosListPage() {
                 </div>
                 <div className="p-4 flex-1 flex flex-col gap-2">
                   <div className="flex items-center justify-between gap-2">
-                    <span
-                      className={`text-[10px] font-medium px-2 py-0.5 rounded-full border ${TONE[b.availability]}`}
-                    >
-                      {LABEL[b.availability]}
-                    </span>
+                    <KitTypeBadge bundle={b} />
                     <span className="text-[11px] text-muted-foreground">
                       {b.items_count} {b.items_count === 1 ? "item" : "itens"}
                     </span>
@@ -101,12 +97,7 @@ function CombosListPage() {
                     <p className="text-xs text-muted-foreground line-clamp-2">{b.description}</p>
                   )}
                   <div className="mt-auto pt-2 flex items-center justify-between">
-                    <div>
-                      <div className="text-[10px] text-muted-foreground">Subtotal estimado</div>
-                      <div className="font-display font-bold text-primary">
-                        {formatBRL(b.subtotal)}
-                      </div>
-                    </div>
+                    <KitPriceBlock bundle={b} />
                     <span className="text-xs text-primary inline-flex items-center gap-1">
                       Ver combo <ArrowRight className="w-3 h-3" />
                     </span>
@@ -118,5 +109,45 @@ function CombosListPage() {
         )}
       </div>
     </StoreLayout>
+  );
+}
+
+function KitTypeBadge({ bundle }: { bundle: BundlePublic }) {
+  const t = bundle.kit.kit_type;
+  const isB2bSource = bundle.pricing.source === "b2b";
+  const label = isB2bSource ? "Preço empresa" : KIT_TYPE_BADGES[t];
+  const tone =
+    isB2bSource
+      ? "bg-blue-50 text-blue-700 border-blue-200"
+      : t === "promocional"
+        ? "bg-amber-50 text-amber-700 border-amber-200"
+        : t === "b2b"
+          ? "bg-blue-50 text-blue-700 border-blue-200"
+          : "bg-emerald-50 text-emerald-700 border-emerald-200";
+  const Icon = isB2bSource || t === "b2b" ? Building2 : Sparkles;
+  return (
+    <span className={`inline-flex items-center gap-1 text-[10px] font-medium px-2 py-0.5 rounded-full border ${tone}`}>
+      <Icon className="w-3 h-3" />
+      {label}
+    </span>
+  );
+}
+
+function KitPriceBlock({ bundle }: { bundle: BundlePublic }) {
+  const p = bundle.pricing;
+  const showStrike = p.savings > 0 && p.appliedPrice < p.retailSum;
+  return (
+    <div>
+      <div className="text-[10px] text-muted-foreground">
+        {p.source === "b2b" ? "Preço empresa" : "Preço do kit"}
+      </div>
+      {showStrike && (
+        <div className="text-[11px] text-muted-foreground line-through">{formatBRL(p.retailSum)}</div>
+      )}
+      <div className="font-display font-bold text-primary">{formatBRL(p.appliedPrice)}</div>
+      {p.unitApprox != null && (
+        <div className="text-[10px] text-muted-foreground">≈ {formatBRL(p.unitApprox)} / un</div>
+      )}
+    </div>
   );
 }
