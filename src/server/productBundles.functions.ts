@@ -358,8 +358,12 @@ export const listPublicBundles = createServerFn({ method: "POST" })
       limit: data.limit ?? 24,
     });
     const filtered = data.featuredOnly ? bundles.filter((b) => b.is_featured) : bundles;
-    // Apenas combos com pelo menos 1 item válido
-    return filtered.filter((b) => b.items.length > 0);
+    return filtered.filter((b) => {
+      if (b.items.length === 0) return false;
+      // Esconde kits B2B-only de visitantes/clientes não aprovados
+      if (!b.kit.available_retail && !b.is_b2b_approved) return false;
+      return true;
+    });
   });
 
 // ----------------------------------------------------------------------------
