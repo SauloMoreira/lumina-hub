@@ -997,7 +997,15 @@ function HomePage() {
     offers_showcase: renderOffersShowcase,
     featured_showcase: renderFeaturedShowcase,
     dynamic_showcases: renderDynamicShowcases,
-    combos_showcase: () => null,
+    combos_showcase: () => (
+      <KitsCarousel
+        key="combos_showcase"
+        title="Kits e Combos em destaque"
+        subtitle="Soluções prontas para economizar e facilitar sua instalação."
+        mode="retail"
+        limit={6}
+      />
+    ),
     institutional_block: () => null,
     main_cta: renderMainCta,
   };
