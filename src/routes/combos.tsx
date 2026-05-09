@@ -1,10 +1,9 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { PackagePlus, ArrowRight, Building2, Sparkles } from "lucide-react";
+import { PackagePlus } from "lucide-react";
 import { StoreLayout } from "@/components/layout/StoreLayout";
 import { listPublicBundles, type BundlePublic } from "@/server/productBundles.functions";
-import { KIT_TYPE_BADGES } from "@/lib/kitPricing";
-import { formatBRL } from "@/lib/domain";
+import { KitCard } from "@/components/store/KitCard";
 
 export const Route = createFileRoute("/combos")({
   component: CombosListPage,
@@ -19,6 +18,12 @@ export const Route = createFileRoute("/combos")({
   }),
 });
 
+type Group = {
+  key: string;
+  title: string;
+  subtitle?: string;
+  bundles: BundlePublic[];
+};
 
 function CombosListPage() {
   const q = useQuery({
@@ -28,6 +33,32 @@ function CombosListPage() {
   });
 
   const bundles = q.data ?? [];
+
+  const groups: Group[] = [
+    {
+      key: "promocional",
+      title: "Kits promocionais",
+      subtitle: "Pacotes com preço fechado para você economizar.",
+      bundles: bundles.filter((b) => b.kit.kit_type === "promocional"),
+    },
+    {
+      key: "combinado",
+      title: "Compre junto",
+      subtitle: "Produtos que se complementam para facilitar sua instalação.",
+      bundles: bundles.filter((b) => b.kit.kit_type === "combinado"),
+    },
+    {
+      key: "b2b",
+      title: "Kits especiais para empresas",
+      subtitle: "Condições diferenciadas para compras em volume.",
+      bundles: bundles.filter((b) => b.kit.kit_type === "b2b" || b.kit.available_b2b),
+    },
+    {
+      key: "estrutural",
+      title: "Soluções prontas",
+      bundles: bundles.filter((b) => b.kit.kit_type === "estrutural"),
+    },
+  ].filter((g) => g.bundles.length > 0);
 
   return (
     <StoreLayout>
@@ -50,91 +81,37 @@ function CombosListPage() {
             </p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {bundles.map((b) => (
-              <Link
-                key={b.id}
-                to="/combo/$slug"
-                params={{ slug: b.slug ?? b.id }}
-                className="group bg-card border border-border rounded-xl overflow-hidden hover:shadow-md transition-shadow flex flex-col"
-              >
-                <div className="aspect-[4/3] bg-surface overflow-hidden">
-                  {b.image_url ? (
-                    <img
-                      src={b.image_url}
-                      alt={b.name}
-                      className="w-full h-full object-cover group-hover:scale-105 transition-transform"
-                      loading="lazy"
+          <div className="space-y-12">
+            {groups.map((g) => (
+              <section key={g.key} aria-label={g.title}>
+                <header className="mb-4">
+                  <h2 className="font-display text-xl md:text-2xl font-bold">{g.title}</h2>
+                  {g.subtitle && (
+                    <p className="text-sm text-muted-foreground mt-1">{g.subtitle}</p>
+                  )}
+                </header>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {g.bundles.map((b) => (
+                    <KitCard
+                      key={b.id}
+                      bundle={b}
+                      mode={g.key === "b2b" ? "b2b" : "retail"}
                     />
-                  ) : (
-                    <div className="w-full h-full flex items-center justify-center">
-                      <PackagePlus className="w-10 h-10 text-muted-foreground/50" />
-                    </div>
-                  )}
+                  ))}
                 </div>
-                <div className="p-4 flex-1 flex flex-col gap-2">
-                  <div className="flex items-center justify-between gap-2">
-                    <KitTypeBadge bundle={b} />
-                    <span className="text-[11px] text-muted-foreground">
-                      {b.items_count} {b.items_count === 1 ? "item" : "itens"}
-                    </span>
-                  </div>
-                  <h2 className="font-display font-semibold text-base line-clamp-2">{b.name}</h2>
-                  {b.description && (
-                    <p className="text-xs text-muted-foreground line-clamp-2">{b.description}</p>
-                  )}
-                  <div className="mt-auto pt-2 flex items-center justify-between">
-                    <KitPriceBlock bundle={b} />
-                    <span className="text-xs text-primary inline-flex items-center gap-1">
-                      Ver combo <ArrowRight className="w-3 h-3" />
-                    </span>
-                  </div>
-                </div>
-              </Link>
+              </section>
             ))}
           </div>
         )}
+
+        <div className="mt-12 text-xs text-muted-foreground">
+          Não encontrou o que procura?{" "}
+          <Link to="/catalogo" className="text-primary underline">
+            Ver catálogo completo
+          </Link>
+          .
+        </div>
       </div>
     </StoreLayout>
-  );
-}
-
-function KitTypeBadge({ bundle }: { bundle: BundlePublic }) {
-  const t = bundle.kit.kit_type;
-  const isB2bSource = bundle.pricing.source === "b2b";
-  const label = isB2bSource ? "Preço empresa" : KIT_TYPE_BADGES[t];
-  const tone =
-    isB2bSource
-      ? "bg-blue-50 text-blue-700 border-blue-200"
-      : t === "promocional"
-        ? "bg-amber-50 text-amber-700 border-amber-200"
-        : t === "b2b"
-          ? "bg-blue-50 text-blue-700 border-blue-200"
-          : "bg-emerald-50 text-emerald-700 border-emerald-200";
-  const Icon = isB2bSource || t === "b2b" ? Building2 : Sparkles;
-  return (
-    <span className={`inline-flex items-center gap-1 text-[10px] font-medium px-2 py-0.5 rounded-full border ${tone}`}>
-      <Icon className="w-3 h-3" />
-      {label}
-    </span>
-  );
-}
-
-function KitPriceBlock({ bundle }: { bundle: BundlePublic }) {
-  const p = bundle.pricing;
-  const showStrike = p.savings > 0 && p.appliedPrice < p.retailSum;
-  return (
-    <div>
-      <div className="text-[10px] text-muted-foreground">
-        {p.source === "b2b" ? "Preço empresa" : "Preço do kit"}
-      </div>
-      {showStrike && (
-        <div className="text-[11px] text-muted-foreground line-through">{formatBRL(p.retailSum)}</div>
-      )}
-      <div className="font-display font-bold text-primary">{formatBRL(p.appliedPrice)}</div>
-      {p.unitApprox != null && (
-        <div className="text-[10px] text-muted-foreground">≈ {formatBRL(p.unitApprox)} / un</div>
-      )}
-    </div>
   );
 }
