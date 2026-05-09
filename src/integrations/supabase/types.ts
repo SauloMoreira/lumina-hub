@@ -2742,50 +2742,89 @@ export type Database = {
       }
       product_bundles: {
         Row: {
+          accepts_coupon: boolean
+          available_b2b: boolean
+          available_retail: boolean
+          b2b_extra_discount_percent: number | null
+          b2b_fixed_price: number | null
+          b2b_min_quantity: number
+          b2b_pricing_method: string
           created_at: string
           description: string | null
+          discount_amount: number | null
+          discount_percent: number | null
           discount_type: Database["public"]["Enums"]["bundle_discount_type"]
           discount_value: number
           end_date: string | null
+          fixed_price: number | null
           id: string
           image_url: string | null
           is_active: boolean
           is_featured: boolean
+          kit_type: string
           name: string
           notes: string | null
+          pricing_method: string
           slug: string | null
+          stack_with_b2b: boolean
           start_date: string | null
           updated_at: string
         }
         Insert: {
+          accepts_coupon?: boolean
+          available_b2b?: boolean
+          available_retail?: boolean
+          b2b_extra_discount_percent?: number | null
+          b2b_fixed_price?: number | null
+          b2b_min_quantity?: number
+          b2b_pricing_method?: string
           created_at?: string
           description?: string | null
+          discount_amount?: number | null
+          discount_percent?: number | null
           discount_type?: Database["public"]["Enums"]["bundle_discount_type"]
           discount_value?: number
           end_date?: string | null
+          fixed_price?: number | null
           id?: string
           image_url?: string | null
           is_active?: boolean
           is_featured?: boolean
+          kit_type?: string
           name: string
           notes?: string | null
+          pricing_method?: string
           slug?: string | null
+          stack_with_b2b?: boolean
           start_date?: string | null
           updated_at?: string
         }
         Update: {
+          accepts_coupon?: boolean
+          available_b2b?: boolean
+          available_retail?: boolean
+          b2b_extra_discount_percent?: number | null
+          b2b_fixed_price?: number | null
+          b2b_min_quantity?: number
+          b2b_pricing_method?: string
           created_at?: string
           description?: string | null
+          discount_amount?: number | null
+          discount_percent?: number | null
           discount_type?: Database["public"]["Enums"]["bundle_discount_type"]
           discount_value?: number
           end_date?: string | null
+          fixed_price?: number | null
           id?: string
           image_url?: string | null
           is_active?: boolean
           is_featured?: boolean
+          kit_type?: string
           name?: string
           notes?: string | null
+          pricing_method?: string
           slug?: string | null
+          stack_with_b2b?: boolean
           start_date?: string | null
           updated_at?: string
         }
