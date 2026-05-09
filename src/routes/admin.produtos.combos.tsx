@@ -36,6 +36,15 @@ import {
 } from "@/components/ui/dialog";
 import { formatBRL } from "@/lib/domain";
 import {
+  KIT_TYPE_LABELS,
+  KIT_PRICING_METHOD_LABELS,
+  KIT_B2B_METHOD_LABELS,
+  computeKitPricing,
+  type KitType,
+  type KitPricingMethod,
+  type KitB2bPricingMethod,
+} from "@/lib/kitPricing";
+import {
   adminListBundles,
   adminCreateBundle,
   adminUpdateBundle,
