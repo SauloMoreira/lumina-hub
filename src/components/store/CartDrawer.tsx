@@ -81,30 +81,27 @@ export function CartDrawer() {
               </div>
             ) : (
               <>
-                {/* Progress frete grátis */}
-                <div className="px-5 py-3 bg-primary-tint border-b border-primary-border">
-                  {!freeShip.hasEligibleItems ? (
-                    <p className="text-xs text-primary font-medium mb-1.5">
-                      Adicione produtos participantes para aproveitar frete grátis acima de{" "}
-                      {formatBRL(FREE_SHIPPING_THRESHOLD)}.
-                    </p>
-                  ) : freeShip.qualifies ? (
-                    <p className="text-xs text-success font-medium mb-1.5">
-                      🎉 Você ganhou frete grátis!
-                    </p>
-                  ) : (
-                    <p className="text-xs text-primary font-medium mb-1.5">
-                      Faltam <strong>{formatBRL(freeShip.remaining)}</strong> em produtos
-                      participantes para frete grátis
-                    </p>
-                  )}
-                  <div className="h-1.5 bg-primary-foreground/40 rounded-full overflow-hidden">
-                    <div
-                      className="h-full bg-primary transition-all"
-                      style={{ width: `${progress}%` }}
-                    />
+                {/* Progress frete grátis — só renderiza com itens elegíveis */}
+                {freeShip.hasEligibleItems && (
+                  <div className="px-5 py-3 bg-primary-tint border-b border-primary-border">
+                    {freeShip.qualifies ? (
+                      <p className="text-xs text-success font-medium mb-1.5">
+                        🎉 Você ganhou frete grátis!
+                      </p>
+                    ) : (
+                      <p className="text-xs text-primary font-medium mb-1.5">
+                        Faltam <strong>{formatBRL(freeShip.remaining)}</strong> em produtos
+                        participantes para frete grátis
+                      </p>
+                    )}
+                    <div className="h-1.5 bg-primary-foreground/40 rounded-full overflow-hidden">
+                      <div
+                        className="h-full bg-primary transition-all"
+                        style={{ width: `${progress}%` }}
+                      />
+                    </div>
                   </div>
-                </div>
+                )}
 
                 <div className="flex-1 overflow-y-auto px-5 py-4 space-y-4">
                   {cart.items.map((item) => {
