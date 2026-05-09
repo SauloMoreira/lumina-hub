@@ -579,6 +579,20 @@ export const adminUpdateBundle = createServerFn({ method: "POST" })
       patch.discount_type = disc.discount_type;
       patch.discount_value = disc.discount_value;
     }
+    if (data.kitType !== undefined) patch.kit_type = data.kitType;
+    if (data.pricingMethod !== undefined) patch.pricing_method = data.pricingMethod;
+    if (data.fixedPrice !== undefined) patch.fixed_price = data.fixedPrice;
+    if (data.discountPercent !== undefined) patch.discount_percent = data.discountPercent;
+    if (data.discountAmount !== undefined) patch.discount_amount = data.discountAmount;
+    if (data.availableRetail !== undefined) patch.available_retail = data.availableRetail;
+    if (data.availableB2b !== undefined) patch.available_b2b = data.availableB2b;
+    if (data.b2bPricingMethod !== undefined) patch.b2b_pricing_method = data.b2bPricingMethod;
+    if (data.b2bFixedPrice !== undefined) patch.b2b_fixed_price = data.b2bFixedPrice;
+    if (data.b2bExtraDiscountPercent !== undefined)
+      patch.b2b_extra_discount_percent = data.b2bExtraDiscountPercent;
+    if (data.b2bMinQuantity !== undefined) patch.b2b_min_quantity = data.b2bMinQuantity;
+    if (data.acceptsCoupon !== undefined) patch.accepts_coupon = data.acceptsCoupon;
+    if (data.stackWithB2b !== undefined) patch.stack_with_b2b = data.stackWithB2b;
 
     // Se for ativar, valida cadastro
     if (data.isActive === true) {
@@ -591,7 +605,10 @@ export const adminUpdateBundle = createServerFn({ method: "POST" })
       if (broken.length > 0) throw new Error("bundle_has_broken_items");
     }
 
-    const { error } = await supabaseAdmin.from("product_bundles").update(patch).eq("id", data.id);
+    const { error } = await supabaseAdmin
+      .from("product_bundles")
+      .update(patch as never)
+      .eq("id", data.id);
     if (error) {
       if ((error as any).code === "23505") throw new Error("slug_already_exists");
       throw error;
