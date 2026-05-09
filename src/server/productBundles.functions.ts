@@ -172,6 +172,20 @@ function calcAvailability(items: BundleItemPublic[]): BundleAvailability {
   return someoneShort ? "partial" : "available";
 }
 
+async function resolveB2bApprovalForRequest(): Promise<boolean> {
+  try {
+    const userId = await getOptionalUserId();
+    if (!userId) return false;
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: cid } = await (supabaseAdmin as unknown as {
+      rpc: (n: string, a: unknown) => Promise<{ data: string | null }>;
+    }).rpc("get_user_approved_company_id", { _user_id: userId });
+    return !!cid;
+  } catch {
+    return false;
+  }
+}
+
 async function loadBundlesWithItems(filter: {
   bundleIds?: string[];
   slug?: string;
