@@ -1,13 +1,28 @@
 import { Link } from "@tanstack/react-router";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, Trash2, Plus, Minus, ShoppingBag, AlertCircle } from "lucide-react";
+import { X, Trash2, Plus, Minus, ShoppingBag, AlertCircle, Package } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
 import { useCart, validateB2bLine } from "@/stores/cartStore";
 import { Button } from "@/components/ui/button";
 import { formatBRL, FREE_SHIPPING_THRESHOLD, calcFreeShippingProgress } from "@/lib/domain";
+import { getCartBundlePreview } from "@/server/cartBundlePreview.functions";
 
 export function CartDrawer() {
   const cart = useCart();
   const subtotal = cart.subtotal();
+  const previewItems = cart.items.map((i) => ({ product_id: i.productId, qty: i.qty }));
+  const { data: bundleRows } = useQuery({
+    queryKey: [
+      "cart-drawer-bundle-preview",
+      previewItems.map((i) => `${i.product_id}:${i.qty}`).join("|"),
+    ],
+    queryFn: () => getCartBundlePreview({ data: { items: previewItems, hasCoupon: false } }),
+    enabled: cart.isOpen && previewItems.length > 0,
+    staleTime: 15_000,
+  });
+  const eligibleBundles = (bundleRows ?? []).filter((r) => r.status === "eligible_preview");
+  const bundleSavings = eligibleBundles.reduce((acc, r) => acc + r.estimated_discount, 0);
+  const subtotalWithBundles = Math.max(0, subtotal - bundleSavings);
   const freeShip = calcFreeShippingProgress(
     cart.items.map((i) => ({
       price: i.price,
@@ -162,12 +177,54 @@ export function CartDrawer() {
                 </div>
 
                 <div className="border-t border-border p-5 space-y-3 bg-card">
+                  {eligibleBundles.length > 0 && (
+                    <div className="rounded-md border border-emerald-200 bg-emerald-50 p-3 space-y-1.5">
+                      <div className="flex items-center gap-1.5 text-[11px] font-semibold text-emerald-800">
+                        <Package className="w-3.5 h-3.5" />
+                        Kits e combos detectados
+                      </div>
+                      {eligibleBundles.map((b) => (
+                        <div
+                          key={b.bundle_id}
+                          className="flex items-center justify-between text-[11px] text-emerald-800"
+                        >
+                          <span className="truncate pr-2">{b.bundle_name}</span>
+                          <span className="font-semibold whitespace-nowrap">
+                            −{formatBRL(b.estimated_discount)}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                   <div className="flex items-center justify-between text-sm">
                     <span className="text-muted-foreground">Subtotal</span>
-                    <span className="font-display font-bold text-lg text-foreground">
+                    <span
+                      className={
+                        bundleSavings > 0
+                          ? "text-xs text-muted-foreground line-through"
+                          : "font-display font-bold text-lg text-foreground"
+                      }
+                    >
                       {formatBRL(subtotal)}
                     </span>
                   </div>
+                  {bundleSavings > 0 && (
+                    <>
+                      <div className="flex items-center justify-between text-sm text-emerald-700">
+                        <span>Desconto de kit (estimado)</span>
+                        <span className="font-medium">−{formatBRL(bundleSavings)}</span>
+                      </div>
+                      <div className="flex items-center justify-between text-sm">
+                        <span className="text-muted-foreground">Subtotal com kit</span>
+                        <span className="font-display font-bold text-lg text-primary">
+                          {formatBRL(subtotalWithBundles)}
+                        </span>
+                      </div>
+                      <p className="text-[10px] text-muted-foreground">
+                        O desconto é confirmado no checkout pelo backend.
+                      </p>
+                    </>
+                  )}
                   {hasB2bIssue && (
                     <div className="flex items-start gap-2 rounded-md border border-destructive/40 bg-destructive/5 px-3 py-2 text-xs text-destructive">
                       <AlertCircle className="w-3.5 h-3.5 mt-0.5 shrink-0" />
