@@ -176,7 +176,7 @@ export function AiImageGeneratorDialog({
           </div>
         </div>
 
-        <DialogFooter className="gap-2 sm:gap-2">
+        <DialogFooter className="gap-2 sm:gap-2 px-6 pb-6 border-t pt-4 bg-background">
           <Button variant="outline" onClick={handleClose} disabled={applying}>
             <X className="w-4 h-4 mr-1.5" />
             Cancelar
