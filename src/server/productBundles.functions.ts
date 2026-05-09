@@ -235,6 +235,8 @@ async function loadBundlesWithItems(filter: {
           free_shipping_eligible: !!p.free_shipping_eligible,
           b2b_enabled: !!p.b2b_enabled,
           b2b_min_qty: p.b2b_min_qty != null ? Number(p.b2b_min_qty) : null,
+          b2b_price: p.b2b_price != null ? Number(p.b2b_price) : null,
+          cost_price: p.cost_price != null ? Number(p.cost_price) : null,
         };
         return {
           id: it.id,
