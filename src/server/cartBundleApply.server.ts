@@ -12,6 +12,83 @@
  */
 
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
+import {
+  computeKitPricing,
+  type KitConfig,
+  type KitItemForPricing,
+} from "@/lib/kitPricing";
+
+type KitRow = {
+  id: string;
+  kit_type: string | null;
+  pricing_method: string | null;
+  fixed_price: number | string | null;
+  discount_percent: number | string | null;
+  discount_amount: number | string | null;
+  available_retail: boolean | null;
+  available_b2b: boolean | null;
+  b2b_pricing_method: string | null;
+  b2b_fixed_price: number | string | null;
+  b2b_extra_discount_percent: number | string | null;
+  b2b_min_quantity: number | string | null;
+  accepts_coupon: boolean | null;
+  stack_with_b2b: boolean | null;
+};
+
+type KitItemRow = {
+  bundle_id: string;
+  product_id: string;
+  quantity: number | string;
+  product: {
+    price: number | string | null;
+    sale_price: number | string | null;
+    b2b_enabled: boolean | null;
+    b2b_price: number | string | null;
+    cost_price: number | string | null;
+    active: boolean | null;
+  } | null;
+};
+
+function toKitConfig(row: KitRow): KitConfig {
+  return {
+    kit_type: ((row.kit_type as KitConfig["kit_type"]) ?? "combinado") as KitConfig["kit_type"],
+    pricing_method: ((row.pricing_method as KitConfig["pricing_method"]) ?? "sum") as KitConfig["pricing_method"],
+    fixed_price: row.fixed_price != null ? Number(row.fixed_price) : null,
+    discount_percent: row.discount_percent != null ? Number(row.discount_percent) : null,
+    discount_amount: row.discount_amount != null ? Number(row.discount_amount) : null,
+    available_retail: row.available_retail !== false,
+    available_b2b: !!row.available_b2b,
+    b2b_pricing_method:
+      ((row.b2b_pricing_method as KitConfig["b2b_pricing_method"]) ?? "inherit") as KitConfig["b2b_pricing_method"],
+    b2b_fixed_price: row.b2b_fixed_price != null ? Number(row.b2b_fixed_price) : null,
+    b2b_extra_discount_percent:
+      row.b2b_extra_discount_percent != null ? Number(row.b2b_extra_discount_percent) : null,
+    b2b_min_quantity: Number(row.b2b_min_quantity ?? 1),
+    accepts_coupon: row.accepts_coupon !== false,
+    stack_with_b2b: !!row.stack_with_b2b,
+  };
+}
+
+function isLegacyKit(kit: KitConfig): boolean {
+  // Kit antigo: ainda usa discount_type/discount_value vindo da RPC.
+  return (
+    kit.pricing_method === "sum" &&
+    kit.b2b_pricing_method === "inherit" &&
+    !kit.available_b2b
+  );
+}
+
+async function resolveB2bApprovedForUser(userId: string | null): Promise<boolean> {
+  if (!userId) return false;
+  try {
+    const { data } = await (supabaseAdmin as unknown as {
+      rpc: (n: string, a: unknown) => Promise<{ data: string | null }>;
+    }).rpc("get_user_approved_company_id", { _user_id: userId });
+    return !!data;
+  } catch {
+    return false;
+  }
+}
 
 export type ApplyCartBundlesInput = {
   userId: string | null;
