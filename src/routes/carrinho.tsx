@@ -13,7 +13,7 @@ import { useQuery } from "@tanstack/react-query";
 import { StoreLayout } from "@/components/layout/StoreLayout";
 import { Button } from "@/components/ui/button";
 import { useCart, validateB2bLine } from "@/stores/cartStore";
-import { formatBRL, FREE_SHIPPING_THRESHOLD, calcFreeShippingProgress } from "@/lib/domain";
+import { formatBRL, calcFreeShippingProgress } from "@/lib/domain";
 import { useCartPricing, maskCnpj } from "@/hooks/useCartPricing";
 import { describeB2bReason } from "@/lib/b2bPricingShared";
 import { CartUpsell } from "@/components/store/CartUpsell";
@@ -259,19 +259,10 @@ function CartPage() {
                   )}
                 </span>
               </div>
-              {!freeShip.qualifies && (
+              {freeShip.hasEligibleItems && !freeShip.qualifies && (
                 <p className="text-xs text-muted-foreground">
-                  {freeShip.hasEligibleItems ? (
-                    <>
-                      Faltam <strong>{formatBRL(freeShip.remaining)}</strong> em produtos
-                      participantes para frete grátis.
-                    </>
-                  ) : (
-                    <>
-                      Adicione produtos participantes para aproveitar frete grátis acima de{" "}
-                      {formatBRL(FREE_SHIPPING_THRESHOLD)}.
-                    </>
-                  )}
+                  Faltam <strong>{formatBRL(freeShip.remaining)}</strong> em produtos
+                  participantes para frete grátis.
                 </p>
               )}
               <div className="border-t border-border pt-3 flex justify-between items-end">
