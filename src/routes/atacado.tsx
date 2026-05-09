@@ -356,6 +356,16 @@ function AtacadoPage() {
           )}
         </section>
 
+        {/* Kits especiais para empresas */}
+        <div className="max-w-6xl mx-auto">
+          <KitsCarousel
+            title="Kits especiais para empresas"
+            subtitle="Condições diferenciadas para compras em volume."
+            mode="b2b"
+            limit={6}
+          />
+        </div>
+
         {/* Benefícios */}
         <section className="max-w-6xl mx-auto px-4 py-10 grid sm:grid-cols-3 gap-4">
           <Benefit
