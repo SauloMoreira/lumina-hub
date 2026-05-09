@@ -268,6 +268,23 @@ async function loadBundlesWithItems(filter: {
         return a.sort_order - b2.sort_order;
       });
 
+    const kit: BundleKitConfig = {
+      kit_type: ((b.kit_type ?? "combinado") as KitType),
+      pricing_method: ((b.pricing_method ?? "sum") as KitPricingMethod),
+      fixed_price: b.fixed_price != null ? Number(b.fixed_price) : null,
+      discount_percent: b.discount_percent != null ? Number(b.discount_percent) : null,
+      discount_amount: b.discount_amount != null ? Number(b.discount_amount) : null,
+      available_retail: b.available_retail !== false,
+      available_b2b: !!b.available_b2b,
+      b2b_pricing_method: ((b.b2b_pricing_method ?? "inherit") as KitB2bPricingMethod),
+      b2b_fixed_price: b.b2b_fixed_price != null ? Number(b.b2b_fixed_price) : null,
+      b2b_extra_discount_percent:
+        b.b2b_extra_discount_percent != null ? Number(b.b2b_extra_discount_percent) : null,
+      b2b_min_quantity: Number(b.b2b_min_quantity ?? 1),
+      accepts_coupon: b.accepts_coupon !== false,
+      stack_with_b2b: !!b.stack_with_b2b,
+    };
+
     return {
       id: b.id,
       slug: b.slug,
@@ -281,6 +298,7 @@ async function loadBundlesWithItems(filter: {
       end_date: b.end_date,
       discount_type: (b.discount_type ?? "none") as BundleDiscountType,
       discount_value: Number(b.discount_value ?? 0),
+      kit,
       items,
       subtotal,
       items_count: items.length,
