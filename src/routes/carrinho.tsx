@@ -13,7 +13,7 @@ import { useQuery } from "@tanstack/react-query";
 import { StoreLayout } from "@/components/layout/StoreLayout";
 import { Button } from "@/components/ui/button";
 import { useCart, validateB2bLine } from "@/stores/cartStore";
-import { formatBRL, FREE_SHIPPING_THRESHOLD, calcFreeShippingProgress } from "@/lib/domain";
+import { formatBRL, calcFreeShippingProgress } from "@/lib/domain";
 import { useCartPricing, maskCnpj } from "@/hooks/useCartPricing";
 import { describeB2bReason } from "@/lib/b2bPricingShared";
 import { CartUpsell } from "@/components/store/CartUpsell";
