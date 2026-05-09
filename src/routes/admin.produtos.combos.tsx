@@ -121,7 +121,7 @@ function BundlesAdminPage() {
         </p>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-[360px_1fr] gap-4">
+      <div className="grid grid-cols-1 xl:grid-cols-[320px_minmax(0,1fr)] gap-4 min-w-0">
         {/* Listagem */}
         <div className="bg-card border border-border rounded-xl p-3 min-h-[300px]">
           {listQ.isLoading ? (
@@ -163,7 +163,7 @@ function BundlesAdminPage() {
         </div>
 
         {/* Editor */}
-        <div>
+        <div className="min-w-0">
           {selectedId ? (
             <BundleEditor
               bundleId={selectedId}
@@ -296,8 +296,8 @@ function BundleMetaForm({
   
 
   return (
-    <div className="bg-card border border-border rounded-xl p-5 space-y-4">
-      <div className="flex items-start justify-between gap-3">
+    <div className="bg-card border border-border rounded-xl p-4 sm:p-5 space-y-4 overflow-hidden">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div className="flex-1 min-w-0">
           <h2 className="font-display text-lg font-semibold truncate">{bundle.name}</h2>
           <div className="flex items-center gap-2 mt-1">
@@ -314,7 +314,7 @@ function BundleMetaForm({
             )}
           </div>
         </div>
-        <Button variant="ghost" size="sm" onClick={onDelete}>
+        <Button variant="ghost" size="sm" onClick={onDelete} className="self-start">
           <Trash2 className="w-4 h-4 mr-1" /> Excluir
         </Button>
       </div>
