@@ -35,6 +35,8 @@ export type BundleItemPublic = {
     free_shipping_eligible: boolean;
     b2b_enabled: boolean;
     b2b_min_qty: number | null;
+    b2b_price: number | null;
+    cost_price: number | null;
   };
   // Status calculado por item
   status: "ok" | "inactive" | "no_price" | "no_stock";
@@ -50,6 +52,23 @@ export type BundleImage = {
   source: "manual_upload" | "manual_url" | "ai_generated";
 };
 
+/** Campos comerciais do kit persistidos em product_bundles. */
+export type BundleKitConfig = {
+  kit_type: KitType;
+  pricing_method: KitPricingMethod;
+  fixed_price: number | null;
+  discount_percent: number | null;
+  discount_amount: number | null;
+  available_retail: boolean;
+  available_b2b: boolean;
+  b2b_pricing_method: KitB2bPricingMethod;
+  b2b_fixed_price: number | null;
+  b2b_extra_discount_percent: number | null;
+  b2b_min_quantity: number;
+  accepts_coupon: boolean;
+  stack_with_b2b: boolean;
+};
+
 export type BundlePublic = {
   id: string;
   slug: string | null;
@@ -61,10 +80,13 @@ export type BundlePublic = {
   is_featured: boolean;
   start_date: string | null;
   end_date: string | null;
+  /** legado: enum bundle_discount_type. Mantido para compat. */
   discount_type: BundleDiscountType;
   discount_value: number;
+  /** Configuração comercial nova (ondas de kits). */
+  kit: BundleKitConfig;
   items: BundleItemPublic[];
-  subtotal: number;
+  subtotal: number; // soma simples dos itens (compat)
   items_count: number;
   total_units: number;
   availability: BundleAvailability;
