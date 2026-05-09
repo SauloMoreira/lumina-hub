@@ -525,6 +525,8 @@ function BundleImagesGallery({ bundleId, bundleName }: { bundleId: string; bundl
   const inputRef = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
   const [manualUrl, setManualUrl] = useState("");
+  const [aiOpen, setAiOpen] = useState(false);
+  const [aiUploading, setAiUploading] = useState(false);
 
   const imagesQ = useQuery({
     queryKey: ["admin-bundle-images", bundleId],
