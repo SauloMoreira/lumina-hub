@@ -19,19 +19,7 @@ export const Route = createFileRoute("/combos")({
   }),
 });
 
-const TONE: Record<BundleAvailability, string> = {
-  available: "bg-emerald-50 text-emerald-700 border-emerald-200",
-  partial: "bg-amber-50 text-amber-700 border-amber-200",
-  unavailable: "bg-red-50 text-red-700 border-red-200",
-  needs_review: "bg-muted text-muted-foreground border-border",
-};
-
-const LABEL: Record<BundleAvailability, string> = {
-  available: "Disponível",
-  partial: "Parcialmente disponível",
-  unavailable: "Indisponível",
-  needs_review: "Em revisão",
-};
+type _Avail = BundleAvailability; // referenciado pelo tipo importado
 
 function CombosListPage() {
   const q = useQuery({
