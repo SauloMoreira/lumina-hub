@@ -17,7 +17,9 @@ import {
   EyeOff,
   Upload,
   X,
+  Sparkles,
 } from "lucide-react";
+import { AiImageGeneratorDialog } from "@/components/admin/AiImageGeneratorDialog";
 import { toast } from "sonner";
 import { AdminLayout } from "@/components/admin/AdminLayout";
 import { Button } from "@/components/ui/button";
