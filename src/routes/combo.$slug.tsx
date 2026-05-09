@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
-import { ArrowLeft, ShoppingCart, AlertCircle, CheckCircle2, PackagePlus } from "lucide-react";
+import { ArrowLeft, ShoppingCart, AlertCircle, CheckCircle2, PackagePlus, Building2, Sparkles, Tag } from "lucide-react";
 import { toast } from "sonner";
 import { StoreLayout } from "@/components/layout/StoreLayout";
 import { Button } from "@/components/ui/button";
@@ -11,7 +11,9 @@ import {
   getPublicBundleBySlug,
   type BundleAvailability,
   type BundleItemPublic,
+  type BundlePublic,
 } from "@/server/productBundles.functions";
+import { KIT_TYPE_BADGES } from "@/lib/kitPricing";
 
 export const Route = createFileRoute("/combo/$slug")({
   component: ComboDetailPage,
