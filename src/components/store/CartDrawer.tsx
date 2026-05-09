@@ -1,13 +1,28 @@
 import { Link } from "@tanstack/react-router";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, Trash2, Plus, Minus, ShoppingBag, AlertCircle } from "lucide-react";
+import { X, Trash2, Plus, Minus, ShoppingBag, AlertCircle, Package } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
 import { useCart, validateB2bLine } from "@/stores/cartStore";
 import { Button } from "@/components/ui/button";
 import { formatBRL, FREE_SHIPPING_THRESHOLD, calcFreeShippingProgress } from "@/lib/domain";
+import { getCartBundlePreview } from "@/server/cartBundlePreview.functions";
 
 export function CartDrawer() {
   const cart = useCart();
   const subtotal = cart.subtotal();
+  const previewItems = cart.items.map((i) => ({ product_id: i.productId, qty: i.qty }));
+  const { data: bundleRows } = useQuery({
+    queryKey: [
+      "cart-drawer-bundle-preview",
+      previewItems.map((i) => `${i.product_id}:${i.qty}`).join("|"),
+    ],
+    queryFn: () => getCartBundlePreview({ data: { items: previewItems, hasCoupon: false } }),
+    enabled: cart.isOpen && previewItems.length > 0,
+    staleTime: 15_000,
+  });
+  const eligibleBundles = (bundleRows ?? []).filter((r) => r.status === "eligible_preview");
+  const bundleSavings = eligibleBundles.reduce((acc, r) => acc + r.estimated_discount, 0);
+  const subtotalWithBundles = Math.max(0, subtotal - bundleSavings);
   const freeShip = calcFreeShippingProgress(
     cart.items.map((i) => ({
       price: i.price,
