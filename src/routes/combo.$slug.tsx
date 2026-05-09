@@ -148,7 +148,8 @@ function ComboDetailPage() {
               }
               alt={bundle.name}
             />
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 flex-wrap">
+              <KitTypeBadge bundle={bundle} />
               <span
                 className={`inline-flex items-center gap-1 text-[10px] font-medium px-2 py-0.5 rounded-full border ${TONE[bundle.availability]}`}
               >
