@@ -19,6 +19,7 @@ import { generateImageSeo } from "@/server/imageSeo.functions";
 import { pickUrl, variantUrl, type ProductImageRow } from "@/lib/productImages";
 import { enhanceProductImage } from "@/lib/imageEnhance";
 import { fetchExternalImage } from "@/server/barcodeLookup.functions";
+import { AiImageGeneratorDialog } from "@/components/admin/AiImageGeneratorDialog";
 
 interface Props {
   productId: string;
@@ -66,6 +67,7 @@ export const ProductImageManager = forwardRef<ProductImageManagerHandle, Props>(
     const [optimizingId, setOptimizingId] = useState<string | null>(null);
     const [optimizingAll, setOptimizingAll] = useState(false);
     const [enhancingPendingId, setEnhancingPendingId] = useState<string | null>(null);
+    const [aiOpen, setAiOpen] = useState(false);
 
     const {
       data: images = [],
@@ -433,6 +435,16 @@ export const ProductImageManager = forwardRef<ProductImageManagerHandle, Props>(
                 SEO em todas ({unoptimizedCount})
               </Button>
             )}
+            <Button
+              type="button"
+              size="sm"
+              variant="outline"
+              disabled={totalImages >= MAX_IMAGES}
+              onClick={() => setAiOpen(true)}
+            >
+              <Sparkles className="w-3.5 h-3.5 mr-1.5" />
+              Gerar com IA
+            </Button>
             <label
               className={`inline-flex items-center gap-1.5 cursor-pointer text-xs font-medium px-3 h-8 rounded-md border border-input bg-background hover:bg-accent ${totalImages >= MAX_IMAGES ? "opacity-50 pointer-events-none" : ""}`}
             >
@@ -713,6 +725,20 @@ export const ProductImageManager = forwardRef<ProductImageManagerHandle, Props>(
             Arraste mais imagens aqui ({totalImages}/{MAX_IMAGES})
           </div>
         )}
+
+        <AiImageGeneratorDialog
+          open={aiOpen}
+          onOpenChange={setAiOpen}
+          kind="product"
+          name={productName}
+          brand={brand ?? null}
+          category={category ?? null}
+          onApply={async (dataUrl) => {
+            const result = await addExternalImages([dataUrl]);
+            if (result.added > 0) toast.success("Imagem da IA adicionada");
+            else if (result.failed > 0) toast.error("Falha ao adicionar imagem da IA");
+          }}
+        />
       </div>
     );
   },
