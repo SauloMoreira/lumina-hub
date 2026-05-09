@@ -132,8 +132,8 @@ export function AiImageGeneratorDialog({
           </div>
 
           {dataUrl ? (
-            <div className="rounded-md border border-border overflow-hidden bg-muted">
-              <img src={dataUrl} alt="Pré-visualização" className="w-full h-auto block" />
+            <div className="rounded-md border border-border overflow-hidden bg-muted flex items-center justify-center">
+              <img src={dataUrl} alt="Pré-visualização" className="max-h-[40vh] w-auto object-contain block" />
             </div>
           ) : (
             <div className="rounded-md border border-dashed border-border h-48 flex items-center justify-center text-xs text-muted-foreground">
