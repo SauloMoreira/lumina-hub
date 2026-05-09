@@ -232,6 +232,7 @@ function BundleEditor({ bundleId, onDeleted }: { bundleId: string; onDeleted: ()
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["admin-bundle", bundleId] });
       qc.invalidateQueries({ queryKey: ["admin-bundles"] });
+      toast.success("Salvo e disponível");
     },
     onError: (err: any) => {
       const msg = String(err?.message ?? "");
