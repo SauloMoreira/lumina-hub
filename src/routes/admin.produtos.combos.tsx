@@ -398,6 +398,7 @@ function BundleMetaForm({
         />
       </div>
 
+      <BundleKitConfigSection bundle={bundle} onChange={onChange} />
       <BundleDiscountSection bundle={bundle} onChange={onChange} />
 
       {saving && (
