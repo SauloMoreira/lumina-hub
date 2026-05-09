@@ -19,6 +19,7 @@ import { generateImageSeo } from "@/server/imageSeo.functions";
 import { pickUrl, variantUrl, type ProductImageRow } from "@/lib/productImages";
 import { enhanceProductImage } from "@/lib/imageEnhance";
 import { fetchExternalImage } from "@/server/barcodeLookup.functions";
+import { AiImageGeneratorDialog } from "@/components/admin/AiImageGeneratorDialog";
 
 interface Props {
   productId: string;
