@@ -19,7 +19,6 @@ export const Route = createFileRoute("/combos")({
   }),
 });
 
-type _Avail = BundleAvailability; // referenciado pelo tipo importado
 
 function CombosListPage() {
   const q = useQuery({
