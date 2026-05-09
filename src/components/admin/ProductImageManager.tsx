@@ -725,6 +725,20 @@ export const ProductImageManager = forwardRef<ProductImageManagerHandle, Props>(
             Arraste mais imagens aqui ({totalImages}/{MAX_IMAGES})
           </div>
         )}
+
+        <AiImageGeneratorDialog
+          open={aiOpen}
+          onOpenChange={setAiOpen}
+          kind="product"
+          name={productName}
+          brand={brand ?? null}
+          category={category ?? null}
+          onApply={async (dataUrl) => {
+            const result = await addExternalImages([dataUrl]);
+            if (result.added > 0) toast.success("Imagem da IA adicionada");
+            else if (result.failed > 0) toast.error("Falha ao adicionar imagem da IA");
+          }}
+        />
       </div>
     );
   },
