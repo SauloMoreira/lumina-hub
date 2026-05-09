@@ -95,24 +95,57 @@ export const getCartBundlePreview = createServerFn({ method: "POST" })
       console.error("[getCartBundlePreview] rpc error:", error);
       return [];
     }
+    // Roda o motor de aplicação (mesmo do checkout) para alinhar valores reais.
+    const { computeBundleApplication } = await import("@/server/cartBundleApply.server");
+    const app = await computeBundleApplication({
+      userId,
+      items: data.items.map((i) => ({ productId: i.product_id, qty: i.qty })),
+      hasCoupon: data.hasCoupon ?? false,
+    });
+    const appliedById = new Map(app.details.applied.map((a) => [a.bundle_id, a]));
+    const blockedById = new Map(app.details.blocked.map((b) => [b.bundle_id, b]));
+
     const list = (rows ?? []) as Array<Record<string, unknown>>;
-    return list.map((r) => ({
-      bundle_id: String(r.bundle_id),
-      bundle_slug: (r.bundle_slug as string | null) ?? null,
-      bundle_name: String(r.bundle_name ?? ""),
-      bundle_image: (r.bundle_image as string | null) ?? null,
-      discount_type: (r.discount_type as CartBundlePreviewRow["discount_type"]) ?? "none",
-      discount_value: Number(r.discount_value ?? 0),
-      status: (r.status as CartBundlePreviewStatus) ?? "not_eligible",
-      eligible_subtotal: Number(r.eligible_subtotal ?? 0),
-      estimated_discount: Number(r.estimated_discount ?? 0),
-      considered_items: Array.isArray(r.considered_items)
-        ? (r.considered_items as CartBundleConsideredItem[])
-        : [],
-      missing_items: Array.isArray(r.missing_items)
-        ? (r.missing_items as CartBundleMissingItem[])
-        : [],
-      reason: (r.reason as string | null) ?? null,
-      warnings: Array.isArray(r.warnings) ? (r.warnings as string[]) : [],
-    }));
+    return list.map((r) => {
+      const id = String(r.bundle_id);
+      const appliedRow = appliedById.get(id);
+      const blockedRow = blockedById.get(id);
+      let status = (r.status as CartBundlePreviewStatus) ?? "not_eligible";
+      let estimated_discount = Number(r.estimated_discount ?? 0);
+      let discount_type = (r.discount_type as CartBundlePreviewRow["discount_type"]) ?? "none";
+      let discount_value = Number(r.discount_value ?? 0);
+      let eligible_subtotal = Number(r.eligible_subtotal ?? 0);
+      let reason = (r.reason as string | null) ?? null;
+      if (appliedRow) {
+        status = "eligible_preview";
+        estimated_discount = appliedRow.discount_amount;
+        eligible_subtotal = appliedRow.eligible_subtotal;
+        discount_type = appliedRow.discount_type;
+        discount_value = appliedRow.discount_value;
+        reason = null;
+      } else if (blockedRow) {
+        status = (blockedRow.status as CartBundlePreviewStatus) ?? status;
+        reason = blockedRow.reason ?? reason;
+        estimated_discount = 0;
+      }
+      return {
+        bundle_id: id,
+        bundle_slug: (r.bundle_slug as string | null) ?? null,
+        bundle_name: String(r.bundle_name ?? ""),
+        bundle_image: (r.bundle_image as string | null) ?? null,
+        discount_type,
+        discount_value,
+        status,
+        eligible_subtotal,
+        estimated_discount,
+        considered_items: Array.isArray(r.considered_items)
+          ? (r.considered_items as CartBundleConsideredItem[])
+          : [],
+        missing_items: Array.isArray(r.missing_items)
+          ? (r.missing_items as CartBundleMissingItem[])
+          : [],
+        reason,
+        warnings: Array.isArray(r.warnings) ? (r.warnings as string[]) : [],
+      };
+    });
   });
