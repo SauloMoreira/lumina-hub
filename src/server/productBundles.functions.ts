@@ -90,6 +90,9 @@ export type BundlePublic = {
   items_count: number;
   total_units: number;
   availability: BundleAvailability;
+  /** Resultado da engine de preços do kit (já considera aprovação B2B do solicitante). */
+  pricing: KitPricingResult;
+  is_b2b_approved: boolean;
 };
 
 // Limite seguro de desconto percentual para combos (admin pode rever depois)
