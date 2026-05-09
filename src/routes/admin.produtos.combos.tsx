@@ -356,7 +356,7 @@ function BundleMetaForm({
         />
       </Field>
 
-      <BundleImagesGallery bundleId={bundle.id} />
+      <BundleImagesGallery bundleId={bundle.id} bundleName={bundle.name} />
 
       <div className="grid sm:grid-cols-2 gap-3 pt-2 border-t border-border">
         <ToggleRow
