@@ -718,13 +718,13 @@ function BundleImagesGallery({ bundleId, bundleName }: { bundleId: string; bundl
           </div>
         )}
 
-        <div className="flex flex-col sm:flex-row gap-2 pt-1 border-t border-border">
+        <div className="grid grid-cols-1 gap-2 pt-1 border-t border-border md:grid-cols-[minmax(0,1fr)_auto_auto_auto]">
           <Input
             value={manualUrl}
             onChange={(e) => setManualUrl(e.target.value)}
             placeholder="Cole uma URL de imagem…"
             disabled={atLimit}
-            className="flex-1"
+            className="min-w-0"
             onKeyDown={(e) => {
               if (e.key === "Enter") {
                 e.preventDefault();
@@ -738,6 +738,7 @@ function BundleImagesGallery({ bundleId, bundleName }: { bundleId: string; bundl
             size="sm"
             disabled={atLimit || !manualUrl.trim() || addMut.isPending}
             onClick={commitManualUrl}
+            className="w-full md:w-auto"
           >
             <Plus className="w-4 h-4 mr-1" /> Adicionar URL
           </Button>
@@ -757,6 +758,7 @@ function BundleImagesGallery({ bundleId, bundleName }: { bundleId: string; bundl
             size="sm"
             disabled={atLimit || uploading}
             onClick={() => inputRef.current?.click()}
+            className="w-full md:w-auto"
           >
             {uploading ? (
               <Loader2 className="w-4 h-4 mr-1 animate-spin" />
@@ -771,6 +773,7 @@ function BundleImagesGallery({ bundleId, bundleName }: { bundleId: string; bundl
             size="sm"
             disabled={atLimit || aiUploading}
             onClick={() => setAiOpen(true)}
+            className="w-full md:w-auto"
           >
             {aiUploading ? (
               <Loader2 className="w-4 h-4 mr-1 animate-spin" />
