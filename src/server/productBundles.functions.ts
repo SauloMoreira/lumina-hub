@@ -1,5 +1,13 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
+import {
+  computeKitPricing,
+  type KitConfig,
+  type KitPricingResult,
+  type KitType,
+  type KitPricingMethod,
+  type KitB2bPricingMethod,
+} from "@/lib/kitPricing";
 
 // ----------------------------------------------------------------------------
 // Tipos compartilhados
@@ -27,6 +35,8 @@ export type BundleItemPublic = {
     free_shipping_eligible: boolean;
     b2b_enabled: boolean;
     b2b_min_qty: number | null;
+    b2b_price: number | null;
+    cost_price: number | null;
   };
   // Status calculado por item
   status: "ok" | "inactive" | "no_price" | "no_stock";
@@ -42,6 +52,23 @@ export type BundleImage = {
   source: "manual_upload" | "manual_url" | "ai_generated";
 };
 
+/** Campos comerciais do kit persistidos em product_bundles. */
+export type BundleKitConfig = {
+  kit_type: KitType;
+  pricing_method: KitPricingMethod;
+  fixed_price: number | null;
+  discount_percent: number | null;
+  discount_amount: number | null;
+  available_retail: boolean;
+  available_b2b: boolean;
+  b2b_pricing_method: KitB2bPricingMethod;
+  b2b_fixed_price: number | null;
+  b2b_extra_discount_percent: number | null;
+  b2b_min_quantity: number;
+  accepts_coupon: boolean;
+  stack_with_b2b: boolean;
+};
+
 export type BundlePublic = {
   id: string;
   slug: string | null;
@@ -53,10 +80,13 @@ export type BundlePublic = {
   is_featured: boolean;
   start_date: string | null;
   end_date: string | null;
+  /** legado: enum bundle_discount_type. Mantido para compat. */
   discount_type: BundleDiscountType;
   discount_value: number;
+  /** Configuração comercial nova (ondas de kits). */
+  kit: BundleKitConfig;
   items: BundleItemPublic[];
-  subtotal: number;
+  subtotal: number; // soma simples dos itens (compat)
   items_count: number;
   total_units: number;
   availability: BundleAvailability;
@@ -150,13 +180,16 @@ async function loadBundlesWithItems(filter: {
   let q = supabaseAdmin.from("product_bundles").select(
     `id, slug, name, description, image_url, is_active, is_featured,
        start_date, end_date, discount_type, discount_value, updated_at,
+       kit_type, pricing_method, fixed_price, discount_percent, discount_amount,
+       available_retail, available_b2b, b2b_pricing_method, b2b_fixed_price,
+       b2b_extra_discount_percent, b2b_min_quantity, accepts_coupon, stack_with_b2b,
        images:product_bundle_images (id, url, sort_order, is_primary, source),
        items:product_bundle_items (
          id, product_id, quantity, sort_order, is_required,
          product:products (
            id, name, slug, sku, brand, images, active,
            price, sale_price, stock_qty, free_shipping_eligible,
-           b2b_enabled, b2b_min_qty
+           b2b_enabled, b2b_min_qty, b2b_price, cost_price
          )
        )`,
   );
@@ -202,6 +235,8 @@ async function loadBundlesWithItems(filter: {
           free_shipping_eligible: !!p.free_shipping_eligible,
           b2b_enabled: !!p.b2b_enabled,
           b2b_min_qty: p.b2b_min_qty != null ? Number(p.b2b_min_qty) : null,
+          b2b_price: p.b2b_price != null ? Number(p.b2b_price) : null,
+          cost_price: p.cost_price != null ? Number(p.cost_price) : null,
         };
         return {
           id: it.id,
@@ -233,6 +268,23 @@ async function loadBundlesWithItems(filter: {
         return a.sort_order - b2.sort_order;
       });
 
+    const kit: BundleKitConfig = {
+      kit_type: ((b.kit_type ?? "combinado") as KitType),
+      pricing_method: ((b.pricing_method ?? "sum") as KitPricingMethod),
+      fixed_price: b.fixed_price != null ? Number(b.fixed_price) : null,
+      discount_percent: b.discount_percent != null ? Number(b.discount_percent) : null,
+      discount_amount: b.discount_amount != null ? Number(b.discount_amount) : null,
+      available_retail: b.available_retail !== false,
+      available_b2b: !!b.available_b2b,
+      b2b_pricing_method: ((b.b2b_pricing_method ?? "inherit") as KitB2bPricingMethod),
+      b2b_fixed_price: b.b2b_fixed_price != null ? Number(b.b2b_fixed_price) : null,
+      b2b_extra_discount_percent:
+        b.b2b_extra_discount_percent != null ? Number(b.b2b_extra_discount_percent) : null,
+      b2b_min_quantity: Number(b.b2b_min_quantity ?? 1),
+      accepts_coupon: b.accepts_coupon !== false,
+      stack_with_b2b: !!b.stack_with_b2b,
+    };
+
     return {
       id: b.id,
       slug: b.slug,
@@ -246,6 +298,7 @@ async function loadBundlesWithItems(filter: {
       end_date: b.end_date,
       discount_type: (b.discount_type ?? "none") as BundleDiscountType,
       discount_value: Number(b.discount_value ?? 0),
+      kit,
       items,
       subtotal,
       items_count: items.length,
@@ -465,6 +518,15 @@ export const adminCreateBundle = createServerFn({ method: "POST" })
 // ----------------------------------------------------------------------------
 // ADMIN: atualizar
 // ----------------------------------------------------------------------------
+const KitTypeEnum = z.enum(["combinado", "promocional", "b2b", "estrutural"]);
+const KitPricingMethodEnum = z.enum([
+  "sum",
+  "percent_discount",
+  "fixed_discount",
+  "fixed_price",
+]);
+const KitB2bMethodEnum = z.enum(["inherit", "fixed_price", "extra_discount"]);
+
 const AdminUpdateInput = z.object({
   id: z.string().uuid(),
   name: z.string().trim().min(2).max(160).optional(),
@@ -478,6 +540,20 @@ const AdminUpdateInput = z.object({
   notes: z.string().trim().max(2000).optional().nullable(),
   discountType: DiscountTypeEnum.optional(),
   discountValue: z.number().min(0).max(100000).optional(),
+  // Novos campos comerciais do kit
+  kitType: KitTypeEnum.optional(),
+  pricingMethod: KitPricingMethodEnum.optional(),
+  fixedPrice: z.number().min(0).max(1_000_000).nullable().optional(),
+  discountPercent: z.number().min(0).max(100).nullable().optional(),
+  discountAmount: z.number().min(0).max(1_000_000).nullable().optional(),
+  availableRetail: z.boolean().optional(),
+  availableB2b: z.boolean().optional(),
+  b2bPricingMethod: KitB2bMethodEnum.optional(),
+  b2bFixedPrice: z.number().min(0).max(1_000_000).nullable().optional(),
+  b2bExtraDiscountPercent: z.number().min(0).max(100).nullable().optional(),
+  b2bMinQuantity: z.number().int().min(1).max(9999).optional(),
+  acceptsCoupon: z.boolean().optional(),
+  stackWithB2b: z.boolean().optional(),
 });
 
 export const adminUpdateBundle = createServerFn({ method: "POST" })
@@ -485,20 +561,7 @@ export const adminUpdateBundle = createServerFn({ method: "POST" })
   .handler(async ({ data }) => {
     await requireAdmin();
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    type BundlePatch = {
-      name?: string;
-      slug?: string;
-      description?: string | null;
-      image_url?: string | null;
-      is_active?: boolean;
-      is_featured?: boolean;
-      start_date?: string | null;
-      end_date?: string | null;
-      notes?: string | null;
-      discount_type?: BundleDiscountType;
-      discount_value?: number;
-    };
-    const patch: BundlePatch = {};
+    const patch: Record<string, unknown> = {};
     if (data.name !== undefined) patch.name = data.name;
     if (data.slug !== undefined) patch.slug = data.slug;
     if (data.description !== undefined) patch.description = data.description;
@@ -516,6 +579,20 @@ export const adminUpdateBundle = createServerFn({ method: "POST" })
       patch.discount_type = disc.discount_type;
       patch.discount_value = disc.discount_value;
     }
+    if (data.kitType !== undefined) patch.kit_type = data.kitType;
+    if (data.pricingMethod !== undefined) patch.pricing_method = data.pricingMethod;
+    if (data.fixedPrice !== undefined) patch.fixed_price = data.fixedPrice;
+    if (data.discountPercent !== undefined) patch.discount_percent = data.discountPercent;
+    if (data.discountAmount !== undefined) patch.discount_amount = data.discountAmount;
+    if (data.availableRetail !== undefined) patch.available_retail = data.availableRetail;
+    if (data.availableB2b !== undefined) patch.available_b2b = data.availableB2b;
+    if (data.b2bPricingMethod !== undefined) patch.b2b_pricing_method = data.b2bPricingMethod;
+    if (data.b2bFixedPrice !== undefined) patch.b2b_fixed_price = data.b2bFixedPrice;
+    if (data.b2bExtraDiscountPercent !== undefined)
+      patch.b2b_extra_discount_percent = data.b2bExtraDiscountPercent;
+    if (data.b2bMinQuantity !== undefined) patch.b2b_min_quantity = data.b2bMinQuantity;
+    if (data.acceptsCoupon !== undefined) patch.accepts_coupon = data.acceptsCoupon;
+    if (data.stackWithB2b !== undefined) patch.stack_with_b2b = data.stackWithB2b;
 
     // Se for ativar, valida cadastro
     if (data.isActive === true) {
@@ -528,7 +605,10 @@ export const adminUpdateBundle = createServerFn({ method: "POST" })
       if (broken.length > 0) throw new Error("bundle_has_broken_items");
     }
 
-    const { error } = await supabaseAdmin.from("product_bundles").update(patch).eq("id", data.id);
+    const { error } = await supabaseAdmin
+      .from("product_bundles")
+      .update(patch as never)
+      .eq("id", data.id);
     if (error) {
       if ((error as any).code === "23505") throw new Error("slug_already_exists");
       throw error;
