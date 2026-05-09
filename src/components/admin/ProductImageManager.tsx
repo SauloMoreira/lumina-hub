@@ -435,6 +435,16 @@ export const ProductImageManager = forwardRef<ProductImageManagerHandle, Props>(
                 SEO em todas ({unoptimizedCount})
               </Button>
             )}
+            <Button
+              type="button"
+              size="sm"
+              variant="outline"
+              disabled={totalImages >= MAX_IMAGES}
+              onClick={() => setAiOpen(true)}
+            >
+              <Sparkles className="w-3.5 h-3.5 mr-1.5" />
+              Gerar com IA
+            </Button>
             <label
               className={`inline-flex items-center gap-1.5 cursor-pointer text-xs font-medium px-3 h-8 rounded-md border border-input bg-background hover:bg-accent ${totalImages >= MAX_IMAGES ? "opacity-50 pointer-events-none" : ""}`}
             >
