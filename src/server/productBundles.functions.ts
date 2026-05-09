@@ -180,13 +180,16 @@ async function loadBundlesWithItems(filter: {
   let q = supabaseAdmin.from("product_bundles").select(
     `id, slug, name, description, image_url, is_active, is_featured,
        start_date, end_date, discount_type, discount_value, updated_at,
+       kit_type, pricing_method, fixed_price, discount_percent, discount_amount,
+       available_retail, available_b2b, b2b_pricing_method, b2b_fixed_price,
+       b2b_extra_discount_percent, b2b_min_quantity, accepts_coupon, stack_with_b2b,
        images:product_bundle_images (id, url, sort_order, is_primary, source),
        items:product_bundle_items (
          id, product_id, quantity, sort_order, is_required,
          product:products (
            id, name, slug, sku, brand, images, active,
            price, sale_price, stock_qty, free_shipping_eligible,
-           b2b_enabled, b2b_min_qty
+           b2b_enabled, b2b_min_qty, b2b_price, cost_price
          )
        )`,
   );
