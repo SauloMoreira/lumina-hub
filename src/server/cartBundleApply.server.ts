@@ -252,21 +252,87 @@ export async function computeBundleApplication(
   const list = (rows ?? []) as RpcRow[];
   if (list.length === 0) return empty;
 
-  // Separar elegíveis x bloqueados.
-  const eligible = list.filter(
-    (r) => r.status === "eligible_preview" && Number(r.estimated_discount) > 0,
-  );
-  const blocked: BlockedBundle[] = list
-    .filter((r) => r.status !== "eligible_preview" || Number(r.estimated_discount) <= 0)
-    .map((r) => ({
-      bundle_id: r.bundle_id,
-      bundle_name: r.bundle_name,
-      status: r.status,
-      reason: r.reason,
-    }));
+  // Carregar config nova dos kits + itens (para o motor novo decidir preço final).
+  const isB2bApproved = await resolveB2bApprovedForUser(input.userId);
+  const allBundleIds = Array.from(new Set(list.map((r) => r.bundle_id)));
+  const kitConfigById = new Map<string, KitConfig>();
+  const kitItemsByBundle = new Map<string, KitItemForPricing[]>();
+  if (allBundleIds.length > 0) {
+    const { data: kitRows } = await supabaseAdmin
+      .from("product_bundles")
+      .select(
+        "id, kit_type, pricing_method, fixed_price, discount_percent, discount_amount, available_retail, available_b2b, b2b_pricing_method, b2b_fixed_price, b2b_extra_discount_percent, b2b_min_quantity, accepts_coupon, stack_with_b2b",
+      )
+      .in("id", allBundleIds);
+    for (const k of (kitRows ?? []) as KitRow[]) {
+      kitConfigById.set(k.id, toKitConfig(k));
+    }
+    const { data: kitItemRows } = await supabaseAdmin
+      .from("product_bundle_items")
+      .select(
+        "bundle_id, product_id, quantity, product:products(price, sale_price, b2b_enabled, b2b_price, cost_price, active)",
+      )
+      .in("bundle_id", allBundleIds);
+    for (const it of (kitItemRows ?? []) as unknown as KitItemRow[]) {
+      const p = it.product;
+      if (!p || p.active === false) continue;
+      const retail = Number(p.price ?? 0);
+      const sale = p.sale_price != null ? Number(p.sale_price) : null;
+      const finalPrice = sale != null && sale > 0 ? sale : retail;
+      const arr = kitItemsByBundle.get(it.bundle_id) ?? [];
+      arr.push({
+        quantity: Number(it.quantity ?? 1),
+        retail_unit_price: finalPrice,
+        b2b_unit_price: p.b2b_price != null ? Number(p.b2b_price) : null,
+        cost_unit_price: p.cost_price != null ? Number(p.cost_price) : null,
+        b2b_enabled: !!p.b2b_enabled,
+      });
+      kitItemsByBundle.set(it.bundle_id, arr);
+    }
+  }
 
-  // Ordenar elegíveis por maior desconto primeiro (resolução de conflito gulosa).
-  eligible.sort((a, b) => Number(b.estimated_discount) - Number(a.estimated_discount));
+  // Bloqueios kit-específicos: cupom (kit não aceita cupom), B2B-only para não-B2B.
+  const blocked: BlockedBundle[] = [];
+  const candidates: RpcRow[] = [];
+  for (const r of list) {
+    const cfg = kitConfigById.get(r.bundle_id);
+    if (cfg) {
+      if (input.hasCoupon && !cfg.accepts_coupon) {
+        blocked.push({
+          bundle_id: r.bundle_id,
+          bundle_name: r.bundle_name,
+          status: "blocked_by_coupon",
+          reason: "Este kit não acumula com cupons promocionais.",
+        });
+        continue;
+      }
+      if (!cfg.available_retail && !isB2bApproved) {
+        blocked.push({
+          bundle_id: r.bundle_id,
+          bundle_name: r.bundle_name,
+          status: "not_eligible",
+          reason: "Kit exclusivo para clientes empresa aprovados.",
+        });
+        continue;
+      }
+    }
+    if (r.status !== "eligible_preview") {
+      blocked.push({
+        bundle_id: r.bundle_id,
+        bundle_name: r.bundle_name,
+        status: r.status,
+        reason: r.reason,
+      });
+      continue;
+    }
+    candidates.push(r);
+  }
+
+  // Ordenar candidatos por maior estimated_discount primeiro (resolução de conflito gulosa).
+  // Para kits do motor novo, estimated_discount pode ser 0 — desempate vai para depois (mantemos ordem original).
+  const eligible = candidates.sort(
+    (a, b) => Number(b.estimated_discount) - Number(a.estimated_discount),
+  );
 
   // Quantidades já consumidas por combos aplicados, por produto.
   const consumed = new Map<string, number>();
