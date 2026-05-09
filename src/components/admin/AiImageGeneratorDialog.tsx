@@ -91,15 +91,15 @@ export function AiImageGeneratorDialog({
         else onOpenChange(v);
       }}
     >
-      <DialogContent className="max-w-xl">
-        <DialogHeader>
+      <DialogContent className="max-w-xl max-h-[90vh] flex flex-col p-0">
+        <DialogHeader className="px-6 pt-6">
           <DialogTitle className="flex items-center gap-2">
             <Sparkles className="w-5 h-5 text-primary" />
             Gerar imagem com IA — {kind === "bundle" ? "Kit" : "Produto"}
           </DialogTitle>
         </DialogHeader>
 
-        <div className="space-y-4 py-2">
+        <div className="space-y-4 py-2 px-6 overflow-y-auto flex-1 min-h-0">
           <div className="rounded-md border border-border bg-muted/40 px-3 py-2 text-xs text-muted-foreground space-y-0.5">
             <div>
               <strong className="text-foreground">{kind === "bundle" ? "Kit" : "Produto"}:</strong>{" "}
