@@ -1,5 +1,13 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
+import {
+  computeKitPricing,
+  type KitConfig,
+  type KitPricingResult,
+  type KitType,
+  type KitPricingMethod,
+  type KitB2bPricingMethod,
+} from "@/lib/kitPricing";
 
 // ----------------------------------------------------------------------------
 // Tipos compartilhados
