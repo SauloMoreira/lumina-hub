@@ -96,7 +96,7 @@ function useSectionContentSignals() {
             ? "Nenhuma vitrine configurável adicional ativa no momento."
             : undefined,
       },
-      combos_showcase: { hasContent: false, note: "Em breve." },
+      combos_showcase: { hasContent: true },
       institutional_block: { hasContent: false, note: "Em breve." },
       main_cta: { hasContent: true },
     };
