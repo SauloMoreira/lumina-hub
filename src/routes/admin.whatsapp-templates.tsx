@@ -1,6 +1,8 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useState, type FormEvent } from "react";
 import { Plus, Pencil, Trash2, Copy, MessageSquareText } from "lucide-react";
+import { z } from "zod";
+import { zodValidator, fallback } from "@tanstack/zod-adapter";
 import { AdminLayout } from "@/components/admin/AdminLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -16,6 +18,13 @@ import {
   DialogFooter,
   DialogDescription,
 } from "@/components/ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import {
@@ -26,8 +35,25 @@ import {
   renderTemplate,
   type WhatsappTemplate,
 } from "@/lib/whatsappTemplates";
+import {
+  DataTable,
+  DataTableToolbar,
+  DataTablePagination,
+  type DataTableColumn,
+} from "@/components/admin/datatable";
+import { useTableState } from "@/hooks/useTableState";
+
+const searchSchema = z.object({
+  page: fallback(z.number(), 1).default(1),
+  pageSize: fallback(z.number(), 25).default(25),
+  q: fallback(z.string(), "").default(""),
+  sort: fallback(z.string(), "sort_order.asc").default("sort_order.asc"),
+  category: fallback(z.string(), "all").default("all"),
+  status: fallback(z.enum(["all", "active", "inactive"]), "all").default("all"),
+});
 
 export const Route = createFileRoute("/admin/whatsapp-templates")({
+  validateSearch: zodValidator(searchSchema),
   component: WhatsappTemplatesPage,
 });
 
@@ -43,6 +69,14 @@ type Form = {
 const EMPTY: Form = { name: "", category: "geral", body: "", active: true, sort_order: 0 };
 
 function WhatsappTemplatesPage() {
+  const ts = useTableState({
+    page: 1,
+    pageSize: 25,
+    sort: { column: "sort_order", direction: "asc" },
+  });
+  const category = (ts.search.category as string) ?? "all";
+  const status = (ts.search.status as string) ?? "all";
+
   const [list, setList] = useState<WhatsappTemplate[]>([]);
   const [loading, setLoading] = useState(true);
   const [open, setOpen] = useState(false);
@@ -127,6 +161,111 @@ function WhatsappTemplatesPage() {
 
   const detectedVars = useMemo(() => extractVariables(form.body), [form.body]);
 
+  // filtering, sorting, pagination (client-side)
+  const filtered = useMemo(() => {
+    const term = ts.q.trim().toLowerCase();
+    let arr = list.filter((t) => {
+      if (category !== "all" && t.category !== category) return false;
+      if (status === "active" && !t.active) return false;
+      if (status === "inactive" && t.active) return false;
+      if (term && !t.name.toLowerCase().includes(term) && !t.body.toLowerCase().includes(term))
+        return false;
+      return true;
+    });
+    const dir = ts.sort.direction === "asc" ? 1 : -1;
+    const col = ts.sort.column;
+    arr = [...arr].sort((a, b) => {
+      const av = (a as Record<string, unknown>)[col];
+      const bv = (b as Record<string, unknown>)[col];
+      if (typeof av === "number" && typeof bv === "number") return (av - bv) * dir;
+      return String(av ?? "").localeCompare(String(bv ?? "")) * dir;
+    });
+    return arr;
+  }, [list, ts.q, ts.sort, category, status]);
+
+  const total = filtered.length;
+  const paged = useMemo(() => {
+    const start = (ts.page - 1) * ts.pageSize;
+    return filtered.slice(start, start + ts.pageSize);
+  }, [filtered, ts.page, ts.pageSize]);
+
+  const hasFilters = ts.q !== "" || category !== "all" || status !== "all";
+
+  const columns: DataTableColumn<WhatsappTemplate>[] = [
+    {
+      id: "name",
+      header: "Nome",
+      sortable: true,
+      cell: (t) => <span className="font-medium">{t.name}</span>,
+    },
+    {
+      id: "category",
+      header: "Categoria",
+      sortable: true,
+      cell: (t) => (
+        <Badge variant="secondary" className="text-[10px] uppercase">
+          {t.category}
+        </Badge>
+      ),
+    },
+    {
+      id: "variables",
+      header: "Variáveis",
+      hideOnMobile: true,
+      cell: (t) => (
+        <div className="flex flex-wrap gap-1">
+          {(t.variables ?? []).slice(0, 4).map((v) => (
+            <span
+              key={v}
+              className="text-[10px] px-1.5 py-0.5 rounded bg-muted text-muted-foreground"
+            >{`{{${v}}}`}</span>
+          ))}
+          {(t.variables ?? []).length > 4 && (
+            <span className="text-[10px] text-muted-foreground">
+              +{(t.variables ?? []).length - 4}
+            </span>
+          )}
+        </div>
+      ),
+    },
+    {
+      id: "active",
+      header: "Ativo",
+      sortable: true,
+      cell: (t) => <Switch checked={t.active} onCheckedChange={() => toggleActive(t)} />,
+    },
+    {
+      id: "actions",
+      header: <span className="sr-only">Ações</span>,
+      headerClassName: "text-right",
+      className: "text-right",
+      cell: (t) => (
+        <>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-8 w-8"
+            title="Pré-visualizar"
+            onClick={() => setPreviewOpen(t)}
+          >
+            <MessageSquareText className="w-4 h-4" />
+          </Button>
+          <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => openEdit(t)}>
+            <Pencil className="w-4 h-4" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-8 w-8 text-destructive"
+            onClick={() => del(t.id)}
+          >
+            <Trash2 className="w-4 h-4" />
+          </Button>
+        </>
+      ),
+    },
+  ];
+
   return (
     <AdminLayout
       title="Modelos de WhatsApp"
@@ -137,99 +276,59 @@ function WhatsappTemplatesPage() {
       }
     >
       <div className="bg-card border border-border rounded-xl">
-        <div className="p-4 border-b border-border">
-          <p className="text-sm text-muted-foreground">
-            Mensagens prontas para usar no WhatsApp. Use variáveis como
-            <code className="mx-1 px-1.5 py-0.5 rounded bg-muted text-xs">{`{{nome_cliente}}`}</code>
-            que serão substituídas automaticamente quando o modelo for usado em um lead, pedido ou
-            carrinho.
-          </p>
-        </div>
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead className="text-left text-xs text-muted-foreground bg-muted/40">
-              <tr>
-                <th className="px-4 py-3 font-medium">Nome</th>
-                <th className="px-4 py-3 font-medium">Categoria</th>
-                <th className="px-4 py-3 font-medium">Variáveis</th>
-                <th className="px-4 py-3 font-medium">Ativo</th>
-                <th className="px-4 py-3 font-medium text-right">Ações</th>
-              </tr>
-            </thead>
-            <tbody>
-              {loading && (
-                <tr>
-                  <td colSpan={5} className="px-4 py-8 text-center text-muted-foreground">
-                    Carregando…
-                  </td>
-                </tr>
-              )}
-              {!loading && list.length === 0 && (
-                <tr>
-                  <td colSpan={5} className="px-4 py-8 text-center text-muted-foreground">
-                    Nenhum modelo cadastrado.
-                  </td>
-                </tr>
-              )}
-              {!loading &&
-                list.map((t) => (
-                  <tr key={t.id} className="border-t border-border hover:bg-muted/20">
-                    <td className="px-4 py-3 font-medium">{t.name}</td>
-                    <td className="px-4 py-3">
-                      <Badge variant="secondary" className="text-[10px] uppercase">
-                        {t.category}
-                      </Badge>
-                    </td>
-                    <td className="px-4 py-3">
-                      <div className="flex flex-wrap gap-1">
-                        {(t.variables ?? []).slice(0, 4).map((v) => (
-                          <span
-                            key={v}
-                            className="text-[10px] px-1.5 py-0.5 rounded bg-muted text-muted-foreground"
-                          >{`{{${v}}}`}</span>
-                        ))}
-                        {(t.variables ?? []).length > 4 && (
-                          <span className="text-[10px] text-muted-foreground">
-                            +{(t.variables ?? []).length - 4}
-                          </span>
-                        )}
-                      </div>
-                    </td>
-                    <td className="px-4 py-3">
-                      <Switch checked={t.active} onCheckedChange={() => toggleActive(t)} />
-                    </td>
-                    <td className="px-4 py-3 text-right">
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-8 w-8"
-                        title="Pré-visualizar"
-                        onClick={() => setPreviewOpen(t)}
-                      >
-                        <MessageSquareText className="w-4 h-4" />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-8 w-8"
-                        onClick={() => openEdit(t)}
-                      >
-                        <Pencil className="w-4 h-4" />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-8 w-8 text-destructive"
-                        onClick={() => del(t.id)}
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </Button>
-                    </td>
-                  </tr>
-                ))}
-            </tbody>
-          </table>
-        </div>
+        <DataTableToolbar
+          q={ts.q}
+          onQChange={ts.setQ}
+          searchPlaceholder="Buscar por nome ou conteúdo…"
+          hasActiveFilters={hasFilters}
+          onClearFilters={ts.clearAll}
+          filters={
+            <>
+              <Select value={category} onValueChange={(v) => ts.setFilter("category", v)}>
+                <SelectTrigger className="h-9 w-[160px]">
+                  <SelectValue placeholder="Categoria" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todas categorias</SelectItem>
+                  {TEMPLATE_CATEGORIES.map((c) => (
+                    <SelectItem key={c.value} value={c.value}>
+                      {c.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Select value={status} onValueChange={(v) => ts.setFilter("status", v)}>
+                <SelectTrigger className="h-9 w-[140px]">
+                  <SelectValue placeholder="Status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todos</SelectItem>
+                  <SelectItem value="active">Ativos</SelectItem>
+                  <SelectItem value="inactive">Inativos</SelectItem>
+                </SelectContent>
+              </Select>
+            </>
+          }
+        />
+
+        <DataTable<WhatsappTemplate>
+          columns={columns}
+          rows={paged}
+          loading={loading}
+          sort={ts.sort}
+          onSort={ts.setSort}
+          rowKey={(t) => t.id}
+          emptyTitle="Nenhum modelo"
+          emptyDescription="Crie seu primeiro modelo de WhatsApp."
+        />
+
+        <DataTablePagination
+          page={ts.page}
+          pageSize={ts.pageSize}
+          total={total}
+          onPageChange={ts.setPage}
+          onPageSizeChange={ts.setPageSize}
+        />
       </div>
 
       <Dialog open={open} onOpenChange={setOpen}>
