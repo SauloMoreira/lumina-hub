@@ -204,7 +204,7 @@ function CommercialReviewPage() {
       const res = await exportCommercialReviewCsv({
         data: {
           filter,
-          search: search || undefined,
+          search: ts.q || undefined,
           categoryId: categoryId !== "all" ? categoryId : undefined,
           brand: brand !== "all" ? brand : undefined,
           page: 1,
