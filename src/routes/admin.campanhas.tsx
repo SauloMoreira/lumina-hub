@@ -300,7 +300,59 @@ function CampanhasPage() {
     setOpen(true);
   };
 
-  const openEdit = (c: Campaign) => {
+  const aiReferences: AiCampaignReference = useMemo(
+    () => ({
+      products: products.map((p) => ({ id: p.id, name: p.name })),
+      combos: combos.map((c) => ({ id: c.id, name: c.name })),
+      categories: categories.map((c) => ({ id: c.id, name: c.name })),
+      coupons: coupons.map((c) => ({ id: c.id, code: c.code })),
+    }),
+    [products, combos, categories, coupons],
+  );
+
+  const openFromAi = (patch: AiApplyPatch) => {
+    setEditing(null);
+    setMetrics(null);
+    const next = { ...emptyForm };
+    if (patch.campaign) {
+      Object.assign(next, {
+        name: patch.campaign.name ?? next.name,
+        description: patch.campaign.description ?? next.description,
+        objective: patch.campaign.objective ?? next.objective,
+        audience: patch.campaign.audience ?? next.audience,
+        channel: patch.campaign.channel ?? next.channel,
+        starts_at: patch.campaign.starts_at
+          ? `${patch.campaign.starts_at}T09:00`
+          : next.starts_at,
+        ends_at: patch.campaign.ends_at ? `${patch.campaign.ends_at}T23:59` : next.ends_at,
+        notes: patch.campaign.notes ?? next.notes,
+        status: patch.campaign.status ?? "draft",
+      });
+    }
+    if (patch.utm) {
+      Object.assign(next, {
+        utm_source: patch.utm.utm_source ?? next.utm_source,
+        utm_medium: patch.utm.utm_medium ?? next.utm_medium,
+        utm_campaign: patch.utm.utm_campaign ?? next.utm_campaign,
+        utm_content: patch.utm.utm_content ?? next.utm_content,
+        utm_term: patch.utm.utm_term ?? next.utm_term,
+        base_url: patch.utm.base_url ?? next.base_url,
+      });
+    }
+    if (patch.links) {
+      Object.assign(next, {
+        product_ids: patch.links.product_ids ?? [],
+        combo_ids: patch.links.combo_ids ?? [],
+        category_ids: patch.links.category_ids ?? [],
+        coupon_id: patch.links.coupon_id ?? "",
+      });
+    }
+    setForm(next);
+    setAiOpen(false);
+    setOpen(true);
+    toast.success("Rascunho aplicado. Revise e salve.");
+  };
+
     setEditing(c);
     setForm({
       name: c.name ?? "",
