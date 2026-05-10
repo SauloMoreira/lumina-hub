@@ -152,7 +152,7 @@ export const updateEmailTemplate = createServerFn({ method: "POST" })
 
     const { error } = await supabaseAdmin
       .from("email_templates")
-      .update(patch)
+      .update(patch as never)
       .eq("type", data.type);
     if (error) return { ok: false as const, error: error.message };
 
