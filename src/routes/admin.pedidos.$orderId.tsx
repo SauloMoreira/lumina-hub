@@ -602,6 +602,7 @@ function OrderDetailPage() {
                 { type: "order_shipped", label: "Pedido enviado" },
                 { type: "order_delivered", label: "Pedido entregue" },
                 { type: "order_cancelled", label: "Pedido cancelado" },
+                { type: "order_refunded", label: "Pedido reembolsado" },
               ].map((opt) => (
                 <Button
                   key={opt.type}
