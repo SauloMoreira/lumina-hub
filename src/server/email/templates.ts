@@ -190,7 +190,74 @@ function getContent(p: OrderEmailParams): TemplateContent {
         showItems: true,
       };
     }
+    case "order_refunded": {
+      const storeUrl = p.orderUrl.split("/pedido/")[0] || p.orderUrl;
+      return {
+        subject: `Reembolso do pedido #${p.orderNumber} processado`,
+        preheader: "Seu reembolso foi processado.",
+        headline: `Pedido ${num} reembolsado`,
+        intro:
+          `O reembolso do seu pedido ${num} foi processado. ` +
+          `O valor pode levar alguns dias para aparecer na sua fatura ou conta, ` +
+          `dependendo da forma de pagamento utilizada. ` +
+          `Se tiver qualquer dúvida, fale com nosso atendimento.`,
+        ctaLabel: "Visitar a loja",
+        ctaUrl: storeUrl,
+        secondaryCta: { label: "Ver pedido", url: p.orderUrl },
+        showItems: true,
+      };
+    }
   }
+}
+
+/** Aplica override (ignora vazios) e interpola {{vars}} nas strings finais. */
+function applyOverrideAndInterpolate(
+  base: TemplateContent,
+  override: NonNullable<OrderEmailParams["override"]> | null | undefined,
+  vars: Record<string, string> | null | undefined,
+): TemplateContent {
+  const ov = override ?? {};
+  const pickStr = (cur: string, next?: string | null): string => {
+    const v = (next ?? "").toString();
+    return v.trim() ? v : cur;
+  };
+  const merged: TemplateContent = {
+    subject: pickStr(base.subject, ov.subject),
+    preheader: pickStr(base.preheader, ov.preheader),
+    headline: pickStr(base.headline, ov.headline),
+    intro: pickStr(base.intro, ov.intro_html),
+    ctaLabel: pickStr(base.ctaLabel, ov.cta_label),
+    ctaUrl: pickStr(base.ctaUrl, ov.cta_url),
+    secondaryCta: base.secondaryCta,
+    showItems: base.showItems,
+  };
+  // Override do CTA secundário só aplica se ambos label e url estiverem presentes,
+  // ou se já existir um secondaryCta padrão para sobrescrever só uma das partes.
+  if (ov.secondary_cta_label || ov.secondary_cta_url) {
+    const label = (ov.secondary_cta_label ?? base.secondaryCta?.label ?? "").trim();
+    const url = (ov.secondary_cta_url ?? base.secondaryCta?.url ?? "").trim();
+    merged.secondaryCta = label && url ? { label, url } : merged.secondaryCta;
+  }
+
+  if (!vars) return merged;
+  const VAR = /\{\{\s*([a-zA-Z0-9_]+)\s*\}\}/g;
+  const interp = (s: string): string =>
+    s.replace(VAR, (m, name: string) =>
+      Object.prototype.hasOwnProperty.call(vars, name) ? vars[name] : m,
+    );
+
+  return {
+    ...merged,
+    subject: interp(merged.subject),
+    preheader: interp(merged.preheader),
+    headline: interp(merged.headline),
+    intro: interp(merged.intro),
+    ctaLabel: interp(merged.ctaLabel),
+    ctaUrl: interp(merged.ctaUrl),
+    secondaryCta: merged.secondaryCta
+      ? { label: interp(merged.secondaryCta.label), url: interp(merged.secondaryCta.url) }
+      : undefined,
+  };
 }
 
 export function buildOrderEmailTemplate(p: OrderEmailParams): {
