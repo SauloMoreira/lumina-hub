@@ -1,11 +1,27 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
-import { ArrowLeft, Building2, Search, CheckCircle2, ShieldX, XCircle, Clock } from "lucide-react";
+import { ArrowLeft, Building2, CheckCircle2, ShieldX, XCircle, Clock } from "lucide-react";
+import { z } from "zod";
+import { zodValidator, fallback } from "@tanstack/zod-adapter";
 import { buildSeo } from "@/lib/seo";
 import { formatCNPJ } from "@/lib/cnpj";
 import { AdminLayout } from "@/components/admin/AdminLayout";
 import { adminListCompanies, adminUpdateCompanyStatus } from "@/server/companies.functions";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  DataTable,
+  DataTableToolbar,
+  DataTablePagination,
+  type DataTableColumn,
+} from "@/components/admin/datatable";
+import { useTableState } from "@/hooks/useTableState";
 
 type Company = {
   id: string;
@@ -21,25 +37,50 @@ type Company = {
   admin_notes: string | null;
 };
 
-type StatusFilter = "" | "pending" | "approved" | "blocked" | "rejected";
+type StatusFilter = "all" | "pending" | "approved" | "blocked" | "rejected";
+
+const searchSchema = z.object({
+  page: fallback(z.number(), 1).default(1),
+  pageSize: fallback(z.number(), 25).default(25),
+  q: fallback(z.string(), "").default(""),
+  sort: fallback(z.string(), "created_at.desc").default("created_at.desc"),
+  status: fallback(
+    z.enum(["all", "pending", "approved", "blocked", "rejected"]),
+    "pending",
+  ).default("pending"),
+});
 
 export const Route = createFileRoute("/admin/empresas")({
+  validateSearch: zodValidator(searchSchema),
   head: () => buildSeo({ title: "Empresas B2B", url: "/admin/empresas", noindex: true }),
   component: AdminEmpresasPage,
 });
 
 function AdminEmpresasPage() {
+  const ts = useTableState({
+    page: 1,
+    pageSize: 25,
+    sort: { column: "created_at", direction: "desc" },
+  });
+  const status = ((ts.search.status as string) ?? "pending") as StatusFilter;
+
   const [items, setItems] = useState<Company[]>([]);
   const [loading, setLoading] = useState(true);
-  const [filter, setFilter] = useState<StatusFilter>("pending");
-  const [search, setSearch] = useState("");
   const [selected, setSelected] = useState<Company | null>(null);
 
   const load = async () => {
     setLoading(true);
     try {
       const { companies } = await adminListCompanies({
-        data: { status: (filter || undefined) as StatusFilter | undefined, search },
+        data: {
+          status: (status === "all" ? undefined : status) as
+            | "pending"
+            | "approved"
+            | "blocked"
+            | "rejected"
+            | undefined,
+          search: "",
+        },
       });
       setItems(companies as Company[]);
     } catch (err) {
@@ -53,15 +94,15 @@ function AdminEmpresasPage() {
   useEffect(() => {
     load();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [filter]);
+  }, [status]);
 
   const updateStatus = async (
     company_id: string,
-    status: "approved" | "rejected" | "blocked" | "pending",
+    next: "approved" | "rejected" | "blocked" | "pending",
     extras?: { rejection_reason?: string; admin_notes?: string },
   ) => {
     try {
-      await adminUpdateCompanyStatus({ data: { company_id, status, ...extras } });
+      await adminUpdateCompanyStatus({ data: { company_id, status: next, ...extras } });
       toast.success("Status atualizado");
       setSelected(null);
       await load();
@@ -70,6 +111,91 @@ function AdminEmpresasPage() {
       toast.error(msg);
     }
   };
+
+  const filtered = useMemo(() => {
+    const term = ts.q.trim().toLowerCase();
+    let arr = items.filter((c) => {
+      if (!term) return true;
+      const cnpjDigits = (c.cnpj ?? "").replace(/\D+/g, "");
+      return (
+        c.legal_name.toLowerCase().includes(term) ||
+        (c.trade_name ?? "").toLowerCase().includes(term) ||
+        cnpjDigits.includes(term.replace(/\D+/g, "")) ||
+        c.contact_name.toLowerCase().includes(term) ||
+        c.contact_email.toLowerCase().includes(term)
+      );
+    });
+    const dir = ts.sort.direction === "asc" ? 1 : -1;
+    const col = ts.sort.column;
+    arr = [...arr].sort((a, b) => {
+      const av = (a as Record<string, unknown>)[col];
+      const bv = (b as Record<string, unknown>)[col];
+      return String(av ?? "").localeCompare(String(bv ?? "")) * dir;
+    });
+    return arr;
+  }, [items, ts.q, ts.sort]);
+
+  const total = filtered.length;
+  const paged = useMemo(() => {
+    const start = (ts.page - 1) * ts.pageSize;
+    return filtered.slice(start, start + ts.pageSize);
+  }, [filtered, ts.page, ts.pageSize]);
+
+  const hasFilters = ts.q !== "" || status !== "pending";
+
+  const columns: DataTableColumn<Company>[] = [
+    {
+      id: "legal_name",
+      header: "Empresa",
+      sortable: true,
+      cell: (c) => (
+        <div>
+          <div className="font-medium text-foreground">{c.trade_name || c.legal_name}</div>
+          {c.trade_name && (
+            <div className="text-xs text-muted-foreground">{c.legal_name}</div>
+          )}
+        </div>
+      ),
+    },
+    {
+      id: "cnpj",
+      header: "CNPJ",
+      sortable: true,
+      hideOnMobile: true,
+      cell: (c) => <span className="text-foreground/80">{formatCNPJ(c.cnpj)}</span>,
+    },
+    {
+      id: "contact_name",
+      header: "Responsável",
+      sortable: true,
+      hideOnMobile: true,
+      cell: (c) => (
+        <div className="text-foreground/80">
+          <div>{c.contact_name}</div>
+          <div className="text-xs text-muted-foreground">{c.contact_email}</div>
+        </div>
+      ),
+    },
+    {
+      id: "created_at",
+      header: "Cadastro",
+      sortable: true,
+      hideOnMobile: true,
+      cell: (c) => (
+        <span className="text-xs text-muted-foreground">
+          {new Date(c.created_at).toLocaleDateString("pt-BR")}
+        </span>
+      ),
+    },
+    {
+      id: "status",
+      header: "Status",
+      sortable: true,
+      className: "text-right",
+      headerClassName: "text-right",
+      cell: (c) => <StatusBadge status={c.status} />,
+    },
+  ];
 
   return (
     <AdminLayout title="Empresas B2B">
@@ -87,82 +213,53 @@ function AdminEmpresasPage() {
           <h2 className="text-xl font-display font-bold text-foreground">Empresas cadastradas</h2>
         </div>
 
-        {/* Filtros */}
-        <div className="flex flex-wrap items-center gap-2 mb-4">
-          {(["pending", "approved", "blocked", "rejected", ""] as StatusFilter[]).map((s) => (
-            <button
-              key={s || "all"}
-              onClick={() => setFilter(s)}
-              className={`px-3 h-9 rounded-md text-sm border transition ${
-                filter === s
-                  ? "bg-primary text-primary-foreground border-primary"
-                  : "bg-card text-foreground border-border hover:bg-muted"
-              }`}
-            >
-              {labelStatus(s) || "Todas"}
-            </button>
-          ))}
-          <form
-            onSubmit={(e) => {
-              e.preventDefault();
-              load();
-            }}
-            className="flex-1 min-w-[200px] flex items-center gap-2 ml-auto"
-          >
-            <div className="relative flex-1">
-              <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
-              <input
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                placeholder="Buscar por razão social ou CNPJ"
-                className="w-full h-9 pl-9 pr-3 rounded-md border border-border bg-background text-sm"
-              />
-            </div>
-            <button className="h-9 px-3 rounded-md bg-primary text-primary-foreground text-sm font-medium">
-              Buscar
-            </button>
-          </form>
-        </div>
-
-        {/* Tabela */}
         <div className="bg-card border border-border rounded-lg overflow-hidden">
-          <div className="grid grid-cols-12 gap-3 px-4 py-2 text-xs uppercase tracking-wider text-muted-foreground border-b border-border bg-muted/40">
-            <div className="col-span-4">Empresa</div>
-            <div className="col-span-3">CNPJ</div>
-            <div className="col-span-3">Responsável</div>
-            <div className="col-span-2 text-right">Status</div>
-          </div>
-          {loading ? (
-            <div className="p-6 text-sm text-muted-foreground">Carregando...</div>
-          ) : items.length === 0 ? (
-            <div className="p-6 text-sm text-muted-foreground">Nenhuma empresa encontrada.</div>
-          ) : (
-            items.map((c) => (
-              <button
-                key={c.id}
-                onClick={() => setSelected(c)}
-                className="w-full grid grid-cols-12 gap-3 px-4 py-3 text-left text-sm border-b border-border last:border-0 hover:bg-muted/40 transition"
-              >
-                <div className="col-span-4">
-                  <div className="font-medium text-foreground">{c.trade_name || c.legal_name}</div>
-                  {c.trade_name && (
-                    <div className="text-xs text-muted-foreground">{c.legal_name}</div>
-                  )}
-                </div>
-                <div className="col-span-3 text-foreground/80">{formatCNPJ(c.cnpj)}</div>
-                <div className="col-span-3 text-foreground/80">
-                  <div>{c.contact_name}</div>
-                  <div className="text-xs text-muted-foreground">{c.contact_email}</div>
-                </div>
-                <div className="col-span-2 text-right">
-                  <StatusBadge status={c.status} />
-                </div>
-              </button>
-            ))
-          )}
+          <DataTableToolbar
+            q={ts.q}
+            onQChange={ts.setQ}
+            searchPlaceholder="Buscar por razão social, CNPJ, responsável ou e-mail…"
+            hasActiveFilters={hasFilters}
+            onClearFilters={() => {
+              ts.clearAll();
+              ts.setFilter("status", "pending");
+            }}
+            filters={
+              <Select value={status} onValueChange={(v) => ts.setFilter("status", v)}>
+                <SelectTrigger className="h-9 w-[160px]">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todas</SelectItem>
+                  <SelectItem value="pending">Pendentes</SelectItem>
+                  <SelectItem value="approved">Aprovadas</SelectItem>
+                  <SelectItem value="blocked">Bloqueadas</SelectItem>
+                  <SelectItem value="rejected">Recusadas</SelectItem>
+                </SelectContent>
+              </Select>
+            }
+          />
+
+          <DataTable<Company>
+            columns={columns}
+            rows={paged}
+            loading={loading}
+            sort={ts.sort}
+            onSort={ts.setSort}
+            rowKey={(c) => c.id}
+            onRowClick={(c) => setSelected(c)}
+            emptyTitle="Nenhuma empresa"
+            emptyDescription="Nenhuma empresa encontrada com os filtros atuais."
+          />
+
+          <DataTablePagination
+            page={ts.page}
+            pageSize={ts.pageSize}
+            total={total}
+            onPageChange={ts.setPage}
+            onPageSizeChange={ts.setPageSize}
+          />
         </div>
 
-        {/* Drawer simples */}
         {selected && (
           <Drawer
             company={selected}
@@ -178,17 +275,6 @@ function AdminEmpresasPage() {
         )}
       </div>
     </AdminLayout>
-  );
-}
-
-function labelStatus(s: string) {
-  return (
-    {
-      pending: "Pendentes",
-      approved: "Aprovadas",
-      blocked: "Bloqueadas",
-      rejected: "Recusadas",
-    }[s] ?? ""
   );
 }
 
