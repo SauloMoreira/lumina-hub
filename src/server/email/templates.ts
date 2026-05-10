@@ -33,6 +33,7 @@ export interface OrderEmailParams {
   supportWhatsapp?: string | null;
   retryUrl?: string | null;
   trackingCode?: string | null;
+  cancelledReason?: string | null;
   messageType: EmailMessageType;
   deliveryMethod?: "delivery" | "pickup" | "local_delivery" | string;
   pickup?: {
