@@ -398,12 +398,27 @@ export const resendOrderEmail = createServerFn({ method: "POST" })
           "order_shipped",
           "order_delivered",
           "order_cancelled",
+          "order_refunded",
         ]),
       })
       .parse(input),
   )
   .handler(async ({ data, context }) => {
     const adminUserId = (context as { adminUserId: string }).adminUserId;
+
+    // Bloqueia reenvio manual se o template estiver com allow_manual_resend=false
+    const { data: tpl } = await supabaseAdmin
+      .from("email_templates")
+      .select("allow_manual_resend")
+      .eq("type", data.type)
+      .maybeSingle();
+    if (tpl && tpl.allow_manual_resend === false) {
+      return {
+        ok: false as const,
+        error: "Reenvio manual desativado para este modelo nas configurações.",
+      };
+    }
+
     const result = await sendOrderEmail({ orderId: data.orderId, type: data.type, force: true });
 
     await logOrderEvent({
