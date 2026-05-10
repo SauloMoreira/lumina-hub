@@ -942,6 +942,63 @@ export type Database = {
         }
         Relationships: []
       }
+      email_templates: {
+        Row: {
+          allow_manual_resend: boolean
+          auto_send: boolean
+          created_at: string
+          cta_label: string | null
+          cta_url: string | null
+          display_name: string
+          headline: string | null
+          id: string
+          intro_html: string | null
+          is_active: boolean
+          preheader: string | null
+          secondary_cta_label: string | null
+          secondary_cta_url: string | null
+          subject: string | null
+          type: string
+          updated_at: string
+        }
+        Insert: {
+          allow_manual_resend?: boolean
+          auto_send?: boolean
+          created_at?: string
+          cta_label?: string | null
+          cta_url?: string | null
+          display_name: string
+          headline?: string | null
+          id?: string
+          intro_html?: string | null
+          is_active?: boolean
+          preheader?: string | null
+          secondary_cta_label?: string | null
+          secondary_cta_url?: string | null
+          subject?: string | null
+          type: string
+          updated_at?: string
+        }
+        Update: {
+          allow_manual_resend?: boolean
+          auto_send?: boolean
+          created_at?: string
+          cta_label?: string | null
+          cta_url?: string | null
+          display_name?: string
+          headline?: string | null
+          id?: string
+          intro_html?: string | null
+          is_active?: boolean
+          preheader?: string | null
+          secondary_cta_label?: string | null
+          secondary_cta_url?: string | null
+          subject?: string | null
+          type?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       finance_settings: {
         Row: {
           alerts_baseline_at: string

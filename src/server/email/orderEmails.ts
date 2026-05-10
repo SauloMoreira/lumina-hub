@@ -7,6 +7,7 @@
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { sendTransactionalEmail } from "./transport";
 import { buildOrderEmailTemplate, type EmailMessageType } from "./templates";
+import { buildVariableContext } from "./templateVars";
 
 function getSiteUrl(): string {
   return (process.env.SITE_URL ?? "").replace(/\/$/, "") || "https://www.ledmarica.com.br";
@@ -29,7 +30,7 @@ interface SendOrderEmailOptions {
 
 export async function sendOrderEmail(opts: SendOrderEmailOptions): Promise<{
   ok: boolean;
-  skipped?: "already_sent" | "no_email" | "order_not_found";
+  skipped?: "already_sent" | "no_email" | "order_not_found" | "template_disabled";
   error?: string;
 }> {
   try {
@@ -80,6 +81,22 @@ export async function sendOrderEmail(opts: SendOrderEmailOptions): Promise<{
       }
     }
 
+    // 3.5) Carregar override do email_templates (se existir)
+    const { data: tplRow } = await supabaseAdmin
+      .from("email_templates")
+      .select(
+        "subject, preheader, headline, intro_html, cta_label, cta_url, secondary_cta_label, secondary_cta_url, is_active, auto_send",
+      )
+      .eq("type", opts.type)
+      .maybeSingle();
+
+    // Se template inativo OU auto_send=false, só envia em modo manual (force=true).
+    if (tplRow && !opts.force) {
+      if (tplRow.is_active === false || tplRow.auto_send === false) {
+        return { ok: true, skipped: "template_disabled" };
+      }
+    }
+
     // 4) Renderizar template — link inclui token público para acesso sem login
     const tokenQuery = order.public_access_token
       ? `?token=${encodeURIComponent(order.public_access_token)}`
@@ -102,6 +119,13 @@ export async function sendOrderEmail(opts: SendOrderEmailOptions): Promise<{
       | "delivery"
       | "pickup"
       | "local_delivery";
+
+    const variables = buildVariableContext(
+      order as any,
+      profile ?? null,
+      items.map((i) => ({ product_name: i.name, qty: i.qty })),
+      { siteUrl: getSiteUrl() },
+    );
 
     const { subject, html, text } = buildOrderEmailTemplate({
       storeName: getStoreName(),
@@ -138,6 +162,8 @@ export async function sendOrderEmail(opts: SendOrderEmailOptions): Promise<{
               service: orderAny.shipping_service ?? null,
             }
           : null,
+      override: tplRow ?? null,
+      variables,
     });
 
     // 5) Registrar pending (provider real é resolvido no transport)
