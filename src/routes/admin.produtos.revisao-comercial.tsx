@@ -451,77 +451,60 @@ function CommercialReviewPage() {
         </section>
 
         {/* FILTROS */}
-        <section className="flex flex-col lg:flex-row gap-2 lg:items-end">
-          <form onSubmit={handleSearchSubmit} className="flex-1 min-w-0">
-            <div className="relative">
-              <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-              <Input
-                placeholder="Buscar por nome ou SKU…"
-                value={searchInput}
-                onChange={(e) => setSearchInput(e.target.value)}
-                className="pl-8"
-              />
-            </div>
-          </form>
-          <Select
-            value={filter}
-            onValueChange={(v) => {
-              setFilter(v as CommercialFilter);
-              setPage(1);
-            }}
-          >
-            <SelectTrigger className="w-full lg:w-[240px]">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {FILTER_OPTIONS.map((o) => (
-                <SelectItem key={o.value} value={o.value}>
-                  {o.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          <Select
-            value={categoryId}
-            onValueChange={(v) => {
-              setCategoryId(v);
-              setPage(1);
-            }}
-          >
-            <SelectTrigger className="w-full lg:w-[200px]">
-              <SelectValue placeholder="Categoria" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">Todas as categorias</SelectItem>
-              {(filterOptions?.categories ?? []).map((c) => (
-                <SelectItem key={c.id} value={c.id}>
-                  {c.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          {(filterOptions?.brands?.length ?? 0) > 0 && (
-            <Select
-              value={brand}
-              onValueChange={(v) => {
-                setBrand(v);
-                setPage(1);
-              }}
-            >
-              <SelectTrigger className="w-full lg:w-[180px]">
-                <SelectValue placeholder="Marca" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Todas as marcas</SelectItem>
-                {(filterOptions?.brands ?? []).map((b) => (
-                  <SelectItem key={b} value={b}>
-                    {b}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          )}
-        </section>
+        <DataTableToolbar
+          q={ts.q}
+          onQChange={ts.setQ}
+          searchPlaceholder="Buscar por nome ou SKU…"
+          hasActiveFilters={hasFilters}
+          onClearFilters={ts.clearAll}
+          filters={
+            <>
+              <Select
+                value={filter}
+                onValueChange={(v) => setFilter(v as CommercialFilter)}
+              >
+                <SelectTrigger className="h-9 w-[220px]">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {FILTER_OPTIONS.map((o) => (
+                    <SelectItem key={o.value} value={o.value}>
+                      {o.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Select value={categoryId} onValueChange={(v) => setCategoryId(v)}>
+                <SelectTrigger className="h-9 w-[200px]">
+                  <SelectValue placeholder="Categoria" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todas as categorias</SelectItem>
+                  {(filterOptions?.categories ?? []).map((c) => (
+                    <SelectItem key={c.id} value={c.id}>
+                      {c.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {(filterOptions?.brands?.length ?? 0) > 0 && (
+                <Select value={brand} onValueChange={(v) => setBrand(v)}>
+                  <SelectTrigger className="h-9 w-[180px]">
+                    <SelectValue placeholder="Marca" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Todas as marcas</SelectItem>
+                    {(filterOptions?.brands ?? []).map((b) => (
+                      <SelectItem key={b} value={b}>
+                        {b}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
+            </>
+          }
+        />
 
         {/* TABELA */}
         <section>
