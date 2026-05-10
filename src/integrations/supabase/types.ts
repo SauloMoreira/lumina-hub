@@ -1965,23 +1965,34 @@ export type Database = {
           category_ids: string[]
           channel: string | null
           click_count: number | null
+          combo_ids: string[]
           content: string | null
           coupon_id: string | null
           created_at: string | null
           description: string | null
+          email_template_id: string | null
           ends_at: string | null
           final_url: string | null
           id: string
+          landing_page_url: string | null
           name: string
           notes: string | null
           objective: string | null
           open_count: number | null
+          owner_name: string | null
+          priority: string
           product_ids: string[]
           scheduled_at: string | null
           sent_count: number | null
+          show_on_b2b: boolean
+          show_on_catalog: boolean
+          show_on_home: boolean
           starts_at: string | null
           status: string | null
           subject: string | null
+          tags: string[]
+          target_leads: number | null
+          target_sales: number | null
           type: string | null
           updated_at: string
           utm_campaign: string | null
@@ -1989,6 +2000,7 @@ export type Database = {
           utm_medium: string | null
           utm_source: string | null
           utm_term: string | null
+          whatsapp_template_id: string | null
         }
         Insert: {
           audience?: string | null
@@ -1999,23 +2011,34 @@ export type Database = {
           category_ids?: string[]
           channel?: string | null
           click_count?: number | null
+          combo_ids?: string[]
           content?: string | null
           coupon_id?: string | null
           created_at?: string | null
           description?: string | null
+          email_template_id?: string | null
           ends_at?: string | null
           final_url?: string | null
           id?: string
+          landing_page_url?: string | null
           name: string
           notes?: string | null
           objective?: string | null
           open_count?: number | null
+          owner_name?: string | null
+          priority?: string
           product_ids?: string[]
           scheduled_at?: string | null
           sent_count?: number | null
+          show_on_b2b?: boolean
+          show_on_catalog?: boolean
+          show_on_home?: boolean
           starts_at?: string | null
           status?: string | null
           subject?: string | null
+          tags?: string[]
+          target_leads?: number | null
+          target_sales?: number | null
           type?: string | null
           updated_at?: string
           utm_campaign?: string | null
@@ -2023,6 +2046,7 @@ export type Database = {
           utm_medium?: string | null
           utm_source?: string | null
           utm_term?: string | null
+          whatsapp_template_id?: string | null
         }
         Update: {
           audience?: string | null
@@ -2033,23 +2057,34 @@ export type Database = {
           category_ids?: string[]
           channel?: string | null
           click_count?: number | null
+          combo_ids?: string[]
           content?: string | null
           coupon_id?: string | null
           created_at?: string | null
           description?: string | null
+          email_template_id?: string | null
           ends_at?: string | null
           final_url?: string | null
           id?: string
+          landing_page_url?: string | null
           name?: string
           notes?: string | null
           objective?: string | null
           open_count?: number | null
+          owner_name?: string | null
+          priority?: string
           product_ids?: string[]
           scheduled_at?: string | null
           sent_count?: number | null
+          show_on_b2b?: boolean
+          show_on_catalog?: boolean
+          show_on_home?: boolean
           starts_at?: string | null
           status?: string | null
           subject?: string | null
+          tags?: string[]
+          target_leads?: number | null
+          target_sales?: number | null
           type?: string | null
           updated_at?: string
           utm_campaign?: string | null
@@ -2057,6 +2092,7 @@ export type Database = {
           utm_medium?: string | null
           utm_source?: string | null
           utm_term?: string | null
+          whatsapp_template_id?: string | null
         }
         Relationships: []
       }
