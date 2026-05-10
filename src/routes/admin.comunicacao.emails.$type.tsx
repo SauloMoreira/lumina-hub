@@ -200,10 +200,10 @@ function EmailTemplateEditorPage() {
     setForm((p) => ({ ...p, [k]: v }));
 
   return (
-    <AdminLayout
-      title={`Modelo: ${form.display_name || type}`}
-      description="Campos vazios voltam ao texto padrão do código. O HTML/layout não é editável aqui."
-    >
+    <AdminLayout title={`Modelo: ${form.display_name || type}`}>
+      <p className="text-sm text-muted-foreground mb-4">
+        Campos vazios voltam ao texto padrão do código. O HTML/layout não é editável aqui.
+      </p>
       <div className="mb-4">
         <Button asChild variant="ghost" size="sm">
           <Link to={"/admin/comunicacao/emails" as any}>
