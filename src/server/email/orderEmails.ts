@@ -30,7 +30,7 @@ interface SendOrderEmailOptions {
 
 export async function sendOrderEmail(opts: SendOrderEmailOptions): Promise<{
   ok: boolean;
-  skipped?: "already_sent" | "no_email" | "order_not_found";
+  skipped?: "already_sent" | "no_email" | "order_not_found" | "template_disabled";
   error?: string;
 }> {
   try {
