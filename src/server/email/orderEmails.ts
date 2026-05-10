@@ -120,6 +120,13 @@ export async function sendOrderEmail(opts: SendOrderEmailOptions): Promise<{
       | "pickup"
       | "local_delivery";
 
+    const variables = buildVariableContext(
+      order as any,
+      profile ?? null,
+      items.map((i) => ({ product_name: i.name, qty: i.qty })),
+      { siteUrl: getSiteUrl() },
+    );
+
     const { subject, html, text } = buildOrderEmailTemplate({
       storeName: getStoreName(),
       customerName,
@@ -155,6 +162,8 @@ export async function sendOrderEmail(opts: SendOrderEmailOptions): Promise<{
               service: orderAny.shipping_service ?? null,
             }
           : null,
+      override: tplRow ?? null,
+      variables,
     });
 
     // 5) Registrar pending (provider real é resolvido no transport)
