@@ -117,6 +117,7 @@ export async function sendOrderEmail(opts: SendOrderEmailOptions): Promise<{
       retryUrl,
       supportEmail: getSupportEmail(),
       trackingCode: order.tracking_code ?? null,
+      cancelledReason: (order as any).cancelled_reason ?? null,
       messageType: opts.type,
       deliveryMethod,
       pickup:
