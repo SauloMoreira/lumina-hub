@@ -49,6 +49,19 @@ export interface OrderEmailParams {
     eta?: string | null;
     service?: string | null;
   } | null;
+  /** Override editorial vindo de email_templates (todos opcionais; vazio = usa padrão). */
+  override?: {
+    subject?: string | null;
+    preheader?: string | null;
+    headline?: string | null;
+    intro_html?: string | null;
+    cta_label?: string | null;
+    cta_url?: string | null;
+    secondary_cta_label?: string | null;
+    secondary_cta_url?: string | null;
+  } | null;
+  /** Dicionário de variáveis {{var}} para interpolar nas strings finais. */
+  variables?: Record<string, string> | null;
 }
 
 const BRL = new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" });
