@@ -1,5 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useEffect, useState, type FormEvent } from "react";
+import { useEffect, useMemo, useState, type FormEvent } from "react";
+import { zodValidator, fallback } from "@tanstack/zod-adapter";
+import { z } from "zod";
 import { Plus, Pencil, Trash2 } from "lucide-react";
 import { AdminLayout } from "@/components/admin/AdminLayout";
 import { Button } from "@/components/ui/button";
@@ -7,16 +9,41 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
   DialogFooter,
 } from "@/components/ui/dialog";
+import {
+  DataTable,
+  DataTablePagination,
+  DataTableToolbar,
+  type DataTableColumn,
+} from "@/components/admin/datatable";
+import { useTableState } from "@/hooks/useTableState";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
-export const Route = createFileRoute("/admin/categorias")({ component: CategoriasPage });
+const searchSchema = z.object({
+  page: fallback(z.number(), 1).default(1),
+  pageSize: fallback(z.number(), 25).default(25),
+  q: fallback(z.string(), "").default(""),
+  sort: fallback(z.string(), "sort_order.asc").default("sort_order.asc"),
+  status: fallback(z.enum(["all", "active", "inactive"]), "all").default("all"),
+});
+
+export const Route = createFileRoute("/admin/categorias")({
+  validateSearch: zodValidator(searchSchema),
+  component: CategoriasPage,
+});
 
 interface Cat {
   id: string;
@@ -37,7 +64,7 @@ function slugify(s: string) {
 }
 
 function CategoriasPage() {
-  const [cats, setCats] = useState<Cat[]>([]);
+  const [cats, setCats] = useState<Cat[] | null>(null);
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<Cat | null>(null);
   const [form, setForm] = useState({
@@ -47,6 +74,10 @@ function CategoriasPage() {
     sort_order: "0",
     active: true,
   });
+
+  const sp = Route.useSearch();
+  const { page, pageSize, q, sort, setPage, setPageSize, setQ, setSort, setFilter, clearAll } =
+    useTableState({ page: 1, pageSize: 25, sort: { column: "sort_order", direction: "asc" } });
 
   const load = async () => {
     const { data } = await supabase
@@ -59,6 +90,35 @@ function CategoriasPage() {
   useEffect(() => {
     load();
   }, []);
+
+  const filtered = useMemo(() => {
+    let arr = cats ?? [];
+    if (q) {
+      const n = q.toLowerCase();
+      arr = arr.filter(
+        (c) => c.name.toLowerCase().includes(n) || c.slug.toLowerCase().includes(n),
+      );
+    }
+    if (sp.status === "active") arr = arr.filter((c) => c.active);
+    else if (sp.status === "inactive") arr = arr.filter((c) => !c.active);
+
+    return [...arr].sort((a, b) => {
+      const dir = sort.direction === "asc" ? 1 : -1;
+      const av = (a as any)[sort.column];
+      const bv = (b as any)[sort.column];
+      if (av == null) return 1;
+      if (bv == null) return -1;
+      if (typeof av === "number") return (av - bv) * dir;
+      if (typeof av === "boolean") return (Number(av) - Number(bv)) * dir;
+      return String(av).localeCompare(String(bv), "pt-BR") * dir;
+    });
+  }, [cats, q, sp.status, sort]);
+
+  const total = filtered.length;
+  const paged = useMemo(
+    () => filtered.slice((page - 1) * pageSize, page * pageSize),
+    [filtered, page, pageSize],
+  );
 
   const openNew = () => {
     setEditing(null);
@@ -103,6 +163,62 @@ function CategoriasPage() {
     load();
   };
 
+  const hasActiveFilters = !!q || sp.status !== "all";
+
+  const columns: DataTableColumn<Cat>[] = [
+    {
+      id: "name",
+      header: "Nome",
+      sortable: true,
+      cell: (c) => <span className="font-medium">{c.name}</span>,
+    },
+    {
+      id: "slug",
+      header: "Slug",
+      sortable: true,
+      hideOnMobile: true,
+      cell: (c) => <span className="font-mono text-xs text-muted-foreground">{c.slug}</span>,
+    },
+    {
+      id: "sort_order",
+      header: "Ordem",
+      sortable: true,
+      hideOnMobile: true,
+      cell: (c) => c.sort_order ?? 0,
+    },
+    {
+      id: "active",
+      header: "Status",
+      sortable: true,
+      cell: (c) => (
+        <span className={`text-xs ${c.active ? "text-emerald-600" : "text-muted-foreground"}`}>
+          {c.active ? "Ativa" : "Inativa"}
+        </span>
+      ),
+    },
+    {
+      id: "actions",
+      header: <span className="sr-only">Ações</span>,
+      headerClassName: "text-right",
+      className: "text-right whitespace-nowrap",
+      cell: (c) => (
+        <>
+          <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => openEdit(c)}>
+            <Pencil className="w-4 h-4" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-8 w-8 text-destructive"
+            onClick={() => del(c.id)}
+          >
+            <Trash2 className="w-4 h-4" />
+          </Button>
+        </>
+      ),
+    },
+  ];
+
   return (
     <AdminLayout
       title="Categorias"
@@ -113,58 +229,41 @@ function CategoriasPage() {
       }
     >
       <div className="bg-card border border-border rounded-xl overflow-hidden">
-        <table className="w-full text-sm">
-          <thead className="text-left text-xs text-muted-foreground bg-muted/40">
-            <tr>
-              <th className="px-4 py-3 font-medium">Nome</th>
-              <th className="px-4 py-3 font-medium">Slug</th>
-              <th className="px-4 py-3 font-medium">Ordem</th>
-              <th className="px-4 py-3 font-medium">Status</th>
-              <th className="px-4 py-3"></th>
-            </tr>
-          </thead>
-          <tbody>
-            {cats.length === 0 && (
-              <tr>
-                <td colSpan={5} className="px-4 py-8 text-center text-muted-foreground">
-                  Nenhuma categoria.
-                </td>
-              </tr>
-            )}
-            {cats.map((c) => (
-              <tr key={c.id} className="border-t border-border hover:bg-muted/20">
-                <td className="px-4 py-3 font-medium">{c.name}</td>
-                <td className="px-4 py-3 font-mono text-xs text-muted-foreground">{c.slug}</td>
-                <td className="px-4 py-3">{c.sort_order ?? 0}</td>
-                <td className="px-4 py-3">
-                  <span
-                    className={`text-xs ${c.active ? "text-emerald-600" : "text-muted-foreground"}`}
-                  >
-                    {c.active ? "Ativa" : "Inativa"}
-                  </span>
-                </td>
-                <td className="px-4 py-3 text-right">
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-8 w-8"
-                    onClick={() => openEdit(c)}
-                  >
-                    <Pencil className="w-4 h-4" />
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-8 w-8 text-destructive"
-                    onClick={() => del(c.id)}
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </Button>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+        <DataTableToolbar
+          q={q}
+          onQChange={setQ}
+          searchPlaceholder="Buscar por nome ou slug…"
+          hasActiveFilters={hasActiveFilters}
+          onClearFilters={clearAll}
+          filters={
+            <Select value={sp.status} onValueChange={(v) => setFilter("status", v)}>
+              <SelectTrigger className="h-9 w-[140px]">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Todos status</SelectItem>
+                <SelectItem value="active">Ativas</SelectItem>
+                <SelectItem value="inactive">Inativas</SelectItem>
+              </SelectContent>
+            </Select>
+          }
+        />
+        <DataTable
+          columns={columns}
+          rows={paged}
+          loading={cats === null}
+          sort={sort}
+          onSort={(c) => setSort(c)}
+          rowKey={(c) => c.id}
+          emptyTitle="Nenhuma categoria"
+        />
+        <DataTablePagination
+          page={page}
+          pageSize={pageSize}
+          total={total}
+          onPageChange={setPage}
+          onPageSizeChange={setPageSize}
+        />
       </div>
 
       <Dialog open={open} onOpenChange={setOpen}>

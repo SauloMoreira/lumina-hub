@@ -1,5 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useEffect, useState, type FormEvent } from "react";
+import { useEffect, useMemo, useState, type FormEvent } from "react";
+import { zodValidator, fallback } from "@tanstack/zod-adapter";
+import { z } from "zod";
 import { Plus, Pencil, Trash2 } from "lucide-react";
 import { AdminLayout } from "@/components/admin/AdminLayout";
 import { Button } from "@/components/ui/button";
@@ -7,16 +9,42 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
   DialogFooter,
 } from "@/components/ui/dialog";
+import {
+  DataTable,
+  DataTablePagination,
+  DataTableToolbar,
+  type DataTableColumn,
+} from "@/components/admin/datatable";
+import { useTableState } from "@/hooks/useTableState";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
-export const Route = createFileRoute("/admin/cupons")({ component: CuponsPage });
+const searchSchema = z.object({
+  page: fallback(z.number(), 1).default(1),
+  pageSize: fallback(z.number(), 25).default(25),
+  q: fallback(z.string(), "").default(""),
+  sort: fallback(z.string(), "code.asc").default("code.asc"),
+  status: fallback(z.enum(["all", "active", "inactive"]), "all").default("all"),
+  type: fallback(z.enum(["all", "percent", "fixed"]), "all").default("all"),
+});
+
+export const Route = createFileRoute("/admin/cupons")({
+  validateSearch: zodValidator(searchSchema),
+  component: CuponsPage,
+});
 
 interface Coupon {
   id: string;
@@ -32,7 +60,7 @@ interface Coupon {
 }
 
 function CuponsPage() {
-  const [list, setList] = useState<Coupon[]>([]);
+  const [list, setList] = useState<Coupon[] | null>(null);
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<Coupon | null>(null);
   const [form, setForm] = useState({
@@ -46,6 +74,10 @@ function CuponsPage() {
     active: true,
   });
 
+  const sp = Route.useSearch();
+  const { page, pageSize, q, sort, setPage, setPageSize, setQ, setSort, setFilter, clearAll } =
+    useTableState({ page: 1, pageSize: 25, sort: { column: "code", direction: "asc" } });
+
   const load = async () => {
     const { data } = await supabase
       .from("coupons")
@@ -56,6 +88,37 @@ function CuponsPage() {
   useEffect(() => {
     load();
   }, []);
+
+  const filtered = useMemo(() => {
+    let arr = list ?? [];
+    if (q) {
+      const n = q.toLowerCase();
+      arr = arr.filter(
+        (c) =>
+          c.code.toLowerCase().includes(n) || (c.description ?? "").toLowerCase().includes(n),
+      );
+    }
+    if (sp.status === "active") arr = arr.filter((c) => c.active);
+    else if (sp.status === "inactive") arr = arr.filter((c) => !c.active);
+    if (sp.type !== "all") arr = arr.filter((c) => c.discount_type === sp.type);
+
+    return [...arr].sort((a, b) => {
+      const dir = sort.direction === "asc" ? 1 : -1;
+      const av = (a as any)[sort.column];
+      const bv = (b as any)[sort.column];
+      if (av == null) return 1;
+      if (bv == null) return -1;
+      if (typeof av === "number") return (av - bv) * dir;
+      if (typeof av === "boolean") return (Number(av) - Number(bv)) * dir;
+      return String(av).localeCompare(String(bv), "pt-BR") * dir;
+    });
+  }, [list, q, sp.status, sp.type, sort]);
+
+  const total = filtered.length;
+  const paged = useMemo(
+    () => filtered.slice((page - 1) * pageSize, page * pageSize),
+    [filtered, page, pageSize],
+  );
 
   const openNew = () => {
     setEditing(null);
@@ -114,6 +177,87 @@ function CuponsPage() {
     load();
   };
 
+  const hasActiveFilters = !!q || sp.status !== "all" || sp.type !== "all";
+
+  const columns: DataTableColumn<Coupon>[] = [
+    {
+      id: "code",
+      header: "Código",
+      sortable: true,
+      cell: (c) => <span className="font-mono font-semibold">{c.code}</span>,
+    },
+    {
+      id: "discount_value",
+      header: "Desconto",
+      sortable: true,
+      cell: (c) =>
+        c.discount_type === "percent"
+          ? `${c.discount_value}%`
+          : `R$ ${Number(c.discount_value).toFixed(2)}`,
+    },
+    {
+      id: "min_order_value",
+      header: "Mínimo",
+      sortable: true,
+      hideOnMobile: true,
+      cell: (c) => `R$ ${Number(c.min_order_value ?? 0).toFixed(2)}`,
+    },
+    {
+      id: "used_count",
+      header: "Usos",
+      sortable: true,
+      hideOnMobile: true,
+      cell: (c) => (
+        <span className="text-xs">
+          {c.used_count ?? 0}
+          {c.max_uses ? ` / ${c.max_uses}` : ""}
+        </span>
+      ),
+    },
+    {
+      id: "expires_at",
+      header: "Expira",
+      sortable: true,
+      hideOnMobile: true,
+      cell: (c) => (
+        <span className="text-xs">
+          {c.expires_at ? new Date(c.expires_at).toLocaleDateString("pt-BR") : "—"}
+        </span>
+      ),
+    },
+    {
+      id: "active",
+      header: "Status",
+      sortable: true,
+      cell: (c) => (
+        <span className={`text-xs ${c.active ? "text-emerald-600" : "text-muted-foreground"}`}>
+          {c.active ? "Ativo" : "Inativo"}
+        </span>
+      ),
+    },
+    {
+      id: "actions",
+      header: <span className="sr-only">Ações</span>,
+      headerClassName: "text-right",
+      className: "text-right whitespace-nowrap",
+      cell: (c) => (
+        <>
+          <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => openEdit(c)}>
+            <Pencil className="w-4 h-4" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-8 w-8 text-destructive"
+            onClick={() => del(c.id)}
+          >
+            <Trash2 className="w-4 h-4" />
+          </Button>
+        </>
+      ),
+    },
+  ];
+
   return (
     <AdminLayout
       title="Cupons"
@@ -124,71 +268,54 @@ function CuponsPage() {
       }
     >
       <div className="bg-card border border-border rounded-xl overflow-hidden">
-        <table className="w-full text-sm">
-          <thead className="text-left text-xs text-muted-foreground bg-muted/40">
-            <tr>
-              <th className="px-4 py-3 font-medium">Código</th>
-              <th className="px-4 py-3 font-medium">Desconto</th>
-              <th className="px-4 py-3 font-medium">Mínimo</th>
-              <th className="px-4 py-3 font-medium">Usos</th>
-              <th className="px-4 py-3 font-medium">Expira</th>
-              <th className="px-4 py-3 font-medium">Status</th>
-              <th></th>
-            </tr>
-          </thead>
-          <tbody>
-            {list.length === 0 && (
-              <tr>
-                <td colSpan={7} className="px-4 py-8 text-center text-muted-foreground">
-                  Nenhum cupom.
-                </td>
-              </tr>
-            )}
-            {list.map((c) => (
-              <tr key={c.id} className="border-t border-border hover:bg-muted/20">
-                <td className="px-4 py-3 font-mono font-semibold">{c.code}</td>
-                <td className="px-4 py-3">
-                  {c.discount_type === "percent"
-                    ? `${c.discount_value}%`
-                    : `R$ ${Number(c.discount_value).toFixed(2)}`}
-                </td>
-                <td className="px-4 py-3">R$ {Number(c.min_order_value ?? 0).toFixed(2)}</td>
-                <td className="px-4 py-3 text-xs">
-                  {c.used_count ?? 0}
-                  {c.max_uses ? ` / ${c.max_uses}` : ""}
-                </td>
-                <td className="px-4 py-3 text-xs">
-                  {c.expires_at ? new Date(c.expires_at).toLocaleDateString("pt-BR") : "—"}
-                </td>
-                <td className="px-4 py-3">
-                  <span
-                    className={`text-xs ${c.active ? "text-emerald-600" : "text-muted-foreground"}`}
-                  >
-                    {c.active ? "Ativo" : "Inativo"}
-                  </span>
-                </td>
-                <td className="px-4 py-3 text-right">
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-8 w-8"
-                    onClick={() => openEdit(c)}
-                  >
-                    <Pencil className="w-4 h-4" />
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-8 w-8 text-destructive"
-                    onClick={() => del(c.id)}
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </Button>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+        <DataTableToolbar
+          q={q}
+          onQChange={setQ}
+          searchPlaceholder="Buscar por código ou descrição…"
+          hasActiveFilters={hasActiveFilters}
+          onClearFilters={clearAll}
+          filters={
+            <>
+              <Select value={sp.status} onValueChange={(v) => setFilter("status", v)}>
+                <SelectTrigger className="h-9 w-[140px]">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todos status</SelectItem>
+                  <SelectItem value="active">Ativos</SelectItem>
+                  <SelectItem value="inactive">Inativos</SelectItem>
+                </SelectContent>
+              </Select>
+              <Select value={sp.type} onValueChange={(v) => setFilter("type", v)}>
+                <SelectTrigger className="h-9 w-[160px]">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todos tipos</SelectItem>
+                  <SelectItem value="percent">Percentual (%)</SelectItem>
+                  <SelectItem value="fixed">Valor fixo (R$)</SelectItem>
+                </SelectContent>
+              </Select>
+            </>
+          }
+        />
+        <DataTable
+          columns={columns}
+          rows={paged}
+          loading={list === null}
+          sort={sort}
+          onSort={(c) => setSort(c)}
+          rowKey={(c) => c.id}
+          emptyTitle="Nenhum cupom"
+          emptyDescription="Ajuste os filtros ou crie um novo cupom."
+        />
+        <DataTablePagination
+          page={page}
+          pageSize={pageSize}
+          total={total}
+          onPageChange={setPage}
+          onPageSizeChange={setPageSize}
+        />
       </div>
 
       <Dialog open={open} onOpenChange={setOpen}>
