@@ -600,6 +600,7 @@ function OrderDetailPage() {
                 { type: "payment_pending", label: "Pagamento pendente" },
                 { type: "payment_failed", label: "Pagamento recusado" },
                 { type: "order_shipped", label: "Pedido enviado" },
+                { type: "order_delivered", label: "Pedido entregue" },
               ].map((opt) => (
                 <Button
                   key={opt.type}

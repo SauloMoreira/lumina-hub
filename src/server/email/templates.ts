@@ -7,7 +7,8 @@ export type EmailMessageType =
   | "payment_pending"
   | "payment_failed"
   | "order_processing"
-  | "order_shipped";
+  | "order_shipped"
+  | "order_delivered";
 
 export interface OrderEmailItem {
   name: string;
@@ -140,6 +141,18 @@ function getContent(p: OrderEmailParams): TemplateContent {
         ctaLabel: "Acompanhar pedido",
         ctaUrl: p.orderUrl,
         showItems: false,
+      };
+    case "order_delivered":
+      return {
+        subject: `Seu pedido #${p.orderNumber} foi entregue ✅`,
+        preheader: "Seu pedido foi marcado como entregue.",
+        headline: `Pedido ${num} entregue!`,
+        intro:
+          "Seu pedido foi marcado como entregue. Esperamos que tenha recebido tudo corretamente e que os produtos atendam à sua necessidade. Se precisar de complementos para sua instalação, reposição de materiais elétricos ou novos produtos de iluminação, será um prazer te atender novamente.",
+        ctaLabel: "Visitar a loja",
+        ctaUrl: p.orderUrl.split("/pedido/")[0] || p.orderUrl,
+        secondaryCta: { label: "Ver pedido", url: p.orderUrl },
+        showItems: true,
       };
   }
 }
