@@ -265,7 +265,7 @@ export function buildOrderEmailTemplate(p: OrderEmailParams): {
   html: string;
   text: string;
 } {
-  const c = getContent(p);
+  const c = applyOverrideAndInterpolate(getContent(p), p.override, p.variables);
   const greeting = p.customerName ? `Olá, ${esc(p.customerName)}!` : "Olá!";
 
   const itemsRows = c.showItems
