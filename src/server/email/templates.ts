@@ -8,7 +8,8 @@ export type EmailMessageType =
   | "payment_failed"
   | "order_processing"
   | "order_shipped"
-  | "order_delivered";
+  | "order_delivered"
+  | "order_cancelled";
 
 export interface OrderEmailItem {
   name: string;
