@@ -15,7 +15,7 @@ import {
 } from "@/components/ui/table";
 import { listEmailTemplates } from "@/server/emailTemplates.functions";
 
-export const Route = createFileRoute("/admin/comunicacao/emails")({
+export const Route = createFileRoute("/admin/comunicacao/emails/")({
   component: EmailTemplatesListPage,
 });
 
