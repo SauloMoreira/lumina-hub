@@ -14,7 +14,13 @@ import {
   MessageCircle,
   Target,
   Users,
+  Sparkles,
 } from "lucide-react";
+import {
+  MarketingCampaignAiDialog,
+  type AiApplyPatch,
+  type AiCampaignReference,
+} from "@/components/admin/MarketingCampaignAiDialog";
 import { AdminLayout } from "@/components/admin/AdminLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
