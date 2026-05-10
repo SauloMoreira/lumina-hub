@@ -353,6 +353,7 @@ function CampanhasPage() {
     toast.success("Rascunho aplicado. Revise e salve.");
   };
 
+  const openEdit = (c: Campaign) => {
     setEditing(c);
     setForm({
       name: c.name ?? "",
