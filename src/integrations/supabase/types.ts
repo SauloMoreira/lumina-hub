@@ -1955,6 +1955,56 @@ export type Database = {
           },
         ]
       }
+      marketing_ai_generations: {
+        Row: {
+          admin_email: string | null
+          admin_user_id: string
+          applied_campaign_id: string | null
+          applied_payload: Json | null
+          brief: Json
+          created_at: string
+          id: string
+          model: string | null
+          status: string
+          suggestion: Json
+          updated_at: string
+        }
+        Insert: {
+          admin_email?: string | null
+          admin_user_id: string
+          applied_campaign_id?: string | null
+          applied_payload?: Json | null
+          brief?: Json
+          created_at?: string
+          id?: string
+          model?: string | null
+          status?: string
+          suggestion?: Json
+          updated_at?: string
+        }
+        Update: {
+          admin_email?: string | null
+          admin_user_id?: string
+          applied_campaign_id?: string | null
+          applied_payload?: Json | null
+          brief?: Json
+          created_at?: string
+          id?: string
+          model?: string | null
+          status?: string
+          suggestion?: Json
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "marketing_ai_generations_applied_campaign_id_fkey"
+            columns: ["applied_campaign_id"]
+            isOneToOne: false
+            referencedRelation: "marketing_campaigns"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       marketing_campaigns: {
         Row: {
           audience: string | null
