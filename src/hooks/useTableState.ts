@@ -6,10 +6,10 @@ export const PAGE_SIZE_OPTIONS = [10, 25, 50, 100] as const;
 export type PageSize = (typeof PAGE_SIZE_OPTIONS)[number];
 
 export type TableSearchState = {
-  page: number;
-  pageSize: number;
-  q: string;
-  sort: string; // "column.direction"
+  page?: number;
+  pageSize?: number;
+  q?: string;
+  sort?: string; // "column.direction"
 };
 
 export function parseSort(raw: string | undefined, fallback: SortState): SortState {
@@ -25,14 +25,18 @@ export function formatSort(sort: SortState) {
 
 /**
  * Generic helper used by admin tables. Reads page/pageSize/q/sort + extra filters
- * from the URL search params (already validated by the route's `validateSearch`)
- * and provides setters that navigate while preserving the rest of the search.
+ * from the URL search params and provides setters that navigate while preserving
+ * the rest of the search.
+ *
+ * Each route should declare its own `validateSearch` so types are validated.
+ * This hook uses `strict: false` to stay route-agnostic.
  */
-export function useTableState<TSearch extends Partial<TableSearchState> & Record<string, unknown>>(
-  routeId: string,
-  defaults: { page: number; pageSize: number; sort: SortState },
-) {
-  const search = useSearch({ from: routeId as never }) as TSearch;
+export function useTableState(defaults: {
+  page: number;
+  pageSize: number;
+  sort: SortState;
+}) {
+  const search = useSearch({ strict: false }) as Record<string, unknown>;
   const navigate = useNavigate();
 
   const page = (search.page as number) ?? defaults.page;
@@ -46,7 +50,6 @@ export function useTableState<TSearch extends Partial<TableSearchState> & Record
         to: ".",
         search: (prev: Record<string, unknown>) => {
           const next: Record<string, unknown> = { ...prev, ...patch };
-          // strip empty strings / undefined / null for clean URLs
           for (const k of Object.keys(next)) {
             const v = next[k];
             if (v === "" || v === undefined || v === null) delete next[k];
@@ -64,7 +67,10 @@ export function useTableState<TSearch extends Partial<TableSearchState> & Record
     (ps: number) => update({ pageSize: ps, page: 1 }),
     [update],
   );
-  const setQ = useCallback((value: string) => update({ q: value || undefined, page: 1 }), [update]);
+  const setQ = useCallback(
+    (value: string) => update({ q: value || undefined, page: 1 }),
+    [update],
+  );
   const setSort = useCallback(
     (column: string, direction?: SortDirection) => {
       const dir: SortDirection =
