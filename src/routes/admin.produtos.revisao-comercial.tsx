@@ -50,6 +50,16 @@ import {
 import { STATUS_LABEL, STATUS_TONE, type CommercialStatus } from "@/lib/commercialReview";
 
 export const Route = createFileRoute("/admin/produtos/revisao-comercial")({
+  validateSearch: zodValidator(
+    z.object({
+      page: fallback(z.number(), 1).default(1),
+      pageSize: fallback(z.number(), 25).default(25),
+      q: fallback(z.string(), "").default(""),
+      filter: fallback(z.string(), "all").default("all"),
+      categoryId: fallback(z.string(), "all").default("all"),
+      brand: fallback(z.string(), "all").default("all"),
+    }),
+  ),
   component: CommercialReviewPage,
 });
 
