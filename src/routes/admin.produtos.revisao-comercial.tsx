@@ -155,14 +155,20 @@ function MovementBadge({ row }: { row: CommercialReviewRow }) {
 }
 
 function CommercialReviewPage() {
-  const [filter, setFilter] = useState<CommercialFilter>("all");
-  const [search, setSearch] = useState("");
-  const [searchInput, setSearchInput] = useState("");
-  const [categoryId, setCategoryId] = useState<string>("all");
-  const [brand, setBrand] = useState<string>("all");
-  const [page, setPage] = useState(1);
+  const ts = useTableState({
+    page: 1,
+    pageSize: 25,
+    sort: { column: "name", direction: "asc" },
+  });
+  const filter = ((ts.search.filter as string) ?? "all") as CommercialFilter;
+  const categoryId = (ts.search.categoryId as string) ?? "all";
+  const brand = (ts.search.brand as string) ?? "all";
   const [exporting, setExporting] = useState(false);
-  const pageSize = 25;
+
+  const setFilter = (v: CommercialFilter) => ts.setFilter("filter", v);
+  const setCategoryId = (v: string) => ts.setFilter("categoryId", v);
+  const setBrand = (v: string) => ts.setFilter("brand", v);
+  const setPage = (p: number) => ts.setPage(p);
 
   const { data: filterOptions } = useQuery({
     queryKey: ["commercial-review-filter-options"],
@@ -171,16 +177,16 @@ function CommercialReviewPage() {
   });
 
   const { data, isLoading, isFetching, refetch, error } = useQuery({
-    queryKey: ["commercial-review", filter, search, categoryId, brand, page],
+    queryKey: ["commercial-review", filter, ts.q, categoryId, brand, ts.page, ts.pageSize],
     queryFn: () =>
       getCommercialReviewReport({
         data: {
           filter,
-          search: search || undefined,
+          search: ts.q || undefined,
           categoryId: categoryId !== "all" ? categoryId : undefined,
           brand: brand !== "all" ? brand : undefined,
-          page,
-          pageSize,
+          page: ts.page,
+          pageSize: ts.pageSize,
         },
       }),
     staleTime: 30_000,
@@ -189,13 +195,8 @@ function CommercialReviewPage() {
   const summary = data?.summary;
   const rows = data?.rows ?? [];
   const total = data?.total ?? 0;
-  const totalPages = Math.max(1, Math.ceil(total / pageSize));
-
-  const handleSearchSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    setSearch(searchInput.trim());
-    setPage(1);
-  };
+  const hasFilters =
+    ts.q !== "" || filter !== "all" || categoryId !== "all" || brand !== "all";
 
   const handleExportCsv = async () => {
     setExporting(true);
