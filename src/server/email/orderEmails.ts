@@ -7,6 +7,7 @@
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { sendTransactionalEmail } from "./transport";
 import { buildOrderEmailTemplate, type EmailMessageType } from "./templates";
+import { buildVariableContext } from "./templateVars";
 
 function getSiteUrl(): string {
   return (process.env.SITE_URL ?? "").replace(/\/$/, "") || "https://www.ledmarica.com.br";
