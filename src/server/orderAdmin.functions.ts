@@ -386,6 +386,7 @@ export const resendOrderEmail = createServerFn({ method: "POST" })
           "payment_failed",
           "order_processing",
           "order_shipped",
+          "order_delivered",
         ]),
       })
       .parse(input),
