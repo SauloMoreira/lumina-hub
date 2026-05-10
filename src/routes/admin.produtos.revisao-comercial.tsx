@@ -1,6 +1,13 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { z } from "zod";
+import { zodValidator, fallback } from "@tanstack/zod-adapter";
+import {
+  DataTableToolbar,
+  DataTablePagination,
+} from "@/components/admin/datatable";
+import { useTableState } from "@/hooks/useTableState";
 import {
   ArrowLeft,
   Search,
@@ -43,6 +50,16 @@ import {
 import { STATUS_LABEL, STATUS_TONE, type CommercialStatus } from "@/lib/commercialReview";
 
 export const Route = createFileRoute("/admin/produtos/revisao-comercial")({
+  validateSearch: zodValidator(
+    z.object({
+      page: fallback(z.number(), 1).default(1),
+      pageSize: fallback(z.number(), 25).default(25),
+      q: fallback(z.string(), "").default(""),
+      filter: fallback(z.string(), "all").default("all"),
+      categoryId: fallback(z.string(), "all").default("all"),
+      brand: fallback(z.string(), "all").default("all"),
+    }),
+  ),
   component: CommercialReviewPage,
 });
 
@@ -138,14 +155,20 @@ function MovementBadge({ row }: { row: CommercialReviewRow }) {
 }
 
 function CommercialReviewPage() {
-  const [filter, setFilter] = useState<CommercialFilter>("all");
-  const [search, setSearch] = useState("");
-  const [searchInput, setSearchInput] = useState("");
-  const [categoryId, setCategoryId] = useState<string>("all");
-  const [brand, setBrand] = useState<string>("all");
-  const [page, setPage] = useState(1);
+  const ts = useTableState({
+    page: 1,
+    pageSize: 25,
+    sort: { column: "name", direction: "asc" },
+  });
+  const filter = ((ts.search.filter as string) ?? "all") as CommercialFilter;
+  const categoryId = (ts.search.categoryId as string) ?? "all";
+  const brand = (ts.search.brand as string) ?? "all";
   const [exporting, setExporting] = useState(false);
-  const pageSize = 25;
+
+  const setFilter = (v: CommercialFilter) => ts.setFilter("filter", v);
+  const setCategoryId = (v: string) => ts.setFilter("categoryId", v);
+  const setBrand = (v: string) => ts.setFilter("brand", v);
+  const setPage = (p: number) => ts.setPage(p);
 
   const { data: filterOptions } = useQuery({
     queryKey: ["commercial-review-filter-options"],
@@ -154,16 +177,16 @@ function CommercialReviewPage() {
   });
 
   const { data, isLoading, isFetching, refetch, error } = useQuery({
-    queryKey: ["commercial-review", filter, search, categoryId, brand, page],
+    queryKey: ["commercial-review", filter, ts.q, categoryId, brand, ts.page, ts.pageSize],
     queryFn: () =>
       getCommercialReviewReport({
         data: {
           filter,
-          search: search || undefined,
+          search: ts.q || undefined,
           categoryId: categoryId !== "all" ? categoryId : undefined,
           brand: brand !== "all" ? brand : undefined,
-          page,
-          pageSize,
+          page: ts.page,
+          pageSize: ts.pageSize,
         },
       }),
     staleTime: 30_000,
@@ -172,13 +195,8 @@ function CommercialReviewPage() {
   const summary = data?.summary;
   const rows = data?.rows ?? [];
   const total = data?.total ?? 0;
-  const totalPages = Math.max(1, Math.ceil(total / pageSize));
-
-  const handleSearchSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    setSearch(searchInput.trim());
-    setPage(1);
-  };
+  const hasFilters =
+    ts.q !== "" || filter !== "all" || categoryId !== "all" || brand !== "all";
 
   const handleExportCsv = async () => {
     setExporting(true);
@@ -186,7 +204,7 @@ function CommercialReviewPage() {
       const res = await exportCommercialReviewCsv({
         data: {
           filter,
-          search: search || undefined,
+          search: ts.q || undefined,
           categoryId: categoryId !== "all" ? categoryId : undefined,
           brand: brand !== "all" ? brand : undefined,
           page: 1,
@@ -433,77 +451,60 @@ function CommercialReviewPage() {
         </section>
 
         {/* FILTROS */}
-        <section className="flex flex-col lg:flex-row gap-2 lg:items-end">
-          <form onSubmit={handleSearchSubmit} className="flex-1 min-w-0">
-            <div className="relative">
-              <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-              <Input
-                placeholder="Buscar por nome ou SKU…"
-                value={searchInput}
-                onChange={(e) => setSearchInput(e.target.value)}
-                className="pl-8"
-              />
-            </div>
-          </form>
-          <Select
-            value={filter}
-            onValueChange={(v) => {
-              setFilter(v as CommercialFilter);
-              setPage(1);
-            }}
-          >
-            <SelectTrigger className="w-full lg:w-[240px]">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {FILTER_OPTIONS.map((o) => (
-                <SelectItem key={o.value} value={o.value}>
-                  {o.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          <Select
-            value={categoryId}
-            onValueChange={(v) => {
-              setCategoryId(v);
-              setPage(1);
-            }}
-          >
-            <SelectTrigger className="w-full lg:w-[200px]">
-              <SelectValue placeholder="Categoria" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">Todas as categorias</SelectItem>
-              {(filterOptions?.categories ?? []).map((c) => (
-                <SelectItem key={c.id} value={c.id}>
-                  {c.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          {(filterOptions?.brands?.length ?? 0) > 0 && (
-            <Select
-              value={brand}
-              onValueChange={(v) => {
-                setBrand(v);
-                setPage(1);
-              }}
-            >
-              <SelectTrigger className="w-full lg:w-[180px]">
-                <SelectValue placeholder="Marca" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Todas as marcas</SelectItem>
-                {(filterOptions?.brands ?? []).map((b) => (
-                  <SelectItem key={b} value={b}>
-                    {b}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          )}
-        </section>
+        <DataTableToolbar
+          q={ts.q}
+          onQChange={ts.setQ}
+          searchPlaceholder="Buscar por nome ou SKU…"
+          hasActiveFilters={hasFilters}
+          onClearFilters={ts.clearAll}
+          filters={
+            <>
+              <Select
+                value={filter}
+                onValueChange={(v) => setFilter(v as CommercialFilter)}
+              >
+                <SelectTrigger className="h-9 w-[220px]">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {FILTER_OPTIONS.map((o) => (
+                    <SelectItem key={o.value} value={o.value}>
+                      {o.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Select value={categoryId} onValueChange={(v) => setCategoryId(v)}>
+                <SelectTrigger className="h-9 w-[200px]">
+                  <SelectValue placeholder="Categoria" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todas as categorias</SelectItem>
+                  {(filterOptions?.categories ?? []).map((c) => (
+                    <SelectItem key={c.id} value={c.id}>
+                      {c.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {(filterOptions?.brands?.length ?? 0) > 0 && (
+                <Select value={brand} onValueChange={(v) => setBrand(v)}>
+                  <SelectTrigger className="h-9 w-[180px]">
+                    <SelectValue placeholder="Marca" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Todas as marcas</SelectItem>
+                    {(filterOptions?.brands ?? []).map((b) => (
+                      <SelectItem key={b} value={b}>
+                        {b}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
+            </>
+          }
+        />
 
         {/* TABELA */}
         <section>
@@ -546,31 +547,13 @@ function CommercialReviewPage() {
                 </tbody>
               </table>
             </div>
-            {total > pageSize && (
-              <div className="flex items-center justify-between p-3 border-t border-border bg-muted/20">
-                <p className="text-xs text-muted-foreground">
-                  Página {page} de {totalPages} • {total} produto(s)
-                </p>
-                <div className="flex gap-2">
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    disabled={page <= 1}
-                    onClick={() => setPage((p) => Math.max(1, p - 1))}
-                  >
-                    Anterior
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    disabled={page >= totalPages}
-                    onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-                  >
-                    Próxima
-                  </Button>
-                </div>
-              </div>
-            )}
+            <DataTablePagination
+              page={ts.page}
+              pageSize={ts.pageSize}
+              total={total}
+              onPageChange={ts.setPage}
+              onPageSizeChange={ts.setPageSize}
+            />
           </Card>
         </section>
       </div>

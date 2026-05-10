@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   ArrowLeft,
@@ -11,16 +11,27 @@ import {
   Package,
   RefreshCw,
 } from "lucide-react";
+import { z } from "zod";
+import { zodValidator, fallback } from "@tanstack/zod-adapter";
 import { toast } from "sonner";
 import { AdminLayout } from "@/components/admin/AdminLayout";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { listProductQuality, type ProductQualityRow } from "@/server/productQuality.functions";
 import { qualityClassColor, qualityClassLabel, type QualityClass } from "@/lib/productQuality";
-
-export const Route = createFileRoute("/admin/produtos/qualidade")({
-  component: ProductQualityPage,
-});
+import {
+  DataTable,
+  DataTableToolbar,
+  DataTablePagination,
+  type DataTableColumn,
+} from "@/components/admin/datatable";
+import { useTableState } from "@/hooks/useTableState";
 
 type Filter =
   | "all"
@@ -38,9 +49,43 @@ type Filter =
   | "no_tech_voltage"
   | "no_tech_ip_rating";
 
+const FILTER_OPTIONS: Array<{ value: Filter; label: string }> = [
+  { value: "all", label: "Todos" },
+  { value: "ruim", label: "Ruins" },
+  { value: "atencao", label: "Atenção" },
+  { value: "active_low", label: "Ativos < 70" },
+  { value: "featured_low", label: "Destaques < 70" },
+  { value: "no_image", label: "Sem imagem" },
+  { value: "no_cost", label: "Sem custo" },
+  { value: "no_seo", label: "SEO incompleto" },
+  { value: "no_fiscal", label: "Fiscal/logística" },
+  { value: "no_tech", label: "Sem atributos técnicos" },
+  { value: "no_tech_power", label: "Sem potência" },
+  { value: "no_tech_color_temp", label: "Sem temperatura" },
+  { value: "no_tech_voltage", label: "Sem voltagem" },
+  { value: "no_tech_ip_rating", label: "Sem IP" },
+];
+
+const searchSchema = z.object({
+  page: fallback(z.number(), 1).default(1),
+  pageSize: fallback(z.number(), 25).default(25),
+  q: fallback(z.string(), "").default(""),
+  sort: fallback(z.string(), "score.asc").default("score.asc"),
+  filter: fallback(z.string(), "all").default("all"),
+});
+
+export const Route = createFileRoute("/admin/produtos/qualidade")({
+  validateSearch: zodValidator(searchSchema),
+  component: ProductQualityPage,
+});
+
 function ProductQualityPage() {
-  const [filter, setFilter] = useState<Filter>("all");
-  const [q, setQ] = useState("");
+  const ts = useTableState({
+    page: 1,
+    pageSize: 25,
+    sort: { column: "score", direction: "asc" },
+  });
+  const filter = ((ts.search.filter as string) ?? "all") as Filter;
   const qc = useQueryClient();
 
   const { data, isLoading, isFetching, refetch, dataUpdatedAt } = useQuery({
@@ -56,7 +101,6 @@ function ProductQualityPage() {
 
   const handleRefresh = async () => {
     try {
-      // Invalida também o feed de operações (contadores do menu + Painel do Dia)
       qc.invalidateQueries({ queryKey: ["admin-operations"] });
       await refetch();
       toast.success("Scores de qualidade atualizados com sucesso.");
@@ -114,13 +158,136 @@ function ProductQualityPage() {
         arr = arr.filter((r) => r.quality.issues.some((i) => i.code === "no_tech_ip_rating"));
         break;
     }
-    const term = q.trim().toLowerCase();
+    const term = ts.q.trim().toLowerCase();
     if (term)
       arr = arr.filter(
         (r) => r.name.toLowerCase().includes(term) || (r.sku ?? "").toLowerCase().includes(term),
       );
-    return arr.slice().sort((a, b) => a.quality.score - b.quality.score);
-  }, [rows, filter, q]);
+    const dir = ts.sort.direction === "asc" ? 1 : -1;
+    const col = ts.sort.column;
+    return [...arr].sort((a, b) => {
+      switch (col) {
+        case "score":
+          return (a.quality.score - b.quality.score) * dir;
+        case "name":
+          return a.name.localeCompare(b.name) * dir;
+        case "sku":
+          return (a.sku ?? "").localeCompare(b.sku ?? "") * dir;
+        case "active":
+          return ((a.active ? 1 : 0) - (b.active ? 1 : 0)) * dir;
+        default:
+          return 0;
+      }
+    });
+  }, [rows, filter, ts.q, ts.sort]);
+
+  const total = filtered.length;
+  const paged = useMemo(() => {
+    const start = (ts.page - 1) * ts.pageSize;
+    return filtered.slice(start, start + ts.pageSize);
+  }, [filtered, ts.page, ts.pageSize]);
+
+  const hasFilters = ts.q !== "" || filter !== "all";
+
+  const columns: DataTableColumn<ProductQualityRow>[] = [
+    {
+      id: "name",
+      header: "Produto",
+      sortable: true,
+      cell: (r) => (
+        <div className="flex items-center gap-2 min-w-0">
+          <Package className="w-4 h-4 text-muted-foreground shrink-0" />
+          <div className="min-w-0">
+            <p className="font-medium truncate">{r.name}</p>
+            <p className="text-xs text-muted-foreground truncate">
+              {r.sku ?? "—"} {r.brand ? `· ${r.brand}` : ""}
+            </p>
+          </div>
+        </div>
+      ),
+    },
+    {
+      id: "score",
+      header: "Score",
+      sortable: true,
+      cell: (r) => <span className="font-semibold">{r.quality.score}</span>,
+    },
+    {
+      id: "classification",
+      header: "Classe",
+      cell: (r) => {
+        const c = qualityClassColor(r.quality.classification);
+        return (
+          <span
+            className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${c.bg} ${c.text}`}
+          >
+            {qualityClassLabel(r.quality.classification)}
+          </span>
+        );
+      },
+    },
+    {
+      id: "active",
+      header: "Status",
+      sortable: true,
+      hideOnMobile: true,
+      cell: (r) => (
+        <div className="flex flex-col gap-1">
+          <span
+            className={`inline-flex w-fit items-center px-2 py-0.5 rounded text-[11px] font-medium ${r.active ? "bg-emerald-500/10 text-emerald-700 dark:text-emerald-400" : "bg-muted text-muted-foreground"}`}
+          >
+            {r.active ? "Ativo" : "Inativo"}
+          </span>
+          {r.featured && r.quality.score < 70 && (
+            <span className="inline-flex w-fit items-center gap-1 px-2 py-0.5 rounded text-[11px] font-medium bg-red-500/10 text-red-700 dark:text-red-400">
+              <AlertTriangle className="w-3 h-3" /> Destaque baixo
+            </span>
+          )}
+          {r.featured && r.quality.score >= 70 && (
+            <span className="inline-flex w-fit items-center px-2 py-0.5 rounded text-[11px] font-medium bg-primary/10 text-primary">
+              Destaque
+            </span>
+          )}
+        </div>
+      ),
+    },
+    {
+      id: "issues",
+      header: "Pendências",
+      hideOnMobile: true,
+      cell: (r) => {
+        const top = r.quality.issues.slice(0, 3);
+        if (top.length === 0) return <span className="text-xs text-muted-foreground">—</span>;
+        return (
+          <ul className="text-xs space-y-0.5">
+            {top.map((i) => (
+              <li key={i.code} className="text-muted-foreground">
+                • {i.label}
+              </li>
+            ))}
+            {r.quality.issues.length > top.length && (
+              <li className="text-[11px] text-muted-foreground/70">
+                + {r.quality.issues.length - top.length} outras
+              </li>
+            )}
+          </ul>
+        );
+      },
+    },
+    {
+      id: "actions",
+      header: <span className="sr-only">Ações</span>,
+      headerClassName: "text-right",
+      className: "text-right",
+      cell: (r) => (
+        <Link to={"/admin/produtos/$id" as never} params={{ id: r.id } as never}>
+          <Button variant="outline" size="sm">
+            Editar
+          </Button>
+        </Link>
+      ),
+    },
+  ];
 
   return (
     <AdminLayout
@@ -131,7 +298,7 @@ function ProductQualityPage() {
             <RefreshCw className={`w-4 h-4 mr-1 ${isFetching ? "animate-spin" : ""}`} />
             {isFetching ? "Atualizando…" : "Atualizar scores"}
           </Button>
-          <Link to={"/admin/produtos" as any}>
+          <Link to={"/admin/produtos" as never}>
             <Button variant="ghost" size="sm">
               <ArrowLeft className="w-4 h-4 mr-1" /> Produtos
             </Button>
@@ -162,236 +329,123 @@ function ProductQualityPage() {
           <SummaryCard
             label="Total"
             value={counts?.total ?? 0}
-            onClick={() => setFilter("all")}
+            onClick={() => ts.setFilter("filter", "all")}
             active={filter === "all"}
           />
           <SummaryCard
             label="Ruins"
             value={counts?.ruim ?? 0}
             tone="danger"
-            onClick={() => setFilter("ruim")}
+            onClick={() => ts.setFilter("filter", "ruim")}
             active={filter === "ruim"}
           />
           <SummaryCard
             label="Atenção"
             value={counts?.atencao ?? 0}
             tone="warn"
-            onClick={() => setFilter("atencao")}
+            onClick={() => ts.setFilter("filter", "atencao")}
             active={filter === "atencao"}
           />
           <SummaryCard
             label="Ativos < 70"
             value={counts?.activeBelow70 ?? 0}
             tone="warn"
-            onClick={() => setFilter("active_low")}
+            onClick={() => ts.setFilter("filter", "active_low")}
             active={filter === "active_low"}
           />
           <SummaryCard
             label="Destaques < 70"
             value={counts?.featuredBelow70 ?? 0}
             tone="danger"
-            onClick={() => setFilter("featured_low")}
+            onClick={() => ts.setFilter("filter", "featured_low")}
             active={filter === "featured_low"}
           />
           <SummaryCard
             label="Sem imagem"
             value={counts?.missingImage ?? 0}
             tone="warn"
-            onClick={() => setFilter("no_image")}
+            onClick={() => ts.setFilter("filter", "no_image")}
             active={filter === "no_image"}
           />
         </div>
 
-        <div className="flex flex-wrap gap-2">
-          <FilterPill
-            icon={<ImageIcon className="w-3.5 h-3.5" />}
-            label="Sem imagem"
-            value="no_image"
-            filter={filter}
-            setFilter={setFilter}
+        <div className="bg-card border border-border rounded-xl">
+          <DataTableToolbar
+            q={ts.q}
+            onQChange={ts.setQ}
+            searchPlaceholder="Buscar por nome ou SKU…"
+            hasActiveFilters={hasFilters}
+            onClearFilters={ts.clearAll}
+            filters={
+              <Select value={filter} onValueChange={(v) => ts.setFilter("filter", v)}>
+                <SelectTrigger className="h-9 w-[220px]">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {FILTER_OPTIONS.map((o) => (
+                    <SelectItem key={o.value} value={o.value}>
+                      {o.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            }
+            rightSlot={
+              <span className="text-xs text-muted-foreground">
+                {filtered.length} de {rows.length}
+              </span>
+            }
           />
-          <FilterPill
-            icon={<DollarSign className="w-3.5 h-3.5" />}
-            label="Sem custo"
-            value="no_cost"
-            filter={filter}
-            setFilter={setFilter}
+
+          <DataTable<ProductQualityRow>
+            columns={columns}
+            rows={paged}
+            loading={isLoading}
+            sort={ts.sort}
+            onSort={ts.setSort}
+            rowKey={(r) => r.id}
+            emptyTitle="Nenhum produto"
+            emptyDescription="Nenhum produto neste filtro."
           />
-          <FilterPill
-            icon={<Search className="w-3.5 h-3.5" />}
-            label="SEO incompleto"
-            value="no_seo"
-            filter={filter}
-            setFilter={setFilter}
-          />
-          <FilterPill
-            icon={<FileText className="w-3.5 h-3.5" />}
-            label="Fiscal/logística"
-            value="no_fiscal"
-            filter={filter}
-            setFilter={setFilter}
-          />
-          <FilterPill
-            icon={<Package className="w-3.5 h-3.5" />}
-            label="Sem atributos técnicos"
-            value="no_tech"
-            filter={filter}
-            setFilter={setFilter}
-          />
-          <FilterPill
-            icon={<Package className="w-3.5 h-3.5" />}
-            label="Sem potência"
-            value="no_tech_power"
-            filter={filter}
-            setFilter={setFilter}
-          />
-          <FilterPill
-            icon={<Package className="w-3.5 h-3.5" />}
-            label="Sem temperatura"
-            value="no_tech_color_temp"
-            filter={filter}
-            setFilter={setFilter}
-          />
-          <FilterPill
-            icon={<Package className="w-3.5 h-3.5" />}
-            label="Sem voltagem"
-            value="no_tech_voltage"
-            filter={filter}
-            setFilter={setFilter}
-          />
-          <FilterPill
-            icon={<Package className="w-3.5 h-3.5" />}
-            label="Sem IP"
-            value="no_tech_ip_rating"
-            filter={filter}
-            setFilter={setFilter}
+
+          <DataTablePagination
+            page={ts.page}
+            pageSize={ts.pageSize}
+            total={total}
+            onPageChange={ts.setPage}
+            onPageSizeChange={ts.setPageSize}
           />
         </div>
 
-        <div className="bg-card border border-border rounded-xl">
-          <div className="p-4 border-b border-border flex items-center gap-3">
-            <div className="relative max-w-sm flex-1">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-              <Input
-                value={q}
-                onChange={(e) => setQ(e.target.value)}
-                placeholder="Buscar por nome ou SKU…"
-                className="pl-9"
-              />
-            </div>
-            <span className="text-xs text-muted-foreground">
-              {filtered.length} de {rows.length}
-            </span>
-          </div>
-
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead className="text-left text-xs text-muted-foreground bg-muted/40">
-                <tr>
-                  <th className="px-4 py-3 font-medium">Produto</th>
-                  <th className="px-4 py-3 font-medium">Score</th>
-                  <th className="px-4 py-3 font-medium">Classe</th>
-                  <th className="px-4 py-3 font-medium">Status</th>
-                  <th className="px-4 py-3 font-medium">Pendências</th>
-                  <th className="px-4 py-3 font-medium w-24"></th>
-                </tr>
-              </thead>
-              <tbody>
-                {isLoading && (
-                  <tr>
-                    <td colSpan={6} className="px-4 py-8 text-center text-muted-foreground">
-                      Carregando…
-                    </td>
-                  </tr>
-                )}
-                {!isLoading && filtered.length === 0 && (
-                  <tr>
-                    <td colSpan={6} className="px-4 py-8 text-center text-muted-foreground">
-                      Nenhum produto neste filtro.
-                    </td>
-                  </tr>
-                )}
-                {filtered.map((r) => (
-                  <Row key={r.id} row={r} />
-                ))}
-              </tbody>
-            </table>
-          </div>
+        <div className="flex flex-wrap gap-2">
+          {(
+            [
+              { v: "no_image", icon: ImageIcon, label: "Sem imagem" },
+              { v: "no_cost", icon: DollarSign, label: "Sem custo" },
+              { v: "no_seo", icon: Search, label: "SEO incompleto" },
+              { v: "no_fiscal", icon: FileText, label: "Fiscal/logística" },
+              { v: "no_tech", icon: Package, label: "Sem atributos técnicos" },
+              { v: "no_tech_power", icon: Package, label: "Sem potência" },
+              { v: "no_tech_color_temp", icon: Package, label: "Sem temperatura" },
+              { v: "no_tech_voltage", icon: Package, label: "Sem voltagem" },
+              { v: "no_tech_ip_rating", icon: Package, label: "Sem IP" },
+            ] as Array<{ v: Filter; icon: typeof Package; label: string }>
+          ).map(({ v, icon: Icon, label }) => {
+            const active = filter === v;
+            return (
+              <button
+                key={v}
+                onClick={() => ts.setFilter("filter", active ? "all" : v)}
+                className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs border transition-colors ${active ? "bg-primary text-primary-foreground border-primary" : "bg-card text-muted-foreground border-border hover:border-primary/40"}`}
+              >
+                <Icon className="w-3.5 h-3.5" />
+                {label}
+              </button>
+            );
+          })}
         </div>
       </div>
     </AdminLayout>
-  );
-}
-
-function Row({ row }: { row: ProductQualityRow }) {
-  const c = qualityClassColor(row.quality.classification);
-  const top = row.quality.issues.slice(0, 3);
-  return (
-    <tr className="border-t border-border hover:bg-muted/20">
-      <td className="px-4 py-3">
-        <div className="flex items-center gap-2 min-w-0">
-          <Package className="w-4 h-4 text-muted-foreground shrink-0" />
-          <div className="min-w-0">
-            <p className="font-medium truncate">{row.name}</p>
-            <p className="text-xs text-muted-foreground truncate">
-              {row.sku ?? "—"} {row.brand ? `· ${row.brand}` : ""}
-            </p>
-          </div>
-        </div>
-      </td>
-      <td className="px-4 py-3 font-semibold">{row.quality.score}</td>
-      <td className="px-4 py-3">
-        <span
-          className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${c.bg} ${c.text}`}
-        >
-          {qualityClassLabel(row.quality.classification)}
-        </span>
-      </td>
-      <td className="px-4 py-3">
-        <div className="flex flex-col gap-1">
-          <span
-            className={`inline-flex w-fit items-center px-2 py-0.5 rounded text-[11px] font-medium ${row.active ? "bg-emerald-500/10 text-emerald-700 dark:text-emerald-400" : "bg-muted text-muted-foreground"}`}
-          >
-            {row.active ? "Ativo" : "Inativo"}
-          </span>
-          {row.featured && row.quality.score < 70 && (
-            <span className="inline-flex w-fit items-center gap-1 px-2 py-0.5 rounded text-[11px] font-medium bg-red-500/10 text-red-700 dark:text-red-400">
-              <AlertTriangle className="w-3 h-3" /> Destaque com score baixo
-            </span>
-          )}
-          {row.featured && row.quality.score >= 70 && (
-            <span className="inline-flex w-fit items-center px-2 py-0.5 rounded text-[11px] font-medium bg-primary/10 text-primary">
-              Destaque
-            </span>
-          )}
-        </div>
-      </td>
-      <td className="px-4 py-3">
-        {top.length === 0 ? (
-          <span className="text-xs text-muted-foreground">—</span>
-        ) : (
-          <ul className="text-xs space-y-0.5">
-            {top.map((i) => (
-              <li key={i.code} className="text-muted-foreground">
-                • {i.label}
-              </li>
-            ))}
-            {row.quality.issues.length > top.length && (
-              <li className="text-[11px] text-muted-foreground/70">
-                + {row.quality.issues.length - top.length} outras
-              </li>
-            )}
-          </ul>
-        )}
-      </td>
-      <td className="px-4 py-3">
-        <Link to={"/admin/produtos/$id" as any} params={{ id: row.id } as any}>
-          <Button variant="outline" size="sm">
-            Editar
-          </Button>
-        </Link>
-      </td>
-    </tr>
   );
 }
 
@@ -425,30 +479,4 @@ function SummaryCard({
   );
 }
 
-function FilterPill({
-  icon,
-  label,
-  value,
-  filter,
-  setFilter,
-}: {
-  icon: React.ReactNode;
-  label: string;
-  value: Filter;
-  filter: Filter;
-  setFilter: (f: Filter) => void;
-}) {
-  const active = filter === value;
-  return (
-    <button
-      onClick={() => setFilter(active ? "all" : value)}
-      className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs border transition-colors ${active ? "bg-primary text-primary-foreground border-primary" : "bg-card text-muted-foreground border-border hover:border-primary/40"}`}
-    >
-      {icon}
-      {label}
-    </button>
-  );
-}
-
-// Helper used for type narrowing in callbacks (kept intentionally)
 type _C = QualityClass;

@@ -7,18 +7,32 @@ import {
   Package,
   RefreshCw,
   Download,
-  Search,
   TrendingUp,
   TimerOff,
   CircleSlash,
   CircleAlert,
   Settings,
-  ChevronDown,
 } from "lucide-react";
+import { z } from "zod";
+import { zodValidator, fallback } from "@tanstack/zod-adapter";
 import { toast } from "sonner";
 import { AdminLayout } from "@/components/admin/AdminLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
 import {
   getStockReport,
   exportStockCsv,
@@ -29,8 +43,13 @@ import {
   type StockSettings,
   type StockStatus,
 } from "@/server/stockOps.functions";
-
-export const Route = createFileRoute("/admin/produtos/estoque")({ component: StockPage });
+import {
+  DataTable,
+  DataTableToolbar,
+  DataTablePagination,
+  type DataTableColumn,
+} from "@/components/admin/datatable";
+import { useTableState } from "@/hooks/useTableState";
 
 type Filter =
   | "all"
@@ -43,17 +62,30 @@ type Filter =
   | "block_oos"
   | "healthy";
 
-const FILTERS: Array<{ id: Filter; label: string }> = [
-  { id: "all", label: "Todos" },
-  { id: "low", label: "Estoque baixo" },
-  { id: "zero", label: "Estoque zerado" },
-  { id: "inactive", label: "Produto parado" },
-  { id: "high_movement", label: "Alto giro" },
-  { id: "healthy", label: "Saudável" },
-  { id: "no_param", label: "Sem mínimo configurado" },
-  { id: "allow_oos", label: "Permite venda sem estoque" },
-  { id: "block_oos", label: "Não permite venda sem estoque" },
+const FILTERS: Array<{ value: Filter; label: string }> = [
+  { value: "all", label: "Todos" },
+  { value: "low", label: "Estoque baixo" },
+  { value: "zero", label: "Estoque zerado" },
+  { value: "inactive", label: "Produto parado" },
+  { value: "high_movement", label: "Alto giro" },
+  { value: "healthy", label: "Saudável" },
+  { value: "no_param", label: "Sem mínimo configurado" },
+  { value: "allow_oos", label: "Permite venda sem estoque" },
+  { value: "block_oos", label: "Não permite venda sem estoque" },
 ];
+
+const searchSchema = z.object({
+  page: fallback(z.number(), 1).default(1),
+  pageSize: fallback(z.number(), 25).default(25),
+  q: fallback(z.string(), "").default(""),
+  sort: fallback(z.string(), "status.asc").default("status.asc"),
+  filter: fallback(z.string(), "all").default("all"),
+});
+
+export const Route = createFileRoute("/admin/produtos/estoque")({
+  validateSearch: zodValidator(searchSchema),
+  component: StockPage,
+});
 
 function statusBadge(status: StockStatus) {
   switch (status) {
@@ -79,9 +111,14 @@ function fmtDate(iso: string | null): string {
 
 function StockPage() {
   const qc = useQueryClient();
-  const [filter, setFilter] = useState<Filter>("all");
-  const [q, setQ] = useState("");
+  const ts = useTableState({
+    page: 1,
+    pageSize: 25,
+    sort: { column: "status", direction: "asc" },
+  });
+  const filter = ((ts.search.filter as string) ?? "all") as Filter;
   const [showSettings, setShowSettings] = useState(false);
+  const [adjusting, setAdjusting] = useState<StockReportRow | null>(null);
 
   const reportQ = useQuery({
     queryKey: ["admin-stock-report"],
@@ -122,6 +159,15 @@ function StockPage() {
     return { low, zero, inactive, high, noParam, healthy, highLow };
   }, [rows, settings]);
 
+  const order: Record<StockStatus, number> = {
+    zero: 0,
+    low: 1,
+    high_movement: 2,
+    inactive: 3,
+    no_param: 4,
+    healthy: 5,
+  };
+
   const filtered = useMemo(() => {
     let arr = rows;
     switch (filter) {
@@ -150,7 +196,7 @@ function StockPage() {
         arr = arr.filter((r) => !r.allow_out_of_stock_sales);
         break;
     }
-    const term = q.trim().toLowerCase();
+    const term = ts.q.trim().toLowerCase();
     if (term) {
       arr = arr.filter(
         (r) =>
@@ -159,19 +205,37 @@ function StockPage() {
           (r.category_name ?? "").toLowerCase().includes(term),
       );
     }
-    // ordem útil: zerado e baixo primeiro
-    const order: Record<StockStatus, number> = {
-      zero: 0,
-      low: 1,
-      high_movement: 2,
-      inactive: 3,
-      no_param: 4,
-      healthy: 5,
-    };
-    return arr
-      .slice()
-      .sort((a, b) => order[a.status] - order[b.status] || b.qty_sold_window - a.qty_sold_window);
-  }, [rows, filter, q]);
+    const dir = ts.sort.direction === "asc" ? 1 : -1;
+    const col = ts.sort.column;
+    return [...arr].sort((a, b) => {
+      switch (col) {
+        case "status":
+          return (order[a.status] - order[b.status]) * dir;
+        case "name":
+          return a.name.localeCompare(b.name) * dir;
+        case "sku":
+          return (a.sku ?? "").localeCompare(b.sku ?? "") * dir;
+        case "stock_qty":
+          return (a.stock_qty - b.stock_qty) * dir;
+        case "qty_sold_window":
+          return (a.qty_sold_window - b.qty_sold_window) * dir;
+        case "last_sold_at":
+          return (
+            (new Date(a.last_sold_at ?? 0).getTime() -
+              new Date(b.last_sold_at ?? 0).getTime()) *
+            dir
+          );
+        default:
+          return 0;
+      }
+    });
+  }, [rows, filter, ts.q, ts.sort]);
+
+  const total = filtered.length;
+  const paged = useMemo(() => {
+    const start = (ts.page - 1) * ts.pageSize;
+    return filtered.slice(start, start + ts.pageSize);
+  }, [filtered, ts.page, ts.pageSize]);
 
   const handleExport = async () => {
     try {
@@ -183,8 +247,9 @@ function StockPage() {
       a.download = res.filename;
       a.click();
       URL.revokeObjectURL(url);
-    } catch (e: any) {
-      toast.error(e?.message ?? "Falha ao exportar CSV.");
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : "Falha ao exportar CSV.";
+      toast.error(msg);
     }
   };
 
@@ -193,6 +258,115 @@ function StockPage() {
     await reportQ.refetch();
     toast.success("Relatório de estoque atualizado.");
   };
+
+  const hasFilters = ts.q !== "" || filter !== "all";
+
+  const columns: DataTableColumn<StockReportRow>[] = [
+    {
+      id: "name",
+      header: "Produto",
+      sortable: true,
+      cell: (r) => (
+        <span className="block max-w-[260px] truncate" title={r.name}>
+          {r.name}
+        </span>
+      ),
+    },
+    {
+      id: "sku",
+      header: "SKU",
+      sortable: true,
+      hideOnMobile: true,
+      cell: (r) => <span className="text-muted-foreground">{r.sku ?? "—"}</span>,
+    },
+    {
+      id: "category",
+      header: "Categoria",
+      hideOnMobile: true,
+      cell: (r) => <span className="text-muted-foreground">{r.category_name ?? "—"}</span>,
+    },
+    {
+      id: "stock_qty",
+      header: "Estoque",
+      sortable: true,
+      className: "text-right",
+      headerClassName: "text-right",
+      cell: (r) => <span className="font-medium">{r.stock_qty}</span>,
+    },
+    {
+      id: "min",
+      header: "Mín.",
+      hideOnMobile: true,
+      className: "text-right",
+      headerClassName: "text-right",
+      cell: (r) => <span className="text-muted-foreground">{r.stock_min_alert ?? "—"}</span>,
+    },
+    {
+      id: "qty_sold_window",
+      header: `Vendidos ${settings?.sales_window_days ?? 30}d`,
+      sortable: true,
+      hideOnMobile: true,
+      className: "text-right",
+      headerClassName: "text-right",
+      cell: (r) => <span>{r.qty_sold_window}</span>,
+    },
+    {
+      id: "last_sold_at",
+      header: "Última venda",
+      sortable: true,
+      hideOnMobile: true,
+      cell: (r) => (
+        <span className="text-muted-foreground">
+          {fmtDate(r.last_sold_at)}
+          {r.days_since_last_sale !== null && r.last_sold_at && (
+            <span className="text-xs ml-1 opacity-70">({r.days_since_last_sale}d)</span>
+          )}
+        </span>
+      ),
+    },
+    {
+      id: "status",
+      header: "Status",
+      sortable: true,
+      cell: (r) => {
+        const b = statusBadge(r.status);
+        return (
+          <span className={`px-2 py-0.5 rounded-full text-[11px] font-medium ${b.cls}`}>
+            {b.label}
+          </span>
+        );
+      },
+    },
+    {
+      id: "oos",
+      header: "Sem estoque",
+      hideOnMobile: true,
+      cell: (r) =>
+        r.allow_out_of_stock_sales ? (
+          <span className="text-amber-700 text-xs">Permitido</span>
+        ) : (
+          <span className="text-muted-foreground text-xs">Bloqueado</span>
+        ),
+    },
+    {
+      id: "actions",
+      header: <span className="sr-only">Ações</span>,
+      headerClassName: "text-right",
+      className: "text-right whitespace-nowrap",
+      cell: (r) => (
+        <>
+          <Button size="sm" variant="outline" onClick={() => setAdjusting(r)}>
+            Ajustar
+          </Button>
+          <Link to={"/admin/produtos/$id" as never} params={{ id: r.product_id } as never}>
+            <Button size="sm" variant="ghost">
+              Editar
+            </Button>
+          </Link>
+        </>
+      ),
+    },
+  ];
 
   return (
     <AdminLayout
@@ -209,7 +383,7 @@ function StockPage() {
           <Button variant="outline" size="sm" onClick={() => setShowSettings((v) => !v)}>
             <Settings className="w-4 h-4 mr-1" /> Configurações
           </Button>
-          <Link to={"/admin/produtos" as any}>
+          <Link to={"/admin/produtos" as never}>
             <Button variant="ghost" size="sm">
               <ArrowLeft className="w-4 h-4 mr-1" /> Produtos
             </Button>
@@ -249,80 +423,64 @@ function StockPage() {
         />
       )}
 
-      {/* Filtros */}
-      <div className="flex flex-wrap gap-2 mb-3">
-        {FILTERS.map((f) => (
-          <button
-            key={f.id}
-            onClick={() => setFilter(f.id)}
-            className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-colors ${
-              filter === f.id
-                ? "bg-primary text-primary-foreground border-primary"
-                : "bg-card text-muted-foreground border-border hover:bg-muted"
-            }`}
-          >
-            {f.label}
-          </button>
-        ))}
-      </div>
-
-      <div className="relative mb-3">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-        <Input
-          placeholder="Buscar por nome, SKU ou categoria…"
-          className="pl-9"
-          value={q}
-          onChange={(e) => setQ(e.target.value)}
-        />
-      </div>
-
-      {/* Tabela */}
       <div className="bg-card border border-border rounded-lg overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead className="bg-muted/50 text-xs uppercase tracking-wider text-muted-foreground">
-              <tr>
-                <th className="text-left px-3 py-2">Produto</th>
-                <th className="text-left px-3 py-2">SKU</th>
-                <th className="text-left px-3 py-2">Categoria</th>
-                <th className="text-right px-3 py-2">Estoque</th>
-                <th className="text-right px-3 py-2">Mín.</th>
-                <th className="text-right px-3 py-2">
-                  Vendidos {settings?.sales_window_days ?? 30}d
-                </th>
-                <th className="text-left px-3 py-2">Última venda</th>
-                <th className="text-left px-3 py-2">Status</th>
-                <th className="text-left px-3 py-2">Sem estoque</th>
-                <th className="text-right px-3 py-2">Ações</th>
-              </tr>
-            </thead>
-            <tbody>
-              {reportQ.isLoading ? (
-                <tr>
-                  <td colSpan={10} className="text-center py-10 text-muted-foreground">
-                    Carregando…
-                  </td>
-                </tr>
-              ) : filtered.length === 0 ? (
-                <tr>
-                  <td colSpan={10} className="text-center py-10 text-muted-foreground">
-                    Nenhum produto encontrado para esse filtro.
-                  </td>
-                </tr>
-              ) : (
-                filtered.map((r) => (
-                  <Row key={r.product_id} row={r} onAdjusted={() => reportQ.refetch()} />
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
+        <DataTableToolbar
+          q={ts.q}
+          onQChange={ts.setQ}
+          searchPlaceholder="Buscar por nome, SKU ou categoria…"
+          hasActiveFilters={hasFilters}
+          onClearFilters={ts.clearAll}
+          filters={
+            <Select value={filter} onValueChange={(v) => ts.setFilter("filter", v)}>
+              <SelectTrigger className="h-9 w-[220px]">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {FILTERS.map((f) => (
+                  <SelectItem key={f.value} value={f.value}>
+                    {f.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          }
+        />
+
+        <DataTable<StockReportRow>
+          columns={columns}
+          rows={paged}
+          loading={reportQ.isLoading}
+          sort={ts.sort}
+          onSort={ts.setSort}
+          rowKey={(r) => r.product_id}
+          emptyTitle="Nenhum produto"
+          emptyDescription="Nenhum produto encontrado para esse filtro."
+        />
+
+        <DataTablePagination
+          page={ts.page}
+          pageSize={ts.pageSize}
+          total={total}
+          onPageChange={ts.setPage}
+          onPageSizeChange={ts.setPageSize}
+        />
       </div>
 
       <p className="text-xs text-muted-foreground mt-3">
         Esta fase é apenas para visibilidade. Não bloqueia venda, não dispara compra e não envia
         pedido para fornecedor.
       </p>
+
+      {adjusting && (
+        <AdjustDialog
+          row={adjusting}
+          onClose={() => setAdjusting(null)}
+          onAdjusted={() => {
+            setAdjusting(null);
+            reportQ.refetch();
+          }}
+        />
+      )}
     </AdminLayout>
   );
 }
@@ -355,9 +513,15 @@ function Card({
   );
 }
 
-function Row({ row, onAdjusted }: { row: StockReportRow; onAdjusted: () => void }) {
-  const badge = statusBadge(row.status);
-  const [open, setOpen] = useState(false);
+function AdjustDialog({
+  row,
+  onClose,
+  onAdjusted,
+}: {
+  row: StockReportRow;
+  onClose: () => void;
+  onAdjusted: () => void;
+}) {
   const [val, setVal] = useState(String(row.stock_qty));
   const [saving, setSaving] = useState(false);
 
@@ -371,83 +535,46 @@ function Row({ row, onAdjusted }: { row: StockReportRow; onAdjusted: () => void 
     try {
       await adjustProductStock({ data: { product_id: row.product_id, new_stock_qty: n } });
       toast.success("Estoque ajustado.");
-      setOpen(false);
       onAdjusted();
-    } catch (e: any) {
-      toast.error(e?.message ?? "Falha ao ajustar estoque.");
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : "Falha ao ajustar estoque.";
+      toast.error(msg);
     } finally {
       setSaving(false);
     }
   };
 
   return (
-    <>
-      <tr className="border-t border-border hover:bg-muted/30">
-        <td className="px-3 py-2 max-w-[260px] truncate" title={row.name}>
-          {row.name}
-        </td>
-        <td className="px-3 py-2 text-muted-foreground">{row.sku ?? "—"}</td>
-        <td className="px-3 py-2 text-muted-foreground">{row.category_name ?? "—"}</td>
-        <td className="px-3 py-2 text-right font-medium">{row.stock_qty}</td>
-        <td className="px-3 py-2 text-right text-muted-foreground">{row.stock_min_alert ?? "—"}</td>
-        <td className="px-3 py-2 text-right">{row.qty_sold_window}</td>
-        <td className="px-3 py-2 text-muted-foreground">
-          {fmtDate(row.last_sold_at)}
-          {row.days_since_last_sale !== null && row.last_sold_at && (
-            <span className="text-xs ml-1 opacity-70">({row.days_since_last_sale}d)</span>
-          )}
-        </td>
-        <td className="px-3 py-2">
-          <span className={`px-2 py-0.5 rounded-full text-[11px] font-medium ${badge.cls}`}>
-            {badge.label}
-          </span>
-        </td>
-        <td className="px-3 py-2 text-xs">
-          {row.allow_out_of_stock_sales ? (
-            <span className="text-amber-700">Permitido</span>
-          ) : (
-            <span className="text-muted-foreground">Bloqueado</span>
-          )}
-        </td>
-        <td className="px-3 py-2 text-right whitespace-nowrap">
-          <Button size="sm" variant="outline" onClick={() => setOpen((v) => !v)}>
-            Ajustar
+    <Dialog open onOpenChange={(o) => !o && onClose()}>
+      <DialogContent className="max-w-sm">
+        <DialogHeader>
+          <DialogTitle>Ajustar estoque</DialogTitle>
+        </DialogHeader>
+        <div className="space-y-2">
+          <p className="text-sm text-muted-foreground">{row.name}</p>
+          <div>
+            <label className="text-xs text-muted-foreground">Novo estoque</label>
+            <Input
+              type="number"
+              min={0}
+              value={val}
+              onChange={(e) => setVal(e.target.value)}
+            />
+          </div>
+          <p className="text-xs text-muted-foreground">
+            Estoque atual: {row.stock_qty}. O ajuste é registrado no log administrativo.
+          </p>
+        </div>
+        <DialogFooter>
+          <Button variant="ghost" onClick={onClose}>
+            Cancelar
           </Button>
-          <Link to={"/admin/produtos/$id" as any} params={{ id: row.product_id } as any}>
-            <Button size="sm" variant="ghost">
-              Editar
-            </Button>
-          </Link>
-        </td>
-      </tr>
-      {open && (
-        <tr className="bg-muted/20 border-t border-border">
-          <td colSpan={10} className="px-3 py-3">
-            <div className="flex items-end gap-2 flex-wrap">
-              <div>
-                <label className="text-xs text-muted-foreground">Novo estoque</label>
-                <Input
-                  type="number"
-                  min={0}
-                  value={val}
-                  onChange={(e) => setVal(e.target.value)}
-                  className="w-32"
-                />
-              </div>
-              <Button size="sm" onClick={submit} disabled={saving}>
-                Salvar ajuste
-              </Button>
-              <Button size="sm" variant="ghost" onClick={() => setOpen(false)}>
-                Cancelar
-              </Button>
-              <span className="text-xs text-muted-foreground ml-2">
-                Estoque atual: {row.stock_qty}. O ajuste é registrado no log administrativo.
-              </span>
-            </div>
-          </td>
-        </tr>
-      )}
-    </>
+          <Button onClick={submit} disabled={saving}>
+            {saving ? "Salvando…" : "Salvar"}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }
 
@@ -478,8 +605,9 @@ function SettingsPanel({
       toast.success("Configurações de estoque salvas.");
       onSaved();
       onClose();
-    } catch (e: any) {
-      toast.error(e?.message ?? "Falha ao salvar.");
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : "Falha ao salvar.";
+      toast.error(msg);
     } finally {
       setSaving(false);
     }
