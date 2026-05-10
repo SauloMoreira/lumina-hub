@@ -534,6 +534,9 @@ function CampanhasPage() {
                 <BarChart3 className="mr-2 h-4 w-4" /> Performance
               </Link>
             </Button>
+            <Button variant="outline" onClick={() => setAiOpen(true)}>
+              <Sparkles className="mr-2 h-4 w-4" /> Criar com IA
+            </Button>
             <Button onClick={openNew}>
               <Plus className="mr-2 h-4 w-4" /> Nova campanha
             </Button>
@@ -1204,6 +1207,13 @@ function CampanhasPage() {
           </form>
         </DialogContent>
       </Dialog>
+
+      <MarketingCampaignAiDialog
+        open={aiOpen}
+        onOpenChange={setAiOpen}
+        references={aiReferences}
+        onApply={(patch) => openFromAi(patch)}
+      />
     </AdminLayout>
   );
 }
