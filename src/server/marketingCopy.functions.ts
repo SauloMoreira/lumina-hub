@@ -348,13 +348,13 @@ export const generateMarketingCampaign = createServerFn({ method: "POST" })
         const { data: row } = await supabaseAdmin
           .from("marketing_ai_generations")
           .insert({
-            admin_user_id: ctx.adminUserId,
+            admin_user_id: ctx.adminUserId ?? "00000000-0000-0000-0000-000000000000",
             admin_email: ctx.adminEmail ?? null,
-            brief: data.brief,
-            suggestion: parsed,
+            brief: data.brief as never,
+            suggestion: parsed as never,
             model,
             status: "generated",
-          })
+          } as never)
           .select("id")
           .single();
         return { ok: true as const, suggestion: parsed, generationId: row?.id ?? null };
@@ -385,8 +385,8 @@ export const markMarketingGeneration = createServerFn({ method: "POST" })
       .update({
         status: data.status,
         applied_campaign_id: data.campaign_id ?? null,
-        applied_payload: data.applied_payload ?? null,
-      })
+        applied_payload: (data.applied_payload ?? null) as never,
+      } as never)
       .eq("id", data.generation_id);
     if (error) return { ok: false as const, error: error.message };
     return { ok: true as const };
