@@ -1,5 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useState, type FormEvent } from "react";
+import { zodValidator, fallback } from "@tanstack/zod-adapter";
+import { z } from "zod";
 import {
   Plus,
   Pencil,
@@ -10,7 +12,10 @@ import {
   Info,
   Tag,
   Image as ImageIcon,
+  Search,
 } from "lucide-react";
+import { DataTablePagination } from "@/components/admin/datatable";
+import { useTableState } from "@/hooks/useTableState";
 import { AdminLayout } from "@/components/admin/AdminLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
