@@ -161,6 +161,7 @@ const groups: Group[] = [
       { to: "/admin/funil", label: "Funil comercial", icon: LayoutDashboard },
       { to: "/admin/contact-messages", label: "Atendimentos", icon: Mail },
       { to: "/admin/whatsapp-templates", label: "Modelos de WhatsApp", icon: MessageSquareText },
+      { to: "/admin/comunicacao/emails", label: "Modelos de e-mail", icon: Mail },
     ],
   },
   {
