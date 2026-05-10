@@ -10,6 +10,10 @@ import {
   Info,
   Tag,
   Image as ImageIcon,
+  QrCode,
+  MessageCircle,
+  Target,
+  Users,
 } from "lucide-react";
 import { AdminLayout } from "@/components/admin/AdminLayout";
 import { Button } from "@/components/ui/button";
@@ -17,6 +21,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
+import { Switch } from "@/components/ui/switch";
 import {
   Dialog,
   DialogContent,
@@ -33,33 +38,39 @@ export const Route = createFileRoute("/admin/campanhas")({ component: CampanhasP
 
 const STATUSES = [
   { value: "draft", label: "Rascunho" },
+  { value: "scheduled", label: "Agendada" },
   { value: "active", label: "Ativa" },
   { value: "paused", label: "Pausada" },
   { value: "ended", label: "Encerrada" },
-  { value: "expired", label: "Vencida" },
 ];
 const CHANNELS = [
-  "Site",
-  "WhatsApp",
-  "Instagram",
-  "Facebook",
-  "Google",
-  "TikTok",
-  "E-mail",
-  "B2B",
-  "Loja física",
-  "Outro",
+  "site",
+  "instagram",
+  "facebook",
+  "google_ads",
+  "whatsapp",
+  "email",
+  "b2b",
+  "loja_fisica",
+  "tiktok",
+  "outro",
 ];
 const OBJECTIVES = [
   "vender produto",
+  "vender kit",
   "captar lead",
-  "divulgar promoção",
   "recuperar carrinho",
-  "divulgar atacado",
-  "aumentar recompra",
+  "divulgar promocao",
+  "b2b",
   "divulgar categoria",
-  "liquidar estoque",
-  "lançamento",
+  "lancamento",
+  "aumentar recompra",
+];
+const PRIORITIES = [
+  { value: "baixa", label: "Baixa" },
+  { value: "normal", label: "Normal" },
+  { value: "alta", label: "Alta" },
+  { value: "urgente", label: "Urgente" },
 ];
 
 type Campaign = {
@@ -86,15 +97,36 @@ type Campaign = {
   banner_id?: string | null;
   product_ids?: string[] | null;
   category_ids?: string[] | null;
+  combo_ids?: string[] | null;
+  whatsapp_template_id?: string | null;
+  email_template_id?: string | null;
+  landing_page_url?: string | null;
+  owner_name?: string | null;
+  target_sales?: number | null;
+  target_leads?: number | null;
+  tags?: string[] | null;
+  priority?: string | null;
+  show_on_home?: boolean | null;
+  show_on_catalog?: boolean | null;
+  show_on_b2b?: boolean | null;
   created_at: string;
   updated_at?: string | null;
+};
+
+type Metrics = {
+  leads: number;
+  carts: number;
+  orders: number;
+  paid_orders: number;
+  revenue: number;
+  coupon_uses: number;
 };
 
 const emptyForm = {
   name: "",
   description: "",
   status: "draft",
-  channel: "Site",
+  channel: "site",
   objective: "vender produto",
   audience: "",
   starts_at: "",
@@ -112,6 +144,18 @@ const emptyForm = {
   banner_id: "",
   product_ids: [] as string[],
   category_ids: [] as string[],
+  combo_ids: [] as string[],
+  whatsapp_template_id: "",
+  email_template_id: "",
+  landing_page_url: "",
+  owner_name: "",
+  target_sales: "",
+  target_leads: "",
+  tags: "",
+  priority: "normal",
+  show_on_home: false,
+  show_on_catalog: false,
+  show_on_b2b: false,
 };
 
 function normalizeUtm(value: string): string {
@@ -119,7 +163,7 @@ function normalizeUtm(value: string): string {
     .toLowerCase()
     .normalize("NFD")
     .replace(/[\u0300-\u036f]/g, "")
-    .replace(/[^a-z0-9_-\s]/g, "")
+    .replace(/[^a-z0-9_\-\s]/g, "")
     .trim()
     .replace(/\s+/g, "_");
 }
@@ -144,6 +188,10 @@ function buildFinalUrl(form: typeof emptyForm): string {
   }
 }
 
+function qrCodeUrl(target: string): string {
+  return `https://api.qrserver.com/v1/create-qr-code/?size=240x240&data=${encodeURIComponent(target)}`;
+}
+
 function CampanhasPage() {
   const [list, setList] = useState<Campaign[]>([]);
   const [loading, setLoading] = useState(true);
@@ -151,28 +199,39 @@ function CampanhasPage() {
   const [editing, setEditing] = useState<Campaign | null>(null);
   const [form, setForm] = useState(emptyForm);
   const [filterStatus, setFilterStatus] = useState<string>("all");
+  const [metrics, setMetrics] = useState<Metrics | null>(null);
+  const [metricsLoading, setMetricsLoading] = useState(false);
 
   const [coupons, setCoupons] = useState<Array<{ id: string; code: string }>>([]);
   const [banners, setBanners] = useState<Array<{ id: string; title: string }>>([]);
   const [products, setProducts] = useState<Array<{ id: string; name: string }>>([]);
   const [categories, setCategories] = useState<Array<{ id: string; name: string }>>([]);
+  const [combos, setCombos] = useState<Array<{ id: string; name: string }>>([]);
+  const [waTemplates, setWaTemplates] = useState<Array<{ id: string; name: string; body: string }>>([]);
+  const [emailTemplates, setEmailTemplates] = useState<Array<{ id: string; display_name: string }>>([]);
 
   const finalUrl = useMemo(() => buildFinalUrl(form), [form]);
 
   const load = async () => {
     setLoading(true);
-    const [c, cup, ban, prod, cat] = await Promise.all([
+    const [c, cup, ban, prod, cat, com, wa, em] = await Promise.all([
       supabase.from("marketing_campaigns").select("*").order("created_at", { ascending: false }),
       supabase.from("coupons").select("id, code").order("code"),
       supabase.from("home_banners").select("id, title").order("sort_order"),
       supabase.from("products").select("id, name").order("name").limit(500),
       supabase.from("categories").select("id, name").order("name"),
+      supabase.from("product_bundles").select("id, name").eq("is_active", true).order("name"),
+      supabase.from("whatsapp_templates").select("id, name, body").eq("active", true).order("name"),
+      supabase.from("email_templates").select("id, display_name").eq("is_active", true).order("display_name"),
     ]);
     setList((c.data as any) ?? []);
     setCoupons((cup.data as any) ?? []);
     setBanners((ban.data as any) ?? []);
     setProducts((prod.data as any) ?? []);
     setCategories((cat.data as any) ?? []);
+    setCombos((com.data as any) ?? []);
+    setWaTemplates((wa.data as any) ?? []);
+    setEmailTemplates((em.data as any) ?? []);
     setLoading(false);
   };
 
@@ -180,9 +239,57 @@ function CampanhasPage() {
     load();
   }, []);
 
+  const loadMetrics = async (utmCampaign: string | null | undefined, couponId: string | null | undefined) => {
+    if (!utmCampaign) {
+      setMetrics(null);
+      return;
+    }
+    setMetricsLoading(true);
+    try {
+      const [leads, carts, orders] = await Promise.all([
+        supabase.from("leads").select("id", { count: "exact", head: true }).eq("utm_campaign", utmCampaign),
+        supabase.from("abandoned_carts").select("id", { count: "exact", head: true }).eq("utm_campaign", utmCampaign),
+        supabase
+          .from("orders")
+          .select("id, status, payment_status, total")
+          .eq("utm_campaign", utmCampaign),
+      ]);
+      const ordersData = (orders.data as any[]) ?? [];
+      const paid = ordersData.filter((o) =>
+        ["paid", "approved"].includes(String(o.payment_status ?? "").toLowerCase()),
+      );
+      const revenue = paid.reduce((s, o) => s + Number(o.total ?? 0), 0);
+
+      let couponUses = 0;
+      if (couponId) {
+        const cu = await supabase
+          .from("coupons")
+          .select("used_count")
+          .eq("id", couponId)
+          .maybeSingle();
+        couponUses = Number((cu.data as any)?.used_count ?? 0);
+      }
+
+      setMetrics({
+        leads: leads.count ?? 0,
+        carts: carts.count ?? 0,
+        orders: ordersData.length,
+        paid_orders: paid.length,
+        revenue,
+        coupon_uses: couponUses,
+      });
+    } catch (e) {
+      console.error(e);
+      setMetrics(null);
+    } finally {
+      setMetricsLoading(false);
+    }
+  };
+
   const openNew = () => {
     setEditing(null);
     setForm(emptyForm);
+    setMetrics(null);
     setOpen(true);
   };
 
@@ -192,7 +299,7 @@ function CampanhasPage() {
       name: c.name ?? "",
       description: c.description ?? "",
       status: c.status ?? "draft",
-      channel: c.channel ?? "Site",
+      channel: c.channel ?? "site",
       objective: c.objective ?? "vender produto",
       audience: c.audience ?? "",
       starts_at: c.starts_at ? c.starts_at.slice(0, 16) : "",
@@ -210,7 +317,20 @@ function CampanhasPage() {
       banner_id: c.banner_id ?? "",
       product_ids: c.product_ids ?? [],
       category_ids: c.category_ids ?? [],
+      combo_ids: c.combo_ids ?? [],
+      whatsapp_template_id: c.whatsapp_template_id ?? "",
+      email_template_id: c.email_template_id ?? "",
+      landing_page_url: c.landing_page_url ?? "",
+      owner_name: c.owner_name ?? "",
+      target_sales: c.target_sales != null ? String(c.target_sales) : "",
+      target_leads: c.target_leads != null ? String(c.target_leads) : "",
+      tags: (c.tags ?? []).join(", "),
+      priority: c.priority ?? "normal",
+      show_on_home: !!c.show_on_home,
+      show_on_catalog: !!c.show_on_catalog,
+      show_on_b2b: !!c.show_on_b2b,
     });
+    loadMetrics(c.utm_campaign, c.coupon_id);
     setOpen(true);
   };
 
@@ -225,6 +345,11 @@ function CampanhasPage() {
   const save = async (e: FormEvent) => {
     e.preventDefault();
     if (!form.name.trim()) return toast.error("Informe o nome da campanha");
+
+    const tagsArr = form.tags
+      .split(",")
+      .map((t) => t.trim())
+      .filter(Boolean);
 
     const payload: Record<string, unknown> = {
       name: form.name.trim(),
@@ -249,6 +374,18 @@ function CampanhasPage() {
       banner_id: form.banner_id || null,
       product_ids: form.product_ids,
       category_ids: form.category_ids,
+      combo_ids: form.combo_ids,
+      whatsapp_template_id: form.whatsapp_template_id || null,
+      email_template_id: form.email_template_id || null,
+      landing_page_url: form.landing_page_url || null,
+      owner_name: form.owner_name || null,
+      target_sales: form.target_sales ? Number(form.target_sales) : null,
+      target_leads: form.target_leads ? Number(form.target_leads) : null,
+      tags: tagsArr,
+      priority: form.priority,
+      show_on_home: form.show_on_home,
+      show_on_catalog: form.show_on_catalog,
+      show_on_b2b: form.show_on_b2b,
     };
 
     const res = editing
@@ -281,15 +418,31 @@ function CampanhasPage() {
     }
   };
 
+  const buildWhatsAppMessage = () => {
+    const tpl = waTemplates.find((t) => t.id === form.whatsapp_template_id);
+    const base = tpl?.body ?? `Olá! Conheça nossa campanha ${form.name}.`;
+    const link = finalUrl || form.base_url || "";
+    return `${base}${link ? `\n\n${link}` : ""}`;
+  };
+
+  const copyWhatsApp = async () => {
+    try {
+      await navigator.clipboard.writeText(buildWhatsAppMessage());
+      toast.success("Mensagem WhatsApp copiada");
+    } catch {
+      toast.error("Não foi possível copiar");
+    }
+  };
+
   const filtered = list.filter((c) => filterStatus === "all" || c.status === filterStatus);
 
   const statusBadge = (s: string) => {
     const map: Record<string, string> = {
       draft: "bg-muted text-muted-foreground",
+      scheduled: "bg-blue-500/15 text-blue-700 dark:text-blue-400",
       active: "bg-green-500/15 text-green-700 dark:text-green-400",
       paused: "bg-amber-500/15 text-amber-700 dark:text-amber-400",
       ended: "bg-muted text-muted-foreground",
-      expired: "bg-red-500/15 text-red-700 dark:text-red-400",
     };
     const label = STATUSES.find((x) => x.value === s)?.label ?? s;
     return (
@@ -311,7 +464,8 @@ function CampanhasPage() {
           <div>
             <h1 className="text-2xl font-semibold">Campanhas de Marketing</h1>
             <p className="text-sm text-muted-foreground">
-              Crie campanhas, gere links com UTM e acompanhe quais ações geram leads e vendas.
+              Centro de controle das suas ações comerciais: gere links com UTM, vincule produtos,
+              kits e cupons, e acompanhe leads, carrinhos e vendas.
             </p>
           </div>
           <div className="flex gap-2">
@@ -324,6 +478,13 @@ function CampanhasPage() {
               <Plus className="mr-2 h-4 w-4" /> Nova campanha
             </Button>
           </div>
+        </div>
+
+        <div className="rounded-md border border-blue-200 bg-blue-50 p-3 text-xs text-blue-900 dark:border-blue-900 dark:bg-blue-950/30 dark:text-blue-200">
+          <Info className="mr-1 inline h-3 w-3" />
+          Esta fase não dispara mensagens automáticas. Use as campanhas para gerar links rastreáveis,
+          organizar vínculos comerciais e medir resultados. Disparos em massa exigem regra de
+          consentimento/LGPD e ficam para fase futura.
         </div>
 
         <div className="rounded-lg border bg-card p-4">
@@ -371,7 +532,13 @@ function CampanhasPage() {
                       <h3 className="font-medium">{c.name}</h3>
                       {statusBadge(c.status)}
                       {c.channel && <Badge variant="outline">{c.channel}</Badge>}
+                      {c.priority && c.priority !== "normal" && (
+                        <Badge variant="secondary">{c.priority}</Badge>
+                      )}
                       {isExpired(c) && <Badge variant="destructive">Vencida ainda ativa</Badge>}
+                      {c.show_on_home && <Badge variant="outline">Home</Badge>}
+                      {c.show_on_catalog && <Badge variant="outline">Catálogo</Badge>}
+                      {c.show_on_b2b && <Badge variant="outline">B2B</Badge>}
                     </div>
                     {c.description && (
                       <p className="mt-1 line-clamp-1 text-sm text-muted-foreground">
@@ -393,13 +560,19 @@ function CampanhasPage() {
                       {c.coupon_id && (
                         <span>
                           <Tag className="mr-1 inline h-3 w-3" />
-                          Cupom vinculado
+                          Cupom
                         </span>
                       )}
                       {c.banner_id && (
                         <span>
                           <ImageIcon className="mr-1 inline h-3 w-3" />
-                          Banner vinculado
+                          Banner
+                        </span>
+                      )}
+                      {c.owner_name && (
+                        <span>
+                          <Users className="mr-1 inline h-3 w-3" />
+                          {c.owner_name}
                         </span>
                       )}
                     </div>
@@ -415,6 +588,7 @@ function CampanhasPage() {
                             toast.success("Link copiado");
                           } catch {}
                         }}
+                        title="Copiar link"
                       >
                         <Copy className="h-4 w-4" />
                       </Button>
@@ -449,11 +623,14 @@ function CampanhasPage() {
 
           <form onSubmit={save} className="space-y-4">
             <Tabs defaultValue="basico" className="w-full">
-              <TabsList className="grid w-full grid-cols-4">
+              <TabsList className="grid w-full grid-cols-5">
                 <TabsTrigger value="basico">Básico</TabsTrigger>
                 <TabsTrigger value="utm">UTM Builder</TabsTrigger>
                 <TabsTrigger value="vinculos">Vínculos</TabsTrigger>
                 <TabsTrigger value="extra">Extras</TabsTrigger>
+                <TabsTrigger value="metricas" disabled={!editing}>
+                  Métricas
+                </TabsTrigger>
               </TabsList>
 
               <TabsContent value="basico" className="space-y-3 pt-3">
@@ -549,7 +726,7 @@ function CampanhasPage() {
               <TabsContent value="utm" className="space-y-3 pt-3">
                 <div className="rounded-md border border-blue-200 bg-blue-50 p-3 text-xs text-blue-900 dark:border-blue-900 dark:bg-blue-950/30 dark:text-blue-200">
                   <Info className="mr-1 inline h-3 w-3" />
-                  UTM é uma identificação no link que ajuda você a saber de onde veio o cliente.
+                  UTM é uma identificação no link que ajuda a saber de onde veio o cliente.
                   Preencha a URL base e as UTMs — o link final é gerado automaticamente.
                 </div>
                 <div>
@@ -557,7 +734,7 @@ function CampanhasPage() {
                   <Input
                     value={form.base_url}
                     onChange={(e) => setForm({ ...form, base_url: e.target.value })}
-                    placeholder="https://maricalightworks.com.br/produtos/refletor-led"
+                    placeholder="https://www.ledmarica.com.br/produtos/refletor-led"
                   />
                 </div>
                 <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
@@ -590,7 +767,7 @@ function CampanhasPage() {
                     <Input
                       value={form.utm_content}
                       onChange={(e) => setForm({ ...form, utm_content: e.target.value })}
-                      placeholder="stories"
+                      placeholder="story_01"
                     />
                   </div>
                   <div className="sm:col-span-2">
@@ -609,7 +786,7 @@ function CampanhasPage() {
                   <p className="mt-1 break-all font-mono text-xs">
                     {finalUrl || "— preencha a URL base —"}
                   </p>
-                  <div className="mt-2 flex gap-2">
+                  <div className="mt-2 flex flex-wrap gap-2">
                     <Button
                       type="button"
                       size="sm"
@@ -617,7 +794,7 @@ function CampanhasPage() {
                       onClick={copyUrl}
                       disabled={!finalUrl}
                     >
-                      <Copy className="mr-1 h-3 w-3" /> Copiar
+                      <Copy className="mr-1 h-3 w-3" /> Copiar link
                     </Button>
                     {finalUrl && (
                       <Button type="button" size="sm" variant="outline" asChild>
@@ -626,8 +803,34 @@ function CampanhasPage() {
                         </a>
                       </Button>
                     )}
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="outline"
+                      onClick={copyWhatsApp}
+                      disabled={!finalUrl && !form.base_url}
+                    >
+                      <MessageCircle className="mr-1 h-3 w-3" /> Copiar mensagem WhatsApp
+                    </Button>
                   </div>
                 </div>
+                {finalUrl && (
+                  <div className="rounded-md border bg-muted/30 p-3">
+                    <Label className="mb-2 flex items-center gap-1 text-xs uppercase tracking-wide text-muted-foreground">
+                      <QrCode className="h-3 w-3" /> QR Code
+                    </Label>
+                    <img
+                      src={qrCodeUrl(finalUrl)}
+                      alt="QR Code da campanha"
+                      width={180}
+                      height={180}
+                      className="rounded border bg-white p-2"
+                    />
+                    <p className="mt-2 text-xs text-muted-foreground">
+                      Clique com o botão direito para salvar a imagem.
+                    </p>
+                  </div>
+                )}
               </TabsContent>
 
               <TabsContent value="vinculos" className="space-y-3 pt-3">
@@ -648,7 +851,7 @@ function CampanhasPage() {
                     </select>
                   </div>
                   <div>
-                    <Label>Banner vinculado</Label>
+                    <Label>Banner da home</Label>
                     <select
                       className="h-10 w-full rounded-md border bg-background px-3 text-sm"
                       value={form.banner_id}
@@ -661,6 +864,44 @@ function CampanhasPage() {
                         </option>
                       ))}
                     </select>
+                  </div>
+                  <div>
+                    <Label>Modelo de WhatsApp</Label>
+                    <select
+                      className="h-10 w-full rounded-md border bg-background px-3 text-sm"
+                      value={form.whatsapp_template_id}
+                      onChange={(e) => setForm({ ...form, whatsapp_template_id: e.target.value })}
+                    >
+                      <option value="">— nenhum —</option>
+                      {waTemplates.map((t) => (
+                        <option key={t.id} value={t.id}>
+                          {t.name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <Label>Modelo de e-mail</Label>
+                    <select
+                      className="h-10 w-full rounded-md border bg-background px-3 text-sm"
+                      value={form.email_template_id}
+                      onChange={(e) => setForm({ ...form, email_template_id: e.target.value })}
+                    >
+                      <option value="">— nenhum —</option>
+                      {emailTemplates.map((t) => (
+                        <option key={t.id} value={t.id}>
+                          {t.display_name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  <div className="sm:col-span-2">
+                    <Label>Landing page</Label>
+                    <Input
+                      value={form.landing_page_url}
+                      onChange={(e) => setForm({ ...form, landing_page_url: e.target.value })}
+                      placeholder="https://www.ledmarica.com.br/promocao/semana-do-led"
+                    />
                   </div>
                 </div>
                 <div>
@@ -681,6 +922,30 @@ function CampanhasPage() {
                         {c.name}
                       </label>
                     ))}
+                  </div>
+                </div>
+                <div>
+                  <Label>Combos / Kits ({form.combo_ids.length} selecionados)</Label>
+                  <div className="mt-1 max-h-40 overflow-y-auto rounded-md border p-2">
+                    {combos.length === 0 ? (
+                      <p className="py-2 text-xs text-muted-foreground">Nenhum combo ativo.</p>
+                    ) : (
+                      combos.map((b) => (
+                        <label key={b.id} className="flex items-center gap-2 py-1 text-sm">
+                          <input
+                            type="checkbox"
+                            checked={form.combo_ids.includes(b.id)}
+                            onChange={(e) => {
+                              const next = e.target.checked
+                                ? [...form.combo_ids, b.id]
+                                : form.combo_ids.filter((x) => x !== b.id);
+                              setForm({ ...form, combo_ids: next });
+                            }}
+                          />
+                          {b.name}
+                        </label>
+                      ))
+                    )}
                   </div>
                 </div>
                 <div>
@@ -708,6 +973,28 @@ function CampanhasPage() {
               <TabsContent value="extra" className="space-y-3 pt-3">
                 <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                   <div>
+                    <Label>Responsável</Label>
+                    <Input
+                      value={form.owner_name}
+                      onChange={(e) => setForm({ ...form, owner_name: e.target.value })}
+                      placeholder="Nome do responsável"
+                    />
+                  </div>
+                  <div>
+                    <Label>Prioridade</Label>
+                    <select
+                      className="h-10 w-full rounded-md border bg-background px-3 text-sm"
+                      value={form.priority}
+                      onChange={(e) => setForm({ ...form, priority: e.target.value })}
+                    >
+                      {PRIORITIES.map((p) => (
+                        <option key={p.value} value={p.value}>
+                          {p.label}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
                     <Label>Investimento previsto (R$)</Label>
                     <Input
                       type="number"
@@ -725,15 +1012,126 @@ function CampanhasPage() {
                       onChange={(e) => setForm({ ...form, budget_spent: e.target.value })}
                     />
                   </div>
+                  <div>
+                    <Label>Meta de vendas (R$)</Label>
+                    <Input
+                      type="number"
+                      step="0.01"
+                      value={form.target_sales}
+                      onChange={(e) => setForm({ ...form, target_sales: e.target.value })}
+                    />
+                  </div>
+                  <div>
+                    <Label>Meta de leads</Label>
+                    <Input
+                      type="number"
+                      value={form.target_leads}
+                      onChange={(e) => setForm({ ...form, target_leads: e.target.value })}
+                    />
+                  </div>
                 </div>
                 <div>
-                  <Label>Observações</Label>
+                  <Label>Tags (separadas por vírgula)</Label>
+                  <Input
+                    value={form.tags}
+                    onChange={(e) => setForm({ ...form, tags: e.target.value })}
+                    placeholder="black-friday, led, varejo"
+                  />
+                </div>
+                <div className="space-y-2 rounded-md border p-3">
+                  <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                    Exibição no site
+                  </p>
+                  <div className="flex items-center justify-between">
+                    <Label htmlFor="show_home" className="cursor-pointer">
+                      Aparecer na home
+                    </Label>
+                    <Switch
+                      id="show_home"
+                      checked={form.show_on_home}
+                      onCheckedChange={(v) => setForm({ ...form, show_on_home: v })}
+                    />
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <Label htmlFor="show_cat" className="cursor-pointer">
+                      Aparecer no catálogo
+                    </Label>
+                    <Switch
+                      id="show_cat"
+                      checked={form.show_on_catalog}
+                      onCheckedChange={(v) => setForm({ ...form, show_on_catalog: v })}
+                    />
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <Label htmlFor="show_b2b" className="cursor-pointer">
+                      Aparecer no B2B
+                    </Label>
+                    <Switch
+                      id="show_b2b"
+                      checked={form.show_on_b2b}
+                      onCheckedChange={(v) => setForm({ ...form, show_on_b2b: v })}
+                    />
+                  </div>
+                </div>
+                <div>
+                  <Label>Observações internas</Label>
                   <Textarea
                     value={form.notes}
                     onChange={(e) => setForm({ ...form, notes: e.target.value })}
                     rows={3}
                   />
                 </div>
+              </TabsContent>
+
+              <TabsContent value="metricas" className="space-y-3 pt-3">
+                {!editing ? (
+                  <p className="text-sm text-muted-foreground">
+                    Salve a campanha para acompanhar métricas.
+                  </p>
+                ) : !form.utm_campaign ? (
+                  <p className="text-sm text-muted-foreground">
+                    Defina o utm_campaign para começar a medir.
+                  </p>
+                ) : metricsLoading ? (
+                  <p className="text-sm text-muted-foreground">Carregando…</p>
+                ) : metrics ? (
+                  <>
+                    <div className="rounded-md border border-blue-200 bg-blue-50 p-3 text-xs text-blue-900 dark:border-blue-900 dark:bg-blue-950/30 dark:text-blue-200">
+                      <Target className="mr-1 inline h-3 w-3" />
+                      Métricas atribuídas pelo utm_campaign{" "}
+                      <code className="font-mono">{form.utm_campaign}</code>.
+                    </div>
+                    <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+                      <MetricCard label="Leads" value={metrics.leads} target={form.target_leads ? Number(form.target_leads) : undefined} />
+                      <MetricCard label="Carrinhos" value={metrics.carts} />
+                      <MetricCard label="Pedidos" value={metrics.orders} />
+                      <MetricCard label="Pedidos pagos" value={metrics.paid_orders} />
+                      <MetricCard
+                        label="Receita"
+                        value={metrics.revenue.toLocaleString("pt-BR", {
+                          style: "currency",
+                          currency: "BRL",
+                        })}
+                        target={
+                          form.target_sales
+                            ? Number(form.target_sales).toLocaleString("pt-BR", {
+                                style: "currency",
+                                currency: "BRL",
+                              })
+                            : undefined
+                        }
+                      />
+                      <MetricCard label="Usos do cupom" value={metrics.coupon_uses} />
+                    </div>
+                    <p className="text-xs text-muted-foreground">
+                      Conversão: {metrics.leads > 0
+                        ? `${((metrics.paid_orders / metrics.leads) * 100).toFixed(1)}% (pagos/leads)`
+                        : "—"}
+                    </p>
+                  </>
+                ) : (
+                  <p className="text-sm text-muted-foreground">Sem dados.</p>
+                )}
               </TabsContent>
             </Tabs>
 
@@ -747,5 +1145,25 @@ function CampanhasPage() {
         </DialogContent>
       </Dialog>
     </AdminLayout>
+  );
+}
+
+function MetricCard({
+  label,
+  value,
+  target,
+}: {
+  label: string;
+  value: number | string;
+  target?: number | string;
+}) {
+  return (
+    <div className="rounded-md border bg-card p-3">
+      <p className="text-xs text-muted-foreground">{label}</p>
+      <p className="mt-1 text-lg font-semibold">{value}</p>
+      {target !== undefined && (
+        <p className="text-xs text-muted-foreground">Meta: {target}</p>
+      )}
+    </div>
   );
 }
