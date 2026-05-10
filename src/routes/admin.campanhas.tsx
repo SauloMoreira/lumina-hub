@@ -207,6 +207,7 @@ function CampanhasPage() {
   const [filterStatus, setFilterStatus] = useState<string>("all");
   const [metrics, setMetrics] = useState<Metrics | null>(null);
   const [metricsLoading, setMetricsLoading] = useState(false);
+  const [aiOpen, setAiOpen] = useState(false);
 
   const [coupons, setCoupons] = useState<Array<{ id: string; code: string }>>([]);
   const [banners, setBanners] = useState<Array<{ id: string; title: string }>>([]);
