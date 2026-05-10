@@ -83,7 +83,9 @@ import { Route as AdminFinanceiroMargemRouteImport } from './routes/admin.financ
 import { Route as AdminFinanceiroImpostosRouteImport } from './routes/admin.financeiro.impostos'
 import { Route as AdminFinanceiroConfiguracoesRouteImport } from './routes/admin.financeiro.configuracoes'
 import { Route as AdminConteudoHomepageRouteImport } from './routes/admin.conteudo.homepage'
+import { Route as AdminComunicacaoEmailsRouteImport } from './routes/admin.comunicacao.emails'
 import { Route as ApiPublicMercadopagoWebhookRouteImport } from './routes/api/public/mercadopago.webhook'
+import { Route as AdminComunicacaoEmailsTypeRouteImport } from './routes/admin.comunicacao.emails.$type'
 
 const TrocaRoute = TrocaRouteImport.update({
   id: '/troca',
@@ -465,11 +467,22 @@ const AdminConteudoHomepageRoute = AdminConteudoHomepageRouteImport.update({
   path: '/admin/conteudo/homepage',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AdminComunicacaoEmailsRoute = AdminComunicacaoEmailsRouteImport.update({
+  id: '/admin/comunicacao/emails',
+  path: '/admin/comunicacao/emails',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPublicMercadopagoWebhookRoute =
   ApiPublicMercadopagoWebhookRouteImport.update({
     id: '/api/public/mercadopago/webhook',
     path: '/api/public/mercadopago/webhook',
     getParentRoute: () => rootRouteImport,
+  } as any)
+const AdminComunicacaoEmailsTypeRoute =
+  AdminComunicacaoEmailsTypeRouteImport.update({
+    id: '/$type',
+    path: '/$type',
+    getParentRoute: () => AdminComunicacaoEmailsRoute,
   } as any)
 
 export interface FileRoutesByFullPath {
@@ -522,6 +535,7 @@ export interface FileRoutesByFullPath {
   '/institucional/$slug': typeof InstitucionalSlugRoute
   '/produto/$slug': typeof ProdutoSlugRoute
   '/admin/': typeof AdminIndexRoute
+  '/admin/comunicacao/emails': typeof AdminComunicacaoEmailsRouteWithChildren
   '/admin/conteudo/homepage': typeof AdminConteudoHomepageRoute
   '/admin/financeiro/configuracoes': typeof AdminFinanceiroConfiguracoesRoute
   '/admin/financeiro/impostos': typeof AdminFinanceiroImpostosRoute
@@ -547,6 +561,7 @@ export interface FileRoutesByFullPath {
   '/admin/institutional-pages/': typeof AdminInstitutionalPagesIndexRoute
   '/admin/pedidos/': typeof AdminPedidosIndexRoute
   '/admin/produtos/': typeof AdminProdutosIndexRoute
+  '/admin/comunicacao/emails/$type': typeof AdminComunicacaoEmailsTypeRoute
   '/api/public/mercadopago/webhook': typeof ApiPublicMercadopagoWebhookRoute
 }
 export interface FileRoutesByTo {
@@ -598,6 +613,7 @@ export interface FileRoutesByTo {
   '/institucional/$slug': typeof InstitucionalSlugRoute
   '/produto/$slug': typeof ProdutoSlugRoute
   '/admin': typeof AdminIndexRoute
+  '/admin/comunicacao/emails': typeof AdminComunicacaoEmailsRouteWithChildren
   '/admin/conteudo/homepage': typeof AdminConteudoHomepageRoute
   '/admin/financeiro/configuracoes': typeof AdminFinanceiroConfiguracoesRoute
   '/admin/financeiro/impostos': typeof AdminFinanceiroImpostosRoute
@@ -623,6 +639,7 @@ export interface FileRoutesByTo {
   '/admin/institutional-pages': typeof AdminInstitutionalPagesIndexRoute
   '/admin/pedidos': typeof AdminPedidosIndexRoute
   '/admin/produtos': typeof AdminProdutosIndexRoute
+  '/admin/comunicacao/emails/$type': typeof AdminComunicacaoEmailsTypeRoute
   '/api/public/mercadopago/webhook': typeof ApiPublicMercadopagoWebhookRoute
 }
 export interface FileRoutesById {
@@ -676,6 +693,7 @@ export interface FileRoutesById {
   '/institucional/$slug': typeof InstitucionalSlugRoute
   '/produto/$slug': typeof ProdutoSlugRoute
   '/admin/': typeof AdminIndexRoute
+  '/admin/comunicacao/emails': typeof AdminComunicacaoEmailsRouteWithChildren
   '/admin/conteudo/homepage': typeof AdminConteudoHomepageRoute
   '/admin/financeiro/configuracoes': typeof AdminFinanceiroConfiguracoesRoute
   '/admin/financeiro/impostos': typeof AdminFinanceiroImpostosRoute
@@ -701,6 +719,7 @@ export interface FileRoutesById {
   '/admin/institutional-pages/': typeof AdminInstitutionalPagesIndexRoute
   '/admin/pedidos/': typeof AdminPedidosIndexRoute
   '/admin/produtos/': typeof AdminProdutosIndexRoute
+  '/admin/comunicacao/emails/$type': typeof AdminComunicacaoEmailsTypeRoute
   '/api/public/mercadopago/webhook': typeof ApiPublicMercadopagoWebhookRoute
 }
 export interface FileRouteTypes {
@@ -755,6 +774,7 @@ export interface FileRouteTypes {
     | '/institucional/$slug'
     | '/produto/$slug'
     | '/admin/'
+    | '/admin/comunicacao/emails'
     | '/admin/conteudo/homepage'
     | '/admin/financeiro/configuracoes'
     | '/admin/financeiro/impostos'
@@ -780,6 +800,7 @@ export interface FileRouteTypes {
     | '/admin/institutional-pages/'
     | '/admin/pedidos/'
     | '/admin/produtos/'
+    | '/admin/comunicacao/emails/$type'
     | '/api/public/mercadopago/webhook'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -831,6 +852,7 @@ export interface FileRouteTypes {
     | '/institucional/$slug'
     | '/produto/$slug'
     | '/admin'
+    | '/admin/comunicacao/emails'
     | '/admin/conteudo/homepage'
     | '/admin/financeiro/configuracoes'
     | '/admin/financeiro/impostos'
@@ -856,6 +878,7 @@ export interface FileRouteTypes {
     | '/admin/institutional-pages'
     | '/admin/pedidos'
     | '/admin/produtos'
+    | '/admin/comunicacao/emails/$type'
     | '/api/public/mercadopago/webhook'
   id:
     | '__root__'
@@ -908,6 +931,7 @@ export interface FileRouteTypes {
     | '/institucional/$slug'
     | '/produto/$slug'
     | '/admin/'
+    | '/admin/comunicacao/emails'
     | '/admin/conteudo/homepage'
     | '/admin/financeiro/configuracoes'
     | '/admin/financeiro/impostos'
@@ -933,6 +957,7 @@ export interface FileRouteTypes {
     | '/admin/institutional-pages/'
     | '/admin/pedidos/'
     | '/admin/produtos/'
+    | '/admin/comunicacao/emails/$type'
     | '/api/public/mercadopago/webhook'
   fileRoutesById: FileRoutesById
 }
@@ -981,6 +1006,7 @@ export interface RootRouteChildren {
   InstitucionalSlugRoute: typeof InstitucionalSlugRoute
   ProdutoSlugRoute: typeof ProdutoSlugRoute
   AdminIndexRoute: typeof AdminIndexRoute
+  AdminComunicacaoEmailsRoute: typeof AdminComunicacaoEmailsRouteWithChildren
   AdminConteudoHomepageRoute: typeof AdminConteudoHomepageRoute
   AdminFinanceiroConfiguracoesRoute: typeof AdminFinanceiroConfiguracoesRoute
   AdminFinanceiroImpostosRoute: typeof AdminFinanceiroImpostosRoute
@@ -1526,12 +1552,26 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminConteudoHomepageRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/admin/comunicacao/emails': {
+      id: '/admin/comunicacao/emails'
+      path: '/admin/comunicacao/emails'
+      fullPath: '/admin/comunicacao/emails'
+      preLoaderRoute: typeof AdminComunicacaoEmailsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/mercadopago/webhook': {
       id: '/api/public/mercadopago/webhook'
       path: '/api/public/mercadopago/webhook'
       fullPath: '/api/public/mercadopago/webhook'
       preLoaderRoute: typeof ApiPublicMercadopagoWebhookRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/admin/comunicacao/emails/$type': {
+      id: '/admin/comunicacao/emails/$type'
+      path: '/$type'
+      fullPath: '/admin/comunicacao/emails/$type'
+      preLoaderRoute: typeof AdminComunicacaoEmailsTypeRouteImport
+      parentRoute: typeof AdminComunicacaoEmailsRoute
     }
   }
 }
@@ -1590,6 +1630,20 @@ const AdminSegurancaRouteWithChildren = AdminSegurancaRoute._addFileChildren(
   AdminSegurancaRouteChildren,
 )
 
+interface AdminComunicacaoEmailsRouteChildren {
+  AdminComunicacaoEmailsTypeRoute: typeof AdminComunicacaoEmailsTypeRoute
+}
+
+const AdminComunicacaoEmailsRouteChildren: AdminComunicacaoEmailsRouteChildren =
+  {
+    AdminComunicacaoEmailsTypeRoute: AdminComunicacaoEmailsTypeRoute,
+  }
+
+const AdminComunicacaoEmailsRouteWithChildren =
+  AdminComunicacaoEmailsRoute._addFileChildren(
+    AdminComunicacaoEmailsRouteChildren,
+  )
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AtacadoRoute: AtacadoRoute,
@@ -1635,6 +1689,7 @@ const rootRouteChildren: RootRouteChildren = {
   InstitucionalSlugRoute: InstitucionalSlugRoute,
   ProdutoSlugRoute: ProdutoSlugRoute,
   AdminIndexRoute: AdminIndexRoute,
+  AdminComunicacaoEmailsRoute: AdminComunicacaoEmailsRouteWithChildren,
   AdminConteudoHomepageRoute: AdminConteudoHomepageRoute,
   AdminFinanceiroConfiguracoesRoute: AdminFinanceiroConfiguracoesRoute,
   AdminFinanceiroImpostosRoute: AdminFinanceiroImpostosRoute,
