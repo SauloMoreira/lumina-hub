@@ -55,10 +55,10 @@ function EmailTemplatesListPage() {
   }, [fetchList]);
 
   return (
-    <AdminLayout
-      title="Modelos de e-mail transacional"
-      description="Edite assunto, textos e CTA dos e-mails enviados ao cliente. O layout e os blocos visuais permanecem padronizados."
-    >
+    <AdminLayout title="Modelos de e-mail transacional">
+      <p className="text-sm text-muted-foreground mb-4">
+        Edite assunto, textos e CTA dos e-mails enviados ao cliente. O layout e blocos visuais permanecem padronizados.
+      </p>
       <div className="flex items-center justify-between mb-4">
         <div className="text-sm text-muted-foreground flex items-center gap-2">
           <Mail className="w-4 h-4" /> {rows?.length ?? 0} modelos
