@@ -9,11 +9,11 @@ import { sendTransactionalEmail } from "./transport";
 import { buildOrderEmailTemplate, type EmailMessageType } from "./templates";
 
 function getSiteUrl(): string {
-  return (process.env.SITE_URL ?? "").replace(/\/$/, "") || "https://localhost";
+  return (process.env.SITE_URL ?? "").replace(/\/$/, "") || "https://www.ledmarica.com.br";
 }
 
 function getStoreName(): string {
-  return process.env.STORE_NAME ?? "Nossa Loja";
+  return process.env.STORE_NAME ?? "Led Maricá";
 }
 
 function getSupportEmail(): string | null {
