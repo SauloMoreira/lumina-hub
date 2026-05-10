@@ -547,31 +547,13 @@ function CommercialReviewPage() {
                 </tbody>
               </table>
             </div>
-            {total > pageSize && (
-              <div className="flex items-center justify-between p-3 border-t border-border bg-muted/20">
-                <p className="text-xs text-muted-foreground">
-                  Página {page} de {totalPages} • {total} produto(s)
-                </p>
-                <div className="flex gap-2">
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    disabled={page <= 1}
-                    onClick={() => setPage((p) => Math.max(1, p - 1))}
-                  >
-                    Anterior
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    disabled={page >= totalPages}
-                    onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-                  >
-                    Próxima
-                  </Button>
-                </div>
-              </div>
-            )}
+            <DataTablePagination
+              page={ts.page}
+              pageSize={ts.pageSize}
+              total={total}
+              onPageChange={ts.setPage}
+              onPageSizeChange={ts.setPageSize}
+            />
           </Card>
         </section>
       </div>
