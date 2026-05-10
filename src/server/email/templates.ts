@@ -8,7 +8,8 @@ export type EmailMessageType =
   | "payment_failed"
   | "order_processing"
   | "order_shipped"
-  | "order_delivered";
+  | "order_delivered"
+  | "order_cancelled";
 
 export interface OrderEmailItem {
   name: string;
@@ -32,6 +33,7 @@ export interface OrderEmailParams {
   supportWhatsapp?: string | null;
   retryUrl?: string | null;
   trackingCode?: string | null;
+  cancelledReason?: string | null;
   messageType: EmailMessageType;
   deliveryMethod?: "delivery" | "pickup" | "local_delivery" | string;
   pickup?: {
@@ -154,6 +156,26 @@ function getContent(p: OrderEmailParams): TemplateContent {
         secondaryCta: { label: "Ver pedido", url: p.orderUrl },
         showItems: true,
       };
+    case "order_cancelled": {
+      const reason =
+        (p.cancelledReason ?? "").trim() ||
+        "Pedido cancelado conforme atualização de status no atendimento.";
+      const storeUrl = p.orderUrl.split("/pedido/")[0] || p.orderUrl;
+      return {
+        subject: `Seu pedido #${p.orderNumber} foi cancelado`,
+        preheader: "Seu pedido foi cancelado.",
+        headline: `Pedido ${num} cancelado`,
+        intro:
+          `Seu pedido ${num} foi cancelado.<br/><br/>` +
+          `<strong>Motivo:</strong><br/>${esc(reason)}<br/><br/>` +
+          `Se o cancelamento não foi solicitado por você ou se desejar refazer a compra, ` +
+          `nossa equipe está à disposição para ajudar.`,
+        ctaLabel: "Visitar a loja",
+        ctaUrl: storeUrl,
+        secondaryCta: { label: "Ver pedido", url: p.orderUrl },
+        showItems: true,
+      };
+    }
   }
 }
 

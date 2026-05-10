@@ -324,11 +324,14 @@ export const updateOrderStatus = createServerFn({ method: "POST" })
     }
     await Promise.all(tasks);
 
-    // Disparo automático de e-mail quando o pedido muda para entregue.
+    // Disparo automático de e-mail quando o pedido muda para entregue/cancelado.
     // sendOrderEmail é idempotente (verifica email_events), então salvar
-    // novamente um pedido já entregue não envia duplicado.
+    // novamente um pedido com o mesmo status não envia duplicado.
     if (data.status === "delivered" && current.status !== "delivered") {
       void sendOrderEmail({ orderId: data.orderId, type: "order_delivered" });
+    }
+    if (data.status === "cancelled" && current.status !== "cancelled") {
+      void sendOrderEmail({ orderId: data.orderId, type: "order_cancelled" });
     }
 
     await logAdminAction({
@@ -394,6 +397,7 @@ export const resendOrderEmail = createServerFn({ method: "POST" })
           "order_processing",
           "order_shipped",
           "order_delivered",
+          "order_cancelled",
         ]),
       })
       .parse(input),

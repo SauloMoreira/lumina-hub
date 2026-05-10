@@ -37,7 +37,7 @@ export async function sendOrderEmail(opts: SendOrderEmailOptions): Promise<{
     const { data: order, error: orderErr } = await supabaseAdmin
       .from("orders")
       .select(
-        "id, order_number, user_id, status, payment_status, subtotal, discount, shipping_cost, total, tracking_code, address_snapshot, public_access_token, delivery_method, pickup_store_name, pickup_store_address, pickup_store_phone, pickup_instructions, local_delivery_district, local_delivery_eta, shipping_carrier, shipping_service, bundle_discount_total, order_items(product_name, qty, unit_price, total_price)",
+        "id, order_number, user_id, status, payment_status, subtotal, discount, shipping_cost, total, tracking_code, address_snapshot, public_access_token, delivery_method, pickup_store_name, pickup_store_address, pickup_store_phone, pickup_instructions, local_delivery_district, local_delivery_eta, shipping_carrier, shipping_service, bundle_discount_total, cancelled_reason, order_items(product_name, qty, unit_price, total_price)",
       )
       .eq("id", opts.orderId)
       .single();
@@ -117,6 +117,7 @@ export async function sendOrderEmail(opts: SendOrderEmailOptions): Promise<{
       retryUrl,
       supportEmail: getSupportEmail(),
       trackingCode: order.tracking_code ?? null,
+      cancelledReason: (order as any).cancelled_reason ?? null,
       messageType: opts.type,
       deliveryMethod,
       pickup:

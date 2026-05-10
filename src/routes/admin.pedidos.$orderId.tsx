@@ -601,6 +601,7 @@ function OrderDetailPage() {
                 { type: "payment_failed", label: "Pagamento recusado" },
                 { type: "order_shipped", label: "Pedido enviado" },
                 { type: "order_delivered", label: "Pedido entregue" },
+                { type: "order_cancelled", label: "Pedido cancelado" },
               ].map((opt) => (
                 <Button
                   key={opt.type}
