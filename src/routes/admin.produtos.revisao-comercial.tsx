@@ -1,6 +1,13 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { z } from "zod";
+import { zodValidator, fallback } from "@tanstack/zod-adapter";
+import {
+  DataTableToolbar,
+  DataTablePagination,
+} from "@/components/admin/datatable";
+import { useTableState } from "@/hooks/useTableState";
 import {
   ArrowLeft,
   Search,
