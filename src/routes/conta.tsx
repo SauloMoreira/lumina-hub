@@ -37,7 +37,7 @@ function AccountPage() {
           </div>
           <div>
             <h1 className="font-display font-bold text-2xl tracking-tight">
-              Olá, {user.user_metadata.name ?? user.email?.split("@")[0]}
+              Olá, {user.user_metadata?.name ?? user.email?.split("@")[0] ?? "cliente"}
             </h1>
             <p className="text-sm text-muted-foreground">{user.email}</p>
           </div>
