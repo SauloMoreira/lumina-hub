@@ -31,6 +31,7 @@ import { Route as CadastroEmpresaRouteImport } from './routes/cadastro-empresa'
 import { Route as CadastroRouteImport } from './routes/cadastro'
 import { Route as AtacadoRouteImport } from './routes/atacado'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as ContaIndexRouteImport } from './routes/conta.index'
 import { Route as AdminIndexRouteImport } from './routes/admin.index'
 import { Route as ProdutoSlugRouteImport } from './routes/produto.$slug'
 import { Route as InstitucionalSlugRouteImport } from './routes/institucional.$slug'
@@ -197,6 +198,11 @@ const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
+} as any)
+const ContaIndexRoute = ContaIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => ContaRoute,
 } as any)
 const AdminIndexRoute = AdminIndexRouteImport.update({
   id: '/admin/',
@@ -543,6 +549,7 @@ export interface FileRoutesByFullPath {
   '/institucional/$slug': typeof InstitucionalSlugRoute
   '/produto/$slug': typeof ProdutoSlugRoute
   '/admin/': typeof AdminIndexRoute
+  '/conta/': typeof ContaIndexRoute
   '/admin/conteudo/homepage': typeof AdminConteudoHomepageRoute
   '/admin/financeiro/configuracoes': typeof AdminFinanceiroConfiguracoesRoute
   '/admin/financeiro/impostos': typeof AdminFinanceiroImpostosRoute
@@ -583,7 +590,6 @@ export interface FileRoutesByTo {
   '/combos': typeof CombosRoute
   '/compra-rapida': typeof CompraRapidaRoute
   '/condicoes-de-uso': typeof CondicoesDeUsoRoute
-  '/conta': typeof ContaRouteWithChildren
   '/contato': typeof ContatoRoute
   '/devolucao': typeof DevolucaoRoute
   '/esqueci-senha': typeof EsqueciSenhaRoute
@@ -622,6 +628,7 @@ export interface FileRoutesByTo {
   '/institucional/$slug': typeof InstitucionalSlugRoute
   '/produto/$slug': typeof ProdutoSlugRoute
   '/admin': typeof AdminIndexRoute
+  '/conta': typeof ContaIndexRoute
   '/admin/conteudo/homepage': typeof AdminConteudoHomepageRoute
   '/admin/financeiro/configuracoes': typeof AdminFinanceiroConfiguracoesRoute
   '/admin/financeiro/impostos': typeof AdminFinanceiroImpostosRoute
@@ -703,6 +710,7 @@ export interface FileRoutesById {
   '/institucional/$slug': typeof InstitucionalSlugRoute
   '/produto/$slug': typeof ProdutoSlugRoute
   '/admin/': typeof AdminIndexRoute
+  '/conta/': typeof ContaIndexRoute
   '/admin/conteudo/homepage': typeof AdminConteudoHomepageRoute
   '/admin/financeiro/configuracoes': typeof AdminFinanceiroConfiguracoesRoute
   '/admin/financeiro/impostos': typeof AdminFinanceiroImpostosRoute
@@ -785,6 +793,7 @@ export interface FileRouteTypes {
     | '/institucional/$slug'
     | '/produto/$slug'
     | '/admin/'
+    | '/conta/'
     | '/admin/conteudo/homepage'
     | '/admin/financeiro/configuracoes'
     | '/admin/financeiro/impostos'
@@ -825,7 +834,6 @@ export interface FileRouteTypes {
     | '/combos'
     | '/compra-rapida'
     | '/condicoes-de-uso'
-    | '/conta'
     | '/contato'
     | '/devolucao'
     | '/esqueci-senha'
@@ -864,6 +872,7 @@ export interface FileRouteTypes {
     | '/institucional/$slug'
     | '/produto/$slug'
     | '/admin'
+    | '/conta'
     | '/admin/conteudo/homepage'
     | '/admin/financeiro/configuracoes'
     | '/admin/financeiro/impostos'
@@ -944,6 +953,7 @@ export interface FileRouteTypes {
     | '/institucional/$slug'
     | '/produto/$slug'
     | '/admin/'
+    | '/conta/'
     | '/admin/conteudo/homepage'
     | '/admin/financeiro/configuracoes'
     | '/admin/financeiro/impostos'
@@ -1202,6 +1212,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/conta/': {
+      id: '/conta/'
+      path: '/'
+      fullPath: '/conta/'
+      preLoaderRoute: typeof ContaIndexRouteImport
+      parentRoute: typeof ContaRoute
     }
     '/admin/': {
       id: '/admin/'
@@ -1617,11 +1634,13 @@ const CheckoutRouteWithChildren = CheckoutRoute._addFileChildren(
 interface ContaRouteChildren {
   ContaEmpresaRoute: typeof ContaEmpresaRoute
   ContaPedidosRoute: typeof ContaPedidosRoute
+  ContaIndexRoute: typeof ContaIndexRoute
 }
 
 const ContaRouteChildren: ContaRouteChildren = {
   ContaEmpresaRoute: ContaEmpresaRoute,
   ContaPedidosRoute: ContaPedidosRoute,
+  ContaIndexRoute: ContaIndexRoute,
 }
 
 const ContaRouteWithChildren = ContaRoute._addFileChildren(ContaRouteChildren)
