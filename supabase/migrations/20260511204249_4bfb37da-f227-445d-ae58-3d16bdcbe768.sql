@@ -1,0 +1,2 @@
+ALTER TABLE public.orders DROP CONSTRAINT IF EXISTS orders_delivery_method_check;
+ALTER TABLE public.orders ADD CONSTRAINT orders_delivery_method_check CHECK (delivery_method = ANY (ARRAY['delivery'::text, 'pickup'::text, 'local_delivery'::text]));
