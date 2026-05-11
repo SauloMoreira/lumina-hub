@@ -21,6 +21,7 @@ import {
   type AiApplyPatch,
   type AiCampaignReference,
 } from "@/components/admin/MarketingCampaignAiDialog";
+import { linkCreativesToCampaign } from "@/server/marketingCreatives.functions";
 import { AdminLayout } from "@/components/admin/AdminLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
