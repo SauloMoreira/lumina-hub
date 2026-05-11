@@ -123,6 +123,15 @@ export const updateEmailTemplate = createServerFn({ method: "POST" })
     const adminUserId = (context as { adminUserId: string }).adminUserId;
     const adminEmail = (context as { adminEmail: string | null }).adminEmail;
 
+    // S5 — bloqueia URLs perigosas (javascript:, data:, etc.) em CTAs
+    const { isSafePublicUrl } = await import("@/lib/uploadGuards");
+    if (!isSafePublicUrl(data.fields.cta_url ?? null)) {
+      throw new Error("URL do CTA inválida. Use apenas http(s) ou caminho interno.");
+    }
+    if (!isSafePublicUrl(data.fields.secondary_cta_url ?? null)) {
+      throw new Error("URL do CTA secundário inválida.");
+    }
+
     const validation = validateTemplate({
       subject: data.fields.subject ?? null,
       preheader: data.fields.preheader ?? null,
