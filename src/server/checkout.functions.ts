@@ -710,10 +710,14 @@ export const listMyOrders = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
     const { supabase } = context;
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from("orders")
-      .select("id, order_number, status, payment_status, total, created_at")
+      .select("id, order_number, status, payment_status, total, created_at, delivery_method")
       .order("created_at", { ascending: false })
       .limit(50);
-    return { orders: data ?? [] };
+    if (error) {
+      console.error("[listMyOrders] error", error);
+      return { orders: [], error: error.message };
+    }
+    return { orders: data ?? [], error: null };
   });

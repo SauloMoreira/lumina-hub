@@ -22,6 +22,7 @@ type Row = {
   payment_status: string | null;
   total: number;
   created_at: string | null;
+  delivery_method: string | null;
 };
 
 const STATUS_CLS: Record<string, string> = {
@@ -37,11 +38,29 @@ const STATUS_CLS: Record<string, string> = {
   refunded: "bg-surface text-muted-foreground",
 };
 
+const PAYMENT_LABEL: Record<string, string> = {
+  pending: "Pagamento pendente",
+  awaiting_payment: "Aguardando pagamento",
+  approved: "Pagamento aprovado",
+  paid: "Pago",
+  rejected: "Pagamento recusado",
+  refunded: "Reembolsado",
+  cancelled: "Cancelado",
+};
+
+const DELIVERY_LABEL: Record<string, string> = {
+  pickup: "Retirada na loja",
+  local_delivery: "Entrega local",
+  shipping: "Envio",
+  correios: "Correios",
+};
+
 function MyOrders() {
   const { user, loading } = useAuth();
   const navigate = useNavigate();
   const [orders, setOrders] = useState<Row[]>([]);
   const [fetching, setFetching] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!loading && !user) navigate({ to: "/login" });
@@ -49,10 +68,18 @@ function MyOrders() {
 
   useEffect(() => {
     if (!user) return;
-    listMyOrders().then((r) => {
-      setOrders(r.orders as Row[]);
-      setFetching(false);
-    });
+    setFetching(true);
+    setError(null);
+    listMyOrders()
+      .then((r) => {
+        setOrders((r.orders ?? []) as Row[]);
+        if ("error" in r && r.error) setError(r.error);
+      })
+      .catch((e) => {
+        console.error("[MyOrders] failed", e);
+        setError(e?.message ?? "Falha ao carregar pedidos");
+      })
+      .finally(() => setFetching(false));
   }, [user]);
 
   if (loading || fetching) {
@@ -76,12 +103,18 @@ function MyOrders() {
           <h1 className="font-display font-bold text-2xl tracking-tight">Meus pedidos</h1>
         </div>
 
+        {error && (
+          <div className="bg-destructive/10 border border-destructive/30 text-destructive rounded-lg p-4 mb-4 text-sm">
+            {error}
+          </div>
+        )}
+
         {orders.length === 0 ? (
           <div className="bg-card border border-border rounded-xl p-10 text-center">
-            <p className="text-muted-foreground mb-5">Você ainda não fez nenhum pedido.</p>
+            <p className="text-muted-foreground mb-5">Você ainda não possui pedidos.</p>
             <Button asChild>
               <Link to="/catalogo">
-                Explorar catálogo <ArrowRight className="w-4 h-4 ml-1.5" />
+                Ir para o catálogo <ArrowRight className="w-4 h-4 ml-1.5" />
               </Link>
             </Button>
           </div>
@@ -92,27 +125,42 @@ function MyOrders() {
                 label: orderStatusLabel(o.status),
                 cls: STATUS_CLS[o.status] ?? "bg-surface text-muted-foreground",
               };
+              const payLabel = o.payment_status
+                ? PAYMENT_LABEL[o.payment_status] ?? o.payment_status
+                : null;
+              const delivery = o.delivery_method
+                ? DELIVERY_LABEL[o.delivery_method] ?? o.delivery_method
+                : null;
               return (
                 <Link
                   key={o.id}
                   to="/pedido/$id/confirmacao"
                   params={{ id: o.id }}
-                  className="flex items-center justify-between p-5 hover:bg-surface transition-colors"
+                  className="flex items-center justify-between gap-4 p-5 hover:bg-surface transition-colors"
                 >
-                  <div>
-                    <div className="flex items-center gap-2 mb-1">
+                  <div className="min-w-0">
+                    <div className="flex items-center gap-2 mb-1 flex-wrap">
                       <span className="font-display font-bold">#{o.order_number}</span>
                       <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${st.cls}`}>
                         {st.label}
                       </span>
+                      {payLabel && (
+                        <span className="text-xs px-2 py-0.5 rounded-full font-medium bg-surface text-muted-foreground">
+                          {payLabel}
+                        </span>
+                      )}
                     </div>
                     <p className="text-xs text-muted-foreground">
                       {o.created_at && new Date(o.created_at).toLocaleString("pt-BR")}
+                      {delivery && <> · {delivery}</>}
                     </p>
                   </div>
-                  <div className="flex items-center gap-3">
+                  <div className="flex items-center gap-3 shrink-0">
                     <span className="font-display font-bold text-primary">
                       {formatBRL(o.total)}
+                    </span>
+                    <span className="hidden sm:inline text-xs text-primary font-medium">
+                      Ver detalhes
                     </span>
                     <ChevronRight className="w-4 h-4 text-text-faint" />
                   </div>
