@@ -183,26 +183,6 @@ export const Route = createFileRoute("/produto/$slug")({
   ),
 });
 
-function StarRating({ rating, count }: { rating: number; count?: number }) {
-  return (
-    <div className="flex items-center gap-1.5">
-      <div
-        className="flex items-center text-accent text-sm leading-none"
-        aria-label={`${rating.toFixed(1)} de 5`}
-      >
-        {Array.from({ length: 5 }, (_, i) => {
-          const full = i < Math.floor(rating);
-          const half = !full && i < rating;
-          return <span key={i}>{full ? "★" : half ? "☆" : "☆"}</span>;
-        })}
-      </div>
-      <span className="text-xs font-medium text-foreground">{rating.toFixed(1)}</span>
-      {typeof count === "number" && (
-        <span className="text-xs text-muted-foreground">· {count} avaliações</span>
-      )}
-    </div>
-  );
-}
 
 function ProductPage() {
   const { slug } = Route.useParams();
@@ -306,7 +286,6 @@ function ProductPage() {
               <h1 className="font-display font-bold text-2xl tracking-tight mb-2 leading-tight">
                 {product.name}
               </h1>
-              <StarRating rating={4.7} count={128} />
             </div>
 
             <div className="border-t border-border" />
@@ -339,9 +318,15 @@ function ProductPage() {
               <span className="text-[10px] uppercase tracking-wider bg-success-tint text-success border border-success/20 px-2 py-1 rounded font-medium">
                 NF garantida
               </span>
-              <span className="text-[10px] uppercase tracking-wider bg-primary-tint text-primary border border-primary-border px-2 py-1 rounded font-medium">
-                Frete rápido
-              </span>
+              {product.free_shipping_eligible ? (
+                <span className="text-[10px] uppercase tracking-wider bg-success-tint text-success border border-success/20 px-2 py-1 rounded font-medium">
+                  Frete grátis acima de R$ 199
+                </span>
+              ) : (
+                <span className="text-[10px] uppercase tracking-wider bg-primary-tint text-primary border border-primary-border px-2 py-1 rounded font-medium">
+                  Entrega local Maricá
+                </span>
+              )}
               {product.tags.map((t) => (
                 <span
                   key={t}

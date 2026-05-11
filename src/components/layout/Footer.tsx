@@ -75,6 +75,16 @@ export function Footer() {
                 </Link>
               </li>
               <li>
+                <Link to="/combos" className="hover:text-[#60A5FA] transition-colors">
+                  Kits e Combos
+                </Link>
+              </li>
+              <li>
+                <Link to="/atacado" className="hover:text-[#60A5FA] transition-colors">
+                  Atacado
+                </Link>
+              </li>
+              <li>
                 <Link to="/contato" className="hover:text-[#60A5FA] transition-colors">
                   Contato
                 </Link>
@@ -188,7 +198,7 @@ export function Footer() {
 
         <div className="border-t border-white/10 mt-14 pt-6 flex flex-col md:flex-row items-center justify-between gap-2 text-xs text-slate-400">
           <div>
-            © 2025 <span className="text-slate-200">{STORE_NAME}</span> · Maricá / RJ
+            © {new Date().getFullYear()} <span className="text-slate-200">{STORE_NAME}</span> · Maricá / RJ
           </div>
           <div>
             Desenvolvido por <span className="font-semibold text-slate-100">SC Moreira Tech</span>
