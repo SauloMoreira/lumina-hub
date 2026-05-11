@@ -584,27 +584,33 @@ export function MarketingCampaignAiDialog({ open, onOpenChange, references, onAp
 
               <TabsContent value="imagens" className="space-y-3 pt-3">
                 <p className="text-xs text-muted-foreground">
-                  Prompts para geração de imagem em ferramenta externa. Use a aba Imagens do produto/banner para gerar.
+                  Gere criativos visuais da campanha com IA. Revise, aprove e salve antes de publicar.
+                  Nada é publicado automaticamente.
                 </p>
-                <Block title="Banner home" copy={() => copyText(s.criativos.prompt_banner_home, "Prompt banner")}>
-                  <pre className="whitespace-pre-wrap font-sans text-xs">{s.criativos.prompt_banner_home}</pre>
-                </Block>
-                <Block title="Post quadrado" copy={() => copyText(s.criativos.prompt_post_quadrado, "Prompt post")}>
-                  <pre className="whitespace-pre-wrap font-sans text-xs">{s.criativos.prompt_post_quadrado}</pre>
-                </Block>
-                <Block title="Story" copy={() => copyText(s.criativos.prompt_story, "Prompt story")}>
-                  <pre className="whitespace-pre-wrap font-sans text-xs">{s.criativos.prompt_story}</pre>
-                </Block>
-                <Block title="Produto/Kit" copy={() => copyText(s.criativos.prompt_produto_kit, "Prompt produto")}>
-                  <pre className="whitespace-pre-wrap font-sans text-xs">{s.criativos.prompt_produto_kit}</pre>
-                </Block>
-                <Block title="Diretrizes visuais">
-                  <ul className="list-disc pl-5 text-sm">
-                    {s.criativos.diretrizes_visuais.map((d, i) => (
-                      <li key={i}>{d}</li>
-                    ))}
-                  </ul>
-                </Block>
+                <CreativeStudio
+                  generationId={genId}
+                  references={references}
+                  suggestion={s}
+                />
+                <details className="rounded-md border bg-muted/40 p-3 text-xs">
+                  <summary className="cursor-pointer text-muted-foreground">
+                    Briefing textual da IA (referência)
+                  </summary>
+                  <div className="mt-2 space-y-2">
+                    <div><strong>Banner home:</strong> {s.criativos.prompt_banner_home}</div>
+                    <div><strong>Post quadrado:</strong> {s.criativos.prompt_post_quadrado}</div>
+                    <div><strong>Story:</strong> {s.criativos.prompt_story}</div>
+                    <div><strong>Produto/Kit:</strong> {s.criativos.prompt_produto_kit}</div>
+                    <div>
+                      <strong>Diretrizes:</strong>{" "}
+                      <ul className="list-disc pl-5">
+                        {s.criativos.diretrizes_visuais.map((d, i) => (
+                          <li key={i}>{d}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  </div>
+                </details>
               </TabsContent>
 
               <TabsContent value="utm" className="space-y-3 pt-3">
