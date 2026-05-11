@@ -49,12 +49,16 @@ export function RequireAdminMfa({ children }: { children: React.ReactNode }) {
       try {
         const fallbackHasVerified = hasVerifiedTotpOnUser(user);
         const tokenAal = getAalFromJwt(session?.access_token);
-        const { data: aalData } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
+        const [{ data: aalData }, { data: currentUser }, { data: f }] = await Promise.all([
+          supabase.auth.mfa.getAuthenticatorAssuranceLevel(),
+          supabase.auth.getUser(),
+          supabase.auth.mfa.listFactors(),
+        ]);
         const isAal2 = aalData?.currentLevel === "aal2" || tokenAal === "aal2";
-        const { data: f } = await supabase.auth.mfa.listFactors();
         const listedFactors = [...(f?.totp ?? []), ...(f?.all ?? [])];
         const hasVerified =
           listedFactors.some((x) => x.factor_type === "totp" && x.status === "verified") ||
+          hasVerifiedTotpOnUser(currentUser?.user) ||
           fallbackHasVerified;
         if (cancelled) return;
         setHasFactor(hasVerified);
