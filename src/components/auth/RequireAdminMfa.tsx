@@ -23,6 +23,10 @@ function getAalFromJwt(accessToken?: string) {
   }
 }
 
+function timeout<T>(ms = 2500) {
+  return new Promise<T | null>((resolve) => window.setTimeout(() => resolve(null), ms));
+}
+
 /**
  * Gate do painel admin.
  *
@@ -49,11 +53,21 @@ export function RequireAdminMfa({ children }: { children: React.ReactNode }) {
       try {
         const fallbackHasVerified = hasVerifiedTotpOnUser(user);
         const tokenAal = getAalFromJwt(session?.access_token);
-        const { data: currentUser } = await supabase.auth.getUser();
-        const { data: aalData } = await supabase.auth.mfa
-          .getAuthenticatorAssuranceLevel()
-          .catch(() => ({ data: null }));
-        const { data: f } = await supabase.auth.mfa.listFactors().catch(() => ({ data: null }));
+        const currentUserRes = await Promise.race([
+          supabase.auth.getUser().catch(() => null),
+          timeout<Awaited<ReturnType<typeof supabase.auth.getUser>>>(),
+        ]);
+        const aalRes = await Promise.race([
+          supabase.auth.mfa.getAuthenticatorAssuranceLevel().catch(() => null),
+          timeout<Awaited<ReturnType<typeof supabase.auth.mfa.getAuthenticatorAssuranceLevel>>>(),
+        ]);
+        const factorsRes = await Promise.race([
+          supabase.auth.mfa.listFactors().catch(() => null),
+          timeout<Awaited<ReturnType<typeof supabase.auth.mfa.listFactors>>>(),
+        ]);
+        const currentUser = currentUserRes?.data;
+        const aalData = aalRes?.data;
+        const f = factorsRes?.data;
         const isAal2 = aalData?.currentLevel === "aal2" || tokenAal === "aal2";
         const listedFactors = [...(f?.totp ?? []), ...(f?.all ?? [])];
         const hasVerified =
