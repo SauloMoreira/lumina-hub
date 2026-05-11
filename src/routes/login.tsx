@@ -124,6 +124,25 @@ function LoginPage() {
         showAuthError("Sessão inválida. Tente novamente.");
         return;
       }
+
+      // Verifica se a sessão precisa elevar para AAL2 (admin com TOTP cadastrado).
+      try {
+        const { data: aalData } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
+        if (
+          aalData?.currentLevel === "aal1" &&
+          aalData?.nextLevel === "aal2"
+        ) {
+          toast.success("Confirme o código MFA para continuar.");
+          navigate({
+            to: "/mfa-challenge",
+            search: { redirect: redirectTo || undefined },
+          });
+          return;
+        }
+      } catch (e) {
+        console.warn("MFA AAL check failed:", e);
+      }
+
       const { data: profile } = await supabase
         .from("profiles")
         .select("role")

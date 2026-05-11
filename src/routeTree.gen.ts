@@ -14,6 +14,7 @@ import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as RobotsDottxtRouteImport } from './routes/robots[.]txt'
 import { Route as ReembolsoRouteImport } from './routes/reembolso'
 import { Route as PrivacidadeRouteImport } from './routes/privacidade'
+import { Route as MfaChallengeRouteImport } from './routes/mfa-challenge'
 import { Route as MeiosDePagamentoRouteImport } from './routes/meios-de-pagamento'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as EsqueciSenhaRouteImport } from './routes/esqueci-senha'
@@ -110,6 +111,11 @@ const ReembolsoRoute = ReembolsoRouteImport.update({
 const PrivacidadeRoute = PrivacidadeRouteImport.update({
   id: '/privacidade',
   path: '/privacidade',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MfaChallengeRoute = MfaChallengeRouteImport.update({
+  id: '/mfa-challenge',
+  path: '/mfa-challenge',
   getParentRoute: () => rootRouteImport,
 } as any)
 const MeiosDePagamentoRoute = MeiosDePagamentoRouteImport.update({
@@ -503,6 +509,7 @@ export interface FileRoutesByFullPath {
   '/esqueci-senha': typeof EsqueciSenhaRoute
   '/login': typeof LoginRoute
   '/meios-de-pagamento': typeof MeiosDePagamentoRoute
+  '/mfa-challenge': typeof MfaChallengeRoute
   '/privacidade': typeof PrivacidadeRoute
   '/reembolso': typeof ReembolsoRoute
   '/robots.txt': typeof RobotsDottxtRoute
@@ -582,6 +589,7 @@ export interface FileRoutesByTo {
   '/esqueci-senha': typeof EsqueciSenhaRoute
   '/login': typeof LoginRoute
   '/meios-de-pagamento': typeof MeiosDePagamentoRoute
+  '/mfa-challenge': typeof MfaChallengeRoute
   '/privacidade': typeof PrivacidadeRoute
   '/reembolso': typeof ReembolsoRoute
   '/robots.txt': typeof RobotsDottxtRoute
@@ -661,6 +669,7 @@ export interface FileRoutesById {
   '/esqueci-senha': typeof EsqueciSenhaRoute
   '/login': typeof LoginRoute
   '/meios-de-pagamento': typeof MeiosDePagamentoRoute
+  '/mfa-challenge': typeof MfaChallengeRoute
   '/privacidade': typeof PrivacidadeRoute
   '/reembolso': typeof ReembolsoRoute
   '/robots.txt': typeof RobotsDottxtRoute
@@ -742,6 +751,7 @@ export interface FileRouteTypes {
     | '/esqueci-senha'
     | '/login'
     | '/meios-de-pagamento'
+    | '/mfa-challenge'
     | '/privacidade'
     | '/reembolso'
     | '/robots.txt'
@@ -821,6 +831,7 @@ export interface FileRouteTypes {
     | '/esqueci-senha'
     | '/login'
     | '/meios-de-pagamento'
+    | '/mfa-challenge'
     | '/privacidade'
     | '/reembolso'
     | '/robots.txt'
@@ -899,6 +910,7 @@ export interface FileRouteTypes {
     | '/esqueci-senha'
     | '/login'
     | '/meios-de-pagamento'
+    | '/mfa-challenge'
     | '/privacidade'
     | '/reembolso'
     | '/robots.txt'
@@ -979,6 +991,7 @@ export interface RootRouteChildren {
   EsqueciSenhaRoute: typeof EsqueciSenhaRoute
   LoginRoute: typeof LoginRoute
   MeiosDePagamentoRoute: typeof MeiosDePagamentoRoute
+  MfaChallengeRoute: typeof MfaChallengeRoute
   PrivacidadeRoute: typeof PrivacidadeRoute
   ReembolsoRoute: typeof ReembolsoRoute
   RobotsDottxtRoute: typeof RobotsDottxtRoute
@@ -1069,6 +1082,13 @@ declare module '@tanstack/react-router' {
       path: '/privacidade'
       fullPath: '/privacidade'
       preLoaderRoute: typeof PrivacidadeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/mfa-challenge': {
+      id: '/mfa-challenge'
+      path: '/mfa-challenge'
+      fullPath: '/mfa-challenge'
+      preLoaderRoute: typeof MfaChallengeRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/meios-de-pagamento': {
@@ -1649,6 +1669,7 @@ const rootRouteChildren: RootRouteChildren = {
   EsqueciSenhaRoute: EsqueciSenhaRoute,
   LoginRoute: LoginRoute,
   MeiosDePagamentoRoute: MeiosDePagamentoRoute,
+  MfaChallengeRoute: MfaChallengeRoute,
   PrivacidadeRoute: PrivacidadeRoute,
   ReembolsoRoute: ReembolsoRoute,
   RobotsDottxtRoute: RobotsDottxtRoute,
