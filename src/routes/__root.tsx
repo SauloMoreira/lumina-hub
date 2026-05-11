@@ -162,6 +162,11 @@ function RootShell({ children }: { children: React.ReactNode }) {
         <meta httpEquiv="Content-Security-Policy" content={CSP_POLICY} />
         <meta httpEquiv="X-Content-Type-Options" content="nosniff" />
         <meta httpEquiv="Content-Language" content="pt-BR" />
+        {/* S6 — Permissions-Policy via meta (defesa em profundidade; o ideal é também via header HTTP). */}
+        <meta
+          httpEquiv="Permissions-Policy"
+          content="camera=(), microphone=(), geolocation=(), payment=(self 'https://www.mercadopago.com' 'https://www.mercadopago.com.br'), usb=(), bluetooth=(), accelerometer=(), gyroscope=(), magnetometer=(), midi=(), interest-cohort=(), browsing-topics=()"
+        />
         <meta name="google" content="notranslate" />
         <HeadContent />
       </head>
