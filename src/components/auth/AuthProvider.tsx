@@ -52,7 +52,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (newUid !== lastUid) {
         lastUid = newUid;
         setIsAdmin(null);
-        setTimeout(() => checkAdmin(newUid), 0);
+        void checkAdmin(newUid);
       }
     });
 
