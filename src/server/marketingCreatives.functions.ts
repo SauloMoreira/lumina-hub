@@ -266,7 +266,7 @@ export const updateCampaignCreative = createServerFn({ method: "POST" })
   )
   .handler(async ({ data }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const patch: Record<string, unknown> = {};
+    const patch: { status?: string; is_principal?: boolean } = {};
     if (data.status) patch.status = data.status;
     if (typeof data.is_principal === "boolean") patch.is_principal = data.is_principal;
 
