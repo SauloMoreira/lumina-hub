@@ -82,8 +82,9 @@ async function requireAdmin(): Promise<string> {
 // ----------------------------------------------------------------------------
 // PUBLIC: lista relações de um produto (página de produto)
 // ----------------------------------------------------------------------------
+const LAX_UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const GetForProductInput = z.object({
-  productId: z.string().uuid(),
+  productId: z.string().regex(LAX_UUID, "Invalid UUID"),
   limit: z.number().int().min(1).max(24).optional(),
 });
 
@@ -105,7 +106,7 @@ export const getRelationsForProduct = createServerFn({ method: "POST" })
 // PUBLIC: sugestões para o carrinho ("complete sua compra")
 // ----------------------------------------------------------------------------
 const GetForCartInput = z.object({
-  productIds: z.array(z.string().uuid()).min(1).max(50),
+  productIds: z.array(z.string().regex(LAX_UUID, "Invalid UUID")).min(1).max(50),
   limit: z.number().int().min(1).max(12).optional(),
 });
 

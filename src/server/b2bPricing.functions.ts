@@ -12,7 +12,7 @@ const PriceCartInput = z.object({
   items: z
     .array(
       z.object({
-        productId: z.string().uuid(),
+        productId: z.string().regex(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i, "Invalid UUID"),
         qty: z.number().int().min(1).max(9999),
       }),
     )

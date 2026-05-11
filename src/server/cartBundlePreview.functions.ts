@@ -53,7 +53,7 @@ const Input = z.object({
   items: z
     .array(
       z.object({
-        product_id: z.string().uuid(),
+        product_id: z.string().regex(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i, "Invalid UUID"),
         qty: z.number().int().min(1).max(99999),
       }),
     )
