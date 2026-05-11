@@ -21,6 +21,7 @@ import {
   type AiApplyPatch,
   type AiCampaignReference,
 } from "@/components/admin/MarketingCampaignAiDialog";
+import { linkCreativesToCampaign } from "@/server/marketingCreatives.functions";
 import { AdminLayout } from "@/components/admin/AdminLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -208,6 +209,7 @@ function CampanhasPage() {
   const [metrics, setMetrics] = useState<Metrics | null>(null);
   const [metricsLoading, setMetricsLoading] = useState(false);
   const [aiOpen, setAiOpen] = useState(false);
+  const [aiGenerationId, setAiGenerationId] = useState<string | null>(null);
 
   const [coupons, setCoupons] = useState<Array<{ id: string; code: string }>>([]);
   const [banners, setBanners] = useState<Array<{ id: string; title: string }>>([]);
@@ -310,7 +312,8 @@ function CampanhasPage() {
     [products, combos, categories, coupons],
   );
 
-  const openFromAi = (patch: AiApplyPatch) => {
+  const openFromAi = (patch: AiApplyPatch, generationId: string | null) => {
+    setAiGenerationId(generationId);
     setEditing(null);
     setMetrics(null);
     const next = { ...emptyForm };
@@ -453,10 +456,25 @@ function CampanhasPage() {
           .from("marketing_campaigns")
           .update(payload as never)
           .eq("id", editing.id)
-      : await supabase.from("marketing_campaigns").insert(payload as never);
+          .select("id")
+          .single()
+      : await supabase
+          .from("marketing_campaigns")
+          .insert(payload as never)
+          .select("id")
+          .single();
     if (res.error) return toast.error(res.error.message);
+    const savedId = (res.data as { id?: string } | null)?.id ?? editing?.id ?? null;
+    if (aiGenerationId && savedId) {
+      try {
+        await linkCreativesToCampaign({ data: { generation_id: aiGenerationId, campaign_id: savedId } });
+      } catch {
+        /* não bloqueia */
+      }
+    }
     toast.success(editing ? "Campanha atualizada" : "Campanha criada");
     setOpen(false);
+    setAiGenerationId(null);
     load();
   };
 
@@ -1212,7 +1230,7 @@ function CampanhasPage() {
         open={aiOpen}
         onOpenChange={setAiOpen}
         references={aiReferences}
-        onApply={(patch) => openFromAi(patch)}
+        onApply={(patch, _s, genId) => openFromAi(patch, genId)}
       />
     </AdminLayout>
   );

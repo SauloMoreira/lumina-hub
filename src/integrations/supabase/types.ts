@@ -2146,6 +2146,84 @@ export type Database = {
         }
         Relationships: []
       }
+      marketing_creatives: {
+        Row: {
+          campaign_id: string | null
+          created_at: string
+          created_by: string | null
+          creative_type: string
+          focus: string | null
+          generation_id: string | null
+          id: string
+          is_principal: boolean
+          metadata: Json
+          origin: string
+          prompt: string | null
+          public_url: string
+          status: string
+          storage_path: string
+          style: string | null
+          tone: string | null
+          updated_at: string
+          variation_index: number
+        }
+        Insert: {
+          campaign_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          creative_type: string
+          focus?: string | null
+          generation_id?: string | null
+          id?: string
+          is_principal?: boolean
+          metadata?: Json
+          origin?: string
+          prompt?: string | null
+          public_url: string
+          status?: string
+          storage_path: string
+          style?: string | null
+          tone?: string | null
+          updated_at?: string
+          variation_index?: number
+        }
+        Update: {
+          campaign_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          creative_type?: string
+          focus?: string | null
+          generation_id?: string | null
+          id?: string
+          is_principal?: boolean
+          metadata?: Json
+          origin?: string
+          prompt?: string | null
+          public_url?: string
+          status?: string
+          storage_path?: string
+          style?: string | null
+          tone?: string | null
+          updated_at?: string
+          variation_index?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "marketing_creatives_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "marketing_campaigns"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "marketing_creatives_generation_id_fkey"
+            columns: ["generation_id"]
+            isOneToOne: false
+            referencedRelation: "marketing_ai_generations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       marketing_integrations: {
         Row: {
           account_id: string
