@@ -290,9 +290,11 @@ function AtacadoPage() {
           <FullHero settings={settings} />
         )}
 
-        {/* Card de status (aparece sempre, mas no aprovado fica logo abaixo do hero compacto) */}
+        {/* Card de status (só após resolver auth, evita flash de "visitante") */}
         <section className="max-w-6xl mx-auto px-4 mt-6">
-          <ClientStatusBanner status={companyStatus} companyName={companyName} />
+          {authResolved && (
+            <ClientStatusBanner status={companyStatus} companyName={companyName} />
+          )}
         </section>
 
         {/* VITRINE B2B — área nobre */}
