@@ -41,7 +41,7 @@ function AccountPage() {
             <p className="text-xs text-muted-foreground">Acompanhe suas compras</p>
           </Link>
           <Link
-            to="/conta"
+            to="/conta/enderecos"
             className="bg-card border border-border rounded-xl p-5 hover:shadow-elevated transition-shadow block"
           >
             <div className="w-10 h-10 rounded-lg bg-primary-tint flex items-center justify-center mb-3">
@@ -51,7 +51,7 @@ function AccountPage() {
             <p className="text-xs text-muted-foreground">Gerencie endereços</p>
           </Link>
           <Link
-            to="/conta"
+            to="/conta/dados"
             className="bg-card border border-border rounded-xl p-5 hover:shadow-elevated transition-shadow block"
           >
             <div className="w-10 h-10 rounded-lg bg-primary-tint flex items-center justify-center mb-3">
