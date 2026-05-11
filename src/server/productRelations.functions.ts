@@ -106,7 +106,7 @@ export const getRelationsForProduct = createServerFn({ method: "POST" })
 // PUBLIC: sugestões para o carrinho ("complete sua compra")
 // ----------------------------------------------------------------------------
 const GetForCartInput = z.object({
-  productIds: z.array(z.string().uuid()).min(1).max(50),
+  productIds: z.array(z.string().regex(LAX_UUID, "Invalid UUID")).min(1).max(50),
   limit: z.number().int().min(1).max(12).optional(),
 });
 
