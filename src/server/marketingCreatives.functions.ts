@@ -233,7 +233,7 @@ export const generateCampaignCreatives = createServerFn({ method: "POST" })
         console.error("[insert creative]", ins.error);
         throw new Error("Falha ao registrar criativo");
       }
-      created.push(ins.data as Record<string, unknown>);
+      created.push(ins.data as unknown as Record<string, never>);
     }
 
     return { ok: true as const, creatives: created };
