@@ -25,6 +25,19 @@ export function AdminLayout({
   const nav = useNavigate();
   const [paletteOpen, setPaletteOpen] = useState(false);
 
+  // S6 — frame-busting defensivo: meta CSP `frame-ancestors` é ignorado por
+  // spec, e ainda não temos header HTTP X-Frame-Options. Quebra qualquer
+  // tentativa de embutir o admin em iframe externo.
+  useEffect(() => {
+    if (typeof window !== "undefined" && window.top !== window.self) {
+      try {
+        window.top!.location.href = window.self.location.href;
+      } catch {
+        document.body.innerHTML = "";
+      }
+    }
+  }, []);
+
   useEffect(() => {
     if (!loading && !user) nav({ to: "/login" });
     if (isAdmin === false) nav({ to: "/" });
