@@ -208,6 +208,7 @@ function CampanhasPage() {
   const [metrics, setMetrics] = useState<Metrics | null>(null);
   const [metricsLoading, setMetricsLoading] = useState(false);
   const [aiOpen, setAiOpen] = useState(false);
+  const [aiGenerationId, setAiGenerationId] = useState<string | null>(null);
 
   const [coupons, setCoupons] = useState<Array<{ id: string; code: string }>>([]);
   const [banners, setBanners] = useState<Array<{ id: string; title: string }>>([]);
