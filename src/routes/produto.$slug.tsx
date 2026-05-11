@@ -183,26 +183,6 @@ export const Route = createFileRoute("/produto/$slug")({
   ),
 });
 
-function StarRating({ rating, count }: { rating: number; count?: number }) {
-  return (
-    <div className="flex items-center gap-1.5">
-      <div
-        className="flex items-center text-accent text-sm leading-none"
-        aria-label={`${rating.toFixed(1)} de 5`}
-      >
-        {Array.from({ length: 5 }, (_, i) => {
-          const full = i < Math.floor(rating);
-          const half = !full && i < rating;
-          return <span key={i}>{full ? "★" : half ? "☆" : "☆"}</span>;
-        })}
-      </div>
-      <span className="text-xs font-medium text-foreground">{rating.toFixed(1)}</span>
-      {typeof count === "number" && (
-        <span className="text-xs text-muted-foreground">· {count} avaliações</span>
-      )}
-    </div>
-  );
-}
 
 function ProductPage() {
   const { slug } = Route.useParams();
