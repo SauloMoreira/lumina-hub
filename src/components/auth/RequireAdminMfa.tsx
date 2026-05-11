@@ -51,8 +51,10 @@ export function RequireAdminMfa({ children }: { children: React.ReactNode }) {
         const { data: aalData } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
         const isAal2 = aalData?.currentLevel === "aal2" || tokenAal === "aal2";
         const { data: f } = await supabase.auth.mfa.listFactors();
+        const listedFactors = [...(f?.totp ?? []), ...(f?.all ?? [])];
         const hasVerified =
-          (f?.totp ?? []).some((x) => x.status === "verified") || fallbackHasVerified;
+          listedFactors.some((x) => x.factor_type === "totp" && x.status === "verified") ||
+          fallbackHasVerified;
         if (cancelled) return;
         setHasFactor(hasVerified);
         setAal2(isAal2);
