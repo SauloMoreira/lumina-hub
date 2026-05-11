@@ -36,6 +36,7 @@ import { Route as AdminIndexRouteImport } from './routes/admin.index'
 import { Route as ProdutoSlugRouteImport } from './routes/produto.$slug'
 import { Route as InstitucionalSlugRouteImport } from './routes/institucional.$slug'
 import { Route as ContaPedidosRouteImport } from './routes/conta.pedidos'
+import { Route as ContaEnderecosRouteImport } from './routes/conta.enderecos'
 import { Route as ContaEmpresaRouteImport } from './routes/conta.empresa'
 import { Route as ComboSlugRouteImport } from './routes/combo.$slug'
 import { Route as CheckoutSuccessRouteImport } from './routes/checkout.success'
@@ -222,6 +223,11 @@ const InstitucionalSlugRoute = InstitucionalSlugRouteImport.update({
 const ContaPedidosRoute = ContaPedidosRouteImport.update({
   id: '/pedidos',
   path: '/pedidos',
+  getParentRoute: () => ContaRoute,
+} as any)
+const ContaEnderecosRoute = ContaEnderecosRouteImport.update({
+  id: '/enderecos',
+  path: '/enderecos',
   getParentRoute: () => ContaRoute,
 } as any)
 const ContaEmpresaRoute = ContaEmpresaRouteImport.update({
@@ -545,6 +551,7 @@ export interface FileRoutesByFullPath {
   '/checkout/success': typeof CheckoutSuccessRoute
   '/combo/$slug': typeof ComboSlugRoute
   '/conta/empresa': typeof ContaEmpresaRoute
+  '/conta/enderecos': typeof ContaEnderecosRoute
   '/conta/pedidos': typeof ContaPedidosRoute
   '/institucional/$slug': typeof InstitucionalSlugRoute
   '/produto/$slug': typeof ProdutoSlugRoute
@@ -624,6 +631,7 @@ export interface FileRoutesByTo {
   '/checkout/success': typeof CheckoutSuccessRoute
   '/combo/$slug': typeof ComboSlugRoute
   '/conta/empresa': typeof ContaEmpresaRoute
+  '/conta/enderecos': typeof ContaEnderecosRoute
   '/conta/pedidos': typeof ContaPedidosRoute
   '/institucional/$slug': typeof InstitucionalSlugRoute
   '/produto/$slug': typeof ProdutoSlugRoute
@@ -706,6 +714,7 @@ export interface FileRoutesById {
   '/checkout/success': typeof CheckoutSuccessRoute
   '/combo/$slug': typeof ComboSlugRoute
   '/conta/empresa': typeof ContaEmpresaRoute
+  '/conta/enderecos': typeof ContaEnderecosRoute
   '/conta/pedidos': typeof ContaPedidosRoute
   '/institucional/$slug': typeof InstitucionalSlugRoute
   '/produto/$slug': typeof ProdutoSlugRoute
@@ -789,6 +798,7 @@ export interface FileRouteTypes {
     | '/checkout/success'
     | '/combo/$slug'
     | '/conta/empresa'
+    | '/conta/enderecos'
     | '/conta/pedidos'
     | '/institucional/$slug'
     | '/produto/$slug'
@@ -868,6 +878,7 @@ export interface FileRouteTypes {
     | '/checkout/success'
     | '/combo/$slug'
     | '/conta/empresa'
+    | '/conta/enderecos'
     | '/conta/pedidos'
     | '/institucional/$slug'
     | '/produto/$slug'
@@ -949,6 +960,7 @@ export interface FileRouteTypes {
     | '/checkout/success'
     | '/combo/$slug'
     | '/conta/empresa'
+    | '/conta/enderecos'
     | '/conta/pedidos'
     | '/institucional/$slug'
     | '/produto/$slug'
@@ -1246,6 +1258,13 @@ declare module '@tanstack/react-router' {
       path: '/pedidos'
       fullPath: '/conta/pedidos'
       preLoaderRoute: typeof ContaPedidosRouteImport
+      parentRoute: typeof ContaRoute
+    }
+    '/conta/enderecos': {
+      id: '/conta/enderecos'
+      path: '/enderecos'
+      fullPath: '/conta/enderecos'
+      preLoaderRoute: typeof ContaEnderecosRouteImport
       parentRoute: typeof ContaRoute
     }
     '/conta/empresa': {
@@ -1633,12 +1652,14 @@ const CheckoutRouteWithChildren = CheckoutRoute._addFileChildren(
 
 interface ContaRouteChildren {
   ContaEmpresaRoute: typeof ContaEmpresaRoute
+  ContaEnderecosRoute: typeof ContaEnderecosRoute
   ContaPedidosRoute: typeof ContaPedidosRoute
   ContaIndexRoute: typeof ContaIndexRoute
 }
 
 const ContaRouteChildren: ContaRouteChildren = {
   ContaEmpresaRoute: ContaEmpresaRoute,
+  ContaEnderecosRoute: ContaEnderecosRoute,
   ContaPedidosRoute: ContaPedidosRoute,
   ContaIndexRoute: ContaIndexRoute,
 }
