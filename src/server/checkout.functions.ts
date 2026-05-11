@@ -457,11 +457,42 @@ export const createOrder = createServerFn({ method: "POST" })
       };
     }
 
+    // === Revalidação autoritativa do frete (delivery remoto) ===
+    // Para "delivery", o cliente envia carrier/service/cost mas NUNCA confiamos
+    // no `cost`: revalidamos contra a engine server-side (mesma usada no preview).
+    // Isso bloqueia tentativa de manipular shipping_cost no payload.
+    let validatedDeliveryCost = 0;
+    if (!isPickup && !isLocal) {
+      const { validateChosenShipping } = await import("@/server/shippingQuote.server");
+      // eligibleSubtotal: itens com free_shipping_eligible (server-side).
+      const eligibleIds = new Set(
+        ((prodMeta ?? []) as Array<{ id: string; free_shipping_eligible?: boolean | null }>)
+          .filter((p) => p.free_shipping_eligible === true)
+          .map((p) => p.id),
+      );
+      const eligibleSubtotal = lines.reduce(
+        (acc, l) => acc + (eligibleIds.has(l.productId) ? l.appliedUnitPrice * l.qty : 0),
+        0,
+      );
+      const check = validateChosenShipping({
+        zipCode: data.address?.zipCode ?? "",
+        eligibleSubtotal,
+        chosen: {
+          carrier: data.shipping?.carrier ?? null,
+          service: data.shipping?.service ?? null,
+          cost: Number(data.shipping?.cost ?? 0),
+        },
+      });
+      if (!check.ok) {
+        return { ok: false as const, error: check.reason };
+      }
+      validatedDeliveryCost = check.service.price;
+    }
     const shippingCost = isPickup
       ? 0
       : isLocal
         ? localZoneInfo!.price
-        : Number(data.shipping?.cost ?? 0);
+        : validatedDeliveryCost;
     const shippingCarrier = isPickup
       ? "Retirada na loja"
       : isLocal
