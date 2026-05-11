@@ -57,6 +57,7 @@ export function RequireAdminMfa({ children }: { children: React.ReactNode }) {
         const isAal2 = aalData?.currentLevel === "aal2" || tokenAal === "aal2";
         const listedFactors = [...(f?.totp ?? []), ...(f?.all ?? [])];
         const hasVerified =
+          isAal2 ||
           listedFactors.some((x) => x.factor_type === "totp" && x.status === "verified") ||
           hasVerifiedTotpOnUser(currentUser?.user) ||
           fallbackHasVerified;
@@ -72,8 +73,8 @@ export function RequireAdminMfa({ children }: { children: React.ReactNode }) {
         }
       } catch {
         if (!cancelled) {
-          const hasVerified = hasVerifiedTotpOnUser(user);
           const isAal2 = getAalFromJwt(session?.access_token) === "aal2";
+          const hasVerified = isAal2 || hasVerifiedTotpOnUser(user);
           setHasFactor(hasVerified);
           setAal2(isAal2);
           if (hasVerified && !isAal2) {
