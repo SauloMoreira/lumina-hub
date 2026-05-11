@@ -265,7 +265,7 @@ export const createOrder = createServerFn({ method: "POST" })
     const productIds = Array.from(new Set(data.items.map((i) => i.productId)));
     const { data: prodMeta } = await supabase
       .from("products")
-      .select("id, name, sku, images, cost_price")
+      .select("id, name, sku, images, cost_price, free_shipping_eligible")
       .in("id", productIds);
     const metaMap = new Map((prodMeta ?? []).map((p) => [p.id, p]));
 
