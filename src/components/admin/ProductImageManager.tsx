@@ -456,7 +456,7 @@ export const ProductImageManager = forwardRef<ProductImageManagerHandle, Props>(
               Adicionar
               <input
                 type="file"
-                accept="image/*"
+                accept="image/jpeg,image/png,image/webp,image/gif"
                 multiple
                 className="hidden"
                 disabled={uploading || totalImages >= MAX_IMAGES}

@@ -245,7 +245,9 @@ function BannersPage() {
     const file = e.target.files?.[0];
     e.target.value = "";
     if (!file) return;
-    if (!file.type.startsWith("image/")) return toast.error("Arquivo precisa ser uma imagem");
+    const ALLOWED = ["image/jpeg", "image/png", "image/webp", "image/gif"];
+    if (!ALLOWED.includes(file.type))
+      return toast.error("Formato inválido. Use JPG, PNG, WebP ou GIF.");
     if (file.size > 10 * 1024 * 1024) return toast.error("Imagem maior que 10MB");
     const setter = target === "desktop" ? setUploadingDesktop : setUploadingMobile;
     setter(true);
@@ -433,7 +435,7 @@ function BannersPage() {
                   <input
                     ref={desktopInputRef}
                     type="file"
-                    accept="image/*"
+                    accept="image/jpeg,image/png,image/webp,image/gif"
                     className="hidden"
                     onChange={(e) => handleUpload(e, "desktop")}
                   />
@@ -492,7 +494,7 @@ function BannersPage() {
                 <input
                   ref={mobileInputRef}
                   type="file"
-                  accept="image/*"
+                  accept="image/jpeg,image/png,image/webp,image/gif"
                   className="hidden"
                   onChange={(e) => handleUpload(e, "mobile")}
                 />
