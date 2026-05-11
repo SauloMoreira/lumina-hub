@@ -48,46 +48,46 @@ export function AdminLayout({
   if (!user || !isAdmin) return null;
 
   return (
-    <div className="min-h-screen flex bg-muted/30">
-      <AdminSidebar />
-      <div className="flex-1 min-w-0">
-        <header className="h-16 bg-card border-b border-border flex items-center justify-between px-6 sticky top-0 z-10 gap-4">
-          <h1 className="font-display text-xl font-semibold tracking-tight pl-12 lg:pl-0 truncate">
-            {title}
-          </h1>
-          <div className="flex items-center gap-2 shrink-0">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setPaletteOpen(true)}
-              className="gap-2 text-muted-foreground hidden sm:inline-flex"
-              aria-label="Buscar"
-            >
-              <Search className="h-4 w-4" />
-              <span className="hidden md:inline">Buscar…</span>
-              <kbd className="hidden md:inline-flex pointer-events-none ml-2 h-5 select-none items-center gap-1 rounded border bg-muted px-1.5 font-mono text-[10px] font-medium text-muted-foreground">
-                ⌘K
-              </kbd>
-            </Button>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="sm:hidden"
-              onClick={() => setPaletteOpen(true)}
-              aria-label="Buscar"
-            >
-              <Search className="h-5 w-5" />
-            </Button>
-            {action}
-            <AdminAlertsBell />
-          </div>
-        </header>
-        <main className="p-6">
-          <RequireAdminMfa>{children}</RequireAdminMfa>
-        </main>
+    <RequireAdminMfa>
+      <div className="min-h-screen flex bg-muted/30">
+        <AdminSidebar />
+        <div className="flex-1 min-w-0">
+          <header className="h-16 bg-card border-b border-border flex items-center justify-between px-6 sticky top-0 z-10 gap-4">
+            <h1 className="font-display text-xl font-semibold tracking-tight pl-12 lg:pl-0 truncate">
+              {title}
+            </h1>
+            <div className="flex items-center gap-2 shrink-0">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setPaletteOpen(true)}
+                className="gap-2 text-muted-foreground hidden sm:inline-flex"
+                aria-label="Buscar"
+              >
+                <Search className="h-4 w-4" />
+                <span className="hidden md:inline">Buscar…</span>
+                <kbd className="hidden md:inline-flex pointer-events-none ml-2 h-5 select-none items-center gap-1 rounded border bg-muted px-1.5 font-mono text-[10px] font-medium text-muted-foreground">
+                  ⌘K
+                </kbd>
+              </Button>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="sm:hidden"
+                onClick={() => setPaletteOpen(true)}
+                aria-label="Buscar"
+              >
+                <Search className="h-5 w-5" />
+              </Button>
+              {action}
+              <AdminAlertsBell />
+            </div>
+          </header>
+          <main className="p-6">{children}</main>
+        </div>
+        <AdminCommandPalette open={paletteOpen} onOpenChange={setPaletteOpen} />
+        <Toaster position="top-right" richColors />
       </div>
-      <AdminCommandPalette open={paletteOpen} onOpenChange={setPaletteOpen} />
-      <Toaster position="top-right" richColors />
-    </div>
+    </RequireAdminMfa>
   );
 }
