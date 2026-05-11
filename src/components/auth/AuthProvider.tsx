@@ -40,14 +40,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (mounted) setIsAdmin(!error && data?.role === "admin");
     };
 
+    let lastUid: string | null | undefined = undefined;
     const { data: sub } = supabase.auth.onAuthStateChange((_e, s) => {
       if (!mounted) return;
       setSession(s);
       setUser(s?.user ?? null);
       setLoading(false);
-      // defer admin check to avoid blocking the auth callback
-      setIsAdmin(null);
-      setTimeout(() => checkAdmin(s?.user?.id), 0);
+      const newUid = s?.user?.id ?? null;
+      // Só re-checa admin quando o usuário muda (evita resetar isAdmin a null
+      // em TOKEN_REFRESHED, o que prendia o painel admin no PageSkeleton).
+      if (newUid !== lastUid) {
+        lastUid = newUid;
+        setIsAdmin(null);
+        setTimeout(() => checkAdmin(newUid), 0);
+      }
     });
 
     supabase.auth.getSession().then(({ data }) => {
