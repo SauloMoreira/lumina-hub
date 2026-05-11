@@ -72,7 +72,7 @@ export function CreativeStudio({ generationId, references, suggestion }: Props) 
   useEffect(() => {
     if (!generationId) return;
     listCampaignCreatives({ data: { generation_id: generationId } })
-      .then((r) => setItems(r.creatives as CampaignCreative[]))
+      .then((r) => setItems(r.creatives as unknown as CampaignCreative[]))
       .catch(() => {});
   }, [generationId]);
 
@@ -130,7 +130,7 @@ export function CreativeStudio({ generationId, references, suggestion }: Props) 
           context: buildContext(),
         },
       });
-      setItems((prev) => [...(r.creatives as CampaignCreative[]), ...prev]);
+      setItems((prev) => [...(r.creatives as unknown as CampaignCreative[]), ...prev]);
       toast.success(`${variations} criativo(s) gerado(s)`);
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Falha ao gerar imagens");
@@ -142,7 +142,7 @@ export function CreativeStudio({ generationId, references, suggestion }: Props) 
   async function setStatus(id: string, status: "approved" | "discarded" | "draft") {
     try {
       const r = await updateCampaignCreative({ data: { id, status } });
-      setItems((prev) => prev.map((it) => (it.id === id ? (r.creative as CampaignCreative) : it)));
+      setItems((prev) => prev.map((it) => (it.id === id ? (r.creative as unknown as CampaignCreative) : it)));
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Erro ao atualizar");
     }
