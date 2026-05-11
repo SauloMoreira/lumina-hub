@@ -81,16 +81,18 @@ function AtacadoPage() {
   const [categories, setCategories] = useState<Category[]>([]);
   const [companyStatus, setCompanyStatus] = useState<CompanyStatus>("guest");
   const [companyName, setCompanyName] = useState<string | null>(null);
+  const [authResolved, setAuthResolved] = useState(false);
 
   const [filters, setFilters] = useState<B2bFiltersState>(DEFAULT_B2B_FILTERS);
   const debouncedQ = useDebounced(filters.q, 280);
   const debouncedMin = useDebounced(filters.priceMin, 280);
   const debouncedMax = useDebounced(filters.priceMax, 280);
 
+  // Carrega settings e categorias (independe de sessão)
   useEffect(() => {
     let mounted = true;
     (async () => {
-      const [{ data: s }, { data: cats }, { data: sess }] = await Promise.all([
+      const [{ data: s }, { data: cats }] = await Promise.all([
         supabase
           .from("b2b_settings")
           .select(
@@ -103,16 +105,26 @@ function AtacadoPage() {
           .select("id, name, slug")
           .eq("active", true)
           .order("sort_order", { ascending: true }),
-        supabase.auth.getSession(),
       ]);
-
       if (!mounted) return;
       setSettings(s as B2bSettings | null);
       setCategories((cats ?? []) as Category[]);
+    })();
+    return () => {
+      mounted = false;
+    };
+  }, []);
 
-      const userId = sess.session?.user?.id;
+  // Resolve sessão + empresa do usuário, reagindo a mudanças de auth
+  useEffect(() => {
+    let mounted = true;
+
+    async function resolveCompany(userId: string | null | undefined) {
+      if (!mounted) return;
       if (!userId) {
         setCompanyStatus("guest");
+        setCompanyName(null);
+        setAuthResolved(true);
         return;
       }
       const { data: link } = await supabase
@@ -121,8 +133,11 @@ function AtacadoPage() {
         .eq("user_id", userId)
         .limit(1)
         .maybeSingle();
+      if (!mounted) return;
       if (!link) {
         setCompanyStatus("pf");
+        setCompanyName(null);
+        setAuthResolved(true);
         return;
       }
       const { data: company } = await supabase
@@ -130,13 +145,31 @@ function AtacadoPage() {
         .select("status, legal_name, trade_name")
         .eq("id", link.company_id)
         .maybeSingle();
+      if (!mounted) return;
       if (company) {
         setCompanyStatus(company.status as CompanyStatus);
         setCompanyName(company.trade_name || company.legal_name);
+      } else {
+        setCompanyStatus("pf");
+        setCompanyName(null);
       }
-    })();
+      setAuthResolved(true);
+    }
+
+    // 1) Listener primeiro para não perder eventos de hidratação
+    const { data: subscription } = supabase.auth.onAuthStateChange(
+      (_event, session) => {
+        void resolveCompany(session?.user?.id ?? null);
+      },
+    );
+    // 2) Resolve sessão atual (cobre o caso de já estar logado no mount)
+    supabase.auth.getSession().then(({ data }) => {
+      void resolveCompany(data.session?.user?.id ?? null);
+    });
+
     return () => {
       mounted = false;
+      subscription.subscription.unsubscribe();
     };
   }, []);
 
