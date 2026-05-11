@@ -61,7 +61,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setSession(data.session);
       setUser(data.session?.user ?? null);
       setLoading(false);
-      checkAdmin(data.session?.user?.id);
+      lastUid = data.session?.user?.id ?? null;
+      checkAdmin(lastUid);
     });
 
     return () => {
