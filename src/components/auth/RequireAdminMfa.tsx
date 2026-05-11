@@ -1,36 +1,52 @@
 import { useEffect, useState } from "react";
-import { Link } from "@tanstack/react-router";
+import { Link, useLocation, useNavigate } from "@tanstack/react-router";
 import { ShieldAlert, Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 
 /**
- * Wrapper de proteção do painel admin: se o usuário admin não tiver
- * MFA verificado, mostra tela bloqueadora pedindo para ativar em /conta.
+ * Gate do painel admin.
  *
- * Renderiza children apenas quando há ao menos um fator TOTP verificado.
+ * Regra (Onda S1):
+ *  - Admin sem fator MFA cadastrado → tela bloqueadora pedindo para ativar em /conta.
+ *  - Admin com fator cadastrado mas sessão em AAL1 → redireciona para /mfa-challenge.
+ *  - Apenas sessão AAL2 libera children.
  */
 export function RequireAdminMfa({ children }: { children: React.ReactNode }) {
   const { user, loading: authLoading } = useAuth();
+  const navigate = useNavigate();
+  const location = useLocation();
   const [checking, setChecking] = useState(true);
-  const [hasMfa, setHasMfa] = useState(false);
+  const [hasFactor, setHasFactor] = useState(false);
+  const [aal2, setAal2] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
     async function check() {
       if (!user) {
-        setChecking(false);
+        if (!cancelled) setChecking(false);
         return;
       }
       try {
-        const { data } = await supabase.auth.mfa.listFactors();
-        const verified = [
-          ...(data?.totp ?? []),
-          ...((data as unknown as { phone?: Array<{ status: string }> })?.phone ?? []),
-        ].filter((f) => f.status === "verified");
-        if (!cancelled) setHasMfa(verified.length > 0);
+        const { data: aalData } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
+        const isAal2 = aalData?.currentLevel === "aal2";
+        const { data: f } = await supabase.auth.mfa.listFactors();
+        const hasVerified = (f?.totp ?? []).some((x) => x.status === "verified");
+        if (cancelled) return;
+        setHasFactor(hasVerified);
+        setAal2(isAal2);
+        if (hasVerified && !isAal2) {
+          navigate({
+            to: "/mfa-challenge",
+            search: { redirect: location.pathname + location.search },
+          });
+          return;
+        }
       } catch {
-        if (!cancelled) setHasMfa(false);
+        if (!cancelled) {
+          setHasFactor(false);
+          setAal2(false);
+        }
       } finally {
         if (!cancelled) setChecking(false);
       }
@@ -39,7 +55,7 @@ export function RequireAdminMfa({ children }: { children: React.ReactNode }) {
     return () => {
       cancelled = true;
     };
-  }, [user]);
+  }, [user, navigate, location.pathname, location.search]);
 
   if (authLoading || checking) {
     return (
@@ -49,7 +65,7 @@ export function RequireAdminMfa({ children }: { children: React.ReactNode }) {
     );
   }
 
-  if (!hasMfa) {
+  if (!hasFactor) {
     return (
       <div className="flex items-center justify-center min-h-[60vh] p-6">
         <div className="max-w-md w-full bg-card border rounded-lg p-6 shadow-sm">
@@ -75,6 +91,15 @@ export function RequireAdminMfa({ children }: { children: React.ReactNode }) {
             Use Google Authenticator, 1Password, Authy ou similar.
           </p>
         </div>
+      </div>
+    );
+  }
+
+  if (!aal2) {
+    // Redirect já disparado no effect; renderiza loader enquanto navega.
+    return (
+      <div className="flex items-center justify-center min-h-[60vh]">
+        <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
       </div>
     );
   }
