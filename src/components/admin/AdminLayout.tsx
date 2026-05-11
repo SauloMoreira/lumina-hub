@@ -24,16 +24,27 @@ export function AdminLayout({
   const isAdmin = useIsAdmin();
   const nav = useNavigate();
   const [paletteOpen, setPaletteOpen] = useState(false);
+  const [frameBlocked, setFrameBlocked] = useState(false);
 
   // S6 — frame-busting defensivo: meta CSP `frame-ancestors` é ignorado por
   // spec, e ainda não temos header HTTP X-Frame-Options. Quebra qualquer
-  // tentativa de embutir o admin em iframe externo.
+  // tentativa de embutir o admin em iframe externo, sem quebrar o Lovable Preview.
   useEffect(() => {
-    if (typeof window !== "undefined" && window.top !== window.self) {
+    if (typeof window === "undefined" || window.top === window.self) return;
+
+    const hostname = window.location.hostname;
+    const isPreviewOrDev =
+      hostname === "localhost" ||
+      hostname === "127.0.0.1" ||
+      hostname.includes("lovableproject.com") ||
+      hostname.startsWith("id-preview--") ||
+      hostname.includes("-dev.lovable.app");
+
+    if (!isPreviewOrDev) {
       try {
         window.top!.location.href = window.self.location.href;
       } catch {
-        document.body.innerHTML = "";
+        setFrameBlocked(true);
       }
     }
   }, []);
@@ -59,6 +70,20 @@ export function AdminLayout({
     return <PageSkeleton />;
   }
   if (!user || !isAdmin) return null;
+  if (frameBlocked) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background p-6">
+        <div className="max-w-md rounded-lg border border-border bg-card p-6 text-center shadow-sm">
+          <h1 className="font-display text-lg font-semibold text-foreground">
+            Acesso administrativo bloqueado
+          </h1>
+          <p className="mt-2 text-sm text-muted-foreground">
+            Por segurança, o painel administrativo não pode ser exibido dentro de um iframe externo.
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <RequireAdminMfa>
