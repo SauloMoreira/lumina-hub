@@ -82,8 +82,9 @@ async function requireAdmin(): Promise<string> {
 // ----------------------------------------------------------------------------
 // PUBLIC: lista relações de um produto (página de produto)
 // ----------------------------------------------------------------------------
+const LAX_UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const GetForProductInput = z.object({
-  productId: z.string().uuid(),
+  productId: z.string().regex(LAX_UUID, "Invalid UUID"),
   limit: z.number().int().min(1).max(24).optional(),
 });
 
