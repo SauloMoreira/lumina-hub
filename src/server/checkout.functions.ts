@@ -135,70 +135,12 @@ export const calculateShipping = createServerFn({ method: "POST" })
     if (!/^\d{8}$/.test(data.zipCode)) {
       return { services: [], estimated: true as const, error: "CEP deve ter 8 dígitos" };
     }
-
-    // Estimativa local por região (DDD do CEP)
-    const prefix = parseInt(data.zipCode.slice(0, 2), 10);
-    let basePac = 22;
-    let baseSedex = 38;
-    let daysPac = 7;
-    let daysSedex = 3;
-
-    // RJ (20-28) — perto da loja
-    if (prefix >= 20 && prefix <= 28) {
-      basePac = 14;
-      baseSedex = 24;
-      daysPac = 3;
-      daysSedex = 1;
-    } else if (prefix >= 1 && prefix <= 19) {
-      // SP
-      basePac = 22;
-      baseSedex = 36;
-      daysPac = 5;
-      daysSedex = 2;
-    } else if (prefix >= 80 && prefix <= 99) {
-      // Sul
-      basePac = 32;
-      baseSedex = 52;
-      daysPac = 8;
-      daysSedex = 4;
-    } else if (prefix >= 40 && prefix <= 65) {
-      // Nordeste
-      basePac = 38;
-      baseSedex = 64;
-      daysPac = 10;
-      daysSedex = 5;
-    }
-
-    const weightFactor = Math.max(1, data.weightKg);
-    const services = [
-      {
-        id: "pac",
-        name: "PAC",
-        carrier: "Correios",
-        price: Number((basePac * weightFactor).toFixed(2)),
-        days: daysPac,
-      },
-      {
-        id: "sedex",
-        name: "SEDEX",
-        carrier: "Correios",
-        price: Number((baseSedex * weightFactor).toFixed(2)),
-        days: daysSedex,
-      },
-    ];
-
-    // Frete grátis local (RJ Maricá): subtotal de produtos ELEGÍVEIS >= R$ 199.
-    const eligibleSubtotal = data.eligibleSubtotal ?? 0;
-    if (prefix >= 24 && prefix <= 25 && eligibleSubtotal >= 199) {
-      services.unshift({
-        id: "local",
-        name: "Entrega local Maricá",
-        carrier: "Led Maricá",
-        price: 0,
-        days: 1,
-      });
-    }
-
+    const { quoteShippingServices } = await import("@/server/shippingQuote.server");
+    const services = quoteShippingServices({
+      zipCode: data.zipCode,
+      weightKg: data.weightKg,
+      eligibleSubtotal: data.eligibleSubtotal,
+    });
     return { services, estimated: true as const };
   });
 
@@ -323,7 +265,7 @@ export const createOrder = createServerFn({ method: "POST" })
     const productIds = Array.from(new Set(data.items.map((i) => i.productId)));
     const { data: prodMeta } = await supabase
       .from("products")
-      .select("id, name, sku, images, cost_price")
+      .select("id, name, sku, images, cost_price, free_shipping_eligible")
       .in("id", productIds);
     const metaMap = new Map((prodMeta ?? []).map((p) => [p.id, p]));
 
@@ -515,11 +457,42 @@ export const createOrder = createServerFn({ method: "POST" })
       };
     }
 
+    // === Revalidação autoritativa do frete (delivery remoto) ===
+    // Para "delivery", o cliente envia carrier/service/cost mas NUNCA confiamos
+    // no `cost`: revalidamos contra a engine server-side (mesma usada no preview).
+    // Isso bloqueia tentativa de manipular shipping_cost no payload.
+    let validatedDeliveryCost = 0;
+    if (!isPickup && !isLocal) {
+      const { validateChosenShipping } = await import("@/server/shippingQuote.server");
+      // eligibleSubtotal: itens com free_shipping_eligible (server-side).
+      const eligibleIds = new Set(
+        ((prodMeta ?? []) as Array<{ id: string; free_shipping_eligible?: boolean | null }>)
+          .filter((p) => p.free_shipping_eligible === true)
+          .map((p) => p.id),
+      );
+      const eligibleSubtotal = lines.reduce(
+        (acc, l) => acc + (eligibleIds.has(l.productId) ? l.appliedUnitPrice * l.qty : 0),
+        0,
+      );
+      const check = validateChosenShipping({
+        zipCode: data.address?.zipCode ?? "",
+        eligibleSubtotal,
+        chosen: {
+          carrier: data.shipping?.carrier ?? null,
+          service: data.shipping?.service ?? null,
+          cost: Number(data.shipping?.cost ?? 0),
+        },
+      });
+      if (!check.ok) {
+        return { ok: false as const, error: check.reason };
+      }
+      validatedDeliveryCost = check.service.price;
+    }
     const shippingCost = isPickup
       ? 0
       : isLocal
         ? localZoneInfo!.price
-        : Number(data.shipping?.cost ?? 0);
+        : validatedDeliveryCost;
     const shippingCarrier = isPickup
       ? "Retirada na loja"
       : isLocal
