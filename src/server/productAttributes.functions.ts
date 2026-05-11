@@ -41,17 +41,8 @@ async function getOptionalUserId(): Promise<string | null> {
 }
 
 async function requireAdmin(): Promise<string> {
-  const userId = await getOptionalUserId();
-  if (!userId) throw new Error("not_authenticated");
-  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-  const { data, error } = await supabaseAdmin
-    .from("profiles")
-    .select("role")
-    .eq("id", userId)
-    .maybeSingle();
-  if (error) throw error;
-  if (!data || data.role !== "admin") throw new Error("not_authorized");
-  return userId;
+  const { assertAdminAal2FromBearer } = await import("@/integrations/supabase/admin-middleware");
+  return assertAdminAal2FromBearer();
 }
 
 // ---------------------------------------------------------------------------
