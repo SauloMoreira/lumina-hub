@@ -453,10 +453,25 @@ function CampanhasPage() {
           .from("marketing_campaigns")
           .update(payload as never)
           .eq("id", editing.id)
-      : await supabase.from("marketing_campaigns").insert(payload as never);
+          .select("id")
+          .single()
+      : await supabase
+          .from("marketing_campaigns")
+          .insert(payload as never)
+          .select("id")
+          .single();
     if (res.error) return toast.error(res.error.message);
+    const savedId = (res.data as { id?: string } | null)?.id ?? editing?.id ?? null;
+    if (aiGenerationId && savedId) {
+      try {
+        await linkCreativesToCampaign({ data: { generation_id: aiGenerationId, campaign_id: savedId } });
+      } catch {
+        /* não bloqueia */
+      }
+    }
     toast.success(editing ? "Campanha atualizada" : "Campanha criada");
     setOpen(false);
+    setAiGenerationId(null);
     load();
   };
 
