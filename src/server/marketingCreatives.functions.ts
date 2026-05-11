@@ -80,7 +80,7 @@ const InputSchema = z.object({
         .default([]),
       categories: z.array(z.string().max(80)).max(8).default([]),
     })
-    .default({}),
+    .default(() => ({ products: [], combos: [], categories: [] })),
   extra_hint: z.string().max(600).optional().nullable(),
 });
 
