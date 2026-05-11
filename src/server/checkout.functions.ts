@@ -135,70 +135,12 @@ export const calculateShipping = createServerFn({ method: "POST" })
     if (!/^\d{8}$/.test(data.zipCode)) {
       return { services: [], estimated: true as const, error: "CEP deve ter 8 dígitos" };
     }
-
-    // Estimativa local por região (DDD do CEP)
-    const prefix = parseInt(data.zipCode.slice(0, 2), 10);
-    let basePac = 22;
-    let baseSedex = 38;
-    let daysPac = 7;
-    let daysSedex = 3;
-
-    // RJ (20-28) — perto da loja
-    if (prefix >= 20 && prefix <= 28) {
-      basePac = 14;
-      baseSedex = 24;
-      daysPac = 3;
-      daysSedex = 1;
-    } else if (prefix >= 1 && prefix <= 19) {
-      // SP
-      basePac = 22;
-      baseSedex = 36;
-      daysPac = 5;
-      daysSedex = 2;
-    } else if (prefix >= 80 && prefix <= 99) {
-      // Sul
-      basePac = 32;
-      baseSedex = 52;
-      daysPac = 8;
-      daysSedex = 4;
-    } else if (prefix >= 40 && prefix <= 65) {
-      // Nordeste
-      basePac = 38;
-      baseSedex = 64;
-      daysPac = 10;
-      daysSedex = 5;
-    }
-
-    const weightFactor = Math.max(1, data.weightKg);
-    const services = [
-      {
-        id: "pac",
-        name: "PAC",
-        carrier: "Correios",
-        price: Number((basePac * weightFactor).toFixed(2)),
-        days: daysPac,
-      },
-      {
-        id: "sedex",
-        name: "SEDEX",
-        carrier: "Correios",
-        price: Number((baseSedex * weightFactor).toFixed(2)),
-        days: daysSedex,
-      },
-    ];
-
-    // Frete grátis local (RJ Maricá): subtotal de produtos ELEGÍVEIS >= R$ 199.
-    const eligibleSubtotal = data.eligibleSubtotal ?? 0;
-    if (prefix >= 24 && prefix <= 25 && eligibleSubtotal >= 199) {
-      services.unshift({
-        id: "local",
-        name: "Entrega local Maricá",
-        carrier: "Led Maricá",
-        price: 0,
-        days: 1,
-      });
-    }
-
+    const { quoteShippingServices } = await import("@/server/shippingQuote.server");
+    const services = quoteShippingServices({
+      zipCode: data.zipCode,
+      weightKg: data.weightKg,
+      eligibleSubtotal: data.eligibleSubtotal,
+    });
     return { services, estimated: true as const };
   });
 
