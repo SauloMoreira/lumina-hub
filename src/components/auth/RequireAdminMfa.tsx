@@ -15,7 +15,8 @@ function getAalFromJwt(accessToken?: string) {
   try {
     const payload = accessToken?.split(".")[1];
     if (!payload) return null;
-    const json = atob(payload.replace(/-/g, "+").replace(/_/g, "/"));
+    const normalized = payload.replace(/-/g, "+").replace(/_/g, "/");
+    const json = atob(normalized.padEnd(Math.ceil(normalized.length / 4) * 4, "="));
     return (JSON.parse(json) as { aal?: string }).aal ?? null;
   } catch {
     return null;
