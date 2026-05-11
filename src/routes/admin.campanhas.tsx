@@ -1230,7 +1230,7 @@ function CampanhasPage() {
         open={aiOpen}
         onOpenChange={setAiOpen}
         references={aiReferences}
-        onApply={(patch) => openFromAi(patch)}
+        onApply={(patch, _s, genId) => openFromAi(patch, genId)}
       />
     </AdminLayout>
   );
