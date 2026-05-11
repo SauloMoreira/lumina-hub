@@ -30,6 +30,7 @@ import {
   type CampaignSuggestion,
   type CampaignBrief,
 } from "@/server/marketingCopy.functions";
+import { CreativeStudio } from "@/components/admin/marketing/CreativeStudio";
 
 export type AiCampaignReference = {
   products: { id: string; name: string; price?: number | null; stock?: number | null; category?: string | null }[];
