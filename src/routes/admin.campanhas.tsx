@@ -312,7 +312,8 @@ function CampanhasPage() {
     [products, combos, categories, coupons],
   );
 
-  const openFromAi = (patch: AiApplyPatch) => {
+  const openFromAi = (patch: AiApplyPatch, generationId: string | null) => {
+    setAiGenerationId(generationId);
     setEditing(null);
     setMetrics(null);
     const next = { ...emptyForm };
