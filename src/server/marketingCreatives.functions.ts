@@ -164,7 +164,7 @@ export const generateCampaignCreatives = createServerFn({ method: "POST" })
     const adminUserId = (context as { adminUserId: string }).adminUserId;
 
     const variations = data.variations;
-    const created: unknown[] = [];
+    const created: Record<string, never>[] = [];
 
     for (let i = 1; i <= variations; i++) {
       const prompt = buildPrompt(data, i);
