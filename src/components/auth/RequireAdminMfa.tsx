@@ -4,6 +4,29 @@ import { ShieldAlert, Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 
+type UserMfaFactor = { status?: string; factor_type?: string };
+
+function hasVerifiedTotpOnUser(user: unknown) {
+  const factors = (user as { factors?: UserMfaFactor[] } | null)?.factors ?? [];
+  return factors.some((factor) => factor.factor_type === "totp" && factor.status === "verified");
+}
+
+function getAalFromJwt(accessToken?: string) {
+  try {
+    const payload = accessToken?.split(".")[1];
+    if (!payload) return null;
+    const normalized = payload.replace(/-/g, "+").replace(/_/g, "/");
+    const json = atob(normalized.padEnd(Math.ceil(normalized.length / 4) * 4, "="));
+    return (JSON.parse(json) as { aal?: string }).aal ?? null;
+  } catch {
+    return null;
+  }
+}
+
+function timeout<T>(ms = 2500) {
+  return new Promise<T | null>((resolve) => window.setTimeout(() => resolve(null), ms));
+}
+
 /**
  * Gate do painel admin.
  *
@@ -13,7 +36,7 @@ import { useAuth } from "@/hooks/useAuth";
  *  - Apenas sessão AAL2 libera children.
  */
 export function RequireAdminMfa({ children }: { children: React.ReactNode }) {
-  const { user, loading: authLoading } = useAuth();
+  const { session, user, loading: authLoading } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const [checking, setChecking] = useState(true);
@@ -28,10 +51,30 @@ export function RequireAdminMfa({ children }: { children: React.ReactNode }) {
         return;
       }
       try {
-        const { data: aalData } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
-        const isAal2 = aalData?.currentLevel === "aal2";
-        const { data: f } = await supabase.auth.mfa.listFactors();
-        const hasVerified = (f?.totp ?? []).some((x) => x.status === "verified");
+        const fallbackHasVerified = hasVerifiedTotpOnUser(user);
+        const tokenAal = getAalFromJwt(session?.access_token);
+        const currentUserRes = await Promise.race([
+          supabase.auth.getUser().catch(() => null),
+          timeout<Awaited<ReturnType<typeof supabase.auth.getUser>>>(),
+        ]);
+        const aalRes = await Promise.race([
+          supabase.auth.mfa.getAuthenticatorAssuranceLevel().catch(() => null),
+          timeout<Awaited<ReturnType<typeof supabase.auth.mfa.getAuthenticatorAssuranceLevel>>>(),
+        ]);
+        const factorsRes = await Promise.race([
+          supabase.auth.mfa.listFactors().catch(() => null),
+          timeout<Awaited<ReturnType<typeof supabase.auth.mfa.listFactors>>>(),
+        ]);
+        const currentUser = currentUserRes?.data;
+        const aalData = aalRes?.data;
+        const f = factorsRes?.data;
+        const isAal2 = aalData?.currentLevel === "aal2" || tokenAal === "aal2";
+        const listedFactors = [...(f?.totp ?? []), ...(f?.all ?? [])];
+        const hasVerified =
+          isAal2 ||
+          listedFactors.some((x) => x.factor_type === "totp" && x.status === "verified") ||
+          hasVerifiedTotpOnUser(currentUser?.user) ||
+          fallbackHasVerified;
         if (cancelled) return;
         setHasFactor(hasVerified);
         setAal2(isAal2);
@@ -44,8 +87,16 @@ export function RequireAdminMfa({ children }: { children: React.ReactNode }) {
         }
       } catch {
         if (!cancelled) {
-          setHasFactor(false);
-          setAal2(false);
+          const isAal2 = getAalFromJwt(session?.access_token) === "aal2";
+          const hasVerified = isAal2 || hasVerifiedTotpOnUser(user);
+          setHasFactor(hasVerified);
+          setAal2(isAal2);
+          if (hasVerified && !isAal2) {
+            navigate({
+              to: "/mfa-challenge",
+              search: { redirect: location.pathname + location.search },
+            });
+          }
         }
       } finally {
         if (!cancelled) setChecking(false);
@@ -55,7 +106,7 @@ export function RequireAdminMfa({ children }: { children: React.ReactNode }) {
     return () => {
       cancelled = true;
     };
-  }, [user, navigate, location.pathname, location.search]);
+  }, [session?.access_token, user, navigate, location.pathname, location.search]);
 
   if (authLoading || checking) {
     return (
