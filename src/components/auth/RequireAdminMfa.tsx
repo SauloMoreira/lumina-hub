@@ -4,6 +4,24 @@ import { ShieldAlert, Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 
+type UserMfaFactor = { status?: string; factor_type?: string };
+
+function hasVerifiedTotpOnUser(user: unknown) {
+  const factors = (user as { factors?: UserMfaFactor[] } | null)?.factors ?? [];
+  return factors.some((factor) => factor.factor_type === "totp" && factor.status === "verified");
+}
+
+function getAalFromJwt(accessToken?: string) {
+  try {
+    const payload = accessToken?.split(".")[1];
+    if (!payload) return null;
+    const json = atob(payload.replace(/-/g, "+").replace(/_/g, "/"));
+    return (JSON.parse(json) as { aal?: string }).aal ?? null;
+  } catch {
+    return null;
+  }
+}
+
 /**
  * Gate do painel admin.
  *
@@ -13,7 +31,7 @@ import { useAuth } from "@/hooks/useAuth";
  *  - Apenas sessão AAL2 libera children.
  */
 export function RequireAdminMfa({ children }: { children: React.ReactNode }) {
-  const { user, loading: authLoading } = useAuth();
+  const { session, user, loading: authLoading } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const [checking, setChecking] = useState(true);
@@ -28,10 +46,13 @@ export function RequireAdminMfa({ children }: { children: React.ReactNode }) {
         return;
       }
       try {
+        const fallbackHasVerified = hasVerifiedTotpOnUser(user);
+        const tokenAal = getAalFromJwt(session?.access_token);
         const { data: aalData } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
-        const isAal2 = aalData?.currentLevel === "aal2";
+        const isAal2 = aalData?.currentLevel === "aal2" || tokenAal === "aal2";
         const { data: f } = await supabase.auth.mfa.listFactors();
-        const hasVerified = (f?.totp ?? []).some((x) => x.status === "verified");
+        const hasVerified =
+          (f?.totp ?? []).some((x) => x.status === "verified") || fallbackHasVerified;
         if (cancelled) return;
         setHasFactor(hasVerified);
         setAal2(isAal2);
@@ -44,8 +65,16 @@ export function RequireAdminMfa({ children }: { children: React.ReactNode }) {
         }
       } catch {
         if (!cancelled) {
-          setHasFactor(false);
-          setAal2(false);
+          const hasVerified = hasVerifiedTotpOnUser(user);
+          const isAal2 = getAalFromJwt(session?.access_token) === "aal2";
+          setHasFactor(hasVerified);
+          setAal2(isAal2);
+          if (hasVerified && !isAal2) {
+            navigate({
+              to: "/mfa-challenge",
+              search: { redirect: location.pathname + location.search },
+            });
+          }
         }
       } finally {
         if (!cancelled) setChecking(false);
@@ -55,7 +84,7 @@ export function RequireAdminMfa({ children }: { children: React.ReactNode }) {
     return () => {
       cancelled = true;
     };
-  }, [user, navigate, location.pathname, location.search]);
+  }, [session?.access_token, user, navigate, location.pathname, location.search]);
 
   if (authLoading || checking) {
     return (
