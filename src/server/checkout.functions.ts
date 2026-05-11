@@ -717,7 +717,7 @@ export const listMyOrders = createServerFn({ method: "POST" })
       .limit(50);
     if (error) {
       console.error("[listMyOrders] error", error);
-      return { orders: [] as Array<Record<string, unknown>>, error: error.message };
+      return { orders: [], error: error.message };
     }
-    return { orders: data ?? [] };
+    return { orders: data ?? [], error: null };
   });
