@@ -9,6 +9,7 @@ export type RateLimitAction =
   | "password_reset"
   | "contact"
   | "chat"
+  | "chat_history"
   | "coupon"
   | "webhook_invalid"
   | "admin_action"
@@ -25,6 +26,7 @@ export const DEFAULT_LIMITS: Record<RateLimitAction, RateLimitConfig> = {
   password_reset: { maxAttempts: 5, windowSeconds: 60 * 60 },
   contact: { maxAttempts: 5, windowSeconds: 10 * 60 },
   chat: { maxAttempts: 30, windowSeconds: 5 * 60 },
+  chat_history: { maxAttempts: 30, windowSeconds: 5 * 60 },
   coupon: { maxAttempts: 20, windowSeconds: 10 * 60 },
   webhook_invalid: { maxAttempts: 50, windowSeconds: 60 * 60 },
   admin_action: { maxAttempts: 200, windowSeconds: 60 * 60 },
