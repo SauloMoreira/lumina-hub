@@ -76,9 +76,9 @@ export const generateProductImage = createServerFn({ method: "POST" })
 
     const json = await res.json();
     const url: string | undefined = json?.choices?.[0]?.message?.images?.[0]?.image_url?.url;
-    if (!url || !url.startsWith("data:image/")) {
-      console.error("[generateProductImage] resposta sem imagem");
-      throw new Error("IA não retornou imagem");
+    if (!url || !/^data:(image\/(jpeg|png|webp|gif));base64,/i.test(url)) {
+      console.error("[generateProductImage] resposta sem imagem válida");
+      throw new Error("IA não retornou imagem válida (formato não permitido)");
     }
     return { dataUrl: url };
   });

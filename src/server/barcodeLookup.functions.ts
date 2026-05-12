@@ -423,8 +423,10 @@ export const fetchExternalImage = createServerFn({ method: "POST" })
         signal: controller.signal,
       });
       if (!res.ok) throw new Error(`Falha ao baixar imagem (${res.status})`);
-      const contentType = res.headers.get("content-type") || "image/jpeg";
-      if (!contentType.startsWith("image/")) throw new Error("URL não é uma imagem");
+      const rawCT = (res.headers.get("content-type") || "image/jpeg").toLowerCase().split(";")[0].trim();
+      const ALLOWED = ["image/jpeg", "image/png", "image/webp", "image/gif"];
+      if (!ALLOWED.includes(rawCT)) throw new Error(`Formato remoto não permitido (${rawCT}).`);
+      const contentType = rawCT;
       const buf = await res.arrayBuffer();
       if (buf.byteLength > 10 * 1024 * 1024) throw new Error("Imagem maior que 10MB");
       const base64 = btoa(String.fromCharCode(...new Uint8Array(buf)));
@@ -491,12 +493,12 @@ export const generateProductImage = createServerFn({ method: "POST" })
 
     const json = await res.json();
     const url: string | undefined = json?.choices?.[0]?.message?.images?.[0]?.image_url?.url;
-    if (!url || !url.startsWith("data:image/")) {
+    if (!url || !/^data:(image\/(jpeg|png|webp|gif));base64,/i.test(url)) {
       console.error(
-        "[generateProductImage] resposta sem imagem:",
+        "[generateProductImage] resposta sem imagem válida:",
         JSON.stringify(json).slice(0, 500),
       );
-      throw new Error("IA não retornou imagem");
+      throw new Error("IA não retornou imagem válida (formato não permitido)");
     }
     return { dataUrl: url };
   });
