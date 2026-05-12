@@ -182,10 +182,23 @@ export const chatWithAI = createServerFn({ method: "POST" })
 
 export const loadChatHistory = createServerFn({ method: "POST" })
   .inputValidator((input: { sessionId: string }) => {
-    if (!input?.sessionId) throw new Error("sessionId obrigatório");
+    if (!input?.sessionId || typeof input.sessionId !== "string")
+      throw new Error("sessionId obrigatório");
+    // session_id é gerado como `s_${crypto.randomUUID()}` (~40 chars).
+    // Rejeita tamanhos absurdos para evitar abuso/enumeração.
+    if (input.sessionId.length < 8 || input.sessionId.length > 80)
+      throw new Error("sessionId inválido");
     return input;
   })
   .handler(async ({ data }) => {
+    // Defesa em profundidade contra enumeração de session_id.
+    // session_id é UUIDv4 (~122 bits) — força bruta é impraticável,
+    // mas o rate limit por IP elimina qualquer tentativa automatizada.
+    const ip = getClientIdentifier();
+    await enforceRateLimit(`ip:${ip}`, "chat_history", {
+      maxAttempts: 30,
+      windowSeconds: 5 * 60,
+    });
     const { data: msgs } = await supabaseAdmin
       .from("chat_messages")
       .select("role, content, created_at")
