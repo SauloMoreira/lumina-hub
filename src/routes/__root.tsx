@@ -128,13 +128,11 @@ export const Route = createRootRouteWithContext<MyRouterContext>()({
       { name: "twitter:description", content: SITE_DESCRIPTION },
       {
         property: "og:image",
-        content:
-          "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/67194be9-0eba-4ee8-a498-3845ba247db4/id-preview-ecc3ae96--3f0ae235-0d23-458c-97a5-352d790386aa.lovable.app-1777381033099.png",
+        content: `${SITE_URL}/og-default.png`,
       },
       {
         name: "twitter:image",
-        content:
-          "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/67194be9-0eba-4ee8-a498-3845ba247db4/id-preview-ecc3ae96--3f0ae235-0d23-458c-97a5-352d790386aa.lovable.app-1777381033099.png",
+        content: `${SITE_URL}/og-default.png`,
       },
       { name: "twitter:card", content: "summary_large_image" },
       { property: "og:type", content: "website" },
