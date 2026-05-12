@@ -166,7 +166,7 @@ export const ProductImageManager = forwardRef<ProductImageManagerHandle, Props>(
             const parsed = parseSafeImageDataUrl(url);
             if (!parsed.ok) throw new Error(parsed.reason);
             contentType = parsed.mime;
-            blob = new Blob([parsed.bytes], { type: contentType });
+            blob = new Blob([parsed.bytes.buffer.slice(parsed.bytes.byteOffset, parsed.bytes.byteOffset + parsed.bytes.byteLength) as ArrayBuffer], { type: contentType });
             baseName = `ia-gerada-${Date.now()}.${parsed.ext}`;
           } else {
             const res = await fetchExternalImage({ data: { url } });
