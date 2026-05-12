@@ -2,7 +2,7 @@
 // Sem react-helmet — usamos a API nativa do TanStack Router/Start, que é SSR-safe.
 
 export const SITE_NAME = "Led Maricá";
-export const SITE_URL = "https://ledmarica.com.br";
+export const SITE_URL = "https://www.ledmarica.com.br";
 export const SITE_DESCRIPTION =
   "Material elétrico e iluminação LED com qualidade e preço justo em Maricá/RJ. Lâmpadas, disjuntores, cabos, refletores e muito mais. Frete grátis acima de R$199.";
 
