@@ -419,6 +419,26 @@ export const resendOrderEmail = createServerFn({ method: "POST" })
       };
     }
 
+    // A-03 — Lock idempotente: bloqueia reenvio manual do mesmo (order_id, type)
+    // se houver evento muito recente (sent ou pending) nos últimos 2 minutos.
+    const TWO_MIN_AGO = new Date(Date.now() - 2 * 60 * 1000).toISOString();
+    const { data: recent } = await supabaseAdmin
+      .from("email_events")
+      .select("id, status, created_at")
+      .eq("order_id", data.orderId)
+      .eq("type", data.type)
+      .gte("created_at", TWO_MIN_AGO)
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    if (recent) {
+      return {
+        ok: false as const,
+        skipped: "rate_limited" as const,
+        error: "Já existe um reenvio recente deste e-mail. Aguarde alguns instantes.",
+      };
+    }
+
     const result = await sendOrderEmail({ orderId: data.orderId, type: data.type, force: true });
 
     await logOrderEvent({

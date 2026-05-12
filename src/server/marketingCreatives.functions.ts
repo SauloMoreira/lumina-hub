@@ -146,10 +146,12 @@ function buildPrompt(input: z.infer<typeof InputSchema>, variation: number): str
 }
 
 function dataUrlToBuffer(dataUrl: string): { buffer: Buffer; mime: string; ext: string } {
-  const m = dataUrl.match(/^data:(image\/[a-zA-Z+]+);base64,(.+)$/);
+  const ALLOWED = ["image/jpeg", "image/png", "image/webp", "image/gif"];
+  const m = dataUrl.match(/^data:([^;,]+);base64,(.+)$/);
   if (!m) throw new Error("data URL inválida");
-  const mime = m[1];
-  const ext = mime.split("/")[1].replace("jpeg", "jpg").replace("+xml", "");
+  const mime = m[1].toLowerCase().trim();
+  if (!ALLOWED.includes(mime)) throw new Error(`Formato de imagem não permitido (${mime}).`);
+  const ext = mime.split("/")[1].replace("jpeg", "jpg");
   return { buffer: Buffer.from(m[2], "base64"), mime, ext };
 }
 
@@ -188,8 +190,8 @@ export const generateCampaignCreatives = createServerFn({ method: "POST" })
       }
       const json = await res.json();
       const url: string | undefined = json?.choices?.[0]?.message?.images?.[0]?.image_url?.url;
-      if (!url || !url.startsWith("data:image/")) {
-        throw new Error("IA não retornou imagem");
+      if (!url || !/^data:(image\/(jpeg|png|webp|gif));base64,/i.test(url)) {
+        throw new Error("IA não retornou imagem válida (formato não permitido)");
       }
 
       const { buffer, mime, ext } = dataUrlToBuffer(url);

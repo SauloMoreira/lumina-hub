@@ -20,6 +20,7 @@ import { pickUrl, variantUrl, type ProductImageRow } from "@/lib/productImages";
 import { enhanceProductImage } from "@/lib/imageEnhance";
 import { fetchExternalImage } from "@/server/barcodeLookup.functions";
 import { AiImageGeneratorDialog } from "@/components/admin/AiImageGeneratorDialog";
+import { isAllowedImageMime, parseSafeImageDataUrl, validateImageFile } from "@/lib/uploadGuards";
 
 interface Props {
   productId: string;
@@ -144,7 +145,7 @@ export const ProductImageManager = forwardRef<ProductImageManagerHandle, Props>(
     async function addExternalImages(urls: string[]) {
       const valid = (urls ?? [])
         .map((u) => (u ?? "").trim())
-        .filter((u) => /^https?:\/\//i.test(u) || /^data:image\//i.test(u));
+        .filter((u) => /^https?:\/\//i.test(u) || /^data:/i.test(u));
       if (!valid.length) return { added: 0, failed: 0 };
       const remainingSlots = MAX_IMAGES - totalImages;
       if (remainingSlots <= 0) {
@@ -160,20 +161,19 @@ export const ProductImageManager = forwardRef<ProductImageManagerHandle, Props>(
           let contentType: string;
           let baseName: string;
 
-          if (/^data:image\//i.test(url)) {
-            // data URL gerada pela IA — converter direto, sem proxy
-            const match = url.match(/^data:([^;]+);base64,(.+)$/);
-            if (!match) throw new Error("data URL inválida");
-            contentType = match[1];
-            const bin = atob(match[2]);
-            const bytes = new Uint8Array(bin.length);
-            for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
-            blob = new Blob([bytes], { type: contentType });
-            const ext = (contentType.split("/")[1] || "png").replace(/[^a-z0-9]/g, "") || "png";
-            baseName = `ia-gerada-${Date.now()}.${ext}`;
+          if (/^data:/i.test(url)) {
+            // data URL — valida com allowlist segura (bloqueia svg, html, etc.)
+            const parsed = parseSafeImageDataUrl(url);
+            if (!parsed.ok) throw new Error(parsed.reason);
+            contentType = parsed.mime;
+            blob = new Blob([parsed.bytes.buffer.slice(parsed.bytes.byteOffset, parsed.bytes.byteOffset + parsed.bytes.byteLength) as ArrayBuffer], { type: contentType });
+            baseName = `ia-gerada-${Date.now()}.${parsed.ext}`;
           } else {
             const res = await fetchExternalImage({ data: { url } });
             contentType = res.contentType;
+            if (!isAllowedImageMime(contentType)) {
+              throw new Error(`Formato remoto não permitido (${contentType}).`);
+            }
             const bin = atob(res.base64);
             const bytes = new Uint8Array(bin.length);
             for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
@@ -219,8 +219,8 @@ export const ProductImageManager = forwardRef<ProductImageManagerHandle, Props>(
         return;
       }
       for (const f of files) {
-        if (!f.type.startsWith("image/")) return toast.error(`"${f.name}" não é uma imagem`);
-        if (f.size > MAX_FILE_BYTES) return toast.error(`"${f.name}" excede 10MB`);
+        const v = validateImageFile(f);
+        if (!v.ok) return toast.error(`"${f.name}": ${v.reason}`);
       }
 
       const next = files.map((file, i) => ({

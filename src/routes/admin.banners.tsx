@@ -28,6 +28,7 @@ import {
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { generateBannerImage } from "@/server/banner.functions";
+import { parseSafeImageDataUrl, validateImageFile } from "@/lib/uploadGuards";
 
 export const Route = createFileRoute("/admin/banners")({ component: BannersPage });
 
@@ -95,15 +96,14 @@ async function uploadToBucket(file: File): Promise<string> {
 }
 
 function dataUrlToFile(dataUrl: string, baseName: string): File {
-  const match = dataUrl.match(/^data:([^;]+);base64,(.+)$/);
-  if (!match) throw new Error("data URL inválida");
-  const contentType = match[1];
-  const bin = atob(match[2]);
-  const bytes = new Uint8Array(bin.length);
-  for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
-  const ext = (contentType.split("/")[1] || "png").replace(/[^a-z0-9]/g, "") || "png";
-  return new File([new Blob([bytes], { type: contentType })], `${baseName}.${ext}`, {
-    type: contentType,
+  const parsed = parseSafeImageDataUrl(dataUrl);
+  if (!parsed.ok) throw new Error(parsed.reason);
+  const ab = parsed.bytes.buffer.slice(
+    parsed.bytes.byteOffset,
+    parsed.bytes.byteOffset + parsed.bytes.byteLength,
+  ) as ArrayBuffer;
+  return new File([new Blob([ab], { type: parsed.mime })], `${baseName}.${parsed.ext}`, {
+    type: parsed.mime,
   });
 }
 
@@ -245,10 +245,8 @@ function BannersPage() {
     const file = e.target.files?.[0];
     e.target.value = "";
     if (!file) return;
-    const ALLOWED = ["image/jpeg", "image/png", "image/webp", "image/gif"];
-    if (!ALLOWED.includes(file.type))
-      return toast.error("Formato inválido. Use JPG, PNG, WebP ou GIF.");
-    if (file.size > 10 * 1024 * 1024) return toast.error("Imagem maior que 10MB");
+    const v = validateImageFile(file);
+    if (!v.ok) return toast.error(v.reason);
     const setter = target === "desktop" ? setUploadingDesktop : setUploadingMobile;
     setter(true);
     try {
