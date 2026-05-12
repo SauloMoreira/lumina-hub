@@ -1,4 +1,4 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, Outlet, useLocation } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import { toast } from "sonner";
@@ -32,6 +32,7 @@ export const Route = createFileRoute("/admin/seguranca")({
 });
 
 function AdminSecurityPage() {
+  const location = useLocation();
   const [exporting, setExporting] = useState(false);
   const { data, isLoading, refetch, isFetching } = useQuery({
     queryKey: ["security-overview"],
@@ -44,6 +45,10 @@ function AdminSecurityPage() {
     queryFn: () => listAdminAuditLog({ data: { limit: 50 } }),
     refetchInterval: 60_000,
   });
+
+  if (location.pathname !== "/admin/seguranca") {
+    return <Outlet />;
+  }
 
   const handleExport = async () => {
     setExporting(true);
