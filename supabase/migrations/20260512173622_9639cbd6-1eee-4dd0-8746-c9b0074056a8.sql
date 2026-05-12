@@ -1,0 +1,1 @@
+UPDATE public.orders SET mp_preference_id = NULL, checkout_url = NULL, payment_status = 'pending', payment_error = NULL WHERE id = 'b25d4748-8b22-4ffa-8775-f25628a843c4';
