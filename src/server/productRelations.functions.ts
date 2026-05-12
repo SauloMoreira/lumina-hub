@@ -75,7 +75,7 @@ async function getOptionalUserId(): Promise<string | null> {
 }
 
 async function requireAdmin(): Promise<string> {
-  const { assertAdminAal2FromBearer } = await import("@/integrations/supabase/admin-middleware");
+  const { assertAdminAal2FromBearer } = await import("@/integrations/supabase/admin-assertions.server");
   return assertAdminAal2FromBearer();
 }
 
