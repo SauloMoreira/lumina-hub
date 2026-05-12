@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import { toast } from "sonner";
@@ -317,10 +317,17 @@ function AdminSecurityPage() {
                   icon={<ScrollText className="w-4 h-4" />}
                   title="Auditoria de ações admin"
                 />
-                <Button variant="outline" size="sm" onClick={handleExport} disabled={exporting}>
-                  <Download className="w-4 h-4" />
-                  {exporting ? "Exportando..." : "Exportar CSV (90d)"}
-                </Button>
+                <div className="flex gap-2">
+                  <Button asChild variant="default" size="sm">
+                    <Link to="/admin/seguranca/auditoria">
+                      Abrir auditoria com filtros
+                    </Link>
+                  </Button>
+                  <Button variant="outline" size="sm" onClick={handleExport} disabled={exporting}>
+                    <Download className="w-4 h-4" />
+                    {exporting ? "Exportando..." : "Exportar CSV (90d)"}
+                  </Button>
+                </div>
               </div>
               {!audit || audit.events.length === 0 ? (
                 <div className="text-sm text-muted-foreground py-6 text-center">
