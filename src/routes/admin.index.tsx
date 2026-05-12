@@ -34,6 +34,14 @@ import { fmtBRL, fmtInt, fmtPct } from "@/components/admin/dashboard/format";
 export const Route = createFileRoute("/admin/")({ component: AdminDashboard });
 
 function AdminDashboard() {
+  return (
+    <AdminLayout title="Dashboard">
+      <AdminDashboardContent />
+    </AdminLayout>
+  );
+}
+
+function AdminDashboardContent() {
   const [range, setRange] = useState<DashboardRange>(() => computeRange("last7"));
 
   const { data, isLoading, isFetching, error, refetch } = useQuery({
@@ -45,9 +53,8 @@ function AdminDashboard() {
   const cards = data?.cards;
 
   return (
-    <AdminLayout
-      title="Dashboard"
-      action={
+    <>
+      <div className="mb-4 flex justify-end">
         <button
           type="button"
           onClick={() => refetch()}
@@ -57,8 +64,7 @@ function AdminDashboard() {
           <RotateCcw className={`w-3.5 h-3.5 ${isFetching ? "animate-spin" : ""}`} />
           Atualizar
         </button>
-      }
-    >
+      </div>
       <div className="mb-6">
         <DateRangeFilter value={range} onChange={setRange} />
       </div>
@@ -192,7 +198,7 @@ function AdminDashboard() {
           {data && <WebhookHealthCard stats={data.webhookStats} />}
         </ChartCard>
       </div>
-    </AdminLayout>
+    </>
   );
 }
 

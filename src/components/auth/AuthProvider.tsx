@@ -26,18 +26,26 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     let mounted = true;
+    const withTimeout = <T,>(promise: PromiseLike<T>, ms = 3500): Promise<T | null> =>
+      Promise.race([
+        Promise.resolve(promise),
+        new Promise<null>((resolve) => window.setTimeout(() => resolve(null), ms)),
+      ]);
 
     const checkAdmin = async (uid: string | null | undefined) => {
       if (!uid) {
         if (mounted) setIsAdmin(false);
         return;
       }
-      const { data, error } = await supabase
-        .from("profiles")
-        .select("role")
-        .eq("id", uid)
-        .maybeSingle();
-      if (mounted) setIsAdmin(!error && data?.role === "admin");
+      try {
+        const result = await withTimeout(
+          supabase.from("profiles").select("role").eq("id", uid).maybeSingle(),
+        );
+        if (!mounted) return;
+        setIsAdmin(Boolean(result && !result.error && result.data?.role === "admin"));
+      } catch {
+        if (mounted) setIsAdmin(false);
+      }
     };
 
     let lastUid: string | null | undefined = undefined;
@@ -56,14 +64,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
     });
 
-    supabase.auth.getSession().then(({ data }) => {
-      if (!mounted) return;
-      setSession(data.session);
-      setUser(data.session?.user ?? null);
-      setLoading(false);
-      lastUid = data.session?.user?.id ?? null;
-      checkAdmin(lastUid);
-    });
+    withTimeout(supabase.auth.getSession())
+      .then((res) => {
+        if (!mounted) return;
+        const nextSession = res?.data.session ?? null;
+        setSession(nextSession);
+        setUser(nextSession?.user ?? null);
+        setLoading(false);
+        lastUid = nextSession?.user?.id ?? null;
+        void checkAdmin(lastUid);
+      })
+      .catch(() => {
+        if (!mounted) return;
+        setSession(null);
+        setUser(null);
+        setIsAdmin(false);
+        setLoading(false);
+      });
 
     return () => {
       mounted = false;
