@@ -190,8 +190,8 @@ export const generateCampaignCreatives = createServerFn({ method: "POST" })
       }
       const json = await res.json();
       const url: string | undefined = json?.choices?.[0]?.message?.images?.[0]?.image_url?.url;
-      if (!url || !url.startsWith("data:image/")) {
-        throw new Error("IA não retornou imagem");
+      if (!url || !/^data:(image\/(jpeg|png|webp|gif));base64,/i.test(url)) {
+        throw new Error("IA não retornou imagem válida (formato não permitido)");
       }
 
       const { buffer, mime, ext } = dataUrlToBuffer(url);
