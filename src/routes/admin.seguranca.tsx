@@ -20,7 +20,7 @@ import {
 import { AdminLayout } from "@/components/admin/AdminLayout";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
 import {
   getSecurityOverview,
   listAdminAuditLog,
@@ -318,11 +318,12 @@ function AdminSecurityPage() {
                   title="Auditoria de ações admin"
                 />
                 <div className="flex gap-2">
-                  <Button asChild variant="default" size="sm">
-                    <Link to="/admin/seguranca/auditoria">
-                      Abrir auditoria com filtros
-                    </Link>
-                  </Button>
+                  <Link
+                    to="/admin/seguranca/auditoria"
+                    className={buttonVariants({ variant: "default", size: "sm" })}
+                  >
+                    Abrir auditoria com filtros
+                  </Link>
                   <Button variant="outline" size="sm" onClick={handleExport} disabled={exporting}>
                     <Download className="w-4 h-4" />
                     {exporting ? "Exportando..." : "Exportar CSV (90d)"}
