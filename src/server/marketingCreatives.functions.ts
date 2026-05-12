@@ -146,10 +146,12 @@ function buildPrompt(input: z.infer<typeof InputSchema>, variation: number): str
 }
 
 function dataUrlToBuffer(dataUrl: string): { buffer: Buffer; mime: string; ext: string } {
-  const m = dataUrl.match(/^data:(image\/[a-zA-Z+]+);base64,(.+)$/);
+  const ALLOWED = ["image/jpeg", "image/png", "image/webp", "image/gif"];
+  const m = dataUrl.match(/^data:([^;,]+);base64,(.+)$/);
   if (!m) throw new Error("data URL inválida");
-  const mime = m[1];
-  const ext = mime.split("/")[1].replace("jpeg", "jpg").replace("+xml", "");
+  const mime = m[1].toLowerCase().trim();
+  if (!ALLOWED.includes(mime)) throw new Error(`Formato de imagem não permitido (${mime}).`);
+  const ext = mime.split("/")[1].replace("jpeg", "jpg");
   return { buffer: Buffer.from(m[2], "base64"), mime, ext };
 }
 
