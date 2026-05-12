@@ -1,0 +1,1 @@
+UPDATE public.products SET active = true, updated_at = now() WHERE id = 'c0ffee00-1111-4222-8333-000000000c02';
