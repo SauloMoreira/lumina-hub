@@ -195,7 +195,7 @@ export function ProductSEOSection({
             {seoTitle || `${productCtx.name} | Led Maricá`}
           </div>
           <div className="text-[12px] text-[#006621] mt-0.5">
-            ledmarica.com.br/produto/{slug || "produto"}
+            www.ledmarica.com.br/produto/{slug || "produto"}
           </div>
           <div className="text-[12.5px] text-[#545454] leading-snug mt-1">
             {seoDescription || productCtx.description?.slice(0, 160) || "Sem descrição"}
