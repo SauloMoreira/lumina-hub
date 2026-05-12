@@ -26,9 +26,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     let mounted = true;
-    const withTimeout = <T,>(promise: Promise<T>, ms = 3500) =>
+    const withTimeout = <T,>(promise: PromiseLike<T>, ms = 3500): Promise<T | null> =>
       Promise.race([
-        promise,
+        Promise.resolve(promise),
         new Promise<null>((resolve) => window.setTimeout(() => resolve(null), ms)),
       ]);
 
