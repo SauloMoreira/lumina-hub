@@ -367,17 +367,20 @@ export const Route = createFileRoute("/api/public/mercadopago/webhook")({
           }
         }
 
-        // Sincronizar lead/CRM — idempotente, não bloqueia resposta ao MP
+        // Sincronizar lead/CRM — idempotente. AWAIT obrigatório:
+        // no runtime Worker (Cloudflare), Promises não-aguardadas são abortadas
+        // assim que a Response é devolvida — sem await, o lead nunca é criado.
         if (willBePaid) {
           try {
             const { syncApprovedOrderToLead } = await import("@/server/leadSync.server");
-            void syncApprovedOrderToLead(order.id);
+            await syncApprovedOrderToLead(order.id);
           } catch (e) {
             console.error("[MP webhook] falha ao sincronizar lead", e);
           }
         }
 
-        // E-mail transacional ao cliente — idempotente, não bloqueia resposta ao MP
+        // E-mail transacional ao cliente — idempotente. AWAIT obrigatório
+        // (mesma razão acima: void Promise é cancelada antes do envio em Worker).
         try {
           const { sendOrderEmail } = await import("@/server/email/orderEmails");
           let emailType: "payment_approved" | "payment_pending" | "payment_failed" | null = null;
@@ -387,7 +390,7 @@ export const Route = createFileRoute("/api/public/mercadopago/webhook")({
           else if (mappedStatus === "rejected" || mappedStatus === "cancelled")
             emailType = "payment_failed";
           if (emailType) {
-            void sendOrderEmail({ orderId: order.id, type: emailType });
+            await sendOrderEmail({ orderId: order.id, type: emailType });
           }
         } catch (e) {
           console.error("[MP webhook] falha ao agendar e-mail", e);
