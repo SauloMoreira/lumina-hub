@@ -113,6 +113,11 @@ export const Route = createRootRouteWithContext<MyRouterContext>()({
       },
       { name: "google", content: "notranslate" },
       { name: "language", content: "Portuguese" },
+      { name: "mobile-web-app-capable", content: "yes" },
+      { name: "apple-mobile-web-app-capable", content: "yes" },
+      { name: "apple-mobile-web-app-status-bar-style", content: "default" },
+      { name: "apple-mobile-web-app-title", content: "Led Maricá" },
+      { name: "application-name", content: "Led Maricá" },
       { title: "Led Maricá — Material Elétrico & Iluminação LED em Maricá/RJ" },
       {
         property: "og:title",
