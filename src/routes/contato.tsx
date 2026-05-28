@@ -101,18 +101,8 @@ function ContatoPage() {
         .join(" — ")
     : "";
 
-  // Query limpa para o Google Maps: sem o complemento técnico (LOJA/QUADRA/LOTE),
-  // que confunde o geocoder e leva ao destino errado.
-  const mapsQuery = company
-    ? [
-        [company.address_street, company.address_number].filter(Boolean).join(", "),
-        company.address_neighborhood,
-        [company.address_city, company.address_state].filter(Boolean).join(", "),
-        company.address_zipcode || null,
-      ]
-        .filter(Boolean)
-        .join(", ")
-    : "";
+
+
 
   return (
     <StoreLayout>
