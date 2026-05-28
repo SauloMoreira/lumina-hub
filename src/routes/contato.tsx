@@ -170,9 +170,9 @@ function ContatoPage() {
             {fullAddress && (
               <InfoCard icon={<MapPin className="w-5 h-5" />} label="Endereço">
                 <span className="text-foreground">{fullAddress}</span>
-                {fullAddress && (
+                {mapsQuery && (
                   <a
-                    href={`https://www.google.com/maps?q=${encodeURIComponent(fullAddress)}`}
+                    href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(mapsQuery)}`}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="block mt-1 text-xs text-primary hover:underline"
