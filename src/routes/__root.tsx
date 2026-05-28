@@ -141,6 +141,12 @@ export const Route = createRootRouteWithContext<MyRouterContext>()({
       { rel: "stylesheet", href: appCss },
       { rel: "preconnect", href: "https://fonts.googleapis.com" },
       { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "anonymous" },
+      // Identidade de marca — favicon, atalhos e PWA (v2 para evitar cache antigo)
+      { rel: "icon", href: "/favicon.ico?v=2", sizes: "any" },
+      { rel: "icon", type: "image/png", sizes: "32x32", href: "/favicon-32x32.png?v=2" },
+      { rel: "icon", type: "image/png", sizes: "16x16", href: "/favicon-16x16.png?v=2" },
+      { rel: "apple-touch-icon", sizes: "180x180", href: "/apple-touch-icon.png?v=2" },
+      { rel: "manifest", href: "/site.webmanifest?v=2" },
     ],
     scripts: [
       { type: "application/ld+json", children: ORG_JSONLD },
