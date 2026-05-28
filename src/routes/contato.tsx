@@ -101,6 +101,19 @@ function ContatoPage() {
         .join(" — ")
     : "";
 
+  // Query limpa para o Google Maps: sem o complemento técnico (LOJA/QUADRA/LOTE),
+  // que confunde o geocoder e leva ao destino errado.
+  const mapsQuery = company
+    ? [
+        [company.address_street, company.address_number].filter(Boolean).join(", "),
+        company.address_neighborhood,
+        [company.address_city, company.address_state].filter(Boolean).join(", "),
+        company.address_zipcode || null,
+      ]
+        .filter(Boolean)
+        .join(", ")
+    : "";
+
   return (
     <StoreLayout>
       <div className="container mx-auto px-4 py-12 lg:py-16">
@@ -157,9 +170,9 @@ function ContatoPage() {
             {fullAddress && (
               <InfoCard icon={<MapPin className="w-5 h-5" />} label="Endereço">
                 <span className="text-foreground">{fullAddress}</span>
-                {fullAddress && (
+                {mapsQuery && (
                   <a
-                    href={`https://www.google.com/maps?q=${encodeURIComponent(fullAddress)}`}
+                    href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(mapsQuery)}`}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="block mt-1 text-xs text-primary hover:underline"
