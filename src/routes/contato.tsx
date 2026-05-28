@@ -101,18 +101,8 @@ function ContatoPage() {
         .join(" — ")
     : "";
 
-  // Query limpa para o Google Maps: sem o complemento técnico (LOJA/QUADRA/LOTE),
-  // que confunde o geocoder e leva ao destino errado.
-  const mapsQuery = company
-    ? [
-        [company.address_street, company.address_number].filter(Boolean).join(", "),
-        company.address_neighborhood,
-        [company.address_city, company.address_state].filter(Boolean).join(", "),
-        company.address_zipcode || null,
-      ]
-        .filter(Boolean)
-        .join(", ")
-    : "";
+
+
 
   return (
     <StoreLayout>
@@ -170,16 +160,14 @@ function ContatoPage() {
             {fullAddress && (
               <InfoCard icon={<MapPin className="w-5 h-5" />} label="Endereço">
                 <span className="text-foreground">{fullAddress}</span>
-                {mapsQuery && (
-                  <a
-                    href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(mapsQuery)}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="block mt-1 text-xs text-primary hover:underline"
-                  >
-                    Abrir no Google Maps
-                  </a>
-                )}
+                <a
+                  href="https://maps.app.goo.gl/hMuYV3QsZf5nL1Fk6"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="block mt-1 text-xs text-primary hover:underline"
+                >
+                  Abrir no Google Maps
+                </a>
               </InfoCard>
             )}
           </div>
