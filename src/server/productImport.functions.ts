@@ -1,0 +1,931 @@
+import { createServerFn } from "@tanstack/react-start";
+import { z } from "zod";
+import * as XLSX from "xlsx";
+import { requireAdmin } from "@/integrations/supabase/admin-middleware";
+import { logAdminAction } from "@/server/security/auditLog";
+import {
+  countRows,
+  parseAction,
+  parseBoolPtBr,
+  parseInteger,
+  parsePrice,
+  parseTags,
+  slugify,
+  type ImportConfidence,
+  type ImportRow,
+  type ImportStatus,
+} from "@/lib/productImport";
+
+// ===================== Constantes =====================
+
+const MAX_FILE_BYTES = 5 * 1024 * 1024; // 5 MB
+const MAX_ROWS = 500; // limite por importação
+const SHEET_NAME_CANDIDATES = [
+  "PRODUTOS_MÍNIMO",
+  "PRODUTOS_MINIMO",
+  "PRODUTOS",
+  "Produtos",
+];
+
+// Mapeamento tolerante de cabeçalhos da planilha
+const HEADER_MAP: Record<string, keyof RawRow> = {
+  acao: "action",
+  ação: "action",
+  action: "action",
+  sku: "sku",
+  nome_produto: "nome",
+  nome: "nome",
+  produto: "nome",
+  categoria: "categoria",
+  preco_venda: "preco",
+  preço_venda: "preco",
+  preco: "preco",
+  preço: "preco",
+  estoque_inicial: "estoque",
+  estoque: "estoque",
+  ativo: "ativo",
+  revisado_humano: "revisado",
+  revisado: "revisado",
+  aprovado_importar: "aprovado",
+  aprovado: "aprovado",
+  observacoes_usuario: "obs_user",
+  observações_usuario: "obs_user",
+  observacoes: "obs_user",
+  observações: "obs_user",
+};
+
+type RawRow = {
+  rowIndex: number;
+  action: unknown;
+  sku: unknown;
+  nome: unknown;
+  categoria: unknown;
+  preco: unknown;
+  estoque: unknown;
+  ativo: unknown;
+  revisado: unknown;
+  aprovado: unknown;
+  obs_user: unknown;
+};
+
+// ===================== Schemas =====================
+
+const ImportRowSchema = z.object({
+  rowIndex: z.number(),
+  action: z.enum(["criar", "atualizar", "ignorar", ""]),
+  sku: z.string(),
+  nome_produto: z.string(),
+  categoria: z.string(),
+  preco_venda: z.number().nullable(),
+  estoque_inicial: z.number().nullable(),
+  ativo: z.boolean(),
+  revisado_humano: z.boolean(),
+  aprovado_importar: z.boolean(),
+  observacoes_usuario: z.string(),
+  slug_sugerido: z.string().nullable(),
+  descricao_curta: z.string().nullable(),
+  descricao_longa: z.string().nullable(),
+  tags: z.array(z.string()),
+  titulo_seo: z.string().nullable(),
+  meta_description: z.string().nullable(),
+  observacoes_ia: z.string().nullable(),
+  nivel_confianca_ia: z.enum(["alta", "media", "baixa"]).nullable(),
+  status: z.enum(["invalid", "needs_review", "ready", "ignored"]),
+  errors: z.array(z.string()),
+  warnings: z.array(z.string()),
+  matched_product_id: z.string().nullable(),
+  matched_category_id: z.string().nullable(),
+}) satisfies z.ZodType<ImportRow>;
+
+const RowsInput = z.object({
+  rows: z.array(ImportRowSchema).max(MAX_ROWS),
+});
+
+// ===================== Util =====================
+
+function emptyRow(rowIndex: number): ImportRow {
+  return {
+    rowIndex,
+    action: "",
+    sku: "",
+    nome_produto: "",
+    categoria: "",
+    preco_venda: null,
+    estoque_inicial: null,
+    ativo: false,
+    revisado_humano: false,
+    aprovado_importar: false,
+    observacoes_usuario: "",
+    slug_sugerido: null,
+    descricao_curta: null,
+    descricao_longa: null,
+    tags: [],
+    titulo_seo: null,
+    meta_description: null,
+    observacoes_ia: null,
+    nivel_confianca_ia: null,
+    status: "needs_review",
+    errors: [],
+    warnings: [],
+    matched_product_id: null,
+    matched_category_id: null,
+  };
+}
+
+function normalizeHeader(h: string): string {
+  return h
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .trim()
+    .replace(/\s+/g, "_");
+}
+
+// ===================== 1. parseImportSheet =====================
+
+export const parseImportSheet = createServerFn({ method: "POST" })
+  .middleware([requireAdmin])
+  .inputValidator((raw: unknown) =>
+    z
+      .object({
+        fileBase64: z.string().min(1).max(Math.ceil((MAX_FILE_BYTES * 4) / 3) + 100),
+        fileName: z.string().max(255),
+      })
+      .parse(raw),
+  )
+  .handler(async ({ data }) => {
+    // Decodifica base64
+    const cleaned = data.fileBase64.replace(/^data:[^;]+;base64,/, "");
+    let bytes: Uint8Array;
+    try {
+      const bin = Buffer.from(cleaned, "base64");
+      if (bin.byteLength > MAX_FILE_BYTES) {
+        return { ok: false as const, error: "Arquivo muito grande (máx. 5 MB)." };
+      }
+      bytes = new Uint8Array(bin);
+    } catch {
+      return { ok: false as const, error: "Não foi possível decodificar o arquivo." };
+    }
+
+    // Magic bytes ZIP (xlsx é zip): 50 4B 03 04
+    if (bytes[0] !== 0x50 || bytes[1] !== 0x4b) {
+      return {
+        ok: false as const,
+        error: "Formato inválido. Envie um arquivo .xlsx válido.",
+      };
+    }
+
+    let workbook: XLSX.WorkBook;
+    try {
+      workbook = XLSX.read(bytes, { type: "array" });
+    } catch (e) {
+      console.error("xlsx parse error", e);
+      return { ok: false as const, error: "Não foi possível ler a planilha." };
+    }
+
+    // Localiza a aba
+    const sheetName =
+      SHEET_NAME_CANDIDATES.find((n) => workbook.SheetNames.includes(n)) ||
+      workbook.SheetNames[0];
+    if (!sheetName) {
+      return { ok: false as const, error: "A planilha não contém abas." };
+    }
+    const sheet = workbook.Sheets[sheetName];
+    const json = XLSX.utils.sheet_to_json<Record<string, unknown>>(sheet, {
+      defval: "",
+      raw: false,
+    });
+
+    if (json.length > MAX_ROWS) {
+      return {
+        ok: false as const,
+        error: `Planilha com ${json.length} linhas excede o limite de ${MAX_ROWS}.`,
+      };
+    }
+
+    // Verifica cabeçalhos essenciais
+    const firstRow = json[0] ?? {};
+    const normHeaders = Object.keys(firstRow).map(normalizeHeader);
+    const hasSku = normHeaders.some((h) => HEADER_MAP[h] === "sku");
+    const hasNome = normHeaders.some((h) => HEADER_MAP[h] === "nome");
+    if (!hasSku || !hasNome) {
+      return {
+        ok: false as const,
+        error:
+          "Planilha sem colunas mínimas. Cabeçalho deve conter pelo menos 'sku' e 'nome_produto'.",
+      };
+    }
+
+    const rows: ImportRow[] = [];
+    json.forEach((rawObj, idx) => {
+      const row = emptyRow(idx + 2); // +2 = 1 do cabeçalho + 1 base
+      for (const [k, v] of Object.entries(rawObj)) {
+        const key = HEADER_MAP[normalizeHeader(k)];
+        if (!key) continue;
+        switch (key) {
+          case "action":
+            row.action = parseAction(v);
+            break;
+          case "sku":
+            row.sku = String(v ?? "").trim();
+            break;
+          case "nome":
+            row.nome_produto = String(v ?? "").trim();
+            break;
+          case "categoria":
+            row.categoria = String(v ?? "").trim();
+            break;
+          case "preco":
+            row.preco_venda = parsePrice(v);
+            break;
+          case "estoque":
+            row.estoque_inicial = parseInteger(v);
+            break;
+          case "ativo":
+            row.ativo = parseBoolPtBr(v, false);
+            break;
+          case "revisado":
+            row.revisado_humano = parseBoolPtBr(v, false);
+            break;
+          case "aprovado":
+            row.aprovado_importar = parseBoolPtBr(v, false);
+            break;
+          case "obs_user":
+            row.observacoes_usuario = String(v ?? "").trim();
+            break;
+        }
+      }
+      // ignora linhas totalmente vazias
+      if (!row.sku && !row.nome_produto && !row.categoria && row.preco_venda === null) {
+        return;
+      }
+      rows.push(row);
+    });
+
+    return { ok: true as const, rows, sheetName };
+  });
+
+// ===================== 2. validateImportRows =====================
+
+export const validateImportRows = createServerFn({ method: "POST" })
+  .middleware([requireAdmin])
+  .inputValidator((raw: unknown) => RowsInput.parse(raw))
+  .handler(async ({ data }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
+    // Carrega SKUs existentes e categorias
+    const skus = data.rows.map((r) => r.sku.trim()).filter(Boolean);
+    const slugsBuscar = new Set<string>();
+    const nomesCategoriaBuscar = new Set<string>();
+    for (const r of data.rows) {
+      const c = r.categoria.trim();
+      if (c) {
+        slugsBuscar.add(slugify(c));
+        nomesCategoriaBuscar.add(c.toLowerCase());
+      }
+    }
+
+    const [{ data: existingProducts }, { data: existingCategories }] = await Promise.all([
+      skus.length > 0
+        ? supabaseAdmin.from("products").select("id, sku, slug").in("sku", skus)
+        : Promise.resolve({ data: [] as { id: string; sku: string | null; slug: string }[] }),
+      supabaseAdmin.from("categories").select("id, name, slug"),
+    ]);
+
+    const productBySku = new Map<string, { id: string; slug: string }>();
+    for (const p of existingProducts ?? []) {
+      if (p.sku) productBySku.set(p.sku, { id: p.id, slug: p.slug });
+    }
+
+    const categoryByKey = new Map<string, { id: string; name: string; slug: string }>();
+    for (const c of existingCategories ?? []) {
+      categoryByKey.set(c.slug.toLowerCase(), c);
+      categoryByKey.set(c.name.toLowerCase(), c);
+    }
+
+    // Dedup SKU na planilha
+    const skuCount = new Map<string, number>();
+    for (const r of data.rows) {
+      const k = r.sku.trim();
+      if (k) skuCount.set(k, (skuCount.get(k) ?? 0) + 1);
+    }
+
+    const validated: ImportRow[] = data.rows.map((r) => {
+      const errors: string[] = [];
+      const warnings: string[] = [];
+      const sku = r.sku.trim();
+      const nome = r.nome_produto.trim();
+      const categoriaRaw = r.categoria.trim();
+
+      let action = r.action;
+      if (!action) action = "criar";
+
+      if (action === "ignorar") {
+        return {
+          ...r,
+          action,
+          status: "ignored" as ImportStatus,
+          errors: [],
+          warnings: ["Linha marcada como ignorar."],
+          matched_product_id: null,
+          matched_category_id: null,
+        };
+      }
+
+      // SKU
+      if (!sku) errors.push("SKU obrigatório.");
+      else if ((skuCount.get(sku) ?? 0) > 1)
+        errors.push("SKU duplicado dentro da planilha.");
+
+      // Nome
+      if (!nome) errors.push("Nome do produto obrigatório.");
+      else if (nome.length < 3) errors.push("Nome do produto muito curto (mínimo 3).");
+
+      // Categoria
+      let matchedCategoryId: string | null = null;
+      if (!categoriaRaw) {
+        errors.push("Categoria obrigatória.");
+      } else {
+        const cat =
+          categoryByKey.get(categoriaRaw.toLowerCase()) ||
+          categoryByKey.get(slugify(categoriaRaw));
+        if (cat) {
+          matchedCategoryId = cat.id;
+        } else {
+          errors.push(
+            `Categoria "${categoriaRaw}" não encontrada. Crie a categoria antes de importar.`,
+          );
+        }
+      }
+
+      // Preço
+      if (r.preco_venda === null || r.preco_venda === undefined) {
+        errors.push("Preço de venda obrigatório.");
+      } else if (r.preco_venda <= 0) {
+        errors.push("Preço deve ser maior que zero.");
+      }
+
+      // Estoque
+      if (r.estoque_inicial === null || r.estoque_inicial === undefined) {
+        errors.push("Estoque inicial obrigatório.");
+      } else if (r.estoque_inicial < 0) {
+        errors.push("Estoque não pode ser negativo.");
+      }
+
+      // SKU existente
+      const existing = sku ? productBySku.get(sku) : undefined;
+      let matchedProductId: string | null = null;
+      if (existing) {
+        matchedProductId = existing.id;
+        if (action === "criar") {
+          errors.push("SKU já existe. Use ação 'atualizar' para editar o produto.");
+        }
+      } else if (action === "atualizar") {
+        errors.push("SKU não encontrado. Use ação 'criar' para cadastrar.");
+      }
+
+      // Avisos para campos sensíveis
+      if (action === "atualizar" && r.estoque_inicial !== null) {
+        warnings.push(
+          "Atualização: estoque NÃO será sobrescrito automaticamente (regra de segurança).",
+        );
+      }
+      if (r.ativo && !r.revisado_humano) {
+        warnings.push("Produto marcado como ativo mas sem revisão humana — será criado inativo.");
+      }
+
+      let status: ImportStatus;
+      if (errors.length > 0) {
+        status = "invalid";
+      } else if (r.revisado_humano && r.aprovado_importar) {
+        status = "ready";
+      } else {
+        status = "needs_review";
+      }
+
+      return {
+        ...r,
+        action,
+        status,
+        errors,
+        warnings,
+        matched_product_id: matchedProductId,
+        matched_category_id: matchedCategoryId,
+      };
+    });
+
+    return { ok: true as const, rows: validated, counts: countRows(validated) };
+  });
+
+// ===================== 3. enrichImportRows (IA) =====================
+
+const AISuggestion = z.object({
+  slug_sugerido: z.string().min(1).max(120),
+  descricao_curta: z.string().min(10).max(400),
+  descricao_longa: z.string().min(20).max(3000),
+  tags: z.array(z.string()).max(15),
+  titulo_seo: z.string().min(5).max(70),
+  meta_description: z.string().min(20).max(200),
+  observacoes_ia: z.string().max(500).optional().default(""),
+  nivel_confianca_ia: z.enum(["alta", "media", "baixa"]),
+});
+
+const SYSTEM_PROMPT_IA = `Você é especialista em cadastro de produtos para e-commerce de material elétrico e iluminação LED da loja Led Maricá (Maricá/RJ).
+
+REGRAS OBRIGATÓRIAS (NUNCA VIOLAR):
+1. NÃO invente preço, custo, estoque, SKU, EAN, marca, potência, tensão, amperagem, NCM, CEST, garantia, dimensões, peso, certificações.
+2. Use APENAS o nome do produto e a categoria informados.
+3. Se faltar dado técnico, registre em "observacoes_ia" e marque "nivel_confianca_ia" como "baixa".
+4. Texto comercial em português do Brasil, sem promessas falsas.
+5. Título SEO ≤ 60 caracteres. Meta description ≤ 155 caracteres.
+6. Descrição curta ≤ 250 caracteres.
+7. Slug: minúsculo, sem acento, hífen no lugar de espaço.
+8. NUNCA mencione preço, marca específica nem certificações que não vieram nos dados.
+
+Devolva SEMPRE via tool call estruturada.`;
+
+async function callAiForRow(input: {
+  nome: string;
+  categoria: string;
+  sku: string;
+  obsUsuario: string;
+}): Promise<{ ok: true; suggestion: z.infer<typeof AISuggestion> } | { ok: false; error: string }> {
+  const apiKey = process.env.LOVABLE_API_KEY;
+  if (!apiKey) return { ok: false, error: "LOVABLE_API_KEY não configurada" };
+
+  const userPrompt = [
+    `Nome: ${input.nome}`,
+    `Categoria: ${input.categoria}`,
+    input.sku ? `SKU: ${input.sku}` : null,
+    input.obsUsuario ? `Observações do usuário: ${input.obsUsuario}` : null,
+  ]
+    .filter(Boolean)
+    .join("\n");
+
+  const res = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${apiKey}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      model: "google/gemini-2.5-flash",
+      messages: [
+        { role: "system", content: SYSTEM_PROMPT_IA },
+        { role: "user", content: userPrompt },
+      ],
+      tools: [
+        {
+          type: "function",
+          function: {
+            name: "set_product_import_fields",
+            description: "Sugestões textuais para cadastro do produto.",
+            parameters: {
+              type: "object",
+              properties: {
+                slug_sugerido: { type: "string" },
+                descricao_curta: { type: "string" },
+                descricao_longa: { type: "string" },
+                tags: { type: "array", items: { type: "string" } },
+                titulo_seo: { type: "string" },
+                meta_description: { type: "string" },
+                observacoes_ia: { type: "string" },
+                nivel_confianca_ia: { type: "string", enum: ["alta", "media", "baixa"] },
+              },
+              required: [
+                "slug_sugerido",
+                "descricao_curta",
+                "descricao_longa",
+                "titulo_seo",
+                "meta_description",
+                "nivel_confianca_ia",
+              ],
+              additionalProperties: false,
+            },
+          },
+        },
+      ],
+      tool_choice: {
+        type: "function",
+        function: { name: "set_product_import_fields" },
+      },
+    }),
+  });
+
+  if (res.status === 429) return { ok: false, error: "Limite de IA atingido. Tente em instantes." };
+  if (res.status === 402) return { ok: false, error: "Créditos de IA esgotados." };
+  if (!res.ok) {
+    const t = await res.text();
+    console.error("AI enrich error", res.status, t);
+    return { ok: false, error: `Erro IA (${res.status})` };
+  }
+
+  const json = (await res.json()) as {
+    choices?: { message?: { tool_calls?: { function?: { arguments?: unknown } }[] } }[];
+  };
+  const args = json.choices?.[0]?.message?.tool_calls?.[0]?.function?.arguments;
+  if (!args) return { ok: false, error: "Resposta IA sem dados" };
+  try {
+    const parsed = AISuggestion.parse(typeof args === "string" ? JSON.parse(args) : args);
+    return { ok: true, suggestion: parsed };
+  } catch (e) {
+    return { ok: false, error: e instanceof Error ? e.message : "Falha ao validar IA" };
+  }
+}
+
+export const enrichImportRows = createServerFn({ method: "POST" })
+  .middleware([requireAdmin])
+  .inputValidator((raw: unknown) =>
+    z
+      .object({
+        rows: z.array(ImportRowSchema).max(MAX_ROWS),
+        onlyEmpty: z.boolean().default(true),
+      })
+      .parse(raw),
+  )
+  .handler(async ({ data }) => {
+    const out: ImportRow[] = [];
+    let succeeded = 0;
+    let failed = 0;
+
+    for (const row of data.rows) {
+      // Pula linhas inválidas ou ignoradas
+      if (row.status === "invalid" || row.status === "ignored") {
+        out.push(row);
+        continue;
+      }
+      // Pula se já tem sugestão e onlyEmpty=true
+      const alreadyHas =
+        row.descricao_longa &&
+        row.descricao_curta &&
+        row.titulo_seo &&
+        row.meta_description &&
+        row.slug_sugerido;
+      if (data.onlyEmpty && alreadyHas) {
+        out.push(row);
+        continue;
+      }
+      if (!row.nome_produto || !row.categoria) {
+        out.push(row);
+        continue;
+      }
+
+      const r = await callAiForRow({
+        nome: row.nome_produto,
+        categoria: row.categoria,
+        sku: row.sku,
+        obsUsuario: row.observacoes_usuario,
+      });
+
+      if (!r.ok) {
+        failed += 1;
+        out.push({
+          ...row,
+          observacoes_ia: `${row.observacoes_ia ?? ""}\n[IA] ${r.error}`.trim(),
+        });
+        continue;
+      }
+
+      const s = r.suggestion;
+      succeeded += 1;
+      out.push({
+        ...row,
+        slug_sugerido: slugify(s.slug_sugerido),
+        descricao_curta: s.descricao_curta,
+        descricao_longa: s.descricao_longa,
+        tags: parseTags(s.tags),
+        titulo_seo: s.titulo_seo,
+        meta_description: s.meta_description,
+        observacoes_ia: s.observacoes_ia || row.observacoes_ia,
+        nivel_confianca_ia: s.nivel_confianca_ia as ImportConfidence,
+      });
+    }
+
+    return { ok: true as const, rows: out, succeeded, failed };
+  });
+
+// ===================== 4. simulateImport =====================
+
+type SimAction = "create" | "update" | "skip" | "error";
+
+export const simulateImport = createServerFn({ method: "POST" })
+  .middleware([requireAdmin])
+  .inputValidator((raw: unknown) => RowsInput.parse(raw))
+  .handler(async ({ data }) => {
+    const plan = data.rows.map((r) => {
+      let simAction: SimAction = "skip";
+      const reasons: string[] = [];
+
+      if (r.status === "ignored") {
+        simAction = "skip";
+        reasons.push("ação=ignorar");
+      } else if (r.status === "invalid") {
+        simAction = "error";
+        reasons.push(...r.errors);
+      } else if (!r.revisado_humano) {
+        simAction = "skip";
+        reasons.push("Não revisado por humano.");
+      } else if (!r.aprovado_importar) {
+        simAction = "skip";
+        reasons.push("Não aprovado para importar.");
+      } else if (r.action === "atualizar" && r.matched_product_id) {
+        simAction = "update";
+      } else if (r.matched_product_id) {
+        simAction = "skip";
+        reasons.push("SKU já existe. Use ação atualizar.");
+      } else {
+        simAction = "create";
+      }
+
+      return {
+        rowIndex: r.rowIndex,
+        sku: r.sku,
+        nome: r.nome_produto,
+        simAction,
+        reasons,
+      };
+    });
+
+    const summary = {
+      total: plan.length,
+      toCreate: plan.filter((p) => p.simAction === "create").length,
+      toUpdate: plan.filter((p) => p.simAction === "update").length,
+      toSkip: plan.filter((p) => p.simAction === "skip").length,
+      errors: plan.filter((p) => p.simAction === "error").length,
+    };
+
+    return { ok: true as const, plan, summary };
+  });
+
+// ===================== 5. commitImport =====================
+
+export const commitImport = createServerFn({ method: "POST" })
+  .middleware([requireAdmin])
+  .inputValidator((raw: unknown) =>
+    z
+      .object({
+        rows: z.array(ImportRowSchema).max(MAX_ROWS),
+        fileName: z.string().max(255),
+      })
+      .parse(raw),
+  )
+  .handler(async ({ data, context }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const adminUserId = (context as { adminUserId: string }).adminUserId;
+    const importId = crypto.randomUUID();
+
+    const log: Array<{
+      rowIndex: number;
+      sku: string;
+      result: "created" | "updated" | "skipped" | "error";
+      productId?: string;
+      message?: string;
+    }> = [];
+
+    // Re-valida o conjunto inteiro contra o DB no servidor (defesa em profundidade)
+    const skus = data.rows.map((r) => r.sku.trim()).filter(Boolean);
+    const { data: dbProducts } = await supabaseAdmin
+      .from("products")
+      .select("id, sku")
+      .in("sku", skus.length ? skus : ["__none__"]);
+    const dbSkuMap = new Map<string, string>();
+    for (const p of dbProducts ?? []) if (p.sku) dbSkuMap.set(p.sku, p.id);
+
+    // Slugs existentes para evitar duplicidade
+    const slugCheckCache = new Set<string>();
+
+    for (const row of data.rows) {
+      try {
+        // Gate de segurança duro: nada importa sem revisão+aprovação E status válido
+        if (
+          row.status !== "ready" ||
+          !row.revisado_humano ||
+          !row.aprovado_importar
+        ) {
+          log.push({
+            rowIndex: row.rowIndex,
+            sku: row.sku,
+            result: "skipped",
+            message: "Linha não aprovada para importação.",
+          });
+          continue;
+        }
+        if (!row.matched_category_id) {
+          log.push({
+            rowIndex: row.rowIndex,
+            sku: row.sku,
+            result: "error",
+            message: "Categoria não resolvida.",
+          });
+          continue;
+        }
+        if (row.preco_venda === null || row.preco_venda <= 0) {
+          log.push({
+            rowIndex: row.rowIndex,
+            sku: row.sku,
+            result: "error",
+            message: "Preço inválido.",
+          });
+          continue;
+        }
+
+        const dbId = dbSkuMap.get(row.sku.trim()) ?? null;
+
+        if (row.action === "atualizar") {
+          if (!dbId) {
+            log.push({
+              rowIndex: row.rowIndex,
+              sku: row.sku,
+              result: "error",
+              message: "SKU não existe para atualizar.",
+            });
+            continue;
+          }
+          // Atualização NÃO sobrescreve estoque por padrão (regra de segurança).
+          const update: {
+            name: string;
+            category_id: string | null;
+            price: number;
+            updated_at: string;
+            description?: string;
+            tags?: string[];
+            seo_title?: string;
+            seo_description?: string;
+            active?: boolean;
+          } = {
+            name: row.nome_produto,
+            category_id: row.matched_category_id,
+            price: row.preco_venda,
+            updated_at: new Date().toISOString(),
+          };
+          if (row.descricao_longa) update.description = row.descricao_longa;
+          if (row.tags.length) update.tags = row.tags;
+          if (row.titulo_seo) update.seo_title = row.titulo_seo;
+          if (row.meta_description) update.seo_description = row.meta_description;
+          if (row.ativo && row.warnings.length === 0) update.active = true;
+
+          const { error } = await supabaseAdmin
+            .from("products")
+            .update(update)
+            .eq("id", dbId);
+          if (error) throw new Error(error.message);
+          log.push({
+            rowIndex: row.rowIndex,
+            sku: row.sku,
+            result: "updated",
+            productId: dbId,
+          });
+          continue;
+        }
+
+        // ===== criar =====
+        if (dbId) {
+          log.push({
+            rowIndex: row.rowIndex,
+            sku: row.sku,
+            result: "skipped",
+            message: "SKU já existe. Use ação atualizar.",
+          });
+          continue;
+        }
+
+        // Gera slug único
+        let baseSlug = row.slug_sugerido || slugify(row.nome_produto);
+        if (!baseSlug) baseSlug = `produto-${row.sku.toLowerCase()}`;
+        let candidate = baseSlug;
+        let attempt = 1;
+        while (slugCheckCache.has(candidate)) {
+          attempt += 1;
+          candidate = `${baseSlug}-${attempt}`;
+        }
+        // Confere no banco também
+        const { data: slugHit } = await supabaseAdmin
+          .from("products")
+          .select("id")
+          .eq("slug", candidate)
+          .maybeSingle();
+        if (slugHit) {
+          candidate = `${baseSlug}-${row.sku.toLowerCase()}`;
+        }
+        slugCheckCache.add(candidate);
+
+        const insert = {
+          sku: row.sku,
+          name: row.nome_produto,
+          slug: candidate,
+          category_id: row.matched_category_id,
+          price: row.preco_venda,
+          stock_qty: row.estoque_inicial ?? 0,
+          active: row.ativo && row.warnings.length === 0,
+          description: row.descricao_longa ?? null,
+          tags: row.tags.length ? row.tags : null,
+          seo_title: row.titulo_seo ?? null,
+          seo_description: row.meta_description ?? null,
+        };
+
+        const { data: created, error } = await supabaseAdmin
+          .from("products")
+          .insert(insert)
+          .select("id")
+          .single();
+        if (error) throw new Error(error.message);
+        log.push({
+          rowIndex: row.rowIndex,
+          sku: row.sku,
+          result: "created",
+          productId: created?.id,
+        });
+      } catch (e) {
+        log.push({
+          rowIndex: row.rowIndex,
+          sku: row.sku,
+          result: "error",
+          message: e instanceof Error ? e.message : "Erro desconhecido",
+        });
+      }
+    }
+
+    const summary = {
+      importId,
+      fileName: data.fileName,
+      total: data.rows.length,
+      created: log.filter((l) => l.result === "created").length,
+      updated: log.filter((l) => l.result === "updated").length,
+      skipped: log.filter((l) => l.result === "skipped").length,
+      errors: log.filter((l) => l.result === "error").length,
+    };
+
+    await logAdminAction({
+      adminId: adminUserId,
+      action: "product_import.commit",
+      resourceType: "products",
+      resourceId: importId,
+      description: `Importação assistida por IA via planilha: ${summary.created} criados, ${summary.updated} atualizados, ${summary.skipped} ignorados, ${summary.errors} com erro.`,
+      after: summary,
+    });
+
+    return { ok: true as const, summary, log };
+  });
+
+// ===================== 6. downloadRevisedSheet =====================
+
+export const downloadRevisedSheet = createServerFn({ method: "POST" })
+  .middleware([requireAdmin])
+  .inputValidator((raw: unknown) => RowsInput.parse(raw))
+  .handler(async ({ data }) => {
+    const aoa: Array<Array<string | number | null>> = [];
+    aoa.push([
+      "rowIndex",
+      "status",
+      "acao",
+      "sku",
+      "nome_produto",
+      "categoria",
+      "preco_venda",
+      "estoque_inicial",
+      "ativo",
+      "revisado_humano",
+      "aprovado_importar",
+      "slug_sugerido",
+      "descricao_curta",
+      "descricao_longa",
+      "tags",
+      "titulo_seo",
+      "meta_description",
+      "nivel_confianca_ia",
+      "observacoes_ia",
+      "erros",
+      "avisos",
+    ]);
+    for (const r of data.rows) {
+      aoa.push([
+        r.rowIndex,
+        r.status,
+        r.action,
+        r.sku,
+        r.nome_produto,
+        r.categoria,
+        r.preco_venda,
+        r.estoque_inicial,
+        r.ativo ? "sim" : "não",
+        r.revisado_humano ? "sim" : "não",
+        r.aprovado_importar ? "sim" : "não",
+        r.slug_sugerido,
+        r.descricao_curta,
+        r.descricao_longa,
+        r.tags.join(", "),
+        r.titulo_seo,
+        r.meta_description,
+        r.nivel_confianca_ia,
+        r.observacoes_ia,
+        r.errors.join(" | "),
+        r.warnings.join(" | "),
+      ]);
+    }
+    const ws = XLSX.utils.aoa_to_sheet(aoa);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "PRODUTOS_REVISADO");
+    const buf = XLSX.write(wb, { type: "buffer", bookType: "xlsx" }) as Buffer;
+    const base64 = Buffer.from(buf).toString("base64");
+    return { ok: true as const, fileBase64: base64, fileName: "produtos_revisado.xlsx" };
+  });
