@@ -73,6 +73,7 @@ import { Route as AdminSettingsCompanyRouteImport } from './routes/admin.setting
 import { Route as AdminSegurancaAuditoriaRouteImport } from './routes/admin.seguranca.auditoria'
 import { Route as AdminProdutosRevisaoComercialRouteImport } from './routes/admin.produtos.revisao-comercial'
 import { Route as AdminProdutosQualidadeRouteImport } from './routes/admin.produtos.qualidade'
+import { Route as AdminProdutosImportacaoIaRouteImport } from './routes/admin.produtos.importacao-ia'
 import { Route as AdminProdutosEstoqueRouteImport } from './routes/admin.produtos.estoque'
 import { Route as AdminProdutosCombosRouteImport } from './routes/admin.produtos.combos'
 import { Route as AdminProdutosAtributosRotulosRouteImport } from './routes/admin.produtos.atributos-rotulos'
@@ -415,6 +416,12 @@ const AdminProdutosQualidadeRoute = AdminProdutosQualidadeRouteImport.update({
   path: '/admin/produtos/qualidade',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AdminProdutosImportacaoIaRoute =
+  AdminProdutosImportacaoIaRouteImport.update({
+    id: '/admin/produtos/importacao-ia',
+    path: '/admin/produtos/importacao-ia',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const AdminProdutosEstoqueRoute = AdminProdutosEstoqueRouteImport.update({
   id: '/admin/produtos/estoque',
   path: '/admin/produtos/estoque',
@@ -578,6 +585,7 @@ export interface FileRoutesByFullPath {
   '/admin/produtos/atributos-rotulos': typeof AdminProdutosAtributosRotulosRoute
   '/admin/produtos/combos': typeof AdminProdutosCombosRoute
   '/admin/produtos/estoque': typeof AdminProdutosEstoqueRoute
+  '/admin/produtos/importacao-ia': typeof AdminProdutosImportacaoIaRoute
   '/admin/produtos/qualidade': typeof AdminProdutosQualidadeRoute
   '/admin/produtos/revisao-comercial': typeof AdminProdutosRevisaoComercialRoute
   '/admin/seguranca/auditoria': typeof AdminSegurancaAuditoriaRoute
@@ -659,6 +667,7 @@ export interface FileRoutesByTo {
   '/admin/produtos/atributos-rotulos': typeof AdminProdutosAtributosRotulosRoute
   '/admin/produtos/combos': typeof AdminProdutosCombosRoute
   '/admin/produtos/estoque': typeof AdminProdutosEstoqueRoute
+  '/admin/produtos/importacao-ia': typeof AdminProdutosImportacaoIaRoute
   '/admin/produtos/qualidade': typeof AdminProdutosQualidadeRoute
   '/admin/produtos/revisao-comercial': typeof AdminProdutosRevisaoComercialRoute
   '/admin/seguranca/auditoria': typeof AdminSegurancaAuditoriaRoute
@@ -743,6 +752,7 @@ export interface FileRoutesById {
   '/admin/produtos/atributos-rotulos': typeof AdminProdutosAtributosRotulosRoute
   '/admin/produtos/combos': typeof AdminProdutosCombosRoute
   '/admin/produtos/estoque': typeof AdminProdutosEstoqueRoute
+  '/admin/produtos/importacao-ia': typeof AdminProdutosImportacaoIaRoute
   '/admin/produtos/qualidade': typeof AdminProdutosQualidadeRoute
   '/admin/produtos/revisao-comercial': typeof AdminProdutosRevisaoComercialRoute
   '/admin/seguranca/auditoria': typeof AdminSegurancaAuditoriaRoute
@@ -828,6 +838,7 @@ export interface FileRouteTypes {
     | '/admin/produtos/atributos-rotulos'
     | '/admin/produtos/combos'
     | '/admin/produtos/estoque'
+    | '/admin/produtos/importacao-ia'
     | '/admin/produtos/qualidade'
     | '/admin/produtos/revisao-comercial'
     | '/admin/seguranca/auditoria'
@@ -909,6 +920,7 @@ export interface FileRouteTypes {
     | '/admin/produtos/atributos-rotulos'
     | '/admin/produtos/combos'
     | '/admin/produtos/estoque'
+    | '/admin/produtos/importacao-ia'
     | '/admin/produtos/qualidade'
     | '/admin/produtos/revisao-comercial'
     | '/admin/seguranca/auditoria'
@@ -992,6 +1004,7 @@ export interface FileRouteTypes {
     | '/admin/produtos/atributos-rotulos'
     | '/admin/produtos/combos'
     | '/admin/produtos/estoque'
+    | '/admin/produtos/importacao-ia'
     | '/admin/produtos/qualidade'
     | '/admin/produtos/revisao-comercial'
     | '/admin/seguranca/auditoria'
@@ -1067,6 +1080,7 @@ export interface RootRouteChildren {
   AdminProdutosAtributosRotulosRoute: typeof AdminProdutosAtributosRotulosRoute
   AdminProdutosCombosRoute: typeof AdminProdutosCombosRoute
   AdminProdutosEstoqueRoute: typeof AdminProdutosEstoqueRoute
+  AdminProdutosImportacaoIaRoute: typeof AdminProdutosImportacaoIaRoute
   AdminProdutosQualidadeRoute: typeof AdminProdutosQualidadeRoute
   AdminProdutosRevisaoComercialRoute: typeof AdminProdutosRevisaoComercialRoute
   AdminSettingsCompanyRoute: typeof AdminSettingsCompanyRoute
@@ -1531,6 +1545,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminProdutosQualidadeRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/admin/produtos/importacao-ia': {
+      id: '/admin/produtos/importacao-ia'
+      path: '/admin/produtos/importacao-ia'
+      fullPath: '/admin/produtos/importacao-ia'
+      preLoaderRoute: typeof AdminProdutosImportacaoIaRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/admin/produtos/estoque': {
       id: '/admin/produtos/estoque'
       path: '/admin/produtos/estoque'
@@ -1772,6 +1793,7 @@ const rootRouteChildren: RootRouteChildren = {
   AdminProdutosAtributosRotulosRoute: AdminProdutosAtributosRotulosRoute,
   AdminProdutosCombosRoute: AdminProdutosCombosRoute,
   AdminProdutosEstoqueRoute: AdminProdutosEstoqueRoute,
+  AdminProdutosImportacaoIaRoute: AdminProdutosImportacaoIaRoute,
   AdminProdutosQualidadeRoute: AdminProdutosQualidadeRoute,
   AdminProdutosRevisaoComercialRoute: AdminProdutosRevisaoComercialRoute,
   AdminSettingsCompanyRoute: AdminSettingsCompanyRoute,
