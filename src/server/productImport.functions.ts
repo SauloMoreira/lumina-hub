@@ -809,7 +809,7 @@ export const commitImport = createServerFn({ method: "POST" })
         }
         slugCheckCache.add(candidate);
 
-        const insert: Record<string, unknown> = {
+        const insert = {
           sku: row.sku,
           name: row.nome_produto,
           slug: candidate,
