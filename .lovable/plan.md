@@ -1,66 +1,86 @@
-## Padronização das tabelas administrativas
+# Agente de Importação de Produtos via Planilha (IA-assistida)
 
-Escopo enorme (15+ telas). Vou propor uma execução em 3 fases para evitar regressões em áreas sensíveis (checkout, pedidos, MP, webhook, estoque, CRM).
+Funcionalidade nova, isolada, sem tocar em checkout, MP, webhook, pedidos, e-mails, CRM, GA4, RLS, MFA ou estoque de pedidos. Toda escrita acontece via server functions protegidas por `requireAdmin` (AAL2) e nada é importado sem clique explícito do admin.
 
-### Estratégia geral
+## Escopo
 
-Criar uma **camada reutilizável** primeiro e só depois aplicar tela a tela. Não vou reescrever lógica de negócio — apenas a camada de listagem (queries de SELECT, filtros, paginação, ordenação).
+- Nova rota admin: `/admin/produtos/importacao-ia`
+- Upload de `.xlsx` (aba `PRODUTOS_MÍNIMO`), parsing 100% no servidor
+- Validação → enriquecimento IA (Lovable AI Gateway) → prévia → simulação (dry-run) → importação aprovada → relatório + auditoria
+- Download da planilha revisada com sugestões/erros/avisos
+- Link no menu admin de Produtos
 
-### Fase 0 — Fundação (1 entrega)
+## Arquitetura
 
-Criar componentes/hook compartilhados em `src/components/admin/datatable/`:
+```text
+src/routes/admin.produtos.importacao-ia.tsx        ← UI (RequireAdminMfa)
+src/server/productImport.functions.ts              ← server fns (createServerFn + requireAdmin)
+src/server/productImport.server.ts                 ← parser xlsx, validação, enrich IA, dry-run, commit
+src/lib/productImport.ts                           ← tipos + helpers puros (slugify, parsePrice) compartilhados
+```
 
-- `DataTable.tsx` — wrapper sobre `@/components/ui/table` com colunas tipadas, slots de toolbar/paginação, suporte a estado vazio e skeleton.
-- `DataTableToolbar.tsx` — busca com debounce (300ms) + slot de filtros + botão "Limpar filtros".
-- `DataTablePagination.tsx` — seletor de page size (10/25/50/100), contador "X–Y de Z", botões primeira/anterior/próxima/última.
-- `SortableHeader.tsx` — cabeçalho clicável com ícone asc/desc.
-- `EmptyState.tsx` e `TableSkeleton.tsx`.
-- `useTableState.ts` — hook que sincroniza `page`, `pageSize`, `sort`, `q` e filtros com URL via `validateSearch` + `useNavigate` (TanStack Router). Aceita schema Zod por tela.
-- Helper `buildSupabaseQuery` para aplicar `range()`, `order()`, `ilike()`/`eq()` server-side de forma consistente.
+Dependência nova: `xlsx` (SheetJS) — leitura/escrita server-side, compatível com Worker.
 
-Exemplo de URL: `?page=2&pageSize=25&q=joao&sort=created_at.desc&status=confirmed`.
+## Server functions (todas com `requireAdmin`)
 
-### Fase 1 — Telas prioritárias (server-side)
+1. `parseImportSheet({ fileBase64, fileName })` → lê aba `PRODUTOS_MÍNIMO`, devolve linhas normalizadas + erros de parsing. Não grava nada.
+2. `validateImportRows({ rows })` → valida campos obrigatórios, dedup SKU planilha + banco, valida categoria (busca por slug/nome), preço, estoque, flags. Retorna `{ row, status, errors[], warnings[] }`.
+3. `enrichImportRows({ rows })` → Lovable AI (`google/gemini-3-flash-preview`, structured output via Zod) preenche apenas: `slug_sugerido`, `descricao_curta`, `descricao_longa`, `tags`, `titulo_seo`, `meta_description`, `observacoes_ia`, `nivel_confianca_ia`. Prompt proíbe inventar preço/marca/specs/EAN/NCM/certificação.
+4. `simulateImport({ rows })` → dry-run completo: classifica em criar/atualizar/ignorar/erro, mostra diff. Não grava.
+5. `commitImport({ approvedRows, fileName, importId })` → executa só linhas com `revisado_humano=sim` E `aprovado_importar=sim` E status válido. Re-valida no servidor. Cria `active=false` se houver warnings. Grava auditoria via `logAdminAction`. Retorna relatório.
+6. `downloadRevisedSheet({ rows })` → devolve xlsx em base64 com sugestões + colunas `status_validacao`, `erros`, `avisos`.
 
-Aplicar o padrão em:
+## Mapeamento para `products`
 
-1. **Pedidos** (`/admin/pedidos`) — server-side: paginação real (usar `count: 'exact'`), filtros: status pedido, status pagamento, período, método entrega, busca por nº/cliente/e-mail. Ordenação: data, total, status.
-2. **Produtos** (`/admin/produtos`) — server-side: filtros status, categoria, B2B, destaque, sem imagem/custo/descrição, estoque baixo. Busca por nome/SKU/EAN. Ordenação: nome, atualização, preço, estoque.
-3. **Leads/CRM** (`/admin/leads`) — server-side: status, origem, responsável, período, etapa funil, UTM. Busca por nome/telefone/e-mail.
-4. **Modelos de e-mail** (`/admin/comunicacao/emails`) — client-side (poucos registros): filtros status/auto/manual/tipo. Busca por nome/chave.
-5. **Histórico de e-mails** (`email_events`) — server-side, se existir tela; caso contrário criar listagem mínima dentro do escopo.
+| Planilha | Coluna DB |
+|---|---|
+| sku | sku |
+| nome_produto | name |
+| slug_sugerido | slug |
+| categoria | category_id (resolvido por nome/slug; se não existir → pendência, NUNCA cria automaticamente) |
+| preco_venda | price |
+| estoque_inicial | stock_qty (só em `criar`; em `atualizar` exige confirmação explícita por linha) |
+| ativo | active (default false se houver warning) |
+| descricao_curta | (campo equivalente no schema) |
+| descricao_longa | description |
+| tags | tags |
+| titulo_seo / meta_description | campos SEO existentes |
 
-### Fase 2 — Operacionais
+Vou ler o schema real de `products` antes de codar para confirmar nomes exatos (campo de descrição curta, SEO title/description, etc.).
 
-6. Estoque (`/admin/produtos/estoque`)
-7. Kits/Combos (`/admin/produtos/combos`)
-8. Cupons (`/admin/cupons`)
-9. Campanhas/UTM (`/admin/campanhas`, `/admin/campanhas-performance`)
-10. Carrinhos abandonados (`/admin/carrinhos-abandonados`)
+## Regras de segurança
 
-### Fase 3 — Logs e financeiro
+- Toda server fn: `.middleware([requireAdmin])` → exige admin + AAL2 + MFA verificado
+- UI envolvida em `<RequireAdminMfa>` (padrão do projeto)
+- Re-validação server-side mesmo após validação do frontend
+- Upload: limite 5MB, valida extensão `.xlsx` e magic bytes (PK zip)
+- Categoria nunca criada automaticamente
+- Estoque de produtos existentes nunca sobrescrito sem confirmação por linha
+- IA: structured output Zod, sem campos perigosos no schema, temperatura baixa
+- Auditoria: `logAdminAction({ action: 'product_import.commit', resourceType: 'products', after: { importId, criados, atualizados, ignorados, errosCount, fileName } })` — não loga conteúdo bruto da planilha
 
-11. Webhooks Mercado Pago (apenas leitura/listagem — **não tocar no handler do webhook**)
-12. Auditoria (`/admin/seguranca/auditoria`) — já tem boa parte; padronizar ao novo componente.
-13. Financeiro/fiscal/notas (`/admin/financeiro/*`)
-14. Configurações com listagens (empresas B2B, frete local, etc.)
+## UI (`/admin/produtos/importacao-ia`)
 
-### Garantias técnicas
+1. Upload + botão "Ler planilha"
+2. Cards de resumo: total / válidos / com erro / pendentes revisão / aprovados
+3. Tabela de prévia (shadcn Table) com filtros por status
+4. Modal de detalhes por linha (dados originais vs sugestões IA vs o que será gravado)
+5. Botões: Validar · Completar com IA · Baixar planilha revisada · **Simular** · **Importar aprovados** (só habilita após simulação) · Cancelar
+6. Tela de resultado: criados, atualizados, ignorados, erros, download do log CSV
 
-- **Não alterar**: webhook MP, checkout, criação/atualização de pedidos, regras de estoque, RLS, migrations (a menos que falte índice óbvio para ordenar — nesse caso pergunto antes), templates transacionais, homepage pública.
-- **Apenas**: queries SELECT das listagens admin.
-- Cada tela mantém suas ações e colunas atuais; só ganha toolbar/paginação/sort padronizados.
-- TypeScript estrito, build passando, mobile responsivo (toolbar empilha, tabela com scroll horizontal).
+## Fora de escopo (não vou tocar)
 
-### Como entregar
+- Checkout, Mercado Pago, webhook, pedidos, e-mails, CRM, GA4, DNS, MFA, RLS, políticas Supabase
+- Edição/exclusão de produtos existentes além do mapeamento acima
+- Importação de imagens, atributos técnicos, preços B2B, kits, NCM/CEST (planilha mínima não cobre — ficam para fase futura)
+- Nenhuma migração de banco
+- Nenhuma alteração de permissões públicas
 
-Por causa do tamanho, proponho **entregar a Fase 0 + Fase 1 nesta resposta** e aguardar seu OK para seguir com Fase 2 e Fase 3 nas mensagens seguintes. Se preferir outra ordem (ex.: começar só por Pedidos para validar o padrão), é só dizer.
+## Validação final
 
-### Pergunta antes de começar
+- `bun add xlsx`
+- Build + TypeScript devem passar (rodados pelo harness)
+- Testes manuais cobrindo os 15 cenários da seção 19 do brief (planilha boa, SKU faltando, preço inválido, duplicidade, etc.) feitos via leitura do código + simulação na UI
+- Confirmação: nenhuma rota/policy pública nova, nenhum endpoint sem `requireAdmin`
 
-Você prefere:
-- **(A)** Eu já começar Fase 0 + Fase 1 completa agora (5 telas + fundação numa entrega só — mensagem grande, mais risco de revisão demorada).
-- **(B)** Eu entregar **Fase 0 + apenas Pedidos** primeiro como prova do padrão, e depois aplicar nas outras 4 telas da Fase 1.
-- **(C)** Outra ordem que você indicar.
-
-Recomendo **(B)** — valida o padrão visual/UX em uma tela crítica antes de propagar.
+Posso prosseguir?
