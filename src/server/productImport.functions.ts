@@ -742,7 +742,17 @@ export const commitImport = createServerFn({ method: "POST" })
             continue;
           }
           // Atualização NÃO sobrescreve estoque por padrão (regra de segurança).
-          const update: Record<string, unknown> = {
+          const update: {
+            name: string;
+            category_id: string | null;
+            price: number;
+            updated_at: string;
+            description?: string;
+            tags?: string[];
+            seo_title?: string;
+            seo_description?: string;
+            active?: boolean;
+          } = {
             name: row.nome_produto,
             category_id: row.matched_category_id,
             price: row.preco_venda,
@@ -752,7 +762,6 @@ export const commitImport = createServerFn({ method: "POST" })
           if (row.tags.length) update.tags = row.tags;
           if (row.titulo_seo) update.seo_title = row.titulo_seo;
           if (row.meta_description) update.seo_description = row.meta_description;
-          // Active só liga se revisado humano + sem warnings críticos
           if (row.ativo && row.warnings.length === 0) update.active = true;
 
           const { error } = await supabaseAdmin
