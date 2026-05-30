@@ -107,6 +107,42 @@ function ImportacaoIaPage() {
   const [sim, setSim] = useState<SimResult | null>(null);
   const [commitResult, setCommitResult] = useState<CommitResult | null>(null);
   const [detailRow, setDetailRow] = useState<ImportRow | null>(null);
+  const [editingRow, setEditingRow] = useState<ImportRow | null>(null);
+  const [savingEdit, setSavingEdit] = useState(false);
+
+  function updateRowField<K extends keyof ImportRow>(rowIndex: number, key: K, value: ImportRow[K]) {
+    setRows((prev) => prev.map((r) => (r.rowIndex === rowIndex ? { ...r, [key]: value } : r)));
+    setSim(null);
+  }
+
+  async function handleSaveEdit() {
+    if (!editingRow) return;
+    setSavingEdit(true);
+    try {
+      const next = rows.map((r) => (r.rowIndex === editingRow.rowIndex ? editingRow : r));
+      const res = await validateImportRows({ data: { rows: next } });
+      if (!res.ok) {
+        setRows(next);
+        toast.warning("Alterações salvas, mas a revalidação falhou.");
+      } else {
+        setRows(res.rows);
+        const updated = res.rows.find((r) => r.rowIndex === editingRow.rowIndex);
+        if (updated) {
+          if (updated.errors.length > 0) {
+            toast.warning(`Salvo com ${updated.errors.length} erro(s).`);
+          } else {
+            toast.success("Linha atualizada e revalidada.");
+          }
+        }
+      }
+      setSim(null);
+      setEditingRow(null);
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Erro ao salvar");
+    } finally {
+      setSavingEdit(false);
+    }
+  }
 
   const counts = useMemo(() => countRows(rows), [rows]);
   const canImport = sim !== null && counts.ready > 0;
