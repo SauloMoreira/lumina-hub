@@ -541,20 +541,37 @@ async function callAiForRow(input: {
   if (res.status === 402) return { ok: false, error: "Créditos de IA esgotados." };
   if (!res.ok) {
     const t = await res.text();
-    console.error("AI enrich error", res.status, t);
-    return { ok: false, error: `Erro IA (${res.status})` };
+    console.error("AI enrich error", res.status, t.slice(0, 500));
+    return { ok: false, error: `Erro IA (${res.status}): ${t.slice(0, 200)}` };
   }
 
   const json = (await res.json()) as {
-    choices?: { message?: { tool_calls?: { function?: { arguments?: unknown } }[] } }[];
+    choices?: {
+      message?: {
+        content?: string;
+        tool_calls?: { function?: { arguments?: unknown } }[];
+      };
+    }[];
   };
-  const args = json.choices?.[0]?.message?.tool_calls?.[0]?.function?.arguments;
-  if (!args) return { ok: false, error: "Resposta IA sem dados" };
+  let args: unknown = json.choices?.[0]?.message?.tool_calls?.[0]?.function?.arguments;
+  if (!args) {
+    // Fallback: modelos que ignoram tool_choice e devolvem JSON em content
+    const content = json.choices?.[0]?.message?.content;
+    if (content) {
+      const match = content.match(/\{[\s\S]*\}/);
+      if (match) args = match[0];
+    }
+  }
+  if (!args) {
+    console.error("AI enrich: resposta sem tool_call", JSON.stringify(json).slice(0, 500));
+    return { ok: false, error: "Resposta IA sem dados estruturados" };
+  }
   try {
     const parsed = AISuggestion.parse(typeof args === "string" ? JSON.parse(args) : args);
     return { ok: true, suggestion: parsed };
   } catch (e) {
-    return { ok: false, error: e instanceof Error ? e.message : "Falha ao validar IA" };
+    console.error("AI enrich: schema inválido", e, "args=", String(args).slice(0, 500));
+    return { ok: false, error: e instanceof Error ? e.message.slice(0, 200) : "Falha ao validar IA" };
   }
 }
 
