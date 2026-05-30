@@ -445,14 +445,14 @@ export const validateImportRows = createServerFn({ method: "POST" })
 // ===================== 3. enrichImportRows (IA) =====================
 
 const AISuggestion = z.object({
-  slug_sugerido: z.string().min(1).max(120),
-  descricao_curta: z.string().min(10).max(400),
-  descricao_longa: z.string().min(20).max(3000),
-  tags: z.array(z.string()).max(15),
-  titulo_seo: z.string().min(5).max(70),
-  meta_description: z.string().min(20).max(200),
-  observacoes_ia: z.string().max(500).optional().default(""),
-  nivel_confianca_ia: z.enum(["alta", "media", "baixa"]),
+  slug_sugerido: z.string().min(1).transform((s) => s.slice(0, 120)),
+  descricao_curta: z.string().min(1).transform((s) => s.slice(0, 400)),
+  descricao_longa: z.string().min(1).transform((s) => s.slice(0, 3000)),
+  tags: z.array(z.string()).max(30).optional().default([]),
+  titulo_seo: z.string().min(1).transform((s) => s.slice(0, 70)),
+  meta_description: z.string().min(1).transform((s) => s.slice(0, 200)),
+  observacoes_ia: z.string().max(1000).optional().default(""),
+  nivel_confianca_ia: z.enum(["alta", "media", "baixa"]).optional().default("media"),
 });
 
 const SYSTEM_PROMPT_IA = `Você é especialista em cadastro de produtos para e-commerce de material elétrico e iluminação LED da loja Led Maricá (Maricá/RJ).
@@ -541,20 +541,37 @@ async function callAiForRow(input: {
   if (res.status === 402) return { ok: false, error: "Créditos de IA esgotados." };
   if (!res.ok) {
     const t = await res.text();
-    console.error("AI enrich error", res.status, t);
-    return { ok: false, error: `Erro IA (${res.status})` };
+    console.error("AI enrich error", res.status, t.slice(0, 500));
+    return { ok: false, error: `Erro IA (${res.status}): ${t.slice(0, 200)}` };
   }
 
   const json = (await res.json()) as {
-    choices?: { message?: { tool_calls?: { function?: { arguments?: unknown } }[] } }[];
+    choices?: {
+      message?: {
+        content?: string;
+        tool_calls?: { function?: { arguments?: unknown } }[];
+      };
+    }[];
   };
-  const args = json.choices?.[0]?.message?.tool_calls?.[0]?.function?.arguments;
-  if (!args) return { ok: false, error: "Resposta IA sem dados" };
+  let args: unknown = json.choices?.[0]?.message?.tool_calls?.[0]?.function?.arguments;
+  if (!args) {
+    // Fallback: modelos que ignoram tool_choice e devolvem JSON em content
+    const content = json.choices?.[0]?.message?.content;
+    if (content) {
+      const match = content.match(/\{[\s\S]*\}/);
+      if (match) args = match[0];
+    }
+  }
+  if (!args) {
+    console.error("AI enrich: resposta sem tool_call", JSON.stringify(json).slice(0, 500));
+    return { ok: false, error: "Resposta IA sem dados estruturados" };
+  }
   try {
     const parsed = AISuggestion.parse(typeof args === "string" ? JSON.parse(args) : args);
     return { ok: true, suggestion: parsed };
   } catch (e) {
-    return { ok: false, error: e instanceof Error ? e.message : "Falha ao validar IA" };
+    console.error("AI enrich: schema inválido", e, "args=", String(args).slice(0, 500));
+    return { ok: false, error: e instanceof Error ? e.message.slice(0, 200) : "Falha ao validar IA" };
   }
 }
 
