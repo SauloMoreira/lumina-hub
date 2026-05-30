@@ -759,3 +759,249 @@ function KV({ label, value, multi = false }: { label: string; value: string; mul
     </div>
   );
 }
+
+const ACTION_OPTIONS: { value: ImportAction; label: string }[] = [
+  { value: "", label: "(automático)" },
+  { value: "criar", label: "Criar" },
+  { value: "atualizar", label: "Atualizar" },
+  { value: "ignorar", label: "Ignorar" },
+];
+
+function EditRowDialog({
+  row,
+  onChange,
+  onSave,
+  saving,
+}: {
+  row: ImportRow | null;
+  onChange: (r: ImportRow | null) => void;
+  onSave: () => void;
+  saving: boolean;
+}) {
+  const [tagsText, setTagsText] = useState("");
+  useEffect(() => {
+    setTagsText(row ? row.tags.join(", ") : "");
+  }, [row?.rowIndex]);
+
+  if (!row) return null;
+  const set = <K extends keyof ImportRow>(key: K, value: ImportRow[K]) =>
+    onChange({ ...row, [key]: value });
+
+  return (
+    <Dialog open={!!row} onOpenChange={(o) => !o && onChange(null)}>
+      <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle>
+            Editar linha {row.rowIndex} {row.sku ? `· ${row.sku}` : ""}
+          </DialogTitle>
+        </DialogHeader>
+
+        {(row.errors.length > 0 || row.warnings.length > 0) && (
+          <div className="space-y-2 text-xs">
+            {row.errors.length > 0 && (
+              <div className="rounded border border-destructive/30 bg-destructive/5 p-2">
+                <div className="flex items-center gap-1 font-semibold text-destructive">
+                  <XCircle className="h-3.5 w-3.5" /> Erros
+                </div>
+                <ul className="list-disc pl-5">
+                  {row.errors.map((e, i) => <li key={i}>{e}</li>)}
+                </ul>
+              </div>
+            )}
+            {row.warnings.length > 0 && (
+              <div className="rounded border border-amber-400/40 bg-amber-50 dark:bg-amber-950/20 p-2">
+                <div className="flex items-center gap-1 font-semibold text-amber-700 dark:text-amber-300">
+                  <AlertTriangle className="h-3.5 w-3.5" /> Avisos
+                </div>
+                <ul className="list-disc pl-5">
+                  {row.warnings.map((w, i) => <li key={i}>{w}</li>)}
+                </ul>
+              </div>
+            )}
+          </div>
+        )}
+
+        <div className="space-y-5 py-2 text-sm">
+          <fieldset className="space-y-3">
+            <legend className="font-semibold text-sm mb-1">Dados básicos</legend>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              <div>
+                <Label>SKU *</Label>
+                <Input value={row.sku} onChange={(e) => set("sku", e.target.value)} />
+              </div>
+              <div>
+                <Label>Ação</Label>
+                <Select
+                  value={row.action || ""}
+                  onValueChange={(v) => set("action", v as ImportAction)}
+                >
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    {ACTION_OPTIONS.map((o) => (
+                      <SelectItem key={o.value || "auto"} value={o.value}>{o.label}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="md:col-span-2">
+                <Label>Nome do produto *</Label>
+                <Input value={row.nome_produto} onChange={(e) => set("nome_produto", e.target.value)} />
+              </div>
+              <div className="md:col-span-2">
+                <Label>Categoria *</Label>
+                <Input value={row.categoria} onChange={(e) => set("categoria", e.target.value)} />
+              </div>
+              <div className="flex items-center gap-2 pt-5">
+                <Switch checked={row.ativo} onCheckedChange={(v) => set("ativo", v)} />
+                <Label className="mb-0">Ativo</Label>
+              </div>
+            </div>
+          </fieldset>
+
+          <fieldset className="space-y-3">
+            <legend className="font-semibold text-sm mb-1">Comercial</legend>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+              <div>
+                <Label>Preço de custo (R$)</Label>
+                <Input
+                  type="number" step="0.01" min="0"
+                  value={row.preco_custo ?? ""}
+                  onChange={(e) =>
+                    set("preco_custo", e.target.value === "" ? null : Number(e.target.value))
+                  }
+                />
+              </div>
+              <div>
+                <Label>Preço de venda (R$) *</Label>
+                <Input
+                  type="number" step="0.01" min="0"
+                  value={row.preco_venda ?? ""}
+                  onChange={(e) =>
+                    set("preco_venda", e.target.value === "" ? null : Number(e.target.value))
+                  }
+                />
+              </div>
+              <div>
+                <Label>Estoque inicial</Label>
+                <Input
+                  type="number" step="1" min="0"
+                  value={row.estoque_inicial ?? ""}
+                  onChange={(e) =>
+                    set("estoque_inicial", e.target.value === "" ? null : Math.trunc(Number(e.target.value)))
+                  }
+                />
+              </div>
+            </div>
+            <div>
+              <Label>Observações do usuário</Label>
+              <Textarea
+                rows={2}
+                value={row.observacoes_usuario}
+                onChange={(e) => set("observacoes_usuario", e.target.value)}
+              />
+            </div>
+          </fieldset>
+
+          <fieldset className="space-y-3">
+            <legend className="font-semibold text-sm mb-1">Conteúdo / IA</legend>
+            <div>
+              <Label>Slug sugerido</Label>
+              <Input
+                value={row.slug_sugerido ?? ""}
+                onChange={(e) => set("slug_sugerido", e.target.value || null)}
+              />
+            </div>
+            <div>
+              <Label>Descrição curta</Label>
+              <Textarea
+                rows={2}
+                value={row.descricao_curta ?? ""}
+                onChange={(e) => set("descricao_curta", e.target.value || null)}
+              />
+            </div>
+            <div>
+              <Label>Descrição longa</Label>
+              <Textarea
+                rows={5}
+                value={row.descricao_longa ?? ""}
+                onChange={(e) => set("descricao_longa", e.target.value || null)}
+              />
+            </div>
+            <div>
+              <Label>Tags (separadas por vírgula)</Label>
+              <Input
+                value={tagsText}
+                onChange={(e) => {
+                  setTagsText(e.target.value);
+                  set("tags", parseTags(e.target.value));
+                }}
+              />
+            </div>
+          </fieldset>
+
+          <fieldset className="space-y-3">
+            <legend className="font-semibold text-sm mb-1">SEO</legend>
+            <div>
+              <Label>Título SEO</Label>
+              <Input
+                value={row.titulo_seo ?? ""}
+                onChange={(e) => set("titulo_seo", e.target.value || null)}
+              />
+              <p className="text-[11px] text-muted-foreground mt-1">
+                {(row.titulo_seo ?? "").length} caracteres (ideal 30–60)
+              </p>
+            </div>
+            <div>
+              <Label>Meta description</Label>
+              <Textarea
+                rows={2}
+                value={row.meta_description ?? ""}
+                onChange={(e) => set("meta_description", e.target.value || null)}
+              />
+              <p className="text-[11px] text-muted-foreground mt-1">
+                {(row.meta_description ?? "").length} caracteres (ideal 70–160)
+              </p>
+            </div>
+          </fieldset>
+
+          <fieldset className="space-y-3 rounded border bg-muted/30 p-3">
+            <legend className="font-semibold text-sm px-1">Revisão</legend>
+            <div className="flex items-center gap-2">
+              <Checkbox
+                id={`rev-${row.rowIndex}`}
+                checked={row.revisado_humano}
+                onCheckedChange={(v) => set("revisado_humano", v === true)}
+              />
+              <Label htmlFor={`rev-${row.rowIndex}`} className="mb-0">
+                Revisado por humano
+              </Label>
+            </div>
+            <div className="flex items-center gap-2">
+              <Checkbox
+                id={`apr-${row.rowIndex}`}
+                checked={row.aprovado_importar}
+                onCheckedChange={(v) => set("aprovado_importar", v === true)}
+              />
+              <Label htmlFor={`apr-${row.rowIndex}`} className="mb-0">
+                Aprovado para importar
+              </Label>
+            </div>
+            <p className="text-[11px] text-muted-foreground">
+              A importação só ocorre quando ambos estão marcados e a linha está sem erros.
+            </p>
+          </fieldset>
+        </div>
+
+        <DialogFooter>
+          <Button variant="ghost" onClick={() => onChange(null)} disabled={saving}>
+            Cancelar
+          </Button>
+          <Button onClick={onSave} disabled={saving}>
+            {saving ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : null}
+            Salvar e revalidar
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
