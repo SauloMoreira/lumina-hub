@@ -243,6 +243,9 @@ export const parseImportSheet = createServerFn({ method: "POST" })
           case "categoria":
             row.categoria = String(v ?? "").trim();
             break;
+          case "custo":
+            row.preco_custo = parsePrice(v);
+            break;
           case "preco":
             row.preco_venda = parsePrice(v);
             break;
