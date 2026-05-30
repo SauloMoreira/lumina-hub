@@ -267,7 +267,7 @@ export const parseImportSheet = createServerFn({ method: "POST" })
         }
       }
       // ignora linhas totalmente vazias
-      if (!row.sku && !row.nome_produto && !row.categoria && row.preco_venda === null) {
+      if (!row.sku && !row.nome_produto && !row.categoria && row.preco_venda === null && row.preco_custo === null) {
         return;
       }
       rows.push(row);
