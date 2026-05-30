@@ -261,35 +261,107 @@ function ImportacaoIaPage() {
       }
     >
       <div className="space-y-6 max-w-7xl">
-        {/* Upload */}
-        <Card className="p-6">
-          <h2 className="font-display text-lg font-semibold mb-2">1. Enviar planilha .xlsx</h2>
-          <p className="text-sm text-muted-foreground mb-4">
-            A aba lida é <code>PRODUTOS_MÍNIMO</code> (ou a primeira aba disponível). Limite: 5 MB e
-            500 linhas. Nenhum produto é criado sem aprovação humana.
+        {/* Introdução */}
+        <div>
+          <h1 className="font-display text-xl font-semibold mb-1">
+            Importação de produtos por planilha
+          </h1>
+          <p className="text-sm text-muted-foreground max-w-3xl">
+            Baixe o modelo oficial, preencha os campos mínimos e envie a planilha para validação.
+            A IA poderá sugerir descrições, slug, SEO e tags, mas a importação só será realizada
+            após revisão e aprovação humana.
           </p>
-          <div className="flex flex-wrap items-center gap-3">
-            <input
-              type="file"
-              accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-              onChange={(e) => setFile(e.target.files?.[0] ?? null)}
-              className="text-sm"
-            />
-            <Button onClick={handleParse} disabled={!file || loading !== null}>
-              {loading === "parse" ? (
-                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-              ) : (
-                <Upload className="h-4 w-4 mr-2" />
-              )}
-              Ler planilha
-            </Button>
-            {rows.length > 0 && (
-              <Button onClick={handleCancel} variant="ghost" size="sm">
-                Cancelar
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+          {/* Card 1 — Modelo oficial */}
+          <Card className="p-6 flex flex-col">
+            <div className="flex items-center gap-2 mb-3">
+              <FileSpreadsheet className="h-5 w-5 text-emerald-600" />
+              <h2 className="font-display text-base font-semibold">Modelo oficial da planilha</h2>
+            </div>
+            <p className="text-sm text-muted-foreground mb-4 flex-1">
+              Use sempre o arquivo modelo para garantir compatibilidade com o importador.
+              Não altere os nomes das colunas.
+            </p>
+            <div className="space-y-3">
+              <Button asChild variant="default" className="w-full">
+                <a
+                  href="/templates/Cadastro_Minimo_Produtos_Led_Marica_IA.xlsx"
+                  download="Cadastro_Minimo_Produtos_Led_Marica_IA.xlsx"
+                >
+                  <Download className="h-4 w-4 mr-2" />
+                  Baixar modelo da planilha
+                </a>
               </Button>
-            )}
-          </div>
-        </Card>
+              <p className="text-xs text-muted-foreground">
+                O arquivo deve ser mantido no formato original para que o agente de IA consiga ler
+                corretamente as colunas esperadas.
+              </p>
+            </div>
+          </Card>
+
+          {/* Card 2 — Enviar planilha */}
+          <Card className="p-6 flex flex-col">
+            <div className="flex items-center gap-2 mb-3">
+              <Upload className="h-5 w-5 text-primary" />
+              <h2 className="font-display text-base font-semibold">Enviar planilha</h2>
+            </div>
+            <p className="text-sm text-muted-foreground mb-4 flex-1">
+              A aba lida é <code>PRODUTOS_MÍNIMO</code> (ou a primeira aba disponível). Limite: 5 MB
+              e 500 linhas.
+            </p>
+            <div className="flex flex-wrap items-center gap-3">
+              <input
+                type="file"
+                accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+                onChange={(e) => setFile(e.target.files?.[0] ?? null)}
+                className="text-sm"
+              />
+              <Button onClick={handleParse} disabled={!file || loading !== null} size="sm">
+                {loading === "parse" ? (
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                ) : (
+                  <Upload className="h-4 w-4 mr-2" />
+                )}
+                Ler planilha
+              </Button>
+              {rows.length > 0 && (
+                <Button onClick={handleCancel} variant="ghost" size="sm">
+                  Cancelar
+                </Button>
+              )}
+            </div>
+          </Card>
+
+          {/* Card 3 — Como usar */}
+          <Card className="p-6 flex flex-col">
+            <div className="flex items-center gap-2 mb-3">
+              <PlayCircle className="h-5 w-5 text-amber-600" />
+              <h2 className="font-display text-base font-semibold">Como usar</h2>
+            </div>
+            <ol className="text-sm text-muted-foreground space-y-1 list-decimal pl-4 flex-1">
+              <li>Baixe o modelo oficial.</li>
+              <li>Preencha os campos mínimos do produto.</li>
+              <li>Salve a planilha em .xlsx.</li>
+              <li>Envie a planilha nesta página.</li>
+              <li>Aguarde a validação.</li>
+              <li>Revise as sugestões da IA.</li>
+              <li>Aprove apenas os produtos corretos.</li>
+              <li>Execute a importação.</li>
+            </ol>
+          </Card>
+        </div>
+
+        {/* Destaque de segurança */}
+        <div className="rounded-lg border border-emerald-200 bg-emerald-50/60 dark:bg-emerald-950/20 dark:border-emerald-800/40 p-4 flex items-start gap-3">
+          <CheckCircle2 className="h-5 w-5 text-emerald-600 mt-0.5 shrink-0" />
+          <p className="text-sm text-emerald-800 dark:text-emerald-200">
+            <span className="font-semibold">Segurança:</span> A IA auxilia no preenchimento, mas não
+            publica produtos automaticamente. Todo produto precisa de revisão e aprovação humana.
+          </p>
+        </div>
+
 
         {/* Resumo */}
         {rows.length > 0 && (
