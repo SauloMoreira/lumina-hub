@@ -937,6 +937,7 @@ export const downloadRevisedSheet = createServerFn({ method: "POST" })
         r.sku,
         r.nome_produto,
         r.categoria,
+        r.preco_custo,
         r.preco_venda,
         r.estoque_inicial,
         r.ativo ? "sim" : "não",
