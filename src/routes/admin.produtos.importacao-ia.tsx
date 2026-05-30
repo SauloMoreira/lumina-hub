@@ -760,8 +760,9 @@ function KV({ label, value, multi = false }: { label: string; value: string; mul
   );
 }
 
-const ACTION_OPTIONS: { value: ImportAction; label: string }[] = [
-  { value: "", label: "(automático)" },
+const ACTION_AUTO = "__auto__";
+const ACTION_OPTIONS: { value: string; label: string }[] = [
+  { value: ACTION_AUTO, label: "(automático)" },
   { value: "criar", label: "Criar" },
   { value: "atualizar", label: "Atualizar" },
   { value: "ignorar", label: "Ignorar" },
@@ -832,13 +833,13 @@ function EditRowDialog({
               <div>
                 <Label>Ação</Label>
                 <Select
-                  value={row.action || ""}
-                  onValueChange={(v) => set("action", v as ImportAction)}
+                  value={row.action ? row.action : ACTION_AUTO}
+                  onValueChange={(v) => set("action", (v === ACTION_AUTO ? "" : v) as ImportAction)}
                 >
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
                     {ACTION_OPTIONS.map((o) => (
-                      <SelectItem key={o.value || "auto"} value={o.value}>{o.label}</SelectItem>
+                      <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
