@@ -601,6 +601,14 @@ function ImportacaoIaPage() {
         )}
       </div>
 
+      {/* Modal de edição */}
+      <EditRowDialog
+        row={editingRow}
+        onChange={setEditingRow}
+        onSave={handleSaveEdit}
+        saving={savingEdit}
+      />
+
       {/* Modal de detalhes */}
       <Dialog open={!!detailRow} onOpenChange={(o) => !o && setDetailRow(null)}>
         <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
