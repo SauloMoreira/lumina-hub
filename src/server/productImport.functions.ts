@@ -912,6 +912,7 @@ export const downloadRevisedSheet = createServerFn({ method: "POST" })
       "sku",
       "nome_produto",
       "categoria",
+      "preco_custo",
       "preco_venda",
       "estoque_inicial",
       "ativo",
