@@ -833,13 +833,13 @@ function EditRowDialog({
               <div>
                 <Label>Ação</Label>
                 <Select
-                  value={row.action || ""}
-                  onValueChange={(v) => set("action", v as ImportAction)}
+                  value={row.action ? row.action : ACTION_AUTO}
+                  onValueChange={(v) => set("action", (v === ACTION_AUTO ? "" : v) as ImportAction)}
                 >
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
                     {ACTION_OPTIONS.map((o) => (
-                      <SelectItem key={o.value || "auto"} value={o.value}>{o.label}</SelectItem>
+                      <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
