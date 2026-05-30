@@ -309,20 +309,31 @@ function ImportacaoIaPage() {
               e 500 linhas.
             </p>
             <div className="flex flex-wrap items-center gap-3">
-              <input
-                type="file"
-                accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-                onChange={(e) => setFile(e.target.files?.[0] ?? null)}
-                className="text-sm"
-              />
-              <Button onClick={handleParse} disabled={!file || loading !== null} size="sm">
-                {loading === "parse" ? (
-                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                ) : (
-                  <Upload className="h-4 w-4 mr-2" />
-                )}
-                Ler planilha
+              <Button asChild disabled={loading !== null} size="sm">
+                <label className="cursor-pointer">
+                  {loading === "parse" ? (
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  ) : (
+                    <Upload className="h-4 w-4 mr-2" />
+                  )}
+                  {file ? "Trocar planilha" : "Escolher e enviar planilha"}
+                  <input
+                    type="file"
+                    accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+                    className="sr-only"
+                    onChange={(e) => {
+                      const f = e.target.files?.[0];
+                      if (f) void handleParseFile(f);
+                      e.target.value = "";
+                    }}
+                  />
+                </label>
               </Button>
+              {file && (
+                <span className="text-xs text-muted-foreground truncate max-w-[220px]">
+                  {file.name}
+                </span>
+              )}
               {rows.length > 0 && (
                 <Button onClick={handleCancel} variant="ghost" size="sm">
                   Cancelar
