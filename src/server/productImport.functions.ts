@@ -844,6 +844,8 @@ export const commitImport = createServerFn({ method: "POST" })
           slug: candidate,
           category_id: row.matched_category_id,
           price: row.preco_venda,
+          cost_price:
+            row.preco_custo !== null && row.preco_custo >= 0 ? row.preco_custo : null,
           stock_qty: row.estoque_inicial ?? 0,
           active: row.ativo && row.warnings.length === 0,
           description: row.descricao_longa ?? null,
