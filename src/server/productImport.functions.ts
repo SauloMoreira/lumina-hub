@@ -82,6 +82,7 @@ const ImportRowSchema = z.object({
   sku: z.string(),
   nome_produto: z.string(),
   categoria: z.string(),
+  preco_custo: z.number().nullable(),
   preco_venda: z.number().nullable(),
   estoque_inicial: z.number().nullable(),
   ativo: z.boolean(),
