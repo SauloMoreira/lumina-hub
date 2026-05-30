@@ -1,11 +1,23 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useState, useMemo } from "react";
-import { ArrowLeft, Upload, Loader2, Sparkles, Download, FileSpreadsheet, PlayCircle, CheckCircle2, XCircle, AlertTriangle } from "lucide-react";
+import { useState, useMemo, useEffect } from "react";
+import { ArrowLeft, Upload, Loader2, Sparkles, Download, FileSpreadsheet, PlayCircle, CheckCircle2, XCircle, AlertTriangle, Pencil } from "lucide-react";
 import { toast } from "sonner";
 import { AdminLayout } from "@/components/admin/AdminLayout";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Switch } from "@/components/ui/switch";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import {
   Table,
   TableBody,
@@ -17,6 +29,7 @@ import {
 import {
   Dialog,
   DialogContent,
+  DialogFooter,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
@@ -28,8 +41,8 @@ import {
   commitImport,
   downloadRevisedSheet,
 } from "@/server/productImport.functions";
-import type { ImportRow } from "@/lib/productImport";
-import { countRows } from "@/lib/productImport";
+import type { ImportRow, ImportAction } from "@/lib/productImport";
+import { countRows, parseTags } from "@/lib/productImport";
 
 type SimResult = {
   plan: Array<{
