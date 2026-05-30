@@ -515,9 +515,32 @@ function ImportacaoIaPage() {
                         {r.estoque_inicial ?? "—"}
                       </TableCell>
                       <TableCell>{r.ativo ? "Sim" : "Não"}</TableCell>
-                      <TableCell>{r.revisado_humano ? "Sim" : "Não"}</TableCell>
-                      <TableCell>{r.aprovado_importar ? "Sim" : "Não"}</TableCell>
                       <TableCell>
+                        <Checkbox
+                          checked={r.revisado_humano}
+                          onCheckedChange={(v) =>
+                            updateRowField(r.rowIndex, "revisado_humano", v === true)
+                          }
+                          aria-label="Revisado por humano"
+                        />
+                      </TableCell>
+                      <TableCell>
+                        <Checkbox
+                          checked={r.aprovado_importar}
+                          onCheckedChange={(v) =>
+                            updateRowField(r.rowIndex, "aprovado_importar", v === true)
+                          }
+                          aria-label="Aprovado para importar"
+                        />
+                      </TableCell>
+                      <TableCell className="flex gap-1">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setEditingRow({ ...r })}
+                        >
+                          <Pencil className="h-3.5 w-3.5 mr-1" /> Editar
+                        </Button>
                         <Button
                           variant="ghost"
                           size="sm"
