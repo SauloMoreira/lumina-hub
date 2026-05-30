@@ -369,11 +369,25 @@ export const validateImportRows = createServerFn({ method: "POST" })
         }
       }
 
+      // Preço de custo (obrigatório para cálculo de margem)
+      if (r.preco_custo === null || r.preco_custo === undefined) {
+        errors.push("Preço de custo obrigatório.");
+      } else if (r.preco_custo < 0) {
+        errors.push("Preço de custo não pode ser negativo.");
+      }
+
       // Preço
       if (r.preco_venda === null || r.preco_venda === undefined) {
         errors.push("Preço de venda obrigatório.");
       } else if (r.preco_venda <= 0) {
         errors.push("Preço deve ser maior que zero.");
+      } else if (
+        r.preco_custo !== null &&
+        r.preco_custo !== undefined &&
+        r.preco_custo > 0 &&
+        r.preco_venda <= r.preco_custo
+      ) {
+        warnings.push("Preço de venda menor ou igual ao custo — margem nula ou negativa.");
       }
 
       // Estoque
