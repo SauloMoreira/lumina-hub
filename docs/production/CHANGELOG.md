@@ -8,6 +8,17 @@ e versionamento [SemVer](https://semver.org/lang/pt-BR/).
 
 ---
 
+## [1.0.0 — Produção Assistida] — 2026-05-30
+
+### Marco
+- Início oficial da **Produção Assistida v1.0.0** (30/mai/2026 → 30/ago/2026).
+- Governança detalhada em `PRODUCAO_ASSISTIDA_3_MESES.md`.
+- Monitoramento diário nos primeiros 15 dias; semanal a partir da semana 03.
+- Templates semanais e arquivos de incidentes/melhorias criados.
+- ChangeControl: CC-2026-002.
+
+---
+
 ## [1.0.0] — 2026-05-30
 
 ### Marco
