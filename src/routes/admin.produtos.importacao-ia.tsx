@@ -760,8 +760,9 @@ function KV({ label, value, multi = false }: { label: string; value: string; mul
   );
 }
 
-const ACTION_OPTIONS: { value: ImportAction; label: string }[] = [
-  { value: "", label: "(automático)" },
+const ACTION_AUTO = "__auto__";
+const ACTION_OPTIONS: { value: string; label: string }[] = [
+  { value: ACTION_AUTO, label: "(automático)" },
   { value: "criar", label: "Criar" },
   { value: "atualizar", label: "Atualizar" },
   { value: "ignorar", label: "Ignorar" },
