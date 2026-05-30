@@ -195,7 +195,12 @@ function ImportacaoIaPage() {
       const res = await enrichImportRows({ data: { rows, onlyEmpty: true } });
       if (!res.ok) return;
       setRows(res.rows);
-      toast.success(`IA preencheu ${res.succeeded} linhas (${res.failed} falhas).`);
+      if (res.succeeded === 0 && res.failed > 0) {
+        const firstErr = res.rows.find((r) => r.observacoes_ia?.includes("[IA]"))?.observacoes_ia ?? "";
+        toast.error(`IA falhou em todas as ${res.failed} linhas. ${firstErr.slice(0, 200)}`);
+      } else {
+        toast.success(`IA preencheu ${res.succeeded} linhas (${res.failed} falhas).`);
+      }
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Erro IA");
     } finally {
