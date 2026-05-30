@@ -5,6 +5,46 @@ Resumo curto vai em `CHANGELOG.md`; o dossiê completo fica aqui.
 
 ---
 
+## v1.0.0 — Produção Assistida (3 meses)
+
+| Campo               | Valor                                              |
+|---------------------|----------------------------------------------------|
+| Versão              | 1.0.0 (marco operacional)                          |
+| Data                | 30/mai/2026                                        |
+| Término previsto    | 30/ago/2026                                        |
+| Responsável         | Saulo Moreira (saulocmoreira@gmail.com)            |
+| Tipo                | operacional (governança)                           |
+| Status              | em andamento                                       |
+| ChangeControl       | CC-2026-002                                        |
+| Backup pré-deploy   | snapshot diário Lovable Cloud (BACKUP_LOG)         |
+| Plano de rollback   | não aplicável (marco operacional)                  |
+
+### Descrição
+Início oficial da janela de Produção Assistida de 3 meses. Define cadência
+de monitoramento diário (dias 1–15) e semanal (semanas 3–12), regras de
+correção em produção, classificação de incidentes, política de backup
+reforçada e critérios de encerramento. Documento mestre:
+`PRODUCAO_ASSISTIDA_3_MESES.md`.
+
+### Arquivos criados
+- `docs/production/PRODUCAO_ASSISTIDA_3_MESES.md`
+- `docs/production/PRODUCAO_ASSISTIDA_SEMANA_01..04.md`
+- `docs/production/INCIDENTES_PRODUCAO.md`
+- `docs/production/MELHORIAS_PRODUCAO.md`
+
+### Impacto esperado
+- Operação interna passa a registrar incidentes/melhorias/relatórios
+  semanais sistematicamente.
+- Nenhum impacto funcional para o cliente final.
+
+### Riscos
+- Operacional: equipe precisa adotar a rotina de monitoramento.
+
+### Testes realizados
+- N/A (documentação e rotina).
+
+---
+
 ## v1.0.0 — Baseline de produção
 
 | Campo               | Valor                                              |

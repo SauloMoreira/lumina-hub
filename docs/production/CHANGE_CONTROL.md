@@ -114,3 +114,20 @@ neste arquivo na seção "Histórico" abaixo.
 - **Versão alvo:** v1.0.0
 - **Status:** publicado
 - **Data fechamento:** 30/mai/2026
+
+### CC-2026-002 — Produção Assistida v1.0.0 (3 meses)
+- **Solicitante:** Saulo Moreira
+- **Classificação:** operacional (governança, sem código)
+- **Data abertura:** 30/mai/2026
+- **Risco segurança:** nenhum
+- **Risco regressão:** nenhum
+- **Backup necessário:** snapshot diário automático (sem deploy)
+- **Arquivos alterados:** somente `docs/production/*`
+- **Plano de teste:** N/A (documentação)
+- **Plano de rollback:** N/A (marco operacional)
+- **Aprovador:** Saulo Moreira
+- **Versão alvo:** v1.0.0 (marco)
+- **Status:** publicado
+- **Data fechamento:** 30/mai/2026
+- **Observações:** janela ativa 30/mai/2026 → 30/ago/2026
+
