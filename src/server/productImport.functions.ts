@@ -445,14 +445,14 @@ export const validateImportRows = createServerFn({ method: "POST" })
 // ===================== 3. enrichImportRows (IA) =====================
 
 const AISuggestion = z.object({
-  slug_sugerido: z.string().min(1).max(120),
-  descricao_curta: z.string().min(10).max(400),
-  descricao_longa: z.string().min(20).max(3000),
-  tags: z.array(z.string()).max(15),
-  titulo_seo: z.string().min(5).max(70),
-  meta_description: z.string().min(20).max(200),
-  observacoes_ia: z.string().max(500).optional().default(""),
-  nivel_confianca_ia: z.enum(["alta", "media", "baixa"]),
+  slug_sugerido: z.string().min(1).transform((s) => s.slice(0, 120)),
+  descricao_curta: z.string().min(1).transform((s) => s.slice(0, 400)),
+  descricao_longa: z.string().min(1).transform((s) => s.slice(0, 3000)),
+  tags: z.array(z.string()).max(30).optional().default([]),
+  titulo_seo: z.string().min(1).transform((s) => s.slice(0, 70)),
+  meta_description: z.string().min(1).transform((s) => s.slice(0, 200)),
+  observacoes_ia: z.string().max(1000).optional().default(""),
+  nivel_confianca_ia: z.enum(["alta", "media", "baixa"]).optional().default("media"),
 });
 
 const SYSTEM_PROMPT_IA = `Você é especialista em cadastro de produtos para e-commerce de material elétrico e iluminação LED da loja Led Maricá (Maricá/RJ).
