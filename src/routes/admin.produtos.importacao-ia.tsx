@@ -569,7 +569,18 @@ function ImportacaoIaPage() {
                   <KV label="Nome" value={detailRow.nome_produto} />
                   <KV label="Categoria" value={detailRow.categoria} />
                   <KV
-                    label="Preço"
+                    label="Preço de custo"
+                    value={
+                      detailRow.preco_custo !== null
+                        ? detailRow.preco_custo.toLocaleString("pt-BR", {
+                            style: "currency",
+                            currency: "BRL",
+                          })
+                        : "—"
+                    }
+                  />
+                  <KV
+                    label="Preço de venda"
                     value={
                       detailRow.preco_venda !== null
                         ? detailRow.preco_venda.toLocaleString("pt-BR", {
