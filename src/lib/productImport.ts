@@ -16,6 +16,7 @@ export type ImportRow = {
   sku: string;
   nome_produto: string;
   categoria: string;
+  preco_custo: number | null;
   preco_venda: number | null;
   estoque_inicial: number | null;
   ativo: boolean;

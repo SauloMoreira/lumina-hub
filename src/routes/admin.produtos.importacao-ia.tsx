@@ -98,25 +98,21 @@ function ImportacaoIaPage() {
   const counts = useMemo(() => countRows(rows), [rows]);
   const canImport = sim !== null && counts.ready > 0;
 
-  async function handleParse() {
-    if (!file) {
-      toast.error("Selecione um arquivo .xlsx primeiro.");
-      return;
-    }
+  async function handleParseFile(picked: File) {
+    setFile(picked);
     setLoading("parse");
     setSim(null);
     setCommitResult(null);
     try {
-      const b64 = await fileToBase64(file);
-      const res = await parseImportSheet({ data: { fileBase64: b64, fileName: file.name } });
+      const b64 = await fileToBase64(picked);
+      const res = await parseImportSheet({ data: { fileBase64: b64, fileName: picked.name } });
       if (!res.ok) {
         toast.error(res.error);
         return;
       }
       setRows(res.rows);
-      setFileName(file.name);
+      setFileName(picked.name);
       toast.success(`Planilha lida: ${res.rows.length} linhas.`);
-      // Auto valida em seguida
       await handleValidate(res.rows);
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Erro ao ler planilha");
@@ -124,6 +120,7 @@ function ImportacaoIaPage() {
       setLoading(null);
     }
   }
+
 
   async function handleValidate(seed?: ImportRow[]) {
     const input = seed ?? rows;
@@ -312,20 +309,31 @@ function ImportacaoIaPage() {
               e 500 linhas.
             </p>
             <div className="flex flex-wrap items-center gap-3">
-              <input
-                type="file"
-                accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-                onChange={(e) => setFile(e.target.files?.[0] ?? null)}
-                className="text-sm"
-              />
-              <Button onClick={handleParse} disabled={!file || loading !== null} size="sm">
-                {loading === "parse" ? (
-                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                ) : (
-                  <Upload className="h-4 w-4 mr-2" />
-                )}
-                Ler planilha
+              <Button asChild disabled={loading !== null} size="sm">
+                <label className="cursor-pointer">
+                  {loading === "parse" ? (
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  ) : (
+                    <Upload className="h-4 w-4 mr-2" />
+                  )}
+                  {file ? "Trocar planilha" : "Escolher e enviar planilha"}
+                  <input
+                    type="file"
+                    accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+                    className="sr-only"
+                    onChange={(e) => {
+                      const f = e.target.files?.[0];
+                      if (f) void handleParseFile(f);
+                      e.target.value = "";
+                    }}
+                  />
+                </label>
               </Button>
+              {file && (
+                <span className="text-xs text-muted-foreground truncate max-w-[220px]">
+                  {file.name}
+                </span>
+              )}
               {rows.length > 0 && (
                 <Button onClick={handleCancel} variant="ghost" size="sm">
                   Cancelar
@@ -561,7 +569,18 @@ function ImportacaoIaPage() {
                   <KV label="Nome" value={detailRow.nome_produto} />
                   <KV label="Categoria" value={detailRow.categoria} />
                   <KV
-                    label="Preço"
+                    label="Preço de custo"
+                    value={
+                      detailRow.preco_custo !== null
+                        ? detailRow.preco_custo.toLocaleString("pt-BR", {
+                            style: "currency",
+                            currency: "BRL",
+                          })
+                        : "—"
+                    }
+                  />
+                  <KV
+                    label="Preço de venda"
                     value={
                       detailRow.preco_venda !== null
                         ? detailRow.preco_venda.toLocaleString("pt-BR", {

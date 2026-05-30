@@ -37,6 +37,11 @@ const HEADER_MAP: Record<string, keyof RawRow> = {
   nome: "nome",
   produto: "nome",
   categoria: "categoria",
+  preco_custo: "custo",
+  preço_custo: "custo",
+  custo: "custo",
+  custo_unitario: "custo",
+  custo_unitário: "custo",
   preco_venda: "preco",
   preço_venda: "preco",
   preco: "preco",
@@ -60,6 +65,7 @@ type RawRow = {
   sku: unknown;
   nome: unknown;
   categoria: unknown;
+  custo: unknown;
   preco: unknown;
   estoque: unknown;
   ativo: unknown;
@@ -76,6 +82,7 @@ const ImportRowSchema = z.object({
   sku: z.string(),
   nome_produto: z.string(),
   categoria: z.string(),
+  preco_custo: z.number().nullable(),
   preco_venda: z.number().nullable(),
   estoque_inicial: z.number().nullable(),
   ativo: z.boolean(),
@@ -110,6 +117,7 @@ function emptyRow(rowIndex: number): ImportRow {
     sku: "",
     nome_produto: "",
     categoria: "",
+    preco_custo: null,
     preco_venda: null,
     estoque_inicial: null,
     ativo: false,
@@ -235,6 +243,9 @@ export const parseImportSheet = createServerFn({ method: "POST" })
           case "categoria":
             row.categoria = String(v ?? "").trim();
             break;
+          case "custo":
+            row.preco_custo = parsePrice(v);
+            break;
           case "preco":
             row.preco_venda = parsePrice(v);
             break;
@@ -256,7 +267,7 @@ export const parseImportSheet = createServerFn({ method: "POST" })
         }
       }
       // ignora linhas totalmente vazias
-      if (!row.sku && !row.nome_produto && !row.categoria && row.preco_venda === null) {
+      if (!row.sku && !row.nome_produto && !row.categoria && row.preco_venda === null && row.preco_custo === null) {
         return;
       }
       rows.push(row);
@@ -358,11 +369,25 @@ export const validateImportRows = createServerFn({ method: "POST" })
         }
       }
 
+      // Preço de custo (obrigatório para cálculo de margem)
+      if (r.preco_custo === null || r.preco_custo === undefined) {
+        errors.push("Preço de custo obrigatório.");
+      } else if (r.preco_custo < 0) {
+        errors.push("Preço de custo não pode ser negativo.");
+      }
+
       // Preço
       if (r.preco_venda === null || r.preco_venda === undefined) {
         errors.push("Preço de venda obrigatório.");
       } else if (r.preco_venda <= 0) {
         errors.push("Preço deve ser maior que zero.");
+      } else if (
+        r.preco_custo !== null &&
+        r.preco_custo !== undefined &&
+        r.preco_custo > 0 &&
+        r.preco_venda <= r.preco_custo
+      ) {
+        warnings.push("Preço de venda menor ou igual ao custo — margem nula ou negativa.");
       }
 
       // Estoque
@@ -746,6 +771,7 @@ export const commitImport = createServerFn({ method: "POST" })
             name: string;
             category_id: string | null;
             price: number;
+            cost_price?: number;
             updated_at: string;
             description?: string;
             tags?: string[];
@@ -758,6 +784,9 @@ export const commitImport = createServerFn({ method: "POST" })
             price: row.preco_venda,
             updated_at: new Date().toISOString(),
           };
+          if (row.preco_custo !== null && row.preco_custo >= 0) {
+            update.cost_price = row.preco_custo;
+          }
           if (row.descricao_longa) update.description = row.descricao_longa;
           if (row.tags.length) update.tags = row.tags;
           if (row.titulo_seo) update.seo_title = row.titulo_seo;
@@ -815,6 +844,8 @@ export const commitImport = createServerFn({ method: "POST" })
           slug: candidate,
           category_id: row.matched_category_id,
           price: row.preco_venda,
+          cost_price:
+            row.preco_custo !== null && row.preco_custo >= 0 ? row.preco_custo : null,
           stock_qty: row.estoque_inicial ?? 0,
           active: row.ativo && row.warnings.length === 0,
           description: row.descricao_longa ?? null,
@@ -881,6 +912,7 @@ export const downloadRevisedSheet = createServerFn({ method: "POST" })
       "sku",
       "nome_produto",
       "categoria",
+      "preco_custo",
       "preco_venda",
       "estoque_inicial",
       "ativo",
@@ -905,6 +937,7 @@ export const downloadRevisedSheet = createServerFn({ method: "POST" })
         r.sku,
         r.nome_produto,
         r.categoria,
+        r.preco_custo,
         r.preco_venda,
         r.estoque_inicial,
         r.ativo ? "sim" : "não",
