@@ -771,6 +771,7 @@ export const commitImport = createServerFn({ method: "POST" })
             name: string;
             category_id: string | null;
             price: number;
+            cost_price?: number;
             updated_at: string;
             description?: string;
             tags?: string[];
@@ -783,6 +784,9 @@ export const commitImport = createServerFn({ method: "POST" })
             price: row.preco_venda,
             updated_at: new Date().toISOString(),
           };
+          if (row.preco_custo !== null && row.preco_custo >= 0) {
+            update.cost_price = row.preco_custo;
+          }
           if (row.descricao_longa) update.description = row.descricao_longa;
           if (row.tags.length) update.tags = row.tags;
           if (row.titulo_seo) update.seo_title = row.titulo_seo;
