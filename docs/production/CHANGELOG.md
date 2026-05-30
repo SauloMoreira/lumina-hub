@@ -8,6 +8,35 @@ e versionamento [SemVer](https://semver.org/lang/pt-BR/).
 
 ---
 
+## [1.0.1] — 2026-05-30
+
+**Tipo:** melhoria (hotfix de UX)
+**ChangeControl:** CC-2026-003
+**Classificação:** Média (MEL-2026-002)
+
+### Alterado
+- Tela `/admin/produtos/importacao-ia`: etapa de revisão agora é editável.
+  Cada linha tem botão "Editar" abrindo modal com seções (Dados básicos,
+  Comercial, Conteúdo/IA, SEO, Revisão). Checkboxes inline para
+  `revisado_humano` e `aprovado_importar` na grade.
+- Após salvar uma linha, o sistema revalida automaticamente e invalida a
+  simulação anterior, forçando nova simulação antes de importar.
+
+### Segurança
+- Sem alterações em checkout, Mercado Pago, webhook, estoque, pedidos,
+  e-mails, CRM, GA4, DNS, MFA/AAL2, RLS ou policies.
+- Rota continua restrita a admin com MFA/AAL2 (mesma proteção da v1.0.0).
+- Validação server-side em `validateImportRows` e `commitImport` permanece
+  inalterada — frontend apenas alimenta os mesmos endpoints já homologados.
+- IA continua somente sugestão; importação exige aprovação humana explícita.
+
+### Notas de rollback
+- Versão anterior estável: 1.0.0
+- Backup pré-deploy: não obrigatório (mudança apenas no frontend admin,
+  sem schema/dados); ver `BACKUP_LOG.md` para snapshot diário.
+
+---
+
 ## [1.0.0 — Produção Assistida] — 2026-05-30
 
 ### Marco
