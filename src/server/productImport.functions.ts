@@ -117,6 +117,7 @@ function emptyRow(rowIndex: number): ImportRow {
     sku: "",
     nome_produto: "",
     categoria: "",
+    preco_custo: null,
     preco_venda: null,
     estoque_inicial: null,
     ativo: false,
