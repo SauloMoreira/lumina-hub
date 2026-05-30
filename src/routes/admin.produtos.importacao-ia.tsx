@@ -98,25 +98,21 @@ function ImportacaoIaPage() {
   const counts = useMemo(() => countRows(rows), [rows]);
   const canImport = sim !== null && counts.ready > 0;
 
-  async function handleParse() {
-    if (!file) {
-      toast.error("Selecione um arquivo .xlsx primeiro.");
-      return;
-    }
+  async function handleParseFile(picked: File) {
+    setFile(picked);
     setLoading("parse");
     setSim(null);
     setCommitResult(null);
     try {
-      const b64 = await fileToBase64(file);
-      const res = await parseImportSheet({ data: { fileBase64: b64, fileName: file.name } });
+      const b64 = await fileToBase64(picked);
+      const res = await parseImportSheet({ data: { fileBase64: b64, fileName: picked.name } });
       if (!res.ok) {
         toast.error(res.error);
         return;
       }
       setRows(res.rows);
-      setFileName(file.name);
+      setFileName(picked.name);
       toast.success(`Planilha lida: ${res.rows.length} linhas.`);
-      // Auto valida em seguida
       await handleValidate(res.rows);
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Erro ao ler planilha");
@@ -124,6 +120,7 @@ function ImportacaoIaPage() {
       setLoading(null);
     }
   }
+
 
   async function handleValidate(seed?: ImportRow[]) {
     const input = seed ?? rows;
