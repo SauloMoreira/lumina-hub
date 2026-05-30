@@ -37,6 +37,11 @@ const HEADER_MAP: Record<string, keyof RawRow> = {
   nome: "nome",
   produto: "nome",
   categoria: "categoria",
+  preco_custo: "custo",
+  preço_custo: "custo",
+  custo: "custo",
+  custo_unitario: "custo",
+  custo_unitário: "custo",
   preco_venda: "preco",
   preço_venda: "preco",
   preco: "preco",
@@ -60,6 +65,7 @@ type RawRow = {
   sku: unknown;
   nome: unknown;
   categoria: unknown;
+  custo: unknown;
   preco: unknown;
   estoque: unknown;
   ativo: unknown;
