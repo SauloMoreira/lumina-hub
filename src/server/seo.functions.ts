@@ -157,11 +157,18 @@ export const boostProductSeoAuto = createServerFn({ method: "POST" })
       const { data: product, error: pErr } = await supabaseAdmin
         .from("products")
         .select(
-          "id, name, description, brand, price, category_id, specs, categories:category_id(name)",
+          "id, name, description, brand, price, category_id, specs, ncm, tags, categories:category_id(name), product_attributes(attribute_key, attribute_label, attribute_value, attribute_unit)",
         )
         .eq("id", data.productId)
         .maybeSingle();
       if (pErr || !product) return { ok: false as const, error: "Produto não encontrado" };
+
+      const attrs = ((product as any).product_attributes ?? []) as Array<{
+        attribute_key: string | null;
+        attribute_label: string | null;
+        attribute_value: string | null;
+        attribute_unit: string | null;
+      }>;
 
       const promptInput = {
         name: product.name,
@@ -169,6 +176,16 @@ export const boostProductSeoAuto = createServerFn({ method: "POST" })
         brand: product.brand ?? null,
         category: (product as { categories?: { name?: string } | null }).categories?.name ?? null,
         price: product.price != null ? Number(product.price) : null,
+        ncm: (product as any).ncm ?? null,
+        tags: ((product as any).tags ?? []) as string[],
+        attributes: attrs
+          .filter((a) => (a.attribute_value ?? "").trim().length > 0)
+          .map((a) => ({
+            key: a.attribute_key,
+            label: a.attribute_label,
+            value: a.attribute_value!,
+            unit: a.attribute_unit,
+          })),
       };
 
       const json = await callAiGateway({
