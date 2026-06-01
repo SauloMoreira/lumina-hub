@@ -848,6 +848,12 @@ export const commitImport = createServerFn({ method: "POST" })
           if (row.titulo_seo) update.seo_title = row.titulo_seo;
           if (row.meta_description) update.seo_description = row.meta_description;
           if (row.ativo && row.warnings.length === 0) update.active = true;
+          if (row.tech?.marca) update.brand = row.tech.marca.slice(0, 120);
+          if (row.tech?.peso_kg) {
+            const w = Number(row.tech.peso_kg.replace(",", "."));
+            if (Number.isFinite(w) && w >= 0) update.weight_kg = w;
+          }
+
 
           const { error } = await supabaseAdmin
             .from("products")
