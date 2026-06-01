@@ -1,86 +1,185 @@
-# Agente de Importação de Produtos via Planilha (IA-assistida)
 
-Funcionalidade nova, isolada, sem tocar em checkout, MP, webhook, pedidos, e-mails, CRM, GA4, RLS, MFA ou estoque de pedidos. Toda escrita acontece via server functions protegidas por `requireAdmin` (AAL2) e nada é importado sem clique explícito do admin.
+# v1.1.0 — Administração de Usuários e Clientes
 
-## Escopo
+Plataforma em produção assistida. Esta entrega é grande e mexe em
+permissões/autenticação. Por governança proponho dividir em **3 sub-versões
+incrementais (1.1.0-a → 1.1.0-c)**, cada uma com backup, changelog, teste e
+rollback claros. Confirmação antes de cada fase.
 
-- Nova rota admin: `/admin/produtos/importacao-ia`
-- Upload de `.xlsx` (aba `PRODUTOS_MÍNIMO`), parsing 100% no servidor
-- Validação → enriquecimento IA (Lovable AI Gateway) → prévia → simulação (dry-run) → importação aprovada → relatório + auditoria
-- Download da planilha revisada com sugestões/erros/avisos
-- Link no menu admin de Produtos
+## Princípios não-negociáveis
 
-## Arquitetura
+- Nada de mudança em checkout, MP, webhook, estoque, pedidos, e-mails
+  transacionais, GA4, DNS, LGPD, RLS, MFA/AAL2.
+- Toda ação crítica passa por server function com `requireSupabaseAuth` +
+  checagem `is_admin` + (quando aplicável) AAL2, nunca por client.
+- `service_role` só em `*.server.ts` / server functions, jamais no bundle do
+  cliente.
+- Toda ação grava em `admin_audit_log` via `logAdminAction`, sem expor senha,
+  token, link de reset, secret. CPF/CNPJ mascarado.
+- Último admin ativo nunca pode ser bloqueado, removido, rebaixado ou
+  arquivado. Admin não pode bloquear/rebaixar a si próprio sem confirmação
+  forte.
 
-```text
-src/routes/admin.produtos.importacao-ia.tsx        ← UI (RequireAdminMfa)
-src/server/productImport.functions.ts              ← server fns (createServerFn + requireAdmin)
-src/server/productImport.server.ts                 ← parser xlsx, validação, enrich IA, dry-run, commit
-src/lib/productImport.ts                           ← tipos + helpers puros (slugify, parsePrice) compartilhados
+## Estado atual relevante
+
+- `profiles(id, name, email, phone, role, avatar_url, created_at, updated_at)`
+  — não tem `status`. Roles em uso: `admin`, `user` (regra Core: só 2 perfis).
+- `companies` já tem `status` (pending/approved/blocked/rejected) e fluxo de
+  aprovação em `/admin/empresas` + `companies.functions.ts`
+  (`adminUpdateCompanyStatus` já audita).
+- Auditoria pronta: `admin_audit_log` + helper `logAdminAction`.
+- Padrão admin: `AdminLayout`, `DataTable`, `useTableState`, rotas
+  `admin.*.tsx`, server fns em `src/server/*.functions.ts`.
+- Memória Core: **somente 2 perfis (admin / cliente)**. NÃO criar
+  finance/marketing/etc. NÃO criar tela de "perfis e permissões avançadas".
+  Portanto a ação "alterar função" desta tela = alternar entre `admin` ↔
+  `user`, nada mais.
+
+## Escopo ajustado à regra dos 2 perfis
+
+A spec do usuário fala em `cliente_b2c` / `cliente_b2b` como "perfil". Na
+nossa arquitetura isso **não é role** — B2B é definido pelo vínculo com
+`companies` aprovada. Portanto a tela mostra **tipo derivado** (admin /
+cliente B2B aprovado / cliente B2B pendente / cliente B2C / bloqueado), mas
+o que se altera no banco é apenas:
+- `profiles.role` (admin ↔ user) — exige AAL2 + confirmação forte.
+- `companies.status` (já existe, reaproveitar `adminUpdateCompanyStatus`).
+- `profiles.status` novo (active / blocked / archived) — bloqueio operacional.
+
+## Fase 1.1.0-a — Leitura + estrutura base (sem risco)
+
+Backup: não necessário (sem migration destrutiva).
+Migration mínima:
+
+```sql
+alter table public.profiles
+  add column if not exists status text not null default 'active'
+    check (status in ('active','blocked','archived'));
+alter table public.profiles
+  add column if not exists last_sign_in_at timestamptz; -- espelhado do auth on demand
+create index if not exists profiles_status_idx on public.profiles(status);
+create index if not exists profiles_role_idx on public.profiles(role);
 ```
 
-Dependência nova: `xlsx` (SheetJS) — leitura/escrita server-side, compatível com Worker.
+Entregas:
+- Rota `/admin/usuarios` (página + `AdminLayout`, search params via Zod).
+- Cards-resumo (total, B2C, B2B aprovados, B2B pendentes, bloqueados, admins).
+- Tabela com busca (nome, e-mail, telefone, empresa), filtros (todos /
+  admins / B2C / B2B aprov / B2B pend / bloqueados / com pedido / sem
+  pedido), ordenação, paginação. Coluna "tipo" derivada.
+- Server fn `adminListUsers` (paginada, joins com `company_users` +
+  `companies` + count de `orders`).
+- Server fn `adminGetUserDetail` (perfil + empresa + últimos pedidos +
+  leads + últimas linhas do `admin_audit_log` para o alvo + endereços).
+- Página/painel de detalhe somente-leitura.
+- Link no menu `AdminLayout` (perto de Empresas).
 
-## Server functions (todas com `requireAdmin`)
+Sem ações destrutivas nesta fase. Apenas listar e ver.
 
-1. `parseImportSheet({ fileBase64, fileName })` → lê aba `PRODUTOS_MÍNIMO`, devolve linhas normalizadas + erros de parsing. Não grava nada.
-2. `validateImportRows({ rows })` → valida campos obrigatórios, dedup SKU planilha + banco, valida categoria (busca por slug/nome), preço, estoque, flags. Retorna `{ row, status, errors[], warnings[] }`.
-3. `enrichImportRows({ rows })` → Lovable AI (`google/gemini-3-flash-preview`, structured output via Zod) preenche apenas: `slug_sugerido`, `descricao_curta`, `descricao_longa`, `tags`, `titulo_seo`, `meta_description`, `observacoes_ia`, `nivel_confianca_ia`. Prompt proíbe inventar preço/marca/specs/EAN/NCM/certificação.
-4. `simulateImport({ rows })` → dry-run completo: classifica em criar/atualizar/ignorar/erro, mostra diff. Não grava.
-5. `commitImport({ approvedRows, fileName, importId })` → executa só linhas com `revisado_humano=sim` E `aprovado_importar=sim` E status válido. Re-valida no servidor. Cria `active=false` se houver warnings. Grava auditoria via `logAdminAction`. Retorna relatório.
-6. `downloadRevisedSheet({ rows })` → devolve xlsx em base64 com sugestões + colunas `status_validacao`, `erros`, `avisos`.
+## Fase 1.1.0-b — Ações operacionais (com confirmação + auditoria)
 
-## Mapeamento para `products`
+Server fns novas (todas com `requireSupabaseAuth` + `assertAdmin` +
+`logAdminAction`):
+- `adminBlockUser` / `adminUnblockUser` — `profiles.status`.
+  Efeito operacional já existente nas guards atuais: estender
+  `requireSupabaseAuth`/checkout/conta para barrar `status='blocked'`
+  retornando 403 amigável. Pedidos antigos preservados.
+- `adminArchiveUser` — `status='archived'` (bloqueia login operacional, mas
+  mantém histórico). Bloqueia se for último admin.
+- `adminRequestPasswordReset` — usa
+  `supabaseAdmin.auth.admin.generateLink({type:'recovery'})` e dispara
+  e-mail via `src/server/email/transport.ts` (Lovable Emails / Resend
+  atual). Nunca retorna link/senha. Auditoria registra
+  `password_reset_requested`. Mensagem fixa ao admin.
+- `adminApproveCompany` / `adminBlockCompany` / `adminRejectCompany` —
+  reaproveita `adminUpdateCompanyStatus` (já implementado, já audita).
+  Apenas expor botões na tela de usuário quando aplicável.
 
-| Planilha | Coluna DB |
-|---|---|
-| sku | sku |
-| nome_produto | name |
-| slug_sugerido | slug |
-| categoria | category_id (resolvido por nome/slug; se não existir → pendência, NUNCA cria automaticamente) |
-| preco_venda | price |
-| estoque_inicial | stock_qty (só em `criar`; em `atualizar` exige confirmação explícita por linha) |
-| ativo | active (default false se houver warning) |
-| descricao_curta | (campo equivalente no schema) |
-| descricao_longa | description |
-| tags | tags |
-| titulo_seo / meta_description | campos SEO existentes |
+UI:
+- Modal de confirmação com **motivo obrigatório** para todas as ações
+  críticas.
+- Botões na linha + no detalhe.
 
-Vou ler o schema real de `products` antes de codar para confirmar nomes exatos (campo de descrição curta, SEO title/description, etc.).
+Sem mudança em RLS/MFA. Reuso do guarda admin já existente.
 
-## Regras de segurança
+## Fase 1.1.0-c — Alteração de role + arquivar/anonimizar
 
-- Toda server fn: `.middleware([requireAdmin])` → exige admin + AAL2 + MFA verificado
-- UI envolvida em `<RequireAdminMfa>` (padrão do projeto)
-- Re-validação server-side mesmo após validação do frontend
-- Upload: limite 5MB, valida extensão `.xlsx` e magic bytes (PK zip)
-- Categoria nunca criada automaticamente
-- Estoque de produtos existentes nunca sobrescrito sem confirmação por linha
-- IA: structured output Zod, sem campos perigosos no schema, temperatura baixa
-- Auditoria: `logAdminAction({ action: 'product_import.commit', resourceType: 'products', after: { importId, criados, atualizados, ignorados, errosCount, fileName } })` — não loga conteúdo bruto da planilha
+Mais sensível, separada para reduzir blast radius.
 
-## UI (`/admin/produtos/importacao-ia`)
+- `adminChangeUserRole(targetId, newRole, reason, confirmation)`
+  - Valida `assertAdminAal2(context)` (helper novo que checa
+    `context.claims.aal === 'aal2'`, igual a `RequireAdminMfa` no front).
+  - Exige string `confirmation === 'CONFIRMAR ADMIN'` quando promove a admin.
+  - Garante regra do "último admin ativo" via `select count(*) from profiles
+    where role='admin' and status='active'`.
+  - Impede actor === target em rebaixamento sem confirmação extra.
+  - Audita `user_role_changed` com before/after.
+- `adminAnonymizeUser(targetId, reason)` — preserva pedidos/valores,
+  mascara `name='Usuário anonimizado'`, `phone=null`, `email='anon+<id>@…'`,
+  marca `status='archived'`. Texto LGPD no modal. Auditoria
+  `user_anonymized`.
+- `adminDeleteUser(targetId, confirmation)` — só roda se:
+  zero pedidos, zero leads convertidos, zero `admin_audit_log` como actor,
+  não é admin, não é último admin, e `confirmation === 'EXCLUIR DEFINITIVAMENTE'`.
+  Caso contrário retorna erro orientando arquivar/anonimizar e audita
+  `user_delete_attempt_blocked`. Quando permitido, exclui via
+  `supabaseAdmin.auth.admin.deleteUser` (cascade já cuida de profiles).
 
-1. Upload + botão "Ler planilha"
-2. Cards de resumo: total / válidos / com erro / pendentes revisão / aprovados
-3. Tabela de prévia (shadcn Table) com filtros por status
-4. Modal de detalhes por linha (dados originais vs sugestões IA vs o que será gravado)
-5. Botões: Validar · Completar com IA · Baixar planilha revisada · **Simular** · **Importar aprovados** (só habilita após simulação) · Cancelar
-6. Tela de resultado: criados, atualizados, ignorados, erros, download do log CSV
+## Detalhes técnicos transversais
 
-## Fora de escopo (não vou tocar)
+- Helper `src/server/security/assertAdmin.ts`:
+  ```ts
+  export async function assertAdmin(ctx) {
+    const { data } = await supabaseAdmin
+      .from('profiles').select('role').eq('id', ctx.userId).single();
+    if (data?.role !== 'admin') throw new Response('Forbidden',{status:403});
+  }
+  export function assertAal2(ctx) {
+    if (ctx.claims?.aal !== 'aal2')
+      throw new Response('MFA required',{status:401});
+  }
+  ```
+- Guard de login operacional para usuário `blocked`/`archived`:
+  adicionar checagem em `src/server/auth.functions.ts` /
+  `src/integrations/supabase/auth-middleware.ts`-consumers que ler
+  `profiles.status` e retornar 403 com mensagem:
+  "Sua conta está bloqueada. Entre em contato com o suporte."
+  Aplicar em checkout/conta sem tocar nas regras de pagamento.
+- Tipo derivado no listing calculado no SQL (`case` com join em
+  `companies.status`), não no client.
+- Nenhuma alteração em `src/integrations/supabase/*` (arquivos
+  auto-gerados).
 
-- Checkout, Mercado Pago, webhook, pedidos, e-mails, CRM, GA4, DNS, MFA, RLS, políticas Supabase
-- Edição/exclusão de produtos existentes além do mapeamento acima
-- Importação de imagens, atributos técnicos, preços B2B, kits, NCM/CEST (planilha mínima não cobre — ficam para fase futura)
-- Nenhuma migração de banco
-- Nenhuma alteração de permissões públicas
+## Governança (em cada fase)
 
-## Validação final
+- `docs/production/CHANGELOG.md` + `RELEASES.md` atualizado.
+- Classificação: **Alta** (mexe em auth/roles) → backup do banco antes da
+  fase -c, plano de rollback (`alter table profiles drop column status`,
+  reverter server fns, remover rota).
+- `DEPLOY_CHECKLIST.md` rodado.
+- Auditoria validada em pedido de teste.
 
-- `bun add xlsx`
-- Build + TypeScript devem passar (rodados pelo harness)
-- Testes manuais cobrindo os 15 cenários da seção 19 do brief (planilha boa, SKU faltando, preço inválido, duplicidade, etc.) feitos via leitura do código + simulação na UI
-- Confirmação: nenhuma rota/policy pública nova, nenhum endpoint sem `requireAdmin`
+## Testes (executados em cada fase antes do encerramento)
 
-Posso prosseguir?
+Lista completa do item 17 do brief, focando em:
+visitante/B2C/B2B bloqueados na rota; admin acessa; CRUD de status;
+último admin protegido; exclusão bloqueada com histórico; B2B pendente não
+vê preço (regra já em `b2bPricing`); auditoria gerada; build + tsc OK;
+linter Supabase sem novo ERROR.
+
+## Itens fora desta entrega
+
+- Múltiplos perfis (finance/marketing/fiscal). Bloqueado por memória Core.
+- Self-service de MFA por usuário comum. Já existe `RequireAdminMfa` para
+  admin, suficiente.
+- Tela separada de empresas B2B (já existe `/admin/empresas`). Esta tela
+  só linka e expõe ações de aprovação inline.
+
+## Próximo passo
+
+Confirmar:
+1. Tudo bem dividir em três fases (a → b → c) com aprovação entre cada uma?
+2. Ok confirmar que "alterar função" se limita a `admin ↔ user` (regra
+   Core)? Tipos B2B/B2C continuam derivados de `companies`, não roles.
+3. Posso iniciar pela **Fase 1.1.0-a** (somente leitura + migration do
+   campo `status`)?
