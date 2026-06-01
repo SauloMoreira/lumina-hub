@@ -408,8 +408,11 @@ export function computeProductQuality(p: QualityProductInput): QualityResult {
     /externo|outdoor|jardim|piscina|fachada|poste|garagem|área externa|area externa/.test(ctx);
 
   let tech = 0;
-  if (visibleAttrs.length >= 1) {
-    tech += 3;
+  // Considera "tem atributos técnicos" qualquer attribute_value preenchido,
+  // independentemente de is_filterable ou is_visible. Bônus extra quando há
+  // pelo menos 3 atributos relevantes (preferencial).
+  if (techAttrs.length >= 1) {
+    tech += techAttrs.length >= 3 ? 3 : 2;
     passed.push("no_tech_attrs");
   } else {
     issues.push({
