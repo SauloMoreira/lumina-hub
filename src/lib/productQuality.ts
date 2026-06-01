@@ -66,9 +66,11 @@ export interface QualityResult {
 /** Atributo técnico (subset de product_attributes) usado no cálculo de qualidade. */
 export interface QualityAttributeInput {
   attribute_key?: string | null;
+  attribute_label?: string | null;
   attribute_value?: string | null;
   attribute_unit?: string | null;
   is_visible?: boolean | null;
+  is_filterable?: boolean | null;
 }
 
 export interface QualityProductInput {
@@ -85,14 +87,64 @@ export interface QualityProductInput {
   length_cm?: number | null;
   cost_price?: number | null;
   category_id?: string | null;
-  // Imagens podem vir tanto do array legado `images` quanto da relação `product_images`.
   images?: string[] | null;
   product_images?: Array<{ alt_text?: string | null; original_url?: string | null }> | null;
-  // Atributos técnicos estruturados (Onda B). Opcional para compatibilidade.
   product_attributes?: QualityAttributeInput[] | null;
-  // Texto usado para inferir contexto (iluminação / uso externo).
   name?: string | null;
   tags?: string[] | null;
+}
+
+/**
+ * Normaliza um NCM aceitando "8539.52.00", "85395200", "8539 52 00" etc.
+ * Retorna a string só com dígitos quando válida (8 dígitos), ou null.
+ */
+export function normalizeNcm(raw: unknown): string | null {
+  if (raw == null) return null;
+  const digits = String(raw).replace(/\D+/g, "");
+  return digits.length === 8 ? digits : null;
+}
+
+// Mapeia chave/label de atributo para um "slot" canônico (heurísticas de iluminação).
+const ATTR_SLOT_MAP: Record<
+  string,
+  "power" | "voltage" | "color_temperature" | "ip_rating" | "ncm"
+> = {
+  power: "power",
+  potencia: "power",
+  potencia_w: "power",
+  watts: "power",
+  voltage: "voltage",
+  tensao: "voltage",
+  tensao_v: "voltage",
+  voltagem: "voltage",
+  bivolt: "voltage",
+  color_temperature: "color_temperature",
+  temperatura_cor: "color_temperature",
+  temperatura_cor_k: "color_temperature",
+  cct: "color_temperature",
+  ip_rating: "ip_rating",
+  ip: "ip_rating",
+  grau_protecao: "ip_rating",
+  grau_protecao_ip: "ip_rating",
+  protecao_ip: "ip_rating",
+  ncm: "ncm",
+};
+
+function normalizeAttrKey(s: unknown): string {
+  return String(s ?? "")
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .trim()
+    .replace(/[\s\-/]+/g, "_");
+}
+
+function attrSlot(a: QualityAttributeInput): string | null {
+  const k = normalizeAttrKey(a.attribute_key);
+  if (ATTR_SLOT_MAP[k]) return ATTR_SLOT_MAP[k];
+  const l = normalizeAttrKey(a.attribute_label);
+  if (ATTR_SLOT_MAP[l]) return ATTR_SLOT_MAP[l];
+  return null;
 }
 
 const SLUG_RE = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
