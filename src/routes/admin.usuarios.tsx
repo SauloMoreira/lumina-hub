@@ -115,17 +115,13 @@ function AdminUsuariosPage() {
   const load = async () => {
     setLoading(true);
     try {
-      const [list, sum] = await Promise.all([
-        adminListUsers({
-          data: { search: ts.q, filter, limit: 500 },
-        }),
-        summary
-          ? Promise.resolve({ summary })
-          : adminUsersSummary().then((s) => ({ summary: s })),
-      ]);
+      const list = await adminListUsers({
+        data: { search: ts.q, filter, limit: 500 },
+      });
       setItems(list.users);
-      if (!summary && "summary" in sum) {
-        setSummary(sum.summary as typeof summary);
+      if (!summary) {
+        const s = await adminUsersSummary();
+        setSummary(s);
       }
     } catch (err) {
       const msg = err instanceof Error ? err.message : "Erro ao carregar";
