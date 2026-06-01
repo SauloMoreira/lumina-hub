@@ -402,30 +402,106 @@ type DetailData = Awaited<ReturnType<typeof adminGetUserDetail>>;
 function UserDrawer({
   userId,
   onClose,
+  onChanged,
 }: {
   userId: string;
   onClose: () => void;
+  onChanged: () => void;
 }) {
   const [data, setData] = useState<DetailData | null>(null);
   const [loading, setLoading] = useState(true);
+  const [busy, setBusy] = useState<string | null>(null);
 
-  useEffect(() => {
-    let active = true;
+  const reload = () => {
     setLoading(true);
     adminGetUserDetail({ data: { user_id: userId } })
-      .then((d) => {
-        if (active) setData(d);
-      })
+      .then((d) => setData(d))
       .catch((e: unknown) => {
         const msg = e instanceof Error ? e.message : "Erro ao carregar";
         toast.error(msg);
-        if (active) onClose();
+        onClose();
       })
-      .finally(() => active && setLoading(false));
-    return () => {
-      active = false;
-    };
-  }, [userId, onClose]);
+      .finally(() => setLoading(false));
+  };
+
+  useEffect(() => {
+    reload();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [userId]);
+
+  const runAction = async (
+    label: string,
+    fn: () => Promise<unknown>,
+    successMsg: string,
+  ) => {
+    setBusy(label);
+    try {
+      await fn();
+      toast.success(successMsg);
+      reload();
+      onChanged();
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Falha na operação");
+    } finally {
+      setBusy(null);
+    }
+  };
+
+  const handleBlock = () => {
+    const reason = window.prompt(
+      "Motivo do bloqueio (será gravado em auditoria):",
+      "",
+    );
+    if (reason === null) return;
+    runAction(
+      "block",
+      () =>
+        adminBlockUser({ data: { user_id: userId, reason: reason || null } }),
+      "Usuário bloqueado.",
+    );
+  };
+  const handleUnblock = () => {
+    if (!window.confirm("Desbloquear este usuário?")) return;
+    runAction(
+      "unblock",
+      () => adminUnblockUser({ data: { user_id: userId, reason: null } }),
+      "Usuário desbloqueado.",
+    );
+  };
+  const handleArchive = () => {
+    const reason = window.prompt(
+      "Arquivar usuário. Motivo (gravado em auditoria):",
+      "",
+    );
+    if (reason === null) return;
+    runAction(
+      "archive",
+      () =>
+        adminArchiveUser({ data: { user_id: userId, reason: reason || null } }),
+      "Usuário arquivado.",
+    );
+  };
+  const handleRestore = () => {
+    if (!window.confirm("Restaurar este usuário arquivado?")) return;
+    runAction(
+      "restore",
+      () => adminRestoreUser({ data: { user_id: userId, reason: null } }),
+      "Usuário restaurado.",
+    );
+  };
+  const handleReset = () => {
+    if (
+      !window.confirm(
+        "Enviar e-mail de redefinição de senha para este usuário?",
+      )
+    )
+      return;
+    runAction(
+      "reset",
+      () => adminSendPasswordReset({ data: { user_id: userId } }),
+      "E-mail de redefinição enviado.",
+    );
+  };
 
   return (
     <div className="fixed inset-0 z-50 flex">
