@@ -302,8 +302,23 @@ export function computeProductQuality(p: QualityProductInput): QualityResult {
   }
 
   // ----- FISCAL/LOGÍSTICA + CUSTO (35) -----
-  const ncm = (p.ncm ?? "").trim();
-  if (/^[0-9]{8}$/.test(ncm)) {
+  // NCM pode vir como coluna fiscal estruturada OU como atributo técnico
+  // (chave/label "ncm"). Aceitar ambos os formatos (com ou sem pontos).
+  const ncmFromColumn = normalizeNcm(p.ncm);
+  let ncmFromAttribute: string | null = null;
+  if (!ncmFromColumn) {
+    for (const a of p.product_attributes ?? []) {
+      if (attrSlot(a) === "ncm") {
+        const candidate = normalizeNcm(a.attribute_value);
+        if (candidate) {
+          ncmFromAttribute = candidate;
+          break;
+        }
+      }
+    }
+  }
+  const ncmDetected = ncmFromColumn ?? ncmFromAttribute;
+  if (ncmDetected) {
     fiscal += 8;
     passed.push("no_ncm");
   } else
@@ -311,8 +326,8 @@ export function computeProductQuality(p: QualityProductInput): QualityResult {
       code: "no_ncm",
       group: "fiscal",
       weight: 8,
-      label: "NCM ausente ou inválido",
-      hint: "Informe um NCM válido com 8 dígitos para emissão de nota.",
+      label: "NCM não informado",
+      hint: "Campo recomendado para organização fiscal, mas não bloqueia a venda — a emissão fiscal é feita fora da plataforma.",
     });
 
   if (typeof p.weight_kg === "number" && p.weight_kg > 0) {
