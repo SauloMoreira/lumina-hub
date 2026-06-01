@@ -564,3 +564,224 @@ export const adminSendPasswordReset = createServerFn({ method: "POST" })
 
     return { ok: true };
   });
+
+// ============================================================
+// v1.1.0-c — Ações sensíveis (alterar função, anonimizar LGPD,
+// excluir). Exigem AAL2 (MFA) e auditoria completa.
+// ============================================================
+
+import { assertAal2 } from "./security/assertAdmin";
+
+const roleInput = z.object({
+  user_id: z.string().uuid(),
+  reason: z.string().trim().min(3).max(500),
+  confirm: z.literal("CONFIRMAR"),
+});
+
+async function changeRole(
+  adminId: string,
+  adminEmail: string,
+  targetId: string,
+  newRole: "admin" | "user",
+  reason: string,
+) {
+  if (targetId === adminId) {
+    throw new Error("Você não pode alterar a própria função.");
+  }
+  const target = await loadTargetProfile(targetId);
+  if (target.status !== "active") {
+    throw new Error("Reative o usuário antes de alterar a função.");
+  }
+  if (target.role === newRole) {
+    return { ok: true, role: newRole };
+  }
+  if (newRole === "user" && target.role === "admin") {
+    // Despromovendo um admin — garante que não é o último ativo.
+    await assertNotLastActiveAdmin(targetId);
+  }
+  const { error } = await supabaseAdmin
+    .from("profiles")
+    .update({ role: newRole, updated_at: new Date().toISOString() })
+    .eq("id", targetId);
+  if (error) throw new Error(error.message);
+
+  await logAdminAction({
+    adminId,
+    adminEmail,
+    action: newRole === "admin" ? "user_role_promote_admin" : "user_role_demote_user",
+    resourceType: "user",
+    resourceId: targetId,
+    description: `Função alterada: ${target.role} → ${newRole} · motivo: ${reason}`,
+    before: { role: target.role },
+    after: { role: newRole, reason },
+  });
+
+  // Encerra sessões para forçar reavaliação de claims/role.
+  try {
+    await supabaseAdmin.auth.admin.signOut(targetId, "global");
+  } catch (e) {
+    console.warn("[users] signOut após mudança de role falhou:", e);
+  }
+
+  return { ok: true, role: newRole };
+}
+
+export const adminPromoteToAdmin = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data: unknown) => roleInput.parse(data))
+  .handler(async ({ data, context }) => {
+    const admin = await assertAdmin(context.userId);
+    assertAal2(context.claims);
+    return changeRole(admin.id, admin.email, data.user_id, "admin", data.reason);
+  });
+
+export const adminDemoteToUser = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data: unknown) => roleInput.parse(data))
+  .handler(async ({ data, context }) => {
+    const admin = await assertAdmin(context.userId);
+    assertAal2(context.claims);
+    return changeRole(admin.id, admin.email, data.user_id, "user", data.reason);
+  });
+
+// ---------- Anonimização LGPD ----------
+//
+// Mantém o registro (para integridade referencial de pedidos,
+// notas fiscais e auditoria), mas substitui PII por valores
+// genéricos e marca status como "archived".
+
+const anonymizeInput = z.object({
+  user_id: z.string().uuid(),
+  reason: z.string().trim().min(3).max(500),
+  confirm: z.literal("ANONIMIZAR"),
+});
+
+export const adminAnonymizeUser = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data: unknown) => anonymizeInput.parse(data))
+  .handler(async ({ data, context }) => {
+    const admin = await assertAdmin(context.userId);
+    assertAal2(context.claims);
+    if (data.user_id === admin.id) {
+      throw new Error("Você não pode anonimizar a própria conta.");
+    }
+    const target = await loadTargetProfile(data.user_id);
+    if (target.role === "admin") {
+      throw new Error("Despromova o administrador para 'cliente' antes de anonimizar.");
+    }
+
+    const stamp = Date.now().toString(36);
+    const anonEmail = `anonimizado+${stamp}@ledmarica.invalid`;
+    const anonName = "Usuário Anonimizado (LGPD)";
+
+    // 1) profiles
+    const { error: pErr } = await supabaseAdmin
+      .from("profiles")
+      .update({
+        name: anonName,
+        email: anonEmail,
+        phone: null,
+        avatar_url: null,
+        status: "archived",
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", data.user_id);
+    if (pErr) throw new Error(pErr.message);
+
+    // 2) auth.users — atualiza e-mail + bloqueia login
+    try {
+      await supabaseAdmin.auth.admin.updateUserById(data.user_id, {
+        email: anonEmail,
+        user_metadata: { anonymized_at: new Date().toISOString() },
+        ban_duration: "876000h", // ~100 anos
+      });
+    } catch (e) {
+      console.warn("[users] auth.updateUserById em anonimização falhou:", e);
+    }
+
+    // 3) Encerra sessões
+    try {
+      await supabaseAdmin.auth.admin.signOut(data.user_id, "global");
+    } catch (e) {
+      console.warn("[users] signOut em anonimização falhou:", e);
+    }
+
+    await logAdminAction({
+      adminId: admin.id,
+      adminEmail: admin.email,
+      action: "user_anonymize_lgpd",
+      resourceType: "user",
+      resourceId: data.user_id,
+      description: `Anonimização LGPD aplicada · motivo: ${data.reason}`,
+      before: { email: target.email, name: target.name, status: target.status },
+      after: { email: anonEmail, name: anonName, status: "archived" },
+    });
+
+    return { ok: true };
+  });
+
+// ---------- Exclusão segura ----------
+//
+// Só permite excluir se NÃO houver pedidos vinculados. Caso
+// contrário, instrui o admin a usar a anonimização (LGPD).
+
+const deleteInput = z.object({
+  user_id: z.string().uuid(),
+  reason: z.string().trim().min(3).max(500),
+  confirm: z.literal("EXCLUIR"),
+});
+
+export const adminDeleteUser = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data: unknown) => deleteInput.parse(data))
+  .handler(async ({ data, context }) => {
+    const admin = await assertAdmin(context.userId);
+    assertAal2(context.claims);
+    if (data.user_id === admin.id) {
+      throw new Error("Você não pode excluir a própria conta.");
+    }
+    const target = await loadTargetProfile(data.user_id);
+    if (target.role === "admin") {
+      throw new Error("Despromova o administrador antes de excluir.");
+    }
+
+    const { count: orderCount } = await supabaseAdmin
+      .from("orders")
+      .select("id", { count: "exact", head: true })
+      .eq("user_id", data.user_id);
+
+    if ((orderCount ?? 0) > 0) {
+      throw new Error(
+        `Não é possível excluir: usuário possui ${orderCount} pedido(s). Use a anonimização LGPD para preservar histórico.`,
+      );
+    }
+
+    // Limpeza de tabelas auxiliares antes do auth.admin.deleteUser.
+    await supabaseAdmin.from("company_users").delete().eq("user_id", data.user_id);
+    await supabaseAdmin.from("addresses").delete().eq("user_id", data.user_id);
+
+    try {
+      const { error } = await supabaseAdmin.auth.admin.deleteUser(data.user_id);
+      if (error) throw error;
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : "Falha ao remover usuário";
+      throw new Error(`Não foi possível excluir o usuário: ${msg}`);
+    }
+
+    // O ON DELETE CASCADE da FK em profiles.id remove o perfil
+    // automaticamente. Se a FK não existir, removemos por segurança.
+    await supabaseAdmin.from("profiles").delete().eq("id", data.user_id);
+
+    await logAdminAction({
+      adminId: admin.id,
+      adminEmail: admin.email,
+      action: "user_delete",
+      resourceType: "user",
+      resourceId: data.user_id,
+      description: `Usuário excluído · motivo: ${data.reason}`,
+      before: { email: target.email, name: target.name },
+    });
+
+    return { ok: true };
+  });
+

@@ -19,6 +19,7 @@ import { checkSignupAttempt } from "@/server/auth.functions";
 
 import { buildSeo } from "@/lib/seo";
 import { trackEvent } from "@/lib/tracking";
+import { translateAuthError } from "@/lib/authErrors";
 
 export const Route = createFileRoute("/cadastro")({
   head: () => buildSeo({ title: "Criar conta", url: "/cadastro", noindex: true }),
@@ -74,7 +75,7 @@ function SignupPage() {
       try {
         await checkSignupAttempt({ data: { email: form.email } });
       } catch (rl: any) {
-        toast.error(rl?.message ?? "Muitas tentativas. Tente novamente mais tarde.");
+        toast.error(translateAuthError(rl, "Muitas tentativas. Tente novamente mais tarde."));
         setLoading(false);
         return;
       }
@@ -91,7 +92,7 @@ function SignupPage() {
       toast.success("Conta criada com sucesso!");
       navigate({ to: "/conta" });
     } catch (err: any) {
-      toast.error(err?.message ?? "Não foi possível criar a conta");
+      toast.error(translateAuthError(err, "Não foi possível criar a conta."));
     } finally {
       setLoading(false);
     }

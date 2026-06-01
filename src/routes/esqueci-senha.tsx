@@ -16,6 +16,7 @@ import {
 import { checkPasswordResetAttempt } from "@/server/auth.functions";
 
 import { buildSeo } from "@/lib/seo";
+import { translateAuthError } from "@/lib/authErrors";
 
 export const Route = createFileRoute("/esqueci-senha")({
   head: () => buildSeo({ title: "Recuperar senha", url: "/esqueci-senha", noindex: true }),
@@ -43,7 +44,7 @@ function ForgotPage() {
       try {
         await checkPasswordResetAttempt({ data: { email } });
       } catch (rl: any) {
-        toast.error(rl?.message ?? "Muitas tentativas. Tente novamente mais tarde.");
+        toast.error(translateAuthError(rl, "Muitas tentativas. Tente novamente mais tarde."));
         setLoading(false);
         return;
       }
@@ -53,7 +54,7 @@ function ForgotPage() {
       if (error) throw error;
       setSent(true);
     } catch (err: any) {
-      toast.error(err?.message ?? "Não foi possível enviar o e-mail");
+      toast.error(translateAuthError(err, "Não foi possível enviar o e-mail."));
     } finally {
       setLoading(false);
     }

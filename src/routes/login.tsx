@@ -19,6 +19,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { checkLoginAttempt, recordAuthFailure } from "@/server/auth.functions";
 
 import { buildSeo } from "@/lib/seo";
+import { translateAuthError } from "@/lib/authErrors";
 
 export const Route = createFileRoute("/login")({
   head: () => buildSeo({ title: "Entrar na sua conta", url: "/login", noindex: true }),
@@ -107,16 +108,7 @@ function LoginPage() {
         void recordAuthFailure({ data: { email: nextEmail, reason: error.message } }).catch(
           () => {},
         );
-        const msg = error.message?.toLowerCase() ?? "";
-        if (msg.includes("invalid login credentials") || msg.includes("invalid_credentials")) {
-          showAuthError("E-mail ou senha incorretos. Verifique e tente novamente.");
-        } else if (msg.includes("email not confirmed")) {
-          showAuthError("Confirme seu e-mail antes de entrar. Verifique sua caixa de entrada.");
-        } else if (msg.includes("too many") || msg.includes("rate")) {
-          showAuthError("Muitas tentativas. Aguarde alguns minutos.");
-        } else {
-          showAuthError(error.message || "Não foi possível entrar. Tente novamente.");
-        }
+        showAuthError(translateAuthError(error, "Não foi possível entrar. Tente novamente."));
         return;
       }
       const userId = data.user?.id;
@@ -167,8 +159,7 @@ function LoginPage() {
       }
     } catch (err) {
       console.error("Login error:", err);
-      const msg = err instanceof Error ? err.message : "Erro desconhecido ao entrar.";
-      showAuthError(msg);
+      showAuthError(translateAuthError(err, "Erro inesperado ao entrar."));
     } finally {
       setLoading(false);
     }

@@ -24,9 +24,14 @@ import {
   adminArchiveUser,
   adminRestoreUser,
   adminSendPasswordReset,
+  adminPromoteToAdmin,
+  adminDemoteToUser,
+  adminAnonymizeUser,
+  adminDeleteUser,
   type AdminUserRow,
   type AdminUserType,
 } from "@/server/users.functions";
+import { supabase } from "@/integrations/supabase/client";
 import {
   Select,
   SelectContent,
@@ -510,6 +515,110 @@ function UserDrawer({
     );
   };
 
+  // ----- v1.1.0-c: ações sensíveis (exigem MFA/AAL2) -----
+
+  const ensureAal2 = async (): Promise<boolean> => {
+    try {
+      const { data } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
+      if (data?.currentLevel === "aal2") return true;
+      toast.error(
+        "Esta ação exige verificação em duas etapas (MFA). Faça logout e entre novamente confirmando o código.",
+      );
+      return false;
+    } catch {
+      toast.error("Não foi possível verificar o MFA. Tente novamente.");
+      return false;
+    }
+  };
+
+  const handlePromote = async () => {
+    if (!(await ensureAal2())) return;
+    const reason = window.prompt(
+      "PROMOVER A ADMINISTRADOR.\nMotivo (gravado em auditoria, mín. 3 caracteres):",
+      "",
+    );
+    if (!reason || reason.trim().length < 3) return;
+    const c = window.prompt(
+      "Digite CONFIRMAR para promover este usuário a ADMIN:",
+      "",
+    );
+    if (c !== "CONFIRMAR") return;
+    runAction(
+      "promote",
+      () =>
+        adminPromoteToAdmin({
+          data: { user_id: userId, reason: reason.trim(), confirm: "CONFIRMAR" },
+        }),
+      "Usuário promovido a administrador.",
+    );
+  };
+
+  const handleDemote = async () => {
+    if (!(await ensureAal2())) return;
+    const reason = window.prompt(
+      "REMOVER PRIVILÉGIOS DE ADMIN.\nMotivo (gravado em auditoria, mín. 3 caracteres):",
+      "",
+    );
+    if (!reason || reason.trim().length < 3) return;
+    const c = window.prompt(
+      "Digite CONFIRMAR para remover privilégios de admin:",
+      "",
+    );
+    if (c !== "CONFIRMAR") return;
+    runAction(
+      "demote",
+      () =>
+        adminDemoteToUser({
+          data: { user_id: userId, reason: reason.trim(), confirm: "CONFIRMAR" },
+        }),
+      "Privilégios de admin removidos.",
+    );
+  };
+
+  const handleAnonymize = async () => {
+    if (!(await ensureAal2())) return;
+    const reason = window.prompt(
+      "ANONIMIZAÇÃO LGPD.\nIrá apagar nome/e-mail/telefone e bloquear o login.\nMantém pedidos e histórico para integridade fiscal.\nMotivo (mín. 3 caracteres):",
+      "",
+    );
+    if (!reason || reason.trim().length < 3) return;
+    const c = window.prompt(
+      "Digite ANONIMIZAR para confirmar (irreversível):",
+      "",
+    );
+    if (c !== "ANONIMIZAR") return;
+    runAction(
+      "anonymize",
+      () =>
+        adminAnonymizeUser({
+          data: { user_id: userId, reason: reason.trim(), confirm: "ANONIMIZAR" },
+        }),
+      "Usuário anonimizado.",
+    );
+  };
+
+  const handleDelete = async () => {
+    if (!(await ensureAal2())) return;
+    const reason = window.prompt(
+      "EXCLUSÃO DEFINITIVA.\nSó funciona se o usuário NÃO tiver pedidos.\nMotivo (mín. 3 caracteres):",
+      "",
+    );
+    if (!reason || reason.trim().length < 3) return;
+    const c = window.prompt(
+      "Digite EXCLUIR para confirmar a remoção definitiva:",
+      "",
+    );
+    if (c !== "EXCLUIR") return;
+    runAction(
+      "delete",
+      () =>
+        adminDeleteUser({
+          data: { user_id: userId, reason: reason.trim(), confirm: "EXCLUIR" },
+        }),
+      "Usuário excluído.",
+    );
+  };
+
   return (
     <div className="fixed inset-0 z-50 flex">
       <div className="flex-1 bg-black/40" onClick={onClose} />
@@ -726,10 +835,56 @@ function UserDrawer({
                   </ActionBtn>
                 )}
               </div>
-              <p className="text-[11px] text-muted-foreground mt-2">
-                Alteração de função (admin/cliente) e anonimização LGPD serão
-                liberadas em <strong>v1.1.0-c</strong> com exigência de MFA.
-              </p>
+
+              {/* v1.1.0-c — Ações sensíveis (exigem MFA/AAL2) */}
+              <div className="mt-4 pt-4 border-t border-border">
+                <div className="text-[11px] uppercase tracking-wide text-muted-foreground mb-2 font-semibold">
+                  Ações sensíveis · exigem MFA
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  {data.profile.status === "active" && data.profile.role !== "admin" && (
+                    <ActionBtn
+                      onClick={handlePromote}
+                      disabled={busy !== null}
+                      busy={busy === "promote"}
+                      variant="muted"
+                    >
+                      Promover a admin
+                    </ActionBtn>
+                  )}
+                  {data.profile.status === "active" && data.profile.role === "admin" && (
+                    <ActionBtn
+                      onClick={handleDemote}
+                      disabled={busy !== null}
+                      busy={busy === "demote"}
+                      variant="muted"
+                    >
+                      Remover admin
+                    </ActionBtn>
+                  )}
+                  <ActionBtn
+                    onClick={handleAnonymize}
+                    disabled={busy !== null}
+                    busy={busy === "anonymize"}
+                    variant="destructive"
+                  >
+                    Anonimizar (LGPD)
+                  </ActionBtn>
+                  <ActionBtn
+                    onClick={handleDelete}
+                    disabled={busy !== null}
+                    busy={busy === "delete"}
+                    variant="destructive"
+                  >
+                    Excluir definitivamente
+                  </ActionBtn>
+                </div>
+                <p className="text-[11px] text-muted-foreground mt-2">
+                  Exclusão só é permitida se o usuário não tiver pedidos.
+                  Caso contrário, use a anonimização LGPD para preservar
+                  histórico fiscal.
+                </p>
+              </div>
             </section>
           </div>
         )}
