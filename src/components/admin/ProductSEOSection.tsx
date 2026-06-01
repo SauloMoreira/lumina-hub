@@ -16,6 +16,14 @@ interface Props {
     brand?: string;
     category?: string;
     price: number;
+    ncm?: string | null;
+    tags?: string[];
+    attributes?: Array<{
+      key?: string | null;
+      label?: string | null;
+      value: string;
+      unit?: string | null;
+    }>;
   };
   seoTitle: string;
   seoDescription: string;
