@@ -238,44 +238,53 @@ export const parseImportSheet = createServerFn({ method: "POST" })
     json.forEach((rawObj, idx) => {
       const row = emptyRow(idx + 2); // +2 = 1 do cabeçalho + 1 base
       for (const [k, v] of Object.entries(rawObj)) {
-        const key = HEADER_MAP[normalizeHeader(k)];
-        if (!key) continue;
-        switch (key) {
-          case "action":
-            row.action = parseAction(v);
-            break;
-          case "sku":
-            row.sku = String(v ?? "").trim();
-            break;
-          case "nome":
-            row.nome_produto = String(v ?? "").trim();
-            break;
-          case "categoria":
-            row.categoria = String(v ?? "").trim();
-            break;
-          case "custo":
-            row.preco_custo = parsePrice(v);
-            break;
-          case "preco":
-            row.preco_venda = parsePrice(v);
-            break;
-          case "estoque":
-            row.estoque_inicial = parseInteger(v);
-            break;
-          case "ativo":
-            row.ativo = parseBoolPtBr(v, false);
-            break;
-          case "revisado":
-            row.revisado_humano = parseBoolPtBr(v, false);
-            break;
-          case "aprovado":
-            row.aprovado_importar = parseBoolPtBr(v, false);
-            break;
-          case "obs_user":
-            row.observacoes_usuario = String(v ?? "").trim();
-            break;
+        const norm = normalizeHeader(k);
+        const key = HEADER_MAP[norm];
+        if (key) {
+          switch (key) {
+            case "action":
+              row.action = parseAction(v);
+              break;
+            case "sku":
+              row.sku = String(v ?? "").trim();
+              break;
+            case "nome":
+              row.nome_produto = String(v ?? "").trim();
+              break;
+            case "categoria":
+              row.categoria = String(v ?? "").trim();
+              break;
+            case "custo":
+              row.preco_custo = parsePrice(v);
+              break;
+            case "preco":
+              row.preco_venda = parsePrice(v);
+              break;
+            case "estoque":
+              row.estoque_inicial = parseInteger(v);
+              break;
+            case "ativo":
+              row.ativo = parseBoolPtBr(v, false);
+              break;
+            case "revisado":
+              row.revisado_humano = parseBoolPtBr(v, false);
+              break;
+            case "aprovado":
+              row.aprovado_importar = parseBoolPtBr(v, false);
+              break;
+            case "obs_user":
+              row.observacoes_usuario = String(v ?? "").trim();
+              break;
+          }
+          continue;
+        }
+        // Dados técnicos opcionais (v1.0.2): cabeçalho casa com chave em TECH_FIELDS
+        if (TECH_FIELD_KEYS.includes(norm)) {
+          const sanitized = sanitizeTechValue(v);
+          if (sanitized) row.tech[norm] = sanitized;
         }
       }
+
       // ignora linhas totalmente vazias
       if (!row.sku && !row.nome_produto && !row.categoria && row.preco_venda === null && row.preco_custo === null) {
         return;
