@@ -677,12 +677,60 @@ function UserDrawer({
               </section>
             )}
 
-            <div className="border border-dashed border-border rounded-lg p-4 text-xs text-muted-foreground">
-              Ações administrativas (bloquear, reset de senha, alterar função,
-              arquivar) serão liberadas em <strong>v1.1.0-b</strong> e
-              <strong> v1.1.0-c</strong> com auditoria e exigência de MFA quando
-              aplicável.
-            </div>
+            <section>
+              <SectionTitle label="Ações administrativas" />
+              <div className="flex flex-wrap gap-2">
+                {data.profile.status === "active" && (
+                  <>
+                    <ActionBtn
+                      onClick={handleReset}
+                      disabled={busy !== null}
+                      busy={busy === "reset"}
+                    >
+                      Enviar redefinição de senha
+                    </ActionBtn>
+                    <ActionBtn
+                      onClick={handleBlock}
+                      disabled={busy !== null}
+                      busy={busy === "block"}
+                      variant="destructive"
+                    >
+                      Bloquear
+                    </ActionBtn>
+                    <ActionBtn
+                      onClick={handleArchive}
+                      disabled={busy !== null}
+                      busy={busy === "archive"}
+                      variant="muted"
+                    >
+                      Arquivar
+                    </ActionBtn>
+                  </>
+                )}
+                {data.profile.status === "blocked" && (
+                  <ActionBtn
+                    onClick={handleUnblock}
+                    disabled={busy !== null}
+                    busy={busy === "unblock"}
+                  >
+                    Desbloquear
+                  </ActionBtn>
+                )}
+                {data.profile.status === "archived" && (
+                  <ActionBtn
+                    onClick={handleRestore}
+                    disabled={busy !== null}
+                    busy={busy === "restore"}
+                  >
+                    Restaurar
+                  </ActionBtn>
+                )}
+              </div>
+              <p className="text-[11px] text-muted-foreground mt-2">
+                Alteração de função (admin/cliente) e anonimização LGPD serão
+                liberadas em <strong>v1.1.0-c</strong> com exigência de MFA.
+              </p>
+            </section>
           </div>
         )}
       </div>
