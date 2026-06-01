@@ -835,10 +835,56 @@ function UserDrawer({
                   </ActionBtn>
                 )}
               </div>
-              <p className="text-[11px] text-muted-foreground mt-2">
-                Alteração de função (admin/cliente) e anonimização LGPD serão
-                liberadas em <strong>v1.1.0-c</strong> com exigência de MFA.
-              </p>
+
+              {/* v1.1.0-c — Ações sensíveis (exigem MFA/AAL2) */}
+              <div className="mt-4 pt-4 border-t border-border">
+                <div className="text-[11px] uppercase tracking-wide text-muted-foreground mb-2 font-semibold">
+                  Ações sensíveis · exigem MFA
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  {data.profile.status === "active" && data.profile.role !== "admin" && (
+                    <ActionBtn
+                      onClick={handlePromote}
+                      disabled={busy !== null}
+                      busy={busy === "promote"}
+                      variant="muted"
+                    >
+                      Promover a admin
+                    </ActionBtn>
+                  )}
+                  {data.profile.status === "active" && data.profile.role === "admin" && (
+                    <ActionBtn
+                      onClick={handleDemote}
+                      disabled={busy !== null}
+                      busy={busy === "demote"}
+                      variant="muted"
+                    >
+                      Remover admin
+                    </ActionBtn>
+                  )}
+                  <ActionBtn
+                    onClick={handleAnonymize}
+                    disabled={busy !== null}
+                    busy={busy === "anonymize"}
+                    variant="destructive"
+                  >
+                    Anonimizar (LGPD)
+                  </ActionBtn>
+                  <ActionBtn
+                    onClick={handleDelete}
+                    disabled={busy !== null}
+                    busy={busy === "delete"}
+                    variant="destructive"
+                  >
+                    Excluir definitivamente
+                  </ActionBtn>
+                </div>
+                <p className="text-[11px] text-muted-foreground mt-2">
+                  Exclusão só é permitida se o usuário não tiver pedidos.
+                  Caso contrário, use a anonimização LGPD para preservar
+                  histórico fiscal.
+                </p>
+              </div>
             </section>
           </div>
         )}
