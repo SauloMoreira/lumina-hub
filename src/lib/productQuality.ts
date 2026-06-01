@@ -516,6 +516,13 @@ export function computeProductQuality(p: QualityProductInput): QualityResult {
       tech: { score: tech, max: 10 },
     },
     canBeFeatured: score >= QUALITY_FEATURED_MIN,
+    techSummary: {
+      total: techAttrs.length,
+      visible: visibleAttrs.length,
+      filterable: filterableAttrs.length,
+      ncm: ncmDetected,
+      ncmSource: ncmFromColumn ? "column" : ncmFromAttribute ? "attribute" : null,
+    },
   };
 }
 
