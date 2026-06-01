@@ -422,7 +422,7 @@ export function computeProductQuality(p: QualityProductInput): QualityResult {
   }
 
   if (looksLightingProduct) {
-    if (hasKey("power")) {
+    if (hasSlot("power")) {
       tech += 2;
       passed.push("no_tech_power");
     } else
@@ -434,7 +434,7 @@ export function computeProductQuality(p: QualityProductInput): QualityResult {
         hint: "Produtos de iluminação devem informar a potência em watts.",
       });
 
-    if (hasKey("voltage")) {
+    if (hasSlot("voltage")) {
       tech += 2;
       passed.push("no_tech_voltage");
     } else
@@ -446,7 +446,7 @@ export function computeProductQuality(p: QualityProductInput): QualityResult {
         hint: "Informe 127V, 220V ou Bivolt.",
       });
 
-    if (hasKey("color_temperature")) {
+    if (hasSlot("color_temperature")) {
       tech += 2;
       passed.push("no_tech_color_temp");
     } else
@@ -460,7 +460,7 @@ export function computeProductQuality(p: QualityProductInput): QualityResult {
   }
 
   if (looksOutdoor) {
-    if (hasKey("ip_rating")) {
+    if (hasSlot("ip_rating")) {
       tech += 1;
       passed.push("no_tech_ip_rating");
     } else
