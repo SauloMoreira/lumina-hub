@@ -10,11 +10,17 @@ import {
   parseInteger,
   parsePrice,
   parseTags,
+  sanitizeTechValue,
   slugify,
+  TECH_FIELDS,
+  TECH_FIELD_KEYS,
+  validateTechValue,
   type ImportConfidence,
   type ImportRow,
   type ImportStatus,
+  type TechFieldDef,
 } from "@/lib/productImport";
+
 
 // ===================== Constantes =====================
 
