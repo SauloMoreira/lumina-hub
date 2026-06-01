@@ -61,6 +61,14 @@ export interface QualityResult {
     tech: { score: number; max: 10 };
   };
   canBeFeatured: boolean;
+  /** Resumo do cadastro técnico (para exibição no card). */
+  techSummary: {
+    total: number; // atributos com valor preenchido
+    visible: number; // visíveis na loja
+    filterable: number; // marcados como filtro
+    ncm: string | null; // NCM detectado (8 dígitos) — coluna fiscal OU atributo
+    ncmSource: "column" | "attribute" | null;
+  };
 }
 
 /** Atributo técnico (subset de product_attributes) usado no cálculo de qualidade. */
