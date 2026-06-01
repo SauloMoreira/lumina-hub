@@ -389,13 +389,15 @@ export function computeProductQuality(p: QualityProductInput): QualityResult {
     (a) => a && (a.attribute_value ?? "").toString().trim().length > 0,
   );
   const visibleAttrs = techAttrs.filter((a) => a.is_visible !== false);
+  const filterableAttrs = techAttrs.filter((a) => a.is_filterable === true);
   const keysSeen = new Map<string, number>();
   for (const a of techAttrs) {
-    const k = (a.attribute_key ?? "").toString().toLowerCase().trim();
+    const k = normalizeAttrKey(a.attribute_key);
     if (k) keysSeen.set(k, (keysSeen.get(k) ?? 0) + 1);
   }
-  const hasKey = (k: string) =>
-    visibleAttrs.some((a) => (a.attribute_key ?? "").toString().toLowerCase().trim() === k);
+  // Aceita variações PT-BR e legadas em inglês via attrSlot().
+  const hasSlot = (slot: string) => techAttrs.some((a) => attrSlot(a) === slot);
+
   const ctx = `${(p.name ?? "").toString()} ${(p.tags ?? []).join(" ")}`.toLowerCase();
   // Heurística simples para inferir contexto (sem mexer em RPC ou DB).
   const looksLightingProduct =
