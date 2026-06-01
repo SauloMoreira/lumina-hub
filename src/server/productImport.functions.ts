@@ -470,8 +470,10 @@ export const validateImportRows = createServerFn({ method: "POST" })
         warnings,
         matched_product_id: matchedProductId,
         matched_category_id: matchedCategoryId,
+        tech: techClean,
       };
     });
+
 
     return { ok: true as const, rows: validated, counts: countRows(validated) };
   });
