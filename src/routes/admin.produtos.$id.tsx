@@ -1,6 +1,7 @@
 import { createFileRoute, useNavigate, useParams, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useRef, useState, type FormEvent } from "react";
-import { useQueryClient } from "@tanstack/react-query";
+import { useQueryClient, useQuery } from "@tanstack/react-query";
+import { adminListProductAttributes } from "@/server/productAttributes.functions";
 import {
   ArrowLeft,
   Loader2,
