@@ -900,7 +900,22 @@ export const commitImport = createServerFn({ method: "POST" })
         }
         slugCheckCache.add(candidate);
 
-        const insert: Record<string, unknown> = {
+        const insert: {
+          sku: string;
+          name: string;
+          slug: string;
+          category_id: string | null;
+          price: number;
+          cost_price: number | null;
+          stock_qty: number;
+          active: boolean;
+          description: string | null;
+          tags: string[] | null;
+          seo_title: string | null;
+          seo_description: string | null;
+          brand?: string;
+          weight_kg?: number;
+        } = {
           sku: row.sku,
           name: row.nome_produto,
           slug: candidate,
@@ -930,7 +945,32 @@ export const commitImport = createServerFn({ method: "POST" })
 
         // ===== Persistir dados técnicos opcionais em product_attributes =====
         // (v1.0.2) Best-effort: falha não interrompe a importação do produto.
-        await persistTechAttributes(supabaseAdmin, created?.id, row.tech);
+        if (created?.id) {
+          const attrs = Object.entries(row.tech ?? {})
+            .filter(([k]) => k !== "marca" && k !== "peso_kg")
+            .map(([k, v], i) => {
+              const def = TECH_FIELDS.find((f) => f.key === k);
+              if (!def) return null;
+              return {
+                product_id: created.id,
+                attribute_key: k,
+                attribute_label: def.label,
+                attribute_value: v.slice(0, 500),
+                attribute_unit: def.unit ?? null,
+                sort_order: i,
+                is_visible: true,
+              };
+            })
+            .filter((x): x is NonNullable<typeof x> => x !== null);
+          if (attrs.length) {
+            const { error: attrErr } = await supabaseAdmin
+              .from("product_attributes")
+              .insert(attrs);
+            if (attrErr) {
+              console.error("tech attributes insert error", attrErr);
+            }
+          }
+        }
 
         log.push({
           rowIndex: row.rowIndex,
@@ -938,6 +978,7 @@ export const commitImport = createServerFn({ method: "POST" })
           result: "created",
           productId: created?.id,
         });
+
 
       } catch (e) {
         log.push({
