@@ -318,7 +318,7 @@ export const adminGetUserDetail = createServerFn({ method: "POST" })
 
     const { data: orders } = await supabaseAdmin
       .from("orders")
-      .select("id, number, total, status, payment_status, created_at")
+      .select("id, order_number, total, status, payment_status, created_at")
       .eq("user_id", data.user_id)
       .order("created_at", { ascending: false })
       .limit(50);
