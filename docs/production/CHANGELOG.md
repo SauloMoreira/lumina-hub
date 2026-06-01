@@ -49,14 +49,21 @@ e versionamento [SemVer](https://semver.org/lang/pt-BR/).
   (best-effort).
 
 ### Pendente para v1.0.2.1 (próxima janela)
-- Regerar arquivo `public/templates/Cadastro_Minimo_Produtos_Led_Marica_IA.xlsx`
-  com as 29 colunas técnicas opcionais, atualizar aba INSTRUÇÕES e adicionar
-  aba MAPA_IA. Por ora, administradores podem acrescentar as colunas
-  manualmente na planilha — o parser já reconhece os cabeçalhos.
 - Seção "Dados técnicos opcionais" no `EditRowDialog` da tela de revisão
   (edição inline dos campos técnicos pré-importação).
-- Incluir colunas técnicas no `downloadRevisedSheet`.
 - Indicadores "Dados técnicos preenchidos / com alerta" na grade.
+
+### Concluído nesta versão (atualização de 01/jun/2026)
+- **Planilha modelo regenerada** (`public/templates/Cadastro_Minimo_Produtos_Led_Marica_IA.xlsx`):
+  agora com 40 colunas (11 base + 29 técnicas opcionais), cabeçalho técnico
+  destacado em verde, linha-exemplo preenchida, aba **INSTRUÇÕES** ampliada
+  com descrição de cada campo técnico (unidade, formato esperado, aviso de
+  revisão humana para certificação/norma) e nova aba **MAPA_IA** explicando
+  o que a IA preenche × o que o humano preenche.
+- **`downloadRevisedSheet`** agora inclui as 29 colunas técnicas no arquivo
+  revisado baixado pelo admin, preservando o que foi digitado/sanitizado por
+  linha. Colunas vazias permanecem em branco.
+
 
 ### Notas de rollback
 - Versão anterior estável: 1.0.1
