@@ -8,6 +8,48 @@ e versionamento [SemVer](https://semver.org/lang/pt-BR/).
 
 ---
 
+## [1.1.0-a] — 2026-06-01
+
+**Tipo:** funcionalidade nova (fase 1/3 de v1.1.0)
+**ChangeControl:** CC-2026-005
+**Classificação:** Alta (mexe em estrutura de `profiles` usada por auth)
+
+### Adicionado
+- Migration: coluna `profiles.status` (`active`/`blocked`/`archived`, default
+  `active`) + trigger de validação `validate_profile_status` + índices
+  `profiles_status_idx` e `profiles_role_idx`. Nenhum usuário existente
+  afetado (todos `active`).
+- Server functions (somente leitura) em `src/server/users.functions.ts`:
+  `adminListUsers`, `adminUsersSummary`, `adminGetUserDetail`.
+- Helper `src/server/security/assertAdmin.ts` (`assertAdmin`, `assertAal2`)
+  para guarda server-side compartilhada nas próximas fases.
+- Rota `/admin/usuarios` ("Usuários e Clientes") com cards-resumo, busca,
+  filtros (admins / B2C / B2B aprovados / B2B pendentes / ativos /
+  bloqueados / com pedido / sem pedido), ordenação, paginação e drawer de
+  detalhe (dados, empresa, pedidos, endereços, leads, auditoria).
+- Link no `AdminSidebar` em **Clientes & CRM → Usuários e Clientes**.
+
+### Segurança
+- Toda chamada exige `requireSupabaseAuth` + `assertAdmin` no servidor.
+- `supabaseAdmin` (service_role) só em `*.server.ts` e `*.functions.ts`.
+- Nenhuma RLS, MFA, policy ou regra de checkout/MP/webhook foi alterada.
+- Nenhuma ação destrutiva exposta nesta fase.
+
+### Pendente (próximas fases)
+- **v1.1.0-b** — bloquear/desbloquear/arquivar, reset de senha por e-mail,
+  botões inline de aprovar/bloquear B2B, guard de login para `blocked`,
+  modais com motivo obrigatório.
+- **v1.1.0-c** — alterar `role` admin↔user (com AAL2 + confirmação forte),
+  anonimização LGPD, exclusão definitiva condicionada a histórico zero.
+
+### Rollback
+`ALTER TABLE public.profiles DROP COLUMN status;` +
+`DROP FUNCTION public.validate_profile_status() CASCADE;` + reverter os
+arquivos novos (rota, server fn, helper) e o link no sidebar.
+
+---
+
+
 ## [1.0.2] — 2026-06-01
 
 **Tipo:** melhoria (controlada)
