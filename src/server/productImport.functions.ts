@@ -831,7 +831,10 @@ export const commitImport = createServerFn({ method: "POST" })
             seo_title?: string;
             seo_description?: string;
             active?: boolean;
+            brand?: string;
+            weight_kg?: number;
           } = {
+
             name: row.nome_produto,
             category_id: row.matched_category_id,
             price: row.preco_venda,
