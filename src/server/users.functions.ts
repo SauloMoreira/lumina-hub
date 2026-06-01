@@ -582,7 +582,7 @@ async function changeRole(
   adminId: string,
   adminEmail: string,
   targetId: string,
-  newRole: "admin" | "user",
+  newRole: "admin" | "customer",
   reason: string,
 ) {
   if (targetId === adminId) {
@@ -595,7 +595,7 @@ async function changeRole(
   if (target.role === newRole) {
     return { ok: true, role: newRole };
   }
-  if (newRole === "user" && target.role === "admin") {
+  if (newRole === "customer" && target.role === "admin") {
     // Despromovendo um admin — garante que não é o último ativo.
     await assertNotLastActiveAdmin(targetId);
   }
@@ -608,7 +608,7 @@ async function changeRole(
   await logAdminAction({
     adminId,
     adminEmail,
-    action: newRole === "admin" ? "user_role_promote_admin" : "user_role_demote_user",
+    action: newRole === "admin" ? "user_role_promote_admin" : "user_role_demote_customer",
     resourceType: "user",
     resourceId: targetId,
     description: `Função alterada: ${target.role} → ${newRole} · motivo: ${reason}`,
@@ -641,7 +641,7 @@ export const adminDemoteToUser = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const admin = await assertAdmin(context.userId);
     assertAal2(context.claims);
-    return changeRole(admin.id, admin.email, data.user_id, "user", data.reason);
+    return changeRole(admin.id, admin.email, data.user_id, "customer", data.reason);
   });
 
 // ---------- Anonimização LGPD ----------
