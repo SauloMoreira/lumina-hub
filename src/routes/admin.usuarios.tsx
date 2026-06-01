@@ -523,7 +523,7 @@ function UserDrawer({
                       params={{ orderId: o.id } as never}
                       className="flex items-center justify-between text-sm border-b border-border py-2 hover:bg-muted/40 px-2 -mx-2 rounded"
                     >
-                      <span className="text-foreground">#{o.number}</span>
+                      <span className="text-foreground">#{o.order_number}</span>
                       <span className="text-xs text-muted-foreground">
                         {o.created_at
                           ? new Date(o.created_at).toLocaleDateString("pt-BR")
