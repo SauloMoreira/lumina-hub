@@ -78,6 +78,9 @@ export function ProductSEOSection({
           brand: productCtx.brand || null,
           category: productCtx.category || null,
           price: Number.isFinite(productCtx.price) ? productCtx.price : null,
+          ncm: productCtx.ncm ?? null,
+          tags: productCtx.tags ?? [],
+          attributes: productCtx.attributes ?? [],
         },
       });
       if (!r.ok) {
