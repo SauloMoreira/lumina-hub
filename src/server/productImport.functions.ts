@@ -10,11 +10,17 @@ import {
   parseInteger,
   parsePrice,
   parseTags,
+  sanitizeTechValue,
   slugify,
+  TECH_FIELDS,
+  TECH_FIELD_KEYS,
+  validateTechValue,
   type ImportConfidence,
   type ImportRow,
   type ImportStatus,
 } from "@/lib/productImport";
+
+
 
 // ===================== Constantes =====================
 
@@ -102,11 +108,13 @@ const ImportRowSchema = z.object({
   warnings: z.array(z.string()),
   matched_product_id: z.string().nullable(),
   matched_category_id: z.string().nullable(),
+  tech: z.record(z.string(), z.string()).default({}),
 }) satisfies z.ZodType<ImportRow>;
 
 const RowsInput = z.object({
   rows: z.array(ImportRowSchema).max(MAX_ROWS),
 });
+
 
 // ===================== Util =====================
 
@@ -137,8 +145,10 @@ function emptyRow(rowIndex: number): ImportRow {
     warnings: [],
     matched_product_id: null,
     matched_category_id: null,
+    tech: {},
   };
 }
+
 
 function normalizeHeader(h: string): string {
   return h
@@ -228,44 +238,53 @@ export const parseImportSheet = createServerFn({ method: "POST" })
     json.forEach((rawObj, idx) => {
       const row = emptyRow(idx + 2); // +2 = 1 do cabeçalho + 1 base
       for (const [k, v] of Object.entries(rawObj)) {
-        const key = HEADER_MAP[normalizeHeader(k)];
-        if (!key) continue;
-        switch (key) {
-          case "action":
-            row.action = parseAction(v);
-            break;
-          case "sku":
-            row.sku = String(v ?? "").trim();
-            break;
-          case "nome":
-            row.nome_produto = String(v ?? "").trim();
-            break;
-          case "categoria":
-            row.categoria = String(v ?? "").trim();
-            break;
-          case "custo":
-            row.preco_custo = parsePrice(v);
-            break;
-          case "preco":
-            row.preco_venda = parsePrice(v);
-            break;
-          case "estoque":
-            row.estoque_inicial = parseInteger(v);
-            break;
-          case "ativo":
-            row.ativo = parseBoolPtBr(v, false);
-            break;
-          case "revisado":
-            row.revisado_humano = parseBoolPtBr(v, false);
-            break;
-          case "aprovado":
-            row.aprovado_importar = parseBoolPtBr(v, false);
-            break;
-          case "obs_user":
-            row.observacoes_usuario = String(v ?? "").trim();
-            break;
+        const norm = normalizeHeader(k);
+        const key = HEADER_MAP[norm];
+        if (key) {
+          switch (key) {
+            case "action":
+              row.action = parseAction(v);
+              break;
+            case "sku":
+              row.sku = String(v ?? "").trim();
+              break;
+            case "nome":
+              row.nome_produto = String(v ?? "").trim();
+              break;
+            case "categoria":
+              row.categoria = String(v ?? "").trim();
+              break;
+            case "custo":
+              row.preco_custo = parsePrice(v);
+              break;
+            case "preco":
+              row.preco_venda = parsePrice(v);
+              break;
+            case "estoque":
+              row.estoque_inicial = parseInteger(v);
+              break;
+            case "ativo":
+              row.ativo = parseBoolPtBr(v, false);
+              break;
+            case "revisado":
+              row.revisado_humano = parseBoolPtBr(v, false);
+              break;
+            case "aprovado":
+              row.aprovado_importar = parseBoolPtBr(v, false);
+              break;
+            case "obs_user":
+              row.observacoes_usuario = String(v ?? "").trim();
+              break;
+          }
+          continue;
+        }
+        // Dados técnicos opcionais (v1.0.2): cabeçalho casa com chave em TECH_FIELDS
+        if (TECH_FIELD_KEYS.includes(norm)) {
+          const sanitized = sanitizeTechValue(v);
+          if (sanitized) row.tech[norm] = sanitized;
         }
       }
+
       // ignora linhas totalmente vazias
       if (!row.sku && !row.nome_produto && !row.categoria && row.preco_venda === null && row.preco_custo === null) {
         return;
@@ -419,6 +438,21 @@ export const validateImportRows = createServerFn({ method: "POST" })
         warnings.push("Produto marcado como ativo mas sem revisão humana — será criado inativo.");
       }
 
+      // ===== Dados técnicos opcionais (v1.0.2) =====
+      // Nunca bloqueiam por estarem vazios. Validação leve por campo preenchido.
+      const techClean: Record<string, string> = {};
+      for (const [k, vRaw] of Object.entries(r.tech ?? {})) {
+        const def = TECH_FIELDS.find((f) => f.key === k);
+        if (!def) continue; // ignora chaves desconhecidas
+        const sanitized = sanitizeTechValue(vRaw);
+        if (!sanitized) continue;
+        const v = validateTechValue(def, sanitized);
+        if (v.error) errors.push(v.error);
+        if (v.warning) warnings.push(v.warning);
+        techClean[k] = sanitized;
+      }
+
+
       let status: ImportStatus;
       if (errors.length > 0) {
         status = "invalid";
@@ -436,8 +470,10 @@ export const validateImportRows = createServerFn({ method: "POST" })
         warnings,
         matched_product_id: matchedProductId,
         matched_category_id: matchedCategoryId,
+        tech: techClean,
       };
     });
+
 
     return { ok: true as const, rows: validated, counts: countRows(validated) };
   });
@@ -795,7 +831,10 @@ export const commitImport = createServerFn({ method: "POST" })
             seo_title?: string;
             seo_description?: string;
             active?: boolean;
+            brand?: string;
+            weight_kg?: number;
           } = {
+
             name: row.nome_produto,
             category_id: row.matched_category_id,
             price: row.preco_venda,
@@ -809,6 +848,12 @@ export const commitImport = createServerFn({ method: "POST" })
           if (row.titulo_seo) update.seo_title = row.titulo_seo;
           if (row.meta_description) update.seo_description = row.meta_description;
           if (row.ativo && row.warnings.length === 0) update.active = true;
+          if (row.tech?.marca) update.brand = row.tech.marca.slice(0, 120);
+          if (row.tech?.peso_kg) {
+            const w = Number(row.tech.peso_kg.replace(",", "."));
+            if (Number.isFinite(w) && w >= 0) update.weight_kg = w;
+          }
+
 
           const { error } = await supabaseAdmin
             .from("products")
@@ -855,7 +900,22 @@ export const commitImport = createServerFn({ method: "POST" })
         }
         slugCheckCache.add(candidate);
 
-        const insert = {
+        const insert: {
+          sku: string;
+          name: string;
+          slug: string;
+          category_id: string | null;
+          price: number;
+          cost_price: number | null;
+          stock_qty: number;
+          active: boolean;
+          description: string | null;
+          tags: string[] | null;
+          seo_title: string | null;
+          seo_description: string | null;
+          brand?: string;
+          weight_kg?: number;
+        } = {
           sku: row.sku,
           name: row.nome_produto,
           slug: candidate,
@@ -870,6 +930,11 @@ export const commitImport = createServerFn({ method: "POST" })
           seo_title: row.titulo_seo ?? null,
           seo_description: row.meta_description ?? null,
         };
+        if (row.tech?.marca) insert.brand = row.tech.marca.slice(0, 120);
+        if (row.tech?.peso_kg) {
+          const w = Number(row.tech.peso_kg.replace(",", "."));
+          if (Number.isFinite(w) && w >= 0) insert.weight_kg = w;
+        }
 
         const { data: created, error } = await supabaseAdmin
           .from("products")
@@ -877,12 +942,44 @@ export const commitImport = createServerFn({ method: "POST" })
           .select("id")
           .single();
         if (error) throw new Error(error.message);
+
+        // ===== Persistir dados técnicos opcionais em product_attributes =====
+        // (v1.0.2) Best-effort: falha não interrompe a importação do produto.
+        if (created?.id) {
+          const attrs = Object.entries(row.tech ?? {})
+            .filter(([k]) => k !== "marca" && k !== "peso_kg")
+            .map(([k, v], i) => {
+              const def = TECH_FIELDS.find((f) => f.key === k);
+              if (!def) return null;
+              return {
+                product_id: created.id,
+                attribute_key: k,
+                attribute_label: def.label,
+                attribute_value: v.slice(0, 500),
+                attribute_unit: def.unit ?? null,
+                sort_order: i,
+                is_visible: true,
+              };
+            })
+            .filter((x): x is NonNullable<typeof x> => x !== null);
+          if (attrs.length) {
+            const { error: attrErr } = await supabaseAdmin
+              .from("product_attributes")
+              .insert(attrs);
+            if (attrErr) {
+              console.error("tech attributes insert error", attrErr);
+            }
+          }
+        }
+
         log.push({
           rowIndex: row.rowIndex,
           sku: row.sku,
           result: "created",
           productId: created?.id,
         });
+
+
       } catch (e) {
         log.push({
           rowIndex: row.rowIndex,

@@ -8,6 +8,70 @@ e versionamento [SemVer](https://semver.org/lang/pt-BR/).
 
 ---
 
+## [1.0.2] — 2026-06-01
+
+**Tipo:** melhoria (controlada)
+**ChangeControl:** CC-2026-004
+**Classificação:** Média
+
+### Adicionado
+- Suporte a **dados técnicos opcionais** na importação de produtos via planilha
+  (29 campos: marca, modelo, potencia_w, tensao_v, corrente_a, frequencia_hz,
+  temperatura_cor_k, fluxo_luminoso_lm, eficiencia_lm_w, soquete,
+  grau_protecao_ip, cor_produto, material, dimensoes, peso_kg, comprimento_m,
+  bitola_mm, amperagem_a, numero_polos, curva_disjuntor, tipo_instalacao,
+  vida_util_horas, certificacao, norma_tecnica, garantia, codigo_fornecedor,
+  observacoes_tecnicas, fonte_dados_tecnicos, dados_tecnicos_revisados).
+- Catálogo central `TECH_FIELDS` em `src/lib/productImport.ts` com label,
+  unidade, validação numérica e padrões (ex.: IP\d{2}).
+- Validação leve não-bloqueante (`validateTechValue`):
+  números negativos/ inválidos viram erro; campos `certificacao` e
+  `norma_tecnica` geram aviso "exige revisão humana com fonte".
+- Persistência no commit: `marca → products.brand`, `peso_kg →
+  products.weight_kg`, demais campos vão para `product_attributes`
+  (label + unidade do catálogo). Campos vazios são ignorados.
+
+### Alterado
+- `parseImportSheet` agora lê colunas técnicas além das mínimas — desconhecidas
+  são ignoradas; vazias não bloqueiam.
+- `validateImportRows` agrega erros/avisos técnicos e devolve `row.tech`
+  sanitizado.
+
+### Segurança
+- Sem alterações em checkout, Mercado Pago, webhook, estoque de pedidos,
+  pedidos, e-mails transacionais, CRM, GA4, DNS, MFA/AAL2, RLS, policies
+  ou permissões públicas.
+- IA continua proibida de inventar valores técnicos (regra já reforçada no
+  `SYSTEM_PROMPT_IA` desde v1.0.0).
+- Rota `/admin/produtos/importacao-ia` continua restrita a admin com MFA/AAL2.
+- Importação continua exigindo `revisado_humano=sim` + `aprovado_importar=sim`.
+- Falha ao inserir atributos técnicos é logada mas não bloqueia o produto
+  (best-effort).
+
+### Pendente para v1.0.2.1 (próxima janela)
+- Regerar arquivo `public/templates/Cadastro_Minimo_Produtos_Led_Marica_IA.xlsx`
+  com as 29 colunas técnicas opcionais, atualizar aba INSTRUÇÕES e adicionar
+  aba MAPA_IA. Por ora, administradores podem acrescentar as colunas
+  manualmente na planilha — o parser já reconhece os cabeçalhos.
+- Seção "Dados técnicos opcionais" no `EditRowDialog` da tela de revisão
+  (edição inline dos campos técnicos pré-importação).
+- Incluir colunas técnicas no `downloadRevisedSheet`.
+- Indicadores "Dados técnicos preenchidos / com alerta" na grade.
+
+### Notas de rollback
+- Versão anterior estável: 1.0.1
+- Backup pré-deploy: não obrigatório (parser + validação aditivos; persistência
+  só roda se houver dado técnico preenchido). Snapshot diário cobre.
+
+### Arquivos alterados
+- `src/lib/productImport.ts`
+- `src/server/productImport.functions.ts`
+- `docs/production/CHANGELOG.md`
+
+---
+
+
+
 ## [1.0.1] — 2026-05-30
 
 **Tipo:** melhoria (hotfix de UX)
