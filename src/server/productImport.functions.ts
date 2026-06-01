@@ -1018,6 +1018,7 @@ export const downloadRevisedSheet = createServerFn({ method: "POST" })
   .middleware([requireAdmin])
   .inputValidator((raw: unknown) => RowsInput.parse(raw))
   .handler(async ({ data }) => {
+    const techKeys = TECH_FIELD_KEYS;
     const aoa: Array<Array<string | number | null>> = [];
     aoa.push([
       "rowIndex",
@@ -1040,6 +1041,7 @@ export const downloadRevisedSheet = createServerFn({ method: "POST" })
       "meta_description",
       "nivel_confianca_ia",
       "observacoes_ia",
+      ...techKeys,
       "erros",
       "avisos",
     ]);
@@ -1065,6 +1067,7 @@ export const downloadRevisedSheet = createServerFn({ method: "POST" })
         r.meta_description,
         r.nivel_confianca_ia,
         r.observacoes_ia,
+        ...techKeys.map((k) => (r.tech?.[k] ?? null)),
         r.errors.join(" | "),
         r.warnings.join(" | "),
       ]);
@@ -1076,3 +1079,4 @@ export const downloadRevisedSheet = createServerFn({ method: "POST" })
     const base64 = Buffer.from(buf).toString("base64");
     return { ok: true as const, fileBase64: base64, fileName: "produtos_revisado.xlsx" };
   });
+
