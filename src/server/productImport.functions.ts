@@ -438,6 +438,21 @@ export const validateImportRows = createServerFn({ method: "POST" })
         warnings.push("Produto marcado como ativo mas sem revisão humana — será criado inativo.");
       }
 
+      // ===== Dados técnicos opcionais (v1.0.2) =====
+      // Nunca bloqueiam por estarem vazios. Validação leve por campo preenchido.
+      const techClean: Record<string, string> = {};
+      for (const [k, vRaw] of Object.entries(r.tech ?? {})) {
+        const def = TECH_FIELDS.find((f) => f.key === k);
+        if (!def) continue; // ignora chaves desconhecidas
+        const sanitized = sanitizeTechValue(vRaw);
+        if (!sanitized) continue;
+        const v = validateTechValue(def, sanitized);
+        if (v.error) errors.push(v.error);
+        if (v.warning) warnings.push(v.warning);
+        techClean[k] = sanitized;
+      }
+
+
       let status: ImportStatus;
       if (errors.length > 0) {
         status = "invalid";
