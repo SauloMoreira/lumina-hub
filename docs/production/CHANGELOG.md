@@ -8,6 +8,68 @@ e versionamento [SemVer](https://semver.org/lang/pt-BR/).
 
 ---
 
+## [1.1.0-c] — 2026-06-01
+
+**Tipo:** funcionalidade nova (fase 3/3 de v1.1.0) + correção crítica + i18n de auth
+**ChangeControl:** CC-2026-006
+**Classificação:** Crítica (mudança de role + LGPD + exclusão definitiva)
+
+### Adicionado
+- **Ações sensíveis** em `src/server/users.functions.ts` (todas exigem
+  `requireSupabaseAuth` + `assertAdmin` + `assertAal2` e gravam
+  `admin_audit_log`):
+  - `adminPromoteToAdmin` / `adminDemoteToUser` — alteração de função
+    `admin ↔ user`. Bloqueia mudar a própria função e despromover o
+    último admin ativo. Encerra sessões do alvo (signOut global) para
+    forçar reavaliação de claims.
+  - `adminAnonymizeUser` — anonimização LGPD: substitui `name`/`email`/
+    `phone`/`avatar_url` por valores genéricos, marca `status=archived`,
+    atualiza `auth.users` com e-mail neutro e aplica `ban_duration`
+    longo. Mantém o registro para integridade de pedidos/notas/auditoria.
+  - `adminDeleteUser` — exclusão definitiva. **Bloqueia** se houver
+    qualquer pedido vinculado e instrui a usar anonimização. Remove
+    `company_users`, `addresses`, `auth.users` (cascata para `profiles`).
+- Validações de input com Zod: motivo mín. 3 caracteres + string de
+  confirmação literal (`CONFIRMAR` / `ANONIMIZAR` / `EXCLUIR`).
+- Drawer `/admin/usuarios`: nova seção **Ações sensíveis · exigem MFA**
+  com botões Promover/Remover admin, Anonimizar (LGPD), Excluir.
+  Cada botão valida AAL2 no client (`mfa.getAuthenticatorAssuranceLevel`)
+  antes de chamar a server fn, e exige dois prompts (motivo + confirmação
+  literal).
+
+### Corrigido (crítico)
+- **Rota `/reset-password` ausente** (404). Tanto o e-mail enviado por
+  `esqueci-senha` quanto `adminSendPasswordReset` redirecionavam para
+  uma URL inexistente — usuários ficavam sem como concluir a redefinição.
+  Criado `src/routes/reset-password.tsx` com validação do token de
+  recovery via `onAuthStateChange`, formulário de nova senha (mín. 6 +
+  confirmação) e `supabase.auth.updateUser({ password })`.
+
+### Internacionalizado (mensagens de erro de auth)
+- Novo `src/lib/authErrors.ts` com `translateAuthError()` mapeando ~25
+  padrões do Supabase Auth (credenciais inválidas, e-mail não confirmado,
+  rate limit, senha fraca, token expirado, captcha, rede, etc.) para
+  PT-BR. Quando não há match, devolve fallback amigável (nunca vaza
+  string em inglês).
+- Aplicado em `src/routes/login.tsx`, `src/routes/cadastro.tsx`,
+  `src/routes/esqueci-senha.tsx` e `src/routes/reset-password.tsx`.
+
+### Segurança
+- Promoção/demoção/anonimização/exclusão exigem AAL2 (claim `aal=aal2`
+  validada no server). Sem MFA cadastrado a ação é rejeitada com
+  "MFA obrigatório para esta ação".
+- Toda operação sensível registra `before`/`after` em
+  `admin_audit_log` (PII mascarada pelo `logAdminAction`).
+- Exclusão definitiva é defensiva: bloqueada se houver pedidos.
+
+### Risco residual
+- Nenhuma migration de DB nesta fase — apenas server fns + UI + i18n.
+- Anonimização não toca em `orders.shipping_address` ou snapshots de
+  endereço dentro de pedidos (decisão consciente: nota fiscal exige
+  histórico). Para apagamento total exigir processo manual com fiscal.
+
+---
+
 ## [1.1.0-b] — 2026-06-01
 
 **Tipo:** funcionalidade nova (fase 2/3 de v1.1.0)
