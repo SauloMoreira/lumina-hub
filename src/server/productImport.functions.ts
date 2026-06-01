@@ -900,7 +900,7 @@ export const commitImport = createServerFn({ method: "POST" })
         }
         slugCheckCache.add(candidate);
 
-        const insert = {
+        const insert: Record<string, unknown> = {
           sku: row.sku,
           name: row.nome_produto,
           slug: candidate,
@@ -915,6 +915,11 @@ export const commitImport = createServerFn({ method: "POST" })
           seo_title: row.titulo_seo ?? null,
           seo_description: row.meta_description ?? null,
         };
+        if (row.tech?.marca) insert.brand = row.tech.marca.slice(0, 120);
+        if (row.tech?.peso_kg) {
+          const w = Number(row.tech.peso_kg.replace(",", "."));
+          if (Number.isFinite(w) && w >= 0) insert.weight_kg = w;
+        }
 
         const { data: created, error } = await supabaseAdmin
           .from("products")
@@ -922,12 +927,18 @@ export const commitImport = createServerFn({ method: "POST" })
           .select("id")
           .single();
         if (error) throw new Error(error.message);
+
+        // ===== Persistir dados técnicos opcionais em product_attributes =====
+        // (v1.0.2) Best-effort: falha não interrompe a importação do produto.
+        await persistTechAttributes(supabaseAdmin, created?.id, row.tech);
+
         log.push({
           rowIndex: row.rowIndex,
           sku: row.sku,
           result: "created",
           productId: created?.id,
         });
+
       } catch (e) {
         log.push({
           rowIndex: row.rowIndex,
