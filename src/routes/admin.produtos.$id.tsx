@@ -177,9 +177,21 @@ function ProductForm() {
     }
   }, [id, isNew, nav]);
 
+  // Reaproveita o mesmo queryKey de ProductAttributesSection para deduplicar
+  // a chamada. Quando o produto é novo, fica desabilitado.
+  const attrsQuery = useQuery({
+    queryKey: ["admin-product-attributes", id],
+    queryFn: () => adminListProductAttributes({ data: { productId: id } }),
+    enabled: !isNew,
+  });
+
   const quality = useMemo(
     () =>
       computeProductQuality({
+        name: form.name,
+        tags: form.tags
+          ? form.tags.split(",").map((t) => t.trim()).filter(Boolean)
+          : [],
         description: form.description,
         specs: extra.specs,
         seo_title: form.seo_title,
@@ -195,9 +207,11 @@ function ProductForm() {
         category_id: form.category_id || null,
         images: form.images,
         product_images: extra.product_images,
+        product_attributes: attrsQuery.data ?? [],
       }),
-    [form, extra],
+    [form, extra, attrsQuery.data],
   );
+
 
   async function applyBarcodeData(
     choice: BarcodeApplyChoice,
