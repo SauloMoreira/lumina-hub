@@ -145,8 +145,10 @@ function emptyRow(rowIndex: number): ImportRow {
     warnings: [],
     matched_product_id: null,
     matched_category_id: null,
+    tech: {},
   };
 }
+
 
 function normalizeHeader(h: string): string {
   return h
