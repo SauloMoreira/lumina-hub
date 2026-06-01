@@ -8,6 +8,74 @@ e versionamento [SemVer](https://semver.org/lang/pt-BR/).
 
 ---
 
+## [1.0.3] — 2026-06-01
+
+**Tipo:** correção (qualidade do cadastro + contexto de SEO/IA)
+**ChangeControl:** CC-2026-007
+**Classificação:** Baixa (somente leitura/avaliação e prompt de IA; nada de DB, RLS, checkout, MP, webhook, estoque, pedidos, e-mail)
+
+### Corrigido
+- **Card "Qualidade do Cadastro"** no editor de produto não recebia
+  `product_attributes`, então sempre exibia "Sem atributos técnicos" mesmo
+  com vários atributos cadastrados. Passou a buscar a mesma query usada
+  por `ProductAttributesSection` (cache compartilhado) e a passar a lista
+  para `computeProductQuality`.
+- **Detecção de NCM**: além da coluna fiscal `products.ncm`, agora aceita
+  NCM cadastrado como atributo técnico (chave/label normalizada para
+  `ncm`). Normalização aceita formatos `8539.52.00`, `85395200` ou com
+  espaços — só os 8 dígitos importam. Função pura `normalizeNcm()`.
+- **Reconhecimento de chaves PT-BR**: heurísticas de iluminação
+  (potência/voltagem/temperatura de cor/IP) passaram a usar um mapa de
+  "slots" (`attrSlot`) que aceita `potencia`/`potencia_w`/`watts`,
+  `tensao`/`tensao_v`/`voltagem`/`bivolt`, `temperatura_cor`/`cct`,
+  `grau_protecao_ip`/`ip`. Antes só reconhecia as chaves em inglês.
+- **"Sem atributos técnicos"** agora considera `attribute_value` preenchido
+  (qualquer atributo cadastrado), independentemente de `is_visible` ou
+  `is_filterable`. Bônus extra a partir de 3 atributos.
+- **Texto do aviso de NCM** suavizado: "NCM não informado. Campo
+  recomendado para organização fiscal, mas não bloqueia a venda — a
+  emissão fiscal é feita fora da plataforma."
+
+### Adicionado
+- `QualityResult.techSummary` com `total`, `visible`, `filterable`,
+  `ncm` (8 dígitos detectado) e `ncmSource` (`column` | `attribute`).
+  Exibido no card como "N atributo(s) técnico(s) cadastrado(s) · K
+  usado(s) como filtro" + "NCM: 8539.52.00 (detectado nos atributos)".
+- IA de SEO (`improveProductSeo` e `boostProductSeoAuto`) passou a
+  receber atributos técnicos, NCM e tags do produto no prompt do
+  usuário. Adicionada instrução anti-alucinação no system prompt:
+  "use apenas os dados técnicos fornecidos no cadastro. NÃO invente
+  potência, tensão, certificação, garantia, NCM, fluxo luminoso,
+  soquete, IP, dimensões ou qualquer especificação técnica."
+- `boostProductSeoAuto` agora carrega `product_attributes`, `ncm` e
+  `tags` da própria tabela de produtos antes de chamar a IA.
+
+### Segurança
+- Sem mudança de RLS, policies, MFA, AAL2 ou rotas públicas.
+- Sem alteração em checkout, Mercado Pago, webhook, estoque, pedidos,
+  e-mails transacionais, CRM, GA4 ou DNS.
+- Nenhuma migration nesta release.
+
+### Arquivos
+- `src/lib/productQuality.ts` — `normalizeNcm`, `attrSlot`,
+  `QualityAttributeInput.is_filterable/attribute_label`,
+  `QualityResult.techSummary`, NCM via coluna OU atributo, heurísticas
+  PT-BR, "Sem atributos técnicos" baseado em `techAttrs`.
+- `src/routes/admin.produtos.$id.tsx` — `useQuery` de
+  `adminListProductAttributes`, `product_attributes` no
+  `computeProductQuality`, bloco de resumo técnico + NCM detectado no
+  `QualityPanel`, contexto adicional repassado ao `ProductSEOSection`.
+- `src/components/admin/ProductSEOSection.tsx` — `productCtx` aceita
+  `ncm`, `tags`, `attributes`; repasse para `improveProductSeo`.
+- `src/server/seo.functions.ts` — `InputSchema` com `ncm/tags/attributes`,
+  `buildUserPrompt` lista atributos e NCM, system prompt com regra
+  anti-alucinação, `boostProductSeoAuto` carrega atributos do DB.
+
+### Rollback
+- Reverter o commit. Sem migration, sem dado mutado em produção.
+
+---
+
 ## [1.1.0-c] — 2026-06-01
 
 **Tipo:** funcionalidade nova (fase 3/3 de v1.1.0) + correção crítica + i18n de auth
