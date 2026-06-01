@@ -108,11 +108,13 @@ const ImportRowSchema = z.object({
   warnings: z.array(z.string()),
   matched_product_id: z.string().nullable(),
   matched_category_id: z.string().nullable(),
+  tech: z.record(z.string(), z.string()).default({}),
 }) satisfies z.ZodType<ImportRow>;
 
 const RowsInput = z.object({
   rows: z.array(ImportRowSchema).max(MAX_ROWS),
 });
+
 
 // ===================== Util =====================
 
