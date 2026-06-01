@@ -24,9 +24,14 @@ import {
   adminArchiveUser,
   adminRestoreUser,
   adminSendPasswordReset,
+  adminPromoteToAdmin,
+  adminDemoteToUser,
+  adminAnonymizeUser,
+  adminDeleteUser,
   type AdminUserRow,
   type AdminUserType,
 } from "@/server/users.functions";
+import { supabase } from "@/integrations/supabase/client";
 import {
   Select,
   SelectContent,
@@ -507,6 +512,110 @@ function UserDrawer({
       "reset",
       () => adminSendPasswordReset({ data: { user_id: userId } }),
       "E-mail de redefinição enviado.",
+    );
+  };
+
+  // ----- v1.1.0-c: ações sensíveis (exigem MFA/AAL2) -----
+
+  const ensureAal2 = async (): Promise<boolean> => {
+    try {
+      const { data } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
+      if (data?.currentLevel === "aal2") return true;
+      toast.error(
+        "Esta ação exige verificação em duas etapas (MFA). Faça logout e entre novamente confirmando o código.",
+      );
+      return false;
+    } catch {
+      toast.error("Não foi possível verificar o MFA. Tente novamente.");
+      return false;
+    }
+  };
+
+  const handlePromote = async () => {
+    if (!(await ensureAal2())) return;
+    const reason = window.prompt(
+      "PROMOVER A ADMINISTRADOR.\nMotivo (gravado em auditoria, mín. 3 caracteres):",
+      "",
+    );
+    if (!reason || reason.trim().length < 3) return;
+    const c = window.prompt(
+      "Digite CONFIRMAR para promover este usuário a ADMIN:",
+      "",
+    );
+    if (c !== "CONFIRMAR") return;
+    runAction(
+      "promote",
+      () =>
+        adminPromoteToAdmin({
+          data: { user_id: userId, reason: reason.trim(), confirm: "CONFIRMAR" },
+        }),
+      "Usuário promovido a administrador.",
+    );
+  };
+
+  const handleDemote = async () => {
+    if (!(await ensureAal2())) return;
+    const reason = window.prompt(
+      "REMOVER PRIVILÉGIOS DE ADMIN.\nMotivo (gravado em auditoria, mín. 3 caracteres):",
+      "",
+    );
+    if (!reason || reason.trim().length < 3) return;
+    const c = window.prompt(
+      "Digite CONFIRMAR para remover privilégios de admin:",
+      "",
+    );
+    if (c !== "CONFIRMAR") return;
+    runAction(
+      "demote",
+      () =>
+        adminDemoteToUser({
+          data: { user_id: userId, reason: reason.trim(), confirm: "CONFIRMAR" },
+        }),
+      "Privilégios de admin removidos.",
+    );
+  };
+
+  const handleAnonymize = async () => {
+    if (!(await ensureAal2())) return;
+    const reason = window.prompt(
+      "ANONIMIZAÇÃO LGPD.\nIrá apagar nome/e-mail/telefone e bloquear o login.\nMantém pedidos e histórico para integridade fiscal.\nMotivo (mín. 3 caracteres):",
+      "",
+    );
+    if (!reason || reason.trim().length < 3) return;
+    const c = window.prompt(
+      "Digite ANONIMIZAR para confirmar (irreversível):",
+      "",
+    );
+    if (c !== "ANONIMIZAR") return;
+    runAction(
+      "anonymize",
+      () =>
+        adminAnonymizeUser({
+          data: { user_id: userId, reason: reason.trim(), confirm: "ANONIMIZAR" },
+        }),
+      "Usuário anonimizado.",
+    );
+  };
+
+  const handleDelete = async () => {
+    if (!(await ensureAal2())) return;
+    const reason = window.prompt(
+      "EXCLUSÃO DEFINITIVA.\nSó funciona se o usuário NÃO tiver pedidos.\nMotivo (mín. 3 caracteres):",
+      "",
+    );
+    if (!reason || reason.trim().length < 3) return;
+    const c = window.prompt(
+      "Digite EXCLUIR para confirmar a remoção definitiva:",
+      "",
+    );
+    if (c !== "EXCLUIR") return;
+    runAction(
+      "delete",
+      () =>
+        adminDeleteUser({
+          data: { user_id: userId, reason: reason.trim(), confirm: "EXCLUIR" },
+        }),
+      "Usuário excluído.",
     );
   };
 
