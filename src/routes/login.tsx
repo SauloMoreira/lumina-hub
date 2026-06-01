@@ -145,9 +145,20 @@ function LoginPage() {
 
       const { data: profile } = await supabase
         .from("profiles")
-        .select("role")
+        .select("role, status")
         .eq("id", userId)
         .maybeSingle();
+
+      if (profile?.status && profile.status !== "active") {
+        await supabase.auth.signOut();
+        const msg =
+          profile.status === "blocked"
+            ? "Sua conta está bloqueada. Entre em contato com o suporte."
+            : "Sua conta foi arquivada. Entre em contato com o suporte para reativá-la.";
+        showAuthError(msg);
+        return;
+      }
+
       toast.success("Bem-vindo de volta!");
       if (redirectTo) {
         navigate({ to: redirectTo as never });
