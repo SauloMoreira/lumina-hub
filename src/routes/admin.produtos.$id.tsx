@@ -891,6 +891,34 @@ function QualityPanel({ quality }: { quality: ReturnType<typeof computeProductQu
         <GroupBar label="Fiscal/Custo" g={quality.groups.fiscal} />
       </div>
 
+      <div className="border-t border-border pt-2 text-[11px] text-muted-foreground space-y-0.5">
+        <div>
+          <span className="text-foreground font-medium">{quality.techSummary.total}</span>{" "}
+          atributo(s) técnico(s) cadastrado(s)
+          {quality.techSummary.visible !== quality.techSummary.total && (
+            <> · {quality.techSummary.visible} visível(is) na loja</>
+          )}
+          {" · "}
+          {quality.techSummary.filterable} usado(s) como filtro
+        </div>
+        <div>
+          NCM:{" "}
+          {quality.techSummary.ncm ? (
+            <>
+              <span className="text-foreground font-medium tabular-nums">
+                {quality.techSummary.ncm.replace(/^(\d{4})(\d{2})(\d{2})$/, "$1.$2.$3")}
+              </span>{" "}
+              {quality.techSummary.ncmSource === "attribute" && (
+                <span className="text-muted-foreground/70">(detectado nos atributos)</span>
+              )}
+            </>
+          ) : (
+            <span className="text-muted-foreground/70">não informado (opcional)</span>
+          )}
+        </div>
+      </div>
+
+
       {top.length > 0 ? (
         <div className="space-y-1.5 pt-1">
           <p className="text-xs font-medium text-muted-foreground">Para melhorar:</p>
