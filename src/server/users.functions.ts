@@ -355,3 +355,212 @@ export const adminGetUserDetail = createServerFn({ method: "POST" })
       audit_logs: auditLogs ?? [],
     };
   });
+
+// ============================================================
+// v1.1.0-b — Ações operacionais (bloquear / desbloquear /
+// arquivar / restaurar / reset de senha por e-mail).
+// Todas exigem admin ativo, registram auditoria e bloqueiam
+// ações sobre o próprio usuário e sobre o último admin ativo.
+// ============================================================
+
+type NewStatus = "active" | "blocked" | "archived";
+
+const STATUS_LABELS: Record<NewStatus, string> = {
+  active: "ativo",
+  blocked: "bloqueado",
+  archived: "arquivado",
+};
+
+async function loadTargetProfile(userId: string) {
+  const { data, error } = await supabaseAdmin
+    .from("profiles")
+    .select("id, name, email, role, status")
+    .eq("id", userId)
+    .maybeSingle();
+  if (error) throw new Error(error.message);
+  if (!data) throw new Error("Usuário não encontrado");
+  return data as {
+    id: string;
+    name: string | null;
+    email: string;
+    role: string;
+    status: string;
+  };
+}
+
+async function assertNotLastActiveAdmin(targetUserId: string) {
+  const { count } = await supabaseAdmin
+    .from("profiles")
+    .select("id", { count: "exact", head: true })
+    .eq("role", "admin")
+    .eq("status", "active");
+  if ((count ?? 0) <= 1) {
+    // Confirma se o alvo é o admin ativo restante
+    const { data } = await supabaseAdmin
+      .from("profiles")
+      .select("id")
+      .eq("role", "admin")
+      .eq("status", "active")
+      .limit(2);
+    if ((data ?? []).some((d) => d.id === targetUserId)) {
+      throw new Error(
+        "Não é possível bloquear ou arquivar o último administrador ativo.",
+      );
+    }
+  }
+}
+
+const statusInput = z.object({
+  user_id: z.string().uuid(),
+  reason: z.string().trim().min(1).max(500).optional().nullable(),
+});
+
+async function changeStatus(
+  adminUserId: string,
+  adminEmail: string,
+  targetId: string,
+  newStatus: NewStatus,
+  reason: string | null,
+) {
+  if (targetId === adminUserId) {
+    throw new Error("Você não pode alterar o status da própria conta.");
+  }
+  const target = await loadTargetProfile(targetId);
+  if (target.status === newStatus) {
+    return { ok: true, profile: target };
+  }
+  if (
+    (newStatus === "blocked" || newStatus === "archived") &&
+    target.role === "admin"
+  ) {
+    await assertNotLastActiveAdmin(targetId);
+  }
+  const { data: updated, error } = await supabaseAdmin
+    .from("profiles")
+    .update({ status: newStatus, updated_at: new Date().toISOString() })
+    .eq("id", targetId)
+    .select("id, name, email, role, status")
+    .maybeSingle();
+  if (error) throw new Error(error.message);
+
+  // Se bloqueando/arquivando, encerra sessões ativas do usuário.
+  if (newStatus !== "active") {
+    try {
+      await supabaseAdmin.auth.admin.signOut(targetId, "global");
+    } catch (e) {
+      console.warn("[users] signOut do alvo falhou:", e);
+    }
+  }
+
+  await logAdminAction({
+    adminId: adminUserId,
+    adminEmail,
+    action: `user_status_${newStatus}`,
+    resourceType: "user",
+    resourceId: targetId,
+    description: `${STATUS_LABELS[target.status as NewStatus] ?? target.status} → ${STATUS_LABELS[newStatus]}${reason ? ` · motivo: ${reason}` : ""}`,
+    before: { status: target.status },
+    after: { status: newStatus, reason },
+  });
+
+  return { ok: true, profile: updated ?? target };
+}
+
+export const adminBlockUser = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data: unknown) => statusInput.parse(data))
+  .handler(async ({ data, context }) => {
+    const admin = await assertAdmin(context.userId);
+    return changeStatus(
+      admin.id,
+      admin.email,
+      data.user_id,
+      "blocked",
+      data.reason ?? null,
+    );
+  });
+
+export const adminUnblockUser = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data: unknown) => statusInput.parse(data))
+  .handler(async ({ data, context }) => {
+    const admin = await assertAdmin(context.userId);
+    return changeStatus(
+      admin.id,
+      admin.email,
+      data.user_id,
+      "active",
+      data.reason ?? null,
+    );
+  });
+
+export const adminArchiveUser = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data: unknown) => statusInput.parse(data))
+  .handler(async ({ data, context }) => {
+    const admin = await assertAdmin(context.userId);
+    return changeStatus(
+      admin.id,
+      admin.email,
+      data.user_id,
+      "archived",
+      data.reason ?? null,
+    );
+  });
+
+export const adminRestoreUser = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data: unknown) => statusInput.parse(data))
+  .handler(async ({ data, context }) => {
+    const admin = await assertAdmin(context.userId);
+    return changeStatus(
+      admin.id,
+      admin.email,
+      data.user_id,
+      "active",
+      data.reason ?? null,
+    );
+  });
+
+const resetInput = z.object({ user_id: z.string().uuid() });
+
+export const adminSendPasswordReset = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data: unknown) => resetInput.parse(data))
+  .handler(async ({ data, context }) => {
+    const admin = await assertAdmin(context.userId);
+    const target = await loadTargetProfile(data.user_id);
+    if (target.status !== "active") {
+      throw new Error(
+        "Reative o usuário antes de enviar o link de redefinição de senha.",
+      );
+    }
+
+    const siteUrl =
+      process.env.SITE_URL ||
+      process.env.VITE_SITE_URL ||
+      "https://www.ledmarica.com.br";
+
+    try {
+      const { error } = await supabaseAdmin.auth.admin.generateLink({
+        type: "recovery",
+        email: target.email,
+        options: { redirectTo: `${siteUrl}/reset-password` },
+      });
+      if (error) throw error;
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : "Falha ao gerar link";
+      throw new Error(`Não foi possível enviar o e-mail de redefinição: ${msg}`);
+    }
+
+    await logAdminAction({
+      adminId: admin.id,
+      adminEmail: admin.email,
+      action: "user_password_reset_sent",
+      resourceType: "user",
+      resourceId: target.id,
+      description: `E-mail de redefinição de senha enviado para ${target.email}`,
+    });
+
+    return { ok: true };
+  });
