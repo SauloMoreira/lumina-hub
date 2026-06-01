@@ -19,6 +19,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { checkLoginAttempt, recordAuthFailure } from "@/server/auth.functions";
 
 import { buildSeo } from "@/lib/seo";
+import { translateAuthError } from "@/lib/authErrors";
 
 export const Route = createFileRoute("/login")({
   head: () => buildSeo({ title: "Entrar na sua conta", url: "/login", noindex: true }),
@@ -158,8 +159,7 @@ function LoginPage() {
       }
     } catch (err) {
       console.error("Login error:", err);
-      const msg = err instanceof Error ? err.message : "Erro desconhecido ao entrar.";
-      showAuthError(msg);
+      showAuthError(translateAuthError(err, "Erro inesperado ao entrar."));
     } finally {
       setLoading(false);
     }
