@@ -761,3 +761,34 @@ function Info({ label, value }: { label: string; value: React.ReactNode }) {
     </div>
   );
 }
+
+function ActionBtn({
+  children,
+  onClick,
+  disabled,
+  busy,
+  variant = "primary",
+}: {
+  children: React.ReactNode;
+  onClick: () => void;
+  disabled?: boolean;
+  busy?: boolean;
+  variant?: "primary" | "destructive" | "muted";
+}) {
+  const cls =
+    variant === "destructive"
+      ? "bg-destructive text-destructive-foreground hover:bg-destructive/90"
+      : variant === "muted"
+        ? "bg-muted text-foreground hover:bg-muted/80"
+        : "bg-primary text-primary-foreground hover:bg-primary/90";
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      disabled={disabled}
+      className={`inline-flex items-center gap-1 px-3 py-1.5 rounded-md text-xs font-semibold transition disabled:opacity-50 disabled:cursor-not-allowed ${cls}`}
+    >
+      {busy ? "Processando…" : children}
+    </button>
+  );
+}
