@@ -44,6 +44,7 @@ import { Route as CheckoutSuccessRouteImport } from './routes/checkout.success'
 import { Route as CheckoutPendingRouteImport } from './routes/checkout.pending'
 import { Route as CheckoutFailureRouteImport } from './routes/checkout.failure'
 import { Route as AdminWhatsappTemplatesRouteImport } from './routes/admin.whatsapp-templates'
+import { Route as AdminUsuariosRouteImport } from './routes/admin.usuarios'
 import { Route as AdminSeoRouteImport } from './routes/admin.seo'
 import { Route as AdminSegurancaRouteImport } from './routes/admin.seguranca'
 import { Route as AdminPendenciasRouteImport } from './routes/admin.pendencias'
@@ -265,6 +266,11 @@ const CheckoutFailureRoute = CheckoutFailureRouteImport.update({
 const AdminWhatsappTemplatesRoute = AdminWhatsappTemplatesRouteImport.update({
   id: '/admin/whatsapp-templates',
   path: '/admin/whatsapp-templates',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminUsuariosRoute = AdminUsuariosRouteImport.update({
+  id: '/admin/usuarios',
+  path: '/admin/usuarios',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AdminSeoRoute = AdminSeoRouteImport.update({
@@ -558,6 +564,7 @@ export interface FileRoutesByFullPath {
   '/admin/pendencias': typeof AdminPendenciasRoute
   '/admin/seguranca': typeof AdminSegurancaRouteWithChildren
   '/admin/seo': typeof AdminSeoRoute
+  '/admin/usuarios': typeof AdminUsuariosRoute
   '/admin/whatsapp-templates': typeof AdminWhatsappTemplatesRoute
   '/checkout/failure': typeof CheckoutFailureRoute
   '/checkout/pending': typeof CheckoutPendingRoute
@@ -640,6 +647,7 @@ export interface FileRoutesByTo {
   '/admin/pendencias': typeof AdminPendenciasRoute
   '/admin/seguranca': typeof AdminSegurancaRouteWithChildren
   '/admin/seo': typeof AdminSeoRoute
+  '/admin/usuarios': typeof AdminUsuariosRoute
   '/admin/whatsapp-templates': typeof AdminWhatsappTemplatesRoute
   '/checkout/failure': typeof CheckoutFailureRoute
   '/checkout/pending': typeof CheckoutPendingRoute
@@ -725,6 +733,7 @@ export interface FileRoutesById {
   '/admin/pendencias': typeof AdminPendenciasRoute
   '/admin/seguranca': typeof AdminSegurancaRouteWithChildren
   '/admin/seo': typeof AdminSeoRoute
+  '/admin/usuarios': typeof AdminUsuariosRoute
   '/admin/whatsapp-templates': typeof AdminWhatsappTemplatesRoute
   '/checkout/failure': typeof CheckoutFailureRoute
   '/checkout/pending': typeof CheckoutPendingRoute
@@ -811,6 +820,7 @@ export interface FileRouteTypes {
     | '/admin/pendencias'
     | '/admin/seguranca'
     | '/admin/seo'
+    | '/admin/usuarios'
     | '/admin/whatsapp-templates'
     | '/checkout/failure'
     | '/checkout/pending'
@@ -893,6 +903,7 @@ export interface FileRouteTypes {
     | '/admin/pendencias'
     | '/admin/seguranca'
     | '/admin/seo'
+    | '/admin/usuarios'
     | '/admin/whatsapp-templates'
     | '/checkout/failure'
     | '/checkout/pending'
@@ -977,6 +988,7 @@ export interface FileRouteTypes {
     | '/admin/pendencias'
     | '/admin/seguranca'
     | '/admin/seo'
+    | '/admin/usuarios'
     | '/admin/whatsapp-templates'
     | '/checkout/failure'
     | '/checkout/pending'
@@ -1062,6 +1074,7 @@ export interface RootRouteChildren {
   AdminPendenciasRoute: typeof AdminPendenciasRoute
   AdminSegurancaRoute: typeof AdminSegurancaRouteWithChildren
   AdminSeoRoute: typeof AdminSeoRoute
+  AdminUsuariosRoute: typeof AdminUsuariosRoute
   AdminWhatsappTemplatesRoute: typeof AdminWhatsappTemplatesRoute
   ComboSlugRoute: typeof ComboSlugRoute
   InstitucionalSlugRoute: typeof InstitucionalSlugRoute
@@ -1340,6 +1353,13 @@ declare module '@tanstack/react-router' {
       path: '/admin/whatsapp-templates'
       fullPath: '/admin/whatsapp-templates'
       preLoaderRoute: typeof AdminWhatsappTemplatesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin/usuarios': {
+      id: '/admin/usuarios'
+      path: '/admin/usuarios'
+      fullPath: '/admin/usuarios'
+      preLoaderRoute: typeof AdminUsuariosRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/admin/seo': {
@@ -1775,6 +1795,7 @@ const rootRouteChildren: RootRouteChildren = {
   AdminPendenciasRoute: AdminPendenciasRoute,
   AdminSegurancaRoute: AdminSegurancaRouteWithChildren,
   AdminSeoRoute: AdminSeoRoute,
+  AdminUsuariosRoute: AdminUsuariosRoute,
   AdminWhatsappTemplatesRoute: AdminWhatsappTemplatesRoute,
   ComboSlugRoute: ComboSlugRoute,
   InstitucionalSlugRoute: InstitucionalSlugRoute,
@@ -1810,12 +1831,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { createStart } from '@tanstack/react-start'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-  }
-}

@@ -154,6 +154,11 @@ const groups: Group[] = [
     icon: Users,
     items: [
       {
+        to: "/admin/usuarios",
+        label: "Usuários e Clientes",
+        icon: Users,
+      },
+      {
         to: "/admin/leads",
         label: "Leads",
         icon: Users,
