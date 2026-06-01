@@ -16,6 +16,14 @@ interface Props {
     brand?: string;
     category?: string;
     price: number;
+    ncm?: string | null;
+    tags?: string[];
+    attributes?: Array<{
+      key?: string | null;
+      label?: string | null;
+      value: string;
+      unit?: string | null;
+    }>;
   };
   seoTitle: string;
   seoDescription: string;
@@ -70,6 +78,9 @@ export function ProductSEOSection({
           brand: productCtx.brand || null,
           category: productCtx.category || null,
           price: Number.isFinite(productCtx.price) ? productCtx.price : null,
+          ncm: productCtx.ncm ?? null,
+          tags: productCtx.tags ?? [],
+          attributes: productCtx.attributes ?? [],
         },
       });
       if (!r.ok) {

@@ -3,12 +3,22 @@ import { z } from "zod";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { requireAdmin } from "@/integrations/supabase/admin-middleware";
 
+const AttributeSchema = z.object({
+  key: z.string().max(80).optional().nullable(),
+  label: z.string().max(120).optional().nullable(),
+  value: z.string().max(200),
+  unit: z.string().max(40).optional().nullable(),
+});
+
 const InputSchema = z.object({
   name: z.string().min(1).max(200),
   description: z.string().max(4000).optional().nullable(),
   category: z.string().max(120).optional().nullable(),
   brand: z.string().max(120).optional().nullable(),
   price: z.number().nonnegative().optional().nullable(),
+  ncm: z.string().max(40).optional().nullable(),
+  tags: z.array(z.string().max(60)).max(40).optional().nullable(),
+  attributes: z.array(AttributeSchema).max(60).optional().nullable(),
 });
 
 const ResultSchema = z.object({
@@ -29,24 +39,39 @@ const BoostResultSchema = ResultSchema.extend({
     .max(6),
 });
 
+const ANTI_HALLUCINATION = `IMPORTANTE: use apenas os dados técnicos fornecidos no cadastro. NÃO invente potência, tensão, certificação, garantia, NCM, fluxo luminoso, soquete, IP, dimensões ou qualquer especificação técnica. Se algum dado estiver ausente, não presuma.`;
+
 const SYSTEM_PROMPT = `Você é especialista em SEO para e-commerce brasileiro de material elétrico e iluminação LED da loja Led Maricá (Maricá/RJ).
 Gere campos de SEO otimizados em português brasileiro.
 Regras:
 - Título: até 60 caracteres, deve conter o nome do produto e a marca "Led Maricá".
 - Descrição: até 160 caracteres, mencionar entrega rápida, benefício/economia e Maricá/RJ.
 - Keywords: 6 a 10 termos separados por vírgula, incluir variações como "comprar X", "X preço", "X maricá".
-- Não use aspas desnecessárias dentro dos campos.`;
+- Não use aspas desnecessárias dentro dos campos.
+${ANTI_HALLUCINATION}`;
 
 const SYSTEM_PROMPT_BOOST = `${SYSTEM_PROMPT}
-Adicionalmente, gere um FAQ com 3 a 5 perguntas e respostas curtas, úteis e específicas do produto (instalação, voltagem, garantia, indicação de uso, compatibilidade). Respostas em até 2 frases. Português brasileiro.`;
+Adicionalmente, gere um FAQ com 3 a 5 perguntas e respostas curtas, úteis e específicas do produto (instalação, voltagem, garantia, indicação de uso, compatibilidade). Respostas em até 2 frases. Português brasileiro.
+${ANTI_HALLUCINATION}`;
 
 function buildUserPrompt(data: z.infer<typeof InputSchema>): string {
+  const attrLines = (data.attributes ?? [])
+    .filter((a) => a && a.value && a.value.trim().length > 0)
+    .map((a) => {
+      const label = (a.label ?? a.key ?? "").trim() || (a.key ?? "");
+      const unit = a.unit?.trim();
+      return `- ${label}: ${a.value}${unit ? ` ${unit}` : ""}`;
+    });
+  const ncmDigits = data.ncm ? String(data.ncm).replace(/\D+/g, "") : "";
   return [
     `Produto: ${data.name}`,
     data.brand ? `Marca: ${data.brand}` : null,
     data.category ? `Categoria: ${data.category}` : null,
     data.price != null ? `Preço: R$ ${data.price.toFixed(2)}` : null,
+    ncmDigits.length === 8 ? `NCM: ${ncmDigits}` : null,
+    data.tags && data.tags.length ? `Tags: ${data.tags.join(", ")}` : null,
     data.description ? `Descrição atual: ${data.description}` : null,
+    attrLines.length ? `Atributos técnicos cadastrados:\n${attrLines.join("\n")}` : null,
   ]
     .filter(Boolean)
     .join("\n");
@@ -132,11 +157,18 @@ export const boostProductSeoAuto = createServerFn({ method: "POST" })
       const { data: product, error: pErr } = await supabaseAdmin
         .from("products")
         .select(
-          "id, name, description, brand, price, category_id, specs, categories:category_id(name)",
+          "id, name, description, brand, price, category_id, specs, ncm, tags, categories:category_id(name), product_attributes(attribute_key, attribute_label, attribute_value, attribute_unit)",
         )
         .eq("id", data.productId)
         .maybeSingle();
       if (pErr || !product) return { ok: false as const, error: "Produto não encontrado" };
+
+      const attrs = ((product as any).product_attributes ?? []) as Array<{
+        attribute_key: string | null;
+        attribute_label: string | null;
+        attribute_value: string | null;
+        attribute_unit: string | null;
+      }>;
 
       const promptInput = {
         name: product.name,
@@ -144,6 +176,16 @@ export const boostProductSeoAuto = createServerFn({ method: "POST" })
         brand: product.brand ?? null,
         category: (product as { categories?: { name?: string } | null }).categories?.name ?? null,
         price: product.price != null ? Number(product.price) : null,
+        ncm: (product as any).ncm ?? null,
+        tags: ((product as any).tags ?? []) as string[],
+        attributes: attrs
+          .filter((a) => (a.attribute_value ?? "").trim().length > 0)
+          .map((a) => ({
+            key: a.attribute_key,
+            label: a.attribute_label,
+            value: a.attribute_value!,
+            unit: a.attribute_unit,
+          })),
       };
 
       const json = await callAiGateway({

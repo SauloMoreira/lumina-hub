@@ -1,6 +1,7 @@
 import { createFileRoute, useNavigate, useParams, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useRef, useState, type FormEvent } from "react";
-import { useQueryClient } from "@tanstack/react-query";
+import { useQueryClient, useQuery } from "@tanstack/react-query";
+import { adminListProductAttributes } from "@/server/productAttributes.functions";
 import {
   ArrowLeft,
   Loader2,
@@ -176,9 +177,21 @@ function ProductForm() {
     }
   }, [id, isNew, nav]);
 
+  // Reaproveita o mesmo queryKey de ProductAttributesSection para deduplicar
+  // a chamada. Quando o produto é novo, fica desabilitado.
+  const attrsQuery = useQuery({
+    queryKey: ["admin-product-attributes", id],
+    queryFn: () => adminListProductAttributes({ data: { productId: id } }),
+    enabled: !isNew,
+  });
+
   const quality = useMemo(
     () =>
       computeProductQuality({
+        name: form.name,
+        tags: form.tags
+          ? form.tags.split(",").map((t) => t.trim()).filter(Boolean)
+          : [],
         description: form.description,
         specs: extra.specs,
         seo_title: form.seo_title,
@@ -194,9 +207,11 @@ function ProductForm() {
         category_id: form.category_id || null,
         images: form.images,
         product_images: extra.product_images,
+        product_attributes: attrsQuery.data ?? [],
       }),
-    [form, extra],
+    [form, extra, attrsQuery.data],
   );
+
 
   async function applyBarcodeData(
     choice: BarcodeApplyChoice,
@@ -667,6 +682,16 @@ function ProductForm() {
               brand: form.brand,
               category: cats.find((c) => c.id === form.category_id)?.name,
               price: Number(form.price) || 0,
+              ncm: extra.ncm,
+              tags: form.tags ? form.tags.split(",").map((t) => t.trim()).filter(Boolean) : [],
+              attributes: (attrsQuery.data ?? [])
+                .filter((a) => (a.attribute_value ?? "").trim().length > 0)
+                .map((a) => ({
+                  key: a.attribute_key,
+                  label: a.attribute_label,
+                  value: a.attribute_value,
+                  unit: a.attribute_unit,
+                })),
             }}
             slug={form.slug || slugify(form.name)}
             seoTitle={form.seo_title}
@@ -875,6 +900,34 @@ function QualityPanel({ quality }: { quality: ReturnType<typeof computeProductQu
         <GroupBar label="SEO" g={quality.groups.seo} />
         <GroupBar label="Fiscal/Custo" g={quality.groups.fiscal} />
       </div>
+
+      <div className="border-t border-border pt-2 text-[11px] text-muted-foreground space-y-0.5">
+        <div>
+          <span className="text-foreground font-medium">{quality.techSummary.total}</span>{" "}
+          atributo(s) técnico(s) cadastrado(s)
+          {quality.techSummary.visible !== quality.techSummary.total && (
+            <> · {quality.techSummary.visible} visível(is) na loja</>
+          )}
+          {" · "}
+          {quality.techSummary.filterable} usado(s) como filtro
+        </div>
+        <div>
+          NCM:{" "}
+          {quality.techSummary.ncm ? (
+            <>
+              <span className="text-foreground font-medium tabular-nums">
+                {quality.techSummary.ncm.replace(/^(\d{4})(\d{2})(\d{2})$/, "$1.$2.$3")}
+              </span>{" "}
+              {quality.techSummary.ncmSource === "attribute" && (
+                <span className="text-muted-foreground/70">(detectado nos atributos)</span>
+              )}
+            </>
+          ) : (
+            <span className="text-muted-foreground/70">não informado (opcional)</span>
+          )}
+        </div>
+      </div>
+
 
       {top.length > 0 ? (
         <div className="space-y-1.5 pt-1">

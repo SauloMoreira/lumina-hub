@@ -61,14 +61,24 @@ export interface QualityResult {
     tech: { score: number; max: 10 };
   };
   canBeFeatured: boolean;
+  /** Resumo do cadastro técnico (para exibição no card). */
+  techSummary: {
+    total: number; // atributos com valor preenchido
+    visible: number; // visíveis na loja
+    filterable: number; // marcados como filtro
+    ncm: string | null; // NCM detectado (8 dígitos) — coluna fiscal OU atributo
+    ncmSource: "column" | "attribute" | null;
+  };
 }
 
 /** Atributo técnico (subset de product_attributes) usado no cálculo de qualidade. */
 export interface QualityAttributeInput {
   attribute_key?: string | null;
+  attribute_label?: string | null;
   attribute_value?: string | null;
   attribute_unit?: string | null;
   is_visible?: boolean | null;
+  is_filterable?: boolean | null;
 }
 
 export interface QualityProductInput {
@@ -85,14 +95,64 @@ export interface QualityProductInput {
   length_cm?: number | null;
   cost_price?: number | null;
   category_id?: string | null;
-  // Imagens podem vir tanto do array legado `images` quanto da relação `product_images`.
   images?: string[] | null;
   product_images?: Array<{ alt_text?: string | null; original_url?: string | null }> | null;
-  // Atributos técnicos estruturados (Onda B). Opcional para compatibilidade.
   product_attributes?: QualityAttributeInput[] | null;
-  // Texto usado para inferir contexto (iluminação / uso externo).
   name?: string | null;
   tags?: string[] | null;
+}
+
+/**
+ * Normaliza um NCM aceitando "8539.52.00", "85395200", "8539 52 00" etc.
+ * Retorna a string só com dígitos quando válida (8 dígitos), ou null.
+ */
+export function normalizeNcm(raw: unknown): string | null {
+  if (raw == null) return null;
+  const digits = String(raw).replace(/\D+/g, "");
+  return digits.length === 8 ? digits : null;
+}
+
+// Mapeia chave/label de atributo para um "slot" canônico (heurísticas de iluminação).
+const ATTR_SLOT_MAP: Record<
+  string,
+  "power" | "voltage" | "color_temperature" | "ip_rating" | "ncm"
+> = {
+  power: "power",
+  potencia: "power",
+  potencia_w: "power",
+  watts: "power",
+  voltage: "voltage",
+  tensao: "voltage",
+  tensao_v: "voltage",
+  voltagem: "voltage",
+  bivolt: "voltage",
+  color_temperature: "color_temperature",
+  temperatura_cor: "color_temperature",
+  temperatura_cor_k: "color_temperature",
+  cct: "color_temperature",
+  ip_rating: "ip_rating",
+  ip: "ip_rating",
+  grau_protecao: "ip_rating",
+  grau_protecao_ip: "ip_rating",
+  protecao_ip: "ip_rating",
+  ncm: "ncm",
+};
+
+function normalizeAttrKey(s: unknown): string {
+  return String(s ?? "")
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .trim()
+    .replace(/[\s\-/]+/g, "_");
+}
+
+function attrSlot(a: QualityAttributeInput): string | null {
+  const k = normalizeAttrKey(a.attribute_key);
+  if (ATTR_SLOT_MAP[k]) return ATTR_SLOT_MAP[k];
+  const l = normalizeAttrKey(a.attribute_label);
+  if (ATTR_SLOT_MAP[l]) return ATTR_SLOT_MAP[l];
+  return null;
 }
 
 const SLUG_RE = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
@@ -242,8 +302,23 @@ export function computeProductQuality(p: QualityProductInput): QualityResult {
   }
 
   // ----- FISCAL/LOGÍSTICA + CUSTO (35) -----
-  const ncm = (p.ncm ?? "").trim();
-  if (/^[0-9]{8}$/.test(ncm)) {
+  // NCM pode vir como coluna fiscal estruturada OU como atributo técnico
+  // (chave/label "ncm"). Aceitar ambos os formatos (com ou sem pontos).
+  const ncmFromColumn = normalizeNcm(p.ncm);
+  let ncmFromAttribute: string | null = null;
+  if (!ncmFromColumn) {
+    for (const a of p.product_attributes ?? []) {
+      if (attrSlot(a) === "ncm") {
+        const candidate = normalizeNcm(a.attribute_value);
+        if (candidate) {
+          ncmFromAttribute = candidate;
+          break;
+        }
+      }
+    }
+  }
+  const ncmDetected = ncmFromColumn ?? ncmFromAttribute;
+  if (ncmDetected) {
     fiscal += 8;
     passed.push("no_ncm");
   } else
@@ -251,8 +326,8 @@ export function computeProductQuality(p: QualityProductInput): QualityResult {
       code: "no_ncm",
       group: "fiscal",
       weight: 8,
-      label: "NCM ausente ou inválido",
-      hint: "Informe um NCM válido com 8 dígitos para emissão de nota.",
+      label: "NCM não informado",
+      hint: "Campo recomendado para organização fiscal, mas não bloqueia a venda — a emissão fiscal é feita fora da plataforma.",
     });
 
   if (typeof p.weight_kg === "number" && p.weight_kg > 0) {
@@ -314,13 +389,15 @@ export function computeProductQuality(p: QualityProductInput): QualityResult {
     (a) => a && (a.attribute_value ?? "").toString().trim().length > 0,
   );
   const visibleAttrs = techAttrs.filter((a) => a.is_visible !== false);
+  const filterableAttrs = techAttrs.filter((a) => a.is_filterable === true);
   const keysSeen = new Map<string, number>();
   for (const a of techAttrs) {
-    const k = (a.attribute_key ?? "").toString().toLowerCase().trim();
+    const k = normalizeAttrKey(a.attribute_key);
     if (k) keysSeen.set(k, (keysSeen.get(k) ?? 0) + 1);
   }
-  const hasKey = (k: string) =>
-    visibleAttrs.some((a) => (a.attribute_key ?? "").toString().toLowerCase().trim() === k);
+  // Aceita variações PT-BR e legadas em inglês via attrSlot().
+  const hasSlot = (slot: string) => techAttrs.some((a) => attrSlot(a) === slot);
+
   const ctx = `${(p.name ?? "").toString()} ${(p.tags ?? []).join(" ")}`.toLowerCase();
   // Heurística simples para inferir contexto (sem mexer em RPC ou DB).
   const looksLightingProduct =
@@ -331,8 +408,11 @@ export function computeProductQuality(p: QualityProductInput): QualityResult {
     /externo|outdoor|jardim|piscina|fachada|poste|garagem|área externa|area externa/.test(ctx);
 
   let tech = 0;
-  if (visibleAttrs.length >= 1) {
-    tech += 3;
+  // Considera "tem atributos técnicos" qualquer attribute_value preenchido,
+  // independentemente de is_filterable ou is_visible. Bônus extra quando há
+  // pelo menos 3 atributos relevantes (preferencial).
+  if (techAttrs.length >= 1) {
+    tech += techAttrs.length >= 3 ? 3 : 2;
     passed.push("no_tech_attrs");
   } else {
     issues.push({
@@ -345,7 +425,7 @@ export function computeProductQuality(p: QualityProductInput): QualityResult {
   }
 
   if (looksLightingProduct) {
-    if (hasKey("power")) {
+    if (hasSlot("power")) {
       tech += 2;
       passed.push("no_tech_power");
     } else
@@ -357,7 +437,7 @@ export function computeProductQuality(p: QualityProductInput): QualityResult {
         hint: "Produtos de iluminação devem informar a potência em watts.",
       });
 
-    if (hasKey("voltage")) {
+    if (hasSlot("voltage")) {
       tech += 2;
       passed.push("no_tech_voltage");
     } else
@@ -369,7 +449,7 @@ export function computeProductQuality(p: QualityProductInput): QualityResult {
         hint: "Informe 127V, 220V ou Bivolt.",
       });
 
-    if (hasKey("color_temperature")) {
+    if (hasSlot("color_temperature")) {
       tech += 2;
       passed.push("no_tech_color_temp");
     } else
@@ -383,7 +463,7 @@ export function computeProductQuality(p: QualityProductInput): QualityResult {
   }
 
   if (looksOutdoor) {
-    if (hasKey("ip_rating")) {
+    if (hasSlot("ip_rating")) {
       tech += 1;
       passed.push("no_tech_ip_rating");
     } else
@@ -436,6 +516,13 @@ export function computeProductQuality(p: QualityProductInput): QualityResult {
       tech: { score: tech, max: 10 },
     },
     canBeFeatured: score >= QUALITY_FEATURED_MIN,
+    techSummary: {
+      total: techAttrs.length,
+      visible: visibleAttrs.length,
+      filterable: filterableAttrs.length,
+      ncm: ncmDetected,
+      ncmSource: ncmFromColumn ? "column" : ncmFromAttribute ? "attribute" : null,
+    },
   };
 }
 
