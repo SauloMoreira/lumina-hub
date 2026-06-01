@@ -34,6 +34,10 @@ export type ImportRow = {
   observacoes_ia: string | null;
   nivel_confianca_ia: ImportConfidence | null;
 
+  // Dados técnicos opcionais (v1.0.2). Chaves limitadas a TECH_FIELDS abaixo.
+  // Valores como string trimmed; campos vazios NÃO aparecem aqui.
+  tech: Record<string, string>;
+
   // Resultado da validação
   status: ImportStatus;
   errors: string[];
@@ -43,6 +47,94 @@ export type ImportRow = {
   matched_product_id: string | null; // produto existente por SKU
   matched_category_id: string | null; // categoria existente por nome/slug
 };
+
+// ===================== Dados técnicos opcionais (v1.0.2) =====================
+// Todos OPCIONAIS. IA NÃO pode inventar valor; pode apenas formatar/organizar.
+// `mapsTo` indica colunas em `products`; demais campos vão para product_attributes.
+export type TechFieldDef = {
+  key: string;
+  label: string;
+  unit?: string;
+  numeric?: boolean;
+  /** Quando preenchido, exige revisão humana (certificacao, norma). */
+  requireReview?: boolean;
+  /** Coluna direta em products; sem isso vira product_attributes. */
+  mapsTo?: "brand" | "weight_kg";
+  /** Validação leve de formato. */
+  pattern?: RegExp;
+};
+
+export const TECH_FIELDS: readonly TechFieldDef[] = [
+  { key: "marca", label: "Marca", mapsTo: "brand" },
+  { key: "modelo", label: "Modelo" },
+  { key: "potencia_w", label: "Potência", unit: "W", numeric: true },
+  { key: "tensao_v", label: "Tensão", unit: "V" },
+  { key: "corrente_a", label: "Corrente", unit: "A", numeric: true },
+  { key: "frequencia_hz", label: "Frequência", unit: "Hz", numeric: true },
+  { key: "temperatura_cor_k", label: "Temperatura de cor", unit: "K", numeric: true },
+  { key: "fluxo_luminoso_lm", label: "Fluxo luminoso", unit: "lm", numeric: true },
+  { key: "eficiencia_lm_w", label: "Eficiência", unit: "lm/W", numeric: true },
+  { key: "soquete", label: "Soquete" },
+  { key: "grau_protecao_ip", label: "Grau de proteção IP", pattern: /^IP\d{2}$/i },
+  { key: "cor_produto", label: "Cor" },
+  { key: "material", label: "Material" },
+  { key: "dimensoes", label: "Dimensões" },
+  { key: "peso_kg", label: "Peso", unit: "kg", numeric: true, mapsTo: "weight_kg" },
+  { key: "comprimento_m", label: "Comprimento", unit: "m", numeric: true },
+  { key: "bitola_mm", label: "Bitola", unit: "mm", numeric: true },
+  { key: "amperagem_a", label: "Amperagem", unit: "A", numeric: true },
+  { key: "numero_polos", label: "Número de polos", numeric: true },
+  { key: "curva_disjuntor", label: "Curva disjuntor" },
+  { key: "tipo_instalacao", label: "Tipo de instalação" },
+  { key: "vida_util_horas", label: "Vida útil", unit: "h", numeric: true },
+  { key: "certificacao", label: "Certificação", requireReview: true },
+  { key: "norma_tecnica", label: "Norma técnica", requireReview: true },
+  { key: "garantia", label: "Garantia" },
+  { key: "codigo_fornecedor", label: "Código do fornecedor" },
+  { key: "observacoes_tecnicas", label: "Observações técnicas" },
+  { key: "fonte_dados_tecnicos", label: "Fonte dos dados técnicos" },
+  { key: "dados_tecnicos_revisados", label: "Dados técnicos revisados" },
+] as const;
+
+export const TECH_FIELD_KEYS: readonly string[] = TECH_FIELDS.map((f) => f.key);
+
+export function getTechFieldDef(key: string): TechFieldDef | undefined {
+  return TECH_FIELDS.find((f) => f.key === key);
+}
+
+/** Sanitiza valor técnico vindo da planilha/edição (trim, max 500, vazio→null). */
+export function sanitizeTechValue(v: unknown): string | null {
+  if (v === null || v === undefined) return null;
+  const s = String(v).trim();
+  return s ? s.slice(0, 500) : null;
+}
+
+/** Validação leve, NÃO bloqueante exceto erro de formato evidente. */
+export function validateTechValue(
+  def: TechFieldDef,
+  value: string,
+): { error?: string; warning?: string } {
+  if (def.numeric) {
+    const cleaned = value.replace(",", ".").replace(/[^\d.-]/g, "");
+    const n = Number(cleaned);
+    if (!Number.isFinite(n) || cleaned === "") {
+      return { error: `${def.label}: valor numérico inválido ("${value}").` };
+    }
+    if (n < 0) {
+      return { error: `${def.label}: não pode ser negativo.` };
+    }
+  }
+  if (def.pattern && !def.pattern.test(value)) {
+    return { warning: `${def.label}: formato fora do padrão esperado (ex.: IP20, IP65).` };
+  }
+  if (def.requireReview) {
+    return {
+      warning: `${def.label} preenchido — exige revisão humana com fonte (embalagem, fornecedor, catálogo).`,
+    };
+  }
+  return {};
+}
+
 
 export function slugify(input: string): string {
   return input
