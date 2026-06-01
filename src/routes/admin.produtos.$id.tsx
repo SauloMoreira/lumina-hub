@@ -682,6 +682,16 @@ function ProductForm() {
               brand: form.brand,
               category: cats.find((c) => c.id === form.category_id)?.name,
               price: Number(form.price) || 0,
+              ncm: extra.ncm,
+              tags: form.tags ? form.tags.split(",").map((t) => t.trim()).filter(Boolean) : [],
+              attributes: (attrsQuery.data ?? [])
+                .filter((a) => (a.attribute_value ?? "").trim().length > 0)
+                .map((a) => ({
+                  key: a.attribute_key,
+                  label: a.attribute_label,
+                  value: a.attribute_value,
+                  unit: a.attribute_unit,
+                })),
             }}
             slug={form.slug || slugify(form.name)}
             seoTitle={form.seo_title}
