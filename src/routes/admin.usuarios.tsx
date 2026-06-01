@@ -312,7 +312,14 @@ function AdminUsuariosPage() {
         </div>
 
         {selectedId && (
-          <UserDrawer userId={selectedId} onClose={() => setSelectedId(null)} />
+          <UserDrawer
+            userId={selectedId}
+            onClose={() => setSelectedId(null)}
+            onChanged={() => {
+              setSummary(null);
+              load();
+            }}
+          />
         )}
       </div>
     </AdminLayout>
