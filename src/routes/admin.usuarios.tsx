@@ -19,6 +19,11 @@ import {
   adminListUsers,
   adminUsersSummary,
   adminGetUserDetail,
+  adminBlockUser,
+  adminUnblockUser,
+  adminArchiveUser,
+  adminRestoreUser,
+  adminSendPasswordReset,
   type AdminUserRow,
   type AdminUserType,
 } from "@/server/users.functions";
