@@ -18,8 +18,8 @@ import {
   type ImportConfidence,
   type ImportRow,
   type ImportStatus,
-  type TechFieldDef,
 } from "@/lib/productImport";
+
 
 
 // ===================== Constantes =====================
