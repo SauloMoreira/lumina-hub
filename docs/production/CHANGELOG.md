@@ -8,6 +8,40 @@ e versionamento [SemVer](https://semver.org/lang/pt-BR/).
 
 ---
 
+## [1.1.0-b] — 2026-06-01
+
+**Tipo:** funcionalidade nova (fase 2/3 de v1.1.0)
+**ChangeControl:** CC-2026-005
+**Classificação:** Alta (ações sobre contas + guard de login)
+
+### Adicionado
+- Server functions de ação em `src/server/users.functions.ts`:
+  `adminBlockUser`, `adminUnblockUser`, `adminArchiveUser`,
+  `adminRestoreUser`, `adminSendPasswordReset`. Todas exigem
+  `requireSupabaseAuth` + `assertAdmin`, registram `admin_audit_log`
+  via `logAdminAction` e encerram sessões ativas (signOut global) ao
+  bloquear/arquivar.
+- Salvaguardas: bloqueio impede ação sobre o próprio usuário e sobre o
+  último admin ativo do sistema. Reset de senha só permitido para contas
+  ativas (usa `auth.admin.generateLink` tipo recovery com `redirectTo`
+  para `/reset-password`).
+- Drawer de `/admin/usuarios` agora exibe ações: **Enviar redefinição de
+  senha**, **Bloquear**, **Arquivar**, **Desbloquear**, **Restaurar** com
+  confirmação e captura de motivo (gravado em auditoria).
+- Guard de login (`src/routes/login.tsx`): após `signInWithPassword` e
+  antes do redirect, lê `profiles.status`; se `blocked`/`archived`,
+  encerra a sessão e exibe mensagem clara ao usuário.
+
+### Segurança
+- Nenhuma mudança em RLS, MFA, policies, checkout/MP, webhook, e-mails
+  transacionais, importação ou DNS.
+- `supabaseAdmin` continua restrito a `*.server.ts`/`*.functions.ts`.
+- Alteração de função (admin↔cliente), anonimização LGPD e exclusão
+  segura permanecem fora desta fase (planejados em v1.1.0-c com
+  exigência de MFA/AAL2).
+
+---
+
 ## [1.1.0-a] — 2026-06-01
 
 **Tipo:** funcionalidade nova (fase 1/3 de v1.1.0)

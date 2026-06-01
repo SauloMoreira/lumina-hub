@@ -19,6 +19,11 @@ import {
   adminListUsers,
   adminUsersSummary,
   adminGetUserDetail,
+  adminBlockUser,
+  adminUnblockUser,
+  adminArchiveUser,
+  adminRestoreUser,
+  adminSendPasswordReset,
   type AdminUserRow,
   type AdminUserType,
 } from "@/server/users.functions";
@@ -307,7 +312,14 @@ function AdminUsuariosPage() {
         </div>
 
         {selectedId && (
-          <UserDrawer userId={selectedId} onClose={() => setSelectedId(null)} />
+          <UserDrawer
+            userId={selectedId}
+            onClose={() => setSelectedId(null)}
+            onChanged={() => {
+              setSummary(null);
+              load();
+            }}
+          />
         )}
       </div>
     </AdminLayout>
@@ -397,30 +409,106 @@ type DetailData = Awaited<ReturnType<typeof adminGetUserDetail>>;
 function UserDrawer({
   userId,
   onClose,
+  onChanged,
 }: {
   userId: string;
   onClose: () => void;
+  onChanged: () => void;
 }) {
   const [data, setData] = useState<DetailData | null>(null);
   const [loading, setLoading] = useState(true);
+  const [busy, setBusy] = useState<string | null>(null);
 
-  useEffect(() => {
-    let active = true;
+  const reload = () => {
     setLoading(true);
     adminGetUserDetail({ data: { user_id: userId } })
-      .then((d) => {
-        if (active) setData(d);
-      })
+      .then((d) => setData(d))
       .catch((e: unknown) => {
         const msg = e instanceof Error ? e.message : "Erro ao carregar";
         toast.error(msg);
-        if (active) onClose();
+        onClose();
       })
-      .finally(() => active && setLoading(false));
-    return () => {
-      active = false;
-    };
-  }, [userId, onClose]);
+      .finally(() => setLoading(false));
+  };
+
+  useEffect(() => {
+    reload();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [userId]);
+
+  const runAction = async (
+    label: string,
+    fn: () => Promise<unknown>,
+    successMsg: string,
+  ) => {
+    setBusy(label);
+    try {
+      await fn();
+      toast.success(successMsg);
+      reload();
+      onChanged();
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Falha na operação");
+    } finally {
+      setBusy(null);
+    }
+  };
+
+  const handleBlock = () => {
+    const reason = window.prompt(
+      "Motivo do bloqueio (será gravado em auditoria):",
+      "",
+    );
+    if (reason === null) return;
+    runAction(
+      "block",
+      () =>
+        adminBlockUser({ data: { user_id: userId, reason: reason || null } }),
+      "Usuário bloqueado.",
+    );
+  };
+  const handleUnblock = () => {
+    if (!window.confirm("Desbloquear este usuário?")) return;
+    runAction(
+      "unblock",
+      () => adminUnblockUser({ data: { user_id: userId, reason: null } }),
+      "Usuário desbloqueado.",
+    );
+  };
+  const handleArchive = () => {
+    const reason = window.prompt(
+      "Arquivar usuário. Motivo (gravado em auditoria):",
+      "",
+    );
+    if (reason === null) return;
+    runAction(
+      "archive",
+      () =>
+        adminArchiveUser({ data: { user_id: userId, reason: reason || null } }),
+      "Usuário arquivado.",
+    );
+  };
+  const handleRestore = () => {
+    if (!window.confirm("Restaurar este usuário arquivado?")) return;
+    runAction(
+      "restore",
+      () => adminRestoreUser({ data: { user_id: userId, reason: null } }),
+      "Usuário restaurado.",
+    );
+  };
+  const handleReset = () => {
+    if (
+      !window.confirm(
+        "Enviar e-mail de redefinição de senha para este usuário?",
+      )
+    )
+      return;
+    runAction(
+      "reset",
+      () => adminSendPasswordReset({ data: { user_id: userId } }),
+      "E-mail de redefinição enviado.",
+    );
+  };
 
   return (
     <div className="fixed inset-0 z-50 flex">
@@ -589,12 +677,60 @@ function UserDrawer({
               </section>
             )}
 
-            <div className="border border-dashed border-border rounded-lg p-4 text-xs text-muted-foreground">
-              Ações administrativas (bloquear, reset de senha, alterar função,
-              arquivar) serão liberadas em <strong>v1.1.0-b</strong> e
-              <strong> v1.1.0-c</strong> com auditoria e exigência de MFA quando
-              aplicável.
-            </div>
+            <section>
+              <SectionTitle label="Ações administrativas" />
+              <div className="flex flex-wrap gap-2">
+                {data.profile.status === "active" && (
+                  <>
+                    <ActionBtn
+                      onClick={handleReset}
+                      disabled={busy !== null}
+                      busy={busy === "reset"}
+                    >
+                      Enviar redefinição de senha
+                    </ActionBtn>
+                    <ActionBtn
+                      onClick={handleBlock}
+                      disabled={busy !== null}
+                      busy={busy === "block"}
+                      variant="destructive"
+                    >
+                      Bloquear
+                    </ActionBtn>
+                    <ActionBtn
+                      onClick={handleArchive}
+                      disabled={busy !== null}
+                      busy={busy === "archive"}
+                      variant="muted"
+                    >
+                      Arquivar
+                    </ActionBtn>
+                  </>
+                )}
+                {data.profile.status === "blocked" && (
+                  <ActionBtn
+                    onClick={handleUnblock}
+                    disabled={busy !== null}
+                    busy={busy === "unblock"}
+                  >
+                    Desbloquear
+                  </ActionBtn>
+                )}
+                {data.profile.status === "archived" && (
+                  <ActionBtn
+                    onClick={handleRestore}
+                    disabled={busy !== null}
+                    busy={busy === "restore"}
+                  >
+                    Restaurar
+                  </ActionBtn>
+                )}
+              </div>
+              <p className="text-[11px] text-muted-foreground mt-2">
+                Alteração de função (admin/cliente) e anonimização LGPD serão
+                liberadas em <strong>v1.1.0-c</strong> com exigência de MFA.
+              </p>
+            </section>
           </div>
         )}
       </div>
@@ -623,5 +759,36 @@ function Info({ label, value }: { label: string; value: React.ReactNode }) {
       <span className="text-muted-foreground">{label}</span>
       <span className="text-foreground text-right">{value}</span>
     </div>
+  );
+}
+
+function ActionBtn({
+  children,
+  onClick,
+  disabled,
+  busy,
+  variant = "primary",
+}: {
+  children: React.ReactNode;
+  onClick: () => void;
+  disabled?: boolean;
+  busy?: boolean;
+  variant?: "primary" | "destructive" | "muted";
+}) {
+  const cls =
+    variant === "destructive"
+      ? "bg-destructive text-destructive-foreground hover:bg-destructive/90"
+      : variant === "muted"
+        ? "bg-muted text-foreground hover:bg-muted/80"
+        : "bg-primary text-primary-foreground hover:bg-primary/90";
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      disabled={disabled}
+      className={`inline-flex items-center gap-1 px-3 py-1.5 rounded-md text-xs font-semibold transition disabled:opacity-50 disabled:cursor-not-allowed ${cls}`}
+    >
+      {busy ? "Processando…" : children}
+    </button>
   );
 }
