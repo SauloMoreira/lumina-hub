@@ -3,6 +3,7 @@ import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { assertAdmin } from "./security/assertAdmin";
+import { logAdminAction } from "./security/auditLog";
 
 /**
  * v1.1.0-a — Administração de Usuários e Clientes (fase de leitura).
