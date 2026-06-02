@@ -165,9 +165,51 @@ function ProdutosList() {
   }, []);
 
   const handleDelete = async (id: string) => {
-    if (!confirm("Excluir este produto?")) return;
+    // Verifica se há pedidos vinculados — produtos com vendas não podem ser
+    // excluídos fisicamente (FK order_items_product_id_fkey), apenas arquivados.
+    const { count: orderCount } = await supabase
+      .from("order_items")
+      .select("id", { count: "exact", head: true })
+      .eq("product_id", id);
+
+    if ((orderCount ?? 0) > 0) {
+      if (
+        !confirm(
+          `Este produto possui ${orderCount} item(ns) em pedidos e não pode ser excluído permanentemente (histórico fiscal/financeiro).\n\nDeseja ARQUIVAR? O produto ficará inativo, oculto da loja e o SKU/slug serão liberados para reuso.`,
+        )
+      )
+        return;
+      const stamp = Date.now().toString(36);
+      const { data: cur } = await supabase
+        .from("products")
+        .select("sku, slug")
+        .eq("id", id)
+        .maybeSingle();
+      const updatePayload: { active: boolean; sku?: string; slug?: string } = {
+        active: false,
+      };
+      if (cur?.sku) updatePayload.sku = `${cur.sku}-arq-${stamp}`.slice(0, 64);
+      if (cur?.slug) updatePayload.slug = `${cur.slug}-arq-${stamp}`;
+      const { error } = await supabase
+        .from("products")
+        .update(updatePayload)
+        .eq("id", id);
+      if (error) return toast.error(error.message);
+      toast.success("Produto arquivado (mantido no histórico de pedidos)");
+      load();
+      return;
+    }
+
+    if (!confirm("Excluir este produto permanentemente?")) return;
     const { error } = await supabase.from("products").delete().eq("id", id);
-    if (error) return toast.error(error.message);
+    if (error) {
+      if (error.code === "23503") {
+        return toast.error(
+          "Produto possui registros vinculados (pedidos, combos ou estoque) e não pode ser excluído.",
+        );
+      }
+      return toast.error(error.message);
+    }
     toast.success("Produto excluído");
     load();
   };

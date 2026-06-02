@@ -8,6 +8,25 @@ e versionamento [SemVer](https://semver.org/lang/pt-BR/).
 
 ---
 
+## [1.0.4] — 2026-06-02
+
+**Tipo:** correção (exclusão de produtos com pedidos vinculados)
+**ChangeControl:** CC-2026-008
+**Classificação:** Baixa (apenas UI de exclusão; sem migration, sem mudança em RLS/checkout/MP)
+
+### Corrigido
+- **Erro ao excluir produtos de homologação** (`update or delete on table
+  "products" violates foreign key constraint "order_items_product_id_fkey"`).
+  Produtos com itens em pedidos não podem ser apagados fisicamente
+  (preserva histórico fiscal/financeiro). O botão Excluir em
+  `/admin/produtos` agora:
+  1. Verifica antes se existem `order_items` vinculados;
+  2. Se existir, oferece **arquivamento** (active=false, SKU/slug com
+     sufixo `-arq-<ts>` para liberar reuso) em vez de exclusão;
+  3. Se não existir, mantém exclusão definitiva;
+  4. Em caso de FK residual (combos/estoque), exibe mensagem em
+     português em vez do erro técnico do Postgres.
+
 ## [1.0.3] — 2026-06-01
 
 **Tipo:** correção (qualidade do cadastro + contexto de SEO/IA)
