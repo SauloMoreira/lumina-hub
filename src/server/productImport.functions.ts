@@ -937,6 +937,7 @@ export const commitImport = createServerFn({ method: "POST" })
           seo_description: string | null;
           brand?: string;
           weight_kg?: number;
+          ncm?: string;
         } = {
           sku: row.sku,
           name: row.nome_produto,
@@ -957,6 +958,11 @@ export const commitImport = createServerFn({ method: "POST" })
           const w = Number(row.tech.peso_kg.replace(",", "."));
           if (Number.isFinite(w) && w >= 0) insert.weight_kg = w;
         }
+        if (row.tech?.ncm) {
+          const digits = row.tech.ncm.replace(/\D/g, "").slice(0, 8);
+          if (digits.length === 8) insert.ncm = digits;
+        }
+
 
         const { data: created, error } = await supabaseAdmin
           .from("products")
