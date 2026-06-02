@@ -112,6 +112,7 @@ export const Route = createRootRouteWithContext<MyRouterContext>()({
         content: string;
       },
       { name: "google", content: "notranslate" },
+      { name: "google-site-verification", content: "nVbpxkpcwVPbcDdy1sTWRhWG6yVq4mNEXsWHYaklVdE" },
       { name: "language", content: "Portuguese" },
       { name: "mobile-web-app-capable", content: "yes" },
       { name: "apple-mobile-web-app-capable", content: "yes" },
