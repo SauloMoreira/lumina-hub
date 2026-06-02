@@ -816,7 +816,19 @@ function ProductForm() {
             ? form.tags.split(",").map((t) => t.trim()).filter(Boolean)
             : null,
           ncm: extra.ncm,
-          attributes: extra.specs,
+          attributes: {
+            ...(extra.specs ?? {}),
+            ...Object.fromEntries(
+              (attrsQuery.data ?? [])
+                .filter((a) => (a.attribute_value ?? "").trim().length > 0)
+                .map((a) => [
+                  a.attribute_label || a.attribute_key,
+                  a.attribute_unit
+                    ? `${a.attribute_value} ${a.attribute_unit}`
+                    : a.attribute_value,
+                ]),
+            ),
+          },
           price: form.price ? Number(form.price) : null,
           stock: form.stock_qty ? Number(form.stock_qty) : null,
           imageAlts: extra.product_images
