@@ -21,6 +21,21 @@ import {
 } from "@/lib/productImport";
 
 
+/**
+ * Remove o sufixo de unidade do valor quando o usuário (ou IA) digita
+ * "65W" e a coluna de unidade já é "W". Mantém o número e descarta a unidade
+ * para evitar duplicação visual ("65W W") na loja.
+ */
+function stripUnitSuffix(value: string, unit?: string): string {
+  const v = (value ?? "").trim();
+  if (!v || !unit) return v;
+  const u = unit.trim();
+  if (!u) return v;
+  const re = new RegExp(`\\s*${u.replace(/[.*+?^${}()|[\\]\\\\]/g, "\\$&")}\\s*$`, "i");
+  const stripped = v.replace(re, "").trim();
+  return stripped || v;
+}
+
 
 // ===================== Constantes =====================
 
@@ -951,11 +966,12 @@ export const commitImport = createServerFn({ method: "POST" })
             .map(([k, v], i) => {
               const def = TECH_FIELDS.find((f) => f.key === k);
               if (!def) return null;
+              const cleanValue = stripUnitSuffix(v, def.unit).slice(0, 500);
               return {
                 product_id: created.id,
                 attribute_key: k,
                 attribute_label: def.label,
-                attribute_value: v.slice(0, 500),
+                attribute_value: cleanValue,
                 attribute_unit: def.unit ?? null,
                 sort_order: i,
                 is_visible: true,
