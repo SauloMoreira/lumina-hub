@@ -15,7 +15,7 @@ function padDescription(value: string | null | undefined, fallback: string): str
 }
 
 export function makeInstitutionalAlias(slug: string, aliasPath?: string) {
-  const canonical = `${SITE_URL}${aliasPath ?? `/institucional/${slug}`}`;
+  const canonical = `${SITE_URL}${aliasPath ?? `/${slug}`}`;
   return {
     loader: async () => {
       const { page } = await getPublicInstitutionalPage({ data: { slug } });
