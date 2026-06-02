@@ -185,13 +185,14 @@ function ProdutosList() {
         .select("sku, slug")
         .eq("id", id)
         .maybeSingle();
+      const updatePayload: { active: boolean; sku?: string; slug?: string } = {
+        active: false,
+      };
+      if (cur?.sku) updatePayload.sku = `${cur.sku}-arq-${stamp}`.slice(0, 64);
+      if (cur?.slug) updatePayload.slug = `${cur.slug}-arq-${stamp}`;
       const { error } = await supabase
         .from("products")
-        .update({
-          active: false,
-          sku: cur?.sku ? `${cur.sku}-arq-${stamp}`.slice(0, 64) : null,
-          slug: cur?.slug ? `${cur.slug}-arq-${stamp}` : null,
-        })
+        .update(updatePayload)
         .eq("id", id);
       if (error) return toast.error(error.message);
       toast.success("Produto arquivado (mantido no histórico de pedidos)");
