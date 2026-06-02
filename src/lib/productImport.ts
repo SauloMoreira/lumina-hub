@@ -59,13 +59,21 @@ export type TechFieldDef = {
   /** Quando preenchido, exige revisão humana (certificacao, norma). */
   requireReview?: boolean;
   /** Coluna direta em products; sem isso vira product_attributes. */
-  mapsTo?: "brand" | "weight_kg";
+  mapsTo?: "brand" | "weight_kg" | "ncm";
+
   /** Validação leve de formato. */
   pattern?: RegExp;
 };
 
 export const TECH_FIELDS: readonly TechFieldDef[] = [
   { key: "marca", label: "Marca", mapsTo: "brand" },
+  {
+    key: "ncm",
+    label: "NCM",
+    mapsTo: "ncm",
+    pattern: /^\d{4}\.?\d{2}\.?\d{2}$/,
+  },
+
   { key: "modelo", label: "Modelo" },
   { key: "potencia_w", label: "Potência", unit: "W", numeric: true },
   { key: "tensao_v", label: "Tensão", unit: "V" },

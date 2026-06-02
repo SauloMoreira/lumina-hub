@@ -848,6 +848,8 @@ export const commitImport = createServerFn({ method: "POST" })
             active?: boolean;
             brand?: string;
             weight_kg?: number;
+            ncm?: string;
+
           } = {
 
             name: row.nome_produto,
@@ -868,6 +870,11 @@ export const commitImport = createServerFn({ method: "POST" })
             const w = Number(row.tech.peso_kg.replace(",", "."));
             if (Number.isFinite(w) && w >= 0) update.weight_kg = w;
           }
+          if (row.tech?.ncm) {
+            const digits = row.tech.ncm.replace(/\D/g, "").slice(0, 8);
+            if (digits.length === 8) update.ncm = digits;
+          }
+
 
 
           const { error } = await supabaseAdmin
@@ -930,6 +937,7 @@ export const commitImport = createServerFn({ method: "POST" })
           seo_description: string | null;
           brand?: string;
           weight_kg?: number;
+          ncm?: string;
         } = {
           sku: row.sku,
           name: row.nome_produto,
@@ -950,6 +958,11 @@ export const commitImport = createServerFn({ method: "POST" })
           const w = Number(row.tech.peso_kg.replace(",", "."));
           if (Number.isFinite(w) && w >= 0) insert.weight_kg = w;
         }
+        if (row.tech?.ncm) {
+          const digits = row.tech.ncm.replace(/\D/g, "").slice(0, 8);
+          if (digits.length === 8) insert.ncm = digits;
+        }
+
 
         const { data: created, error } = await supabaseAdmin
           .from("products")
@@ -962,7 +975,7 @@ export const commitImport = createServerFn({ method: "POST" })
         // (v1.0.2) Best-effort: falha não interrompe a importação do produto.
         if (created?.id) {
           const attrs = Object.entries(row.tech ?? {})
-            .filter(([k]) => k !== "marca" && k !== "peso_kg")
+            .filter(([k]) => k !== "marca" && k !== "peso_kg" && k !== "ncm")
             .map(([k, v], i) => {
               const def = TECH_FIELDS.find((f) => f.key === k);
               if (!def) return null;
