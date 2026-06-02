@@ -19,6 +19,16 @@ export const Route = createFileRoute("/sitemap.xml")({
         const staticRoutes: SitemapRoute[] = [
           { url: "/", priority: "1.0", changefreq: "daily" },
           { url: "/catalogo", priority: "0.9", changefreq: "daily" },
+          { url: "/atacado", priority: "0.7", changefreq: "monthly" },
+          { url: "/combos", priority: "0.7", changefreq: "weekly" },
+          { url: "/compra-rapida", priority: "0.5", changefreq: "monthly" },
+          { url: "/contato", priority: "0.5", changefreq: "monthly" },
+          { url: "/meios-de-pagamento", priority: "0.4", changefreq: "monthly" },
+          { url: "/devolucao", priority: "0.3", changefreq: "yearly" },
+          { url: "/troca", priority: "0.3", changefreq: "yearly" },
+          { url: "/reembolso", priority: "0.3", changefreq: "yearly" },
+          { url: "/privacidade", priority: "0.3", changefreq: "yearly" },
+          { url: "/condicoes-de-uso", priority: "0.3", changefreq: "yearly" },
         ];
 
         let productRoutes: SitemapRoute[] = [];
