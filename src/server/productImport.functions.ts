@@ -848,6 +848,8 @@ export const commitImport = createServerFn({ method: "POST" })
             active?: boolean;
             brand?: string;
             weight_kg?: number;
+            ncm?: string;
+
           } = {
 
             name: row.nome_produto,
