@@ -126,7 +126,8 @@ export const Route = createFileRoute("/produto/$slug")({
       p.description?.trim() ||
       `${p.name} — disponível na Led Maricá com entrega rápida em Maricá/RJ. Frete grátis acima de R$199.`;
     const description = clamp(p.seo_description || baseDesc, 160);
-    const title = p.seo_title || `${p.name}${p.brand ? " — " + p.brand : ""}`;
+    const rawTitle = p.seo_title || `${p.name}${p.brand ? " — " + p.brand : ""}`;
+    const title = clamp(rawTitle, 47);
     const productImages = p.product_images ?? [];
     const allImageUrls = productImages.length
       ? productImages
