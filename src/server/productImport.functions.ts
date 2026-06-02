@@ -951,11 +951,12 @@ export const commitImport = createServerFn({ method: "POST" })
             .map(([k, v], i) => {
               const def = TECH_FIELDS.find((f) => f.key === k);
               if (!def) return null;
+              const cleanValue = stripUnitSuffix(v, def.unit).slice(0, 500);
               return {
                 product_id: created.id,
                 attribute_key: k,
                 attribute_label: def.label,
-                attribute_value: v.slice(0, 500),
+                attribute_value: cleanValue,
                 attribute_unit: def.unit ?? null,
                 sort_order: i,
                 is_visible: true,
