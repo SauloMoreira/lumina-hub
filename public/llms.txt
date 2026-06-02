@@ -1,0 +1,24 @@
+# Led Maricá
+
+> Loja de material elétrico e iluminação LED em Maricá/RJ. Lâmpadas, disjuntores, cabos, refletores, interruptores e acessórios com qualidade, preço justo e frete grátis acima de R$ 199. Atende consumidores finais (B2C) e empresas do setor elétrico (B2B/atacado).
+
+## Pages
+
+- [Home](/): Destaques de produtos, banners promocionais, categorias em destaque e vitrines dinâmicas.
+- [Catálogo](/catalogo): Listagem completa de produtos com filtros por categoria, preço, atributos técnicos e busca textual.
+- [Produto](/produto/lampada-led-9w-6500k-bivolt-exemplo): Página de detalhes de um produto — fotos, especificações técnicas, preço, estoque, produtos relacionados, comprar junto e combos disponíveis.
+- [Kits e Combos](/combos): Conjuntos de produtos selecionados para facilitar a compra.
+- [Atacado](/atacado): Área B2B para empresas do setor elétrico cadastradas e aprovadas, com preços diferenciados por volume.
+- [Compra Rápida](/compra-rapida): Ferramenta para adicionar múltiplos produtos ao carrinho por SKU ou nome de forma ágil.
+- [Contato](/contato): Formulário de contato, telefone, WhatsApp, e-mail e endereço da loja em Maricá/RJ.
+- [Meios de Pagamento](/meios-de-pagamento): Formas de pagamento aceitas (PIX, cartão de crédito via Mercado Pago, boleto).
+- [Política de Privacidade](/privacidade): Como coletamos, usamos e protegemos dados pessoais dos clientes.
+- [Condições de Uso](/condicoes-de-uso): Termos e condições gerais de uso do site.
+- [Devolução](/devolucao): Política de devolução de produtos.
+- [Troca](/troca): Política de troca de produtos.
+- [Reembolso](/reembolso): Política de reembolso.
+
+## Optional
+
+- [Sitemap](/sitemap.xml): Índice XML de todas as URLs públicas indexáveis.
+- [Robots](/robots.txt): Diretrizes de rastreamento para mecanismos de busca.
