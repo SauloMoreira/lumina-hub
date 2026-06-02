@@ -795,13 +795,13 @@ function CatalogPage() {
                     "@type": "Product",
                     name: p.name,
                     url: `${SITE_URL}/produto/${p.slug}`,
-                    image: (p as any).image_url || (p as any).image,
+                    image: p.images?.[0],
                     offers: {
                       "@type": "Offer",
                       price: String(p.price),
                       priceCurrency: "BRL",
                       availability:
-                        p.stock > 0
+                        p.stock_qty > 0
                           ? "https://schema.org/InStock"
                           : "https://schema.org/OutOfStock",
                     },
