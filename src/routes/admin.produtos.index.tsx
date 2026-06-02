@@ -148,7 +148,18 @@ function ProdutosList() {
       if (!attrListMap.has(a.product_id)) attrListMap.set(a.product_id, []);
       attrListMap.get(a.product_id)!.push(a);
     });
-    const mapped = (data ?? []).map((p: any) => {
+    // Oculta produtos de teste/arquivados da visão do admin (permanecem no BD
+    // para preservar histórico fiscal/financeiro de pedidos antigos).
+    const isHiddenTestProduct = (p: any) => {
+      const name = (p.name ?? "").toLowerCase().trim();
+      const slug = (p.slug ?? "").toLowerCase();
+      const sku = (p.sku ?? "").toLowerCase();
+      if (name === "produto teste excluir") return true;
+      if (name.startsWith("produto teste")) return true;
+      if (slug.includes("-arq-") || sku.includes("-arq-")) return true;
+      return false;
+    };
+    const mapped = (data ?? []).filter((p: any) => !isHiddenTestProduct(p)).map((p: any) => {
       const imgs = (p.product_images ?? []).slice().sort((a: any, b: any) => {
         if (a.is_primary !== b.is_primary) return a.is_primary ? -1 : 1;
         return (a.sort_order ?? 0) - (b.sort_order ?? 0);

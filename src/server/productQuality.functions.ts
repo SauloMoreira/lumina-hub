@@ -75,7 +75,12 @@ export const listProductQuality = createServerFn({ method: "GET" })
         };
       }
 
-      const rows: ProductQualityRow[] = (data ?? []).map((p: any) => ({
+      const isHiddenTest = (p: any) => {
+        const n = (p.name ?? "").toLowerCase().trim();
+        const s = (p.slug ?? "").toLowerCase();
+        return n === "produto teste excluir" || n.startsWith("produto teste") || s.includes("-arq-");
+      };
+      const rows: ProductQualityRow[] = (data ?? []).filter((p: any) => !isHiddenTest(p)).map((p: any) => ({
         id: p.id,
         name: p.name,
         slug: p.slug,

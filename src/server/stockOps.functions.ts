@@ -207,7 +207,12 @@ export const getStockReport = createServerFn({ method: "GET" })
       });
       if (error) throw new Error(error.message);
 
-      const rows: StockReportRow[] = (data ?? []).map((r: any) => {
+      const isHiddenTest = (r: any) => {
+        const n = (r.name ?? "").toLowerCase().trim();
+        const s = (r.slug ?? "").toLowerCase();
+        return n === "produto teste excluir" || n.startsWith("produto teste") || s.includes("-arq-");
+      };
+      const rows: StockReportRow[] = (data ?? []).filter((r: any) => !isHiddenTest(r)).map((r: any) => {
         const has_min = r.stock_min_alert !== null && r.stock_min_alert !== undefined;
         const effective_min = has_min ? Number(r.stock_min_alert) : settings.default_min_stock;
         const cls = classifyStatus({
