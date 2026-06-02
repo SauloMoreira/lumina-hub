@@ -67,6 +67,13 @@ export type TechFieldDef = {
 
 export const TECH_FIELDS: readonly TechFieldDef[] = [
   { key: "marca", label: "Marca", mapsTo: "brand" },
+  {
+    key: "ncm",
+    label: "NCM",
+    mapsTo: "ncm",
+    pattern: /^\d{4}\.?\d{2}\.?\d{2}$/,
+  },
+
   { key: "modelo", label: "Modelo" },
   { key: "potencia_w", label: "Potência", unit: "W", numeric: true },
   { key: "tensao_v", label: "Tensão", unit: "V" },
