@@ -4,7 +4,7 @@ import { StoreLayout } from "@/components/layout/StoreLayout";
 import { PageSkeleton } from "@/components/layout/PageSkeleton";
 import { sanitizeHtml } from "@/lib/sanitizeHtml";
 import { getPublicInstitutionalPage } from "@/server/institutional.functions";
-import { SITE_URL } from "@/lib/seo";
+import { SITE_URL, SITE_NAME } from "@/lib/seo";
 
 const DESC_PAD =
   "Saiba mais sobre as políticas e informações institucionais da Led Maricá — material elétrico e iluminação LED em Maricá/RJ.";
@@ -27,6 +27,7 @@ export const Route = createFileRoute("/institucional/$slug")({
     if (!p) return { links: [{ rel: "canonical", href: canonical }] };
     const title = p.seo_title || p.title;
     const description = padDescription(p.seo_description || p.excerpt, p.title);
+    const ogImage = `${SITE_URL}/og-default.png`;
     return {
       meta: [
         { title },
@@ -34,6 +35,14 @@ export const Route = createFileRoute("/institucional/$slug")({
         { property: "og:title", content: title },
         { property: "og:description", content: description },
         { property: "og:url", content: canonical },
+        { property: "og:type", content: "article" },
+        { property: "og:image", content: ogImage },
+        { property: "og:site_name", content: SITE_NAME },
+        { property: "og:locale", content: "pt_BR" },
+        { name: "twitter:card", content: "summary_large_image" },
+        { name: "twitter:title", content: title },
+        { name: "twitter:description", content: description },
+        { name: "twitter:image", content: ogImage },
       ],
       links: [{ rel: "canonical", href: canonical }],
     };

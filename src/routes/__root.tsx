@@ -142,6 +142,7 @@ export const Route = createRootRouteWithContext<MyRouterContext>()({
       },
       { name: "twitter:card", content: "summary_large_image" },
       { property: "og:type", content: "website" },
+      { property: "og:url", content: SITE_URL },
     ],
     links: [
       { rel: "stylesheet", href: appCss },
