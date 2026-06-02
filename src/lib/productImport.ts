@@ -59,7 +59,8 @@ export type TechFieldDef = {
   /** Quando preenchido, exige revisão humana (certificacao, norma). */
   requireReview?: boolean;
   /** Coluna direta em products; sem isso vira product_attributes. */
-  mapsTo?: "brand" | "weight_kg";
+  mapsTo?: "brand" | "weight_kg" | "ncm";
+
   /** Validação leve de formato. */
   pattern?: RegExp;
 };
