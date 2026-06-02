@@ -975,7 +975,7 @@ export const commitImport = createServerFn({ method: "POST" })
         // (v1.0.2) Best-effort: falha não interrompe a importação do produto.
         if (created?.id) {
           const attrs = Object.entries(row.tech ?? {})
-            .filter(([k]) => k !== "marca" && k !== "peso_kg")
+            .filter(([k]) => k !== "marca" && k !== "peso_kg" && k !== "ncm")
             .map(([k, v], i) => {
               const def = TECH_FIELDS.find((f) => f.key === k);
               if (!def) return null;
