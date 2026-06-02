@@ -262,7 +262,7 @@ function ProdutosList() {
       case "no_cost":
         return p.cost_price == null || Number(p.cost_price) <= 0;
       case "no_ncm":
-        return !p.ncm || p.ncm.trim().length === 0;
+        return (!p.ncm || p.ncm.trim().length === 0) && !p.tech_attr_keys?.has("ncm");
       case "b2b_incomplete":
         return (
           p.b2b_enabled &&
