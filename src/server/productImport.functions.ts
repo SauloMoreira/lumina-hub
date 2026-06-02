@@ -21,6 +21,21 @@ import {
 } from "@/lib/productImport";
 
 
+/**
+ * Remove o sufixo de unidade do valor quando o usuário (ou IA) digita
+ * "65W" e a coluna de unidade já é "W". Mantém o número e descarta a unidade
+ * para evitar duplicação visual ("65W W") na loja.
+ */
+function stripUnitSuffix(value: string, unit?: string): string {
+  const v = (value ?? "").trim();
+  if (!v || !unit) return v;
+  const u = unit.trim();
+  if (!u) return v;
+  const re = new RegExp(`\\s*${u.replace(/[.*+?^${}()|[\\]\\\\]/g, "\\$&")}\\s*$`, "i");
+  const stripped = v.replace(re, "").trim();
+  return stripped || v;
+}
+
 
 // ===================== Constantes =====================
 
