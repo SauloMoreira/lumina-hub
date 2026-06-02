@@ -131,17 +131,22 @@ function ProdutosList() {
         .order("created_at", { ascending: false }),
       supabase
         .from("product_attributes")
-        .select("product_id, attribute_key, attribute_value")
+        .select(
+          "product_id, attribute_key, attribute_label, attribute_value, attribute_unit, is_visible, is_filterable",
+        )
         .limit(20000),
     ]);
-    const attrMap = new Map<string, Set<string>>();
+    const attrKeyMap = new Map<string, Set<string>>();
+    const attrListMap = new Map<string, any[]>();
     (attrs ?? []).forEach((a: any) => {
       const v = (a.attribute_value ?? "").toString().trim();
       if (!v) return;
       const k = (a.attribute_key ?? "").toString().toLowerCase();
       if (!k) return;
-      if (!attrMap.has(a.product_id)) attrMap.set(a.product_id, new Set());
-      attrMap.get(a.product_id)!.add(k);
+      if (!attrKeyMap.has(a.product_id)) attrKeyMap.set(a.product_id, new Set());
+      attrKeyMap.get(a.product_id)!.add(k);
+      if (!attrListMap.has(a.product_id)) attrListMap.set(a.product_id, []);
+      attrListMap.get(a.product_id)!.push(a);
     });
     const mapped = (data ?? []).map((p: any) => {
       const imgs = (p.product_images ?? []).slice().sort((a: any, b: any) => {
@@ -152,8 +157,9 @@ function ProdutosList() {
         .map((i: any) => i.url_thumb ?? i.url_card ?? i.original_url)
         .filter(Boolean);
       const merged = fromTable.length ? fromTable : (p.images ?? []);
-      const quality = computeProductQuality(p);
-      const tech_attr_keys = attrMap.get(p.id) ?? new Set<string>();
+      const productAttrs = attrListMap.get(p.id) ?? [];
+      const quality = computeProductQuality({ ...p, product_attributes: productAttrs });
+      const tech_attr_keys = attrKeyMap.get(p.id) ?? new Set<string>();
       return { ...p, images: merged, quality, tech_attr_keys };
     });
     setProducts(mapped as any);
