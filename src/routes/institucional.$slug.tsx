@@ -4,6 +4,16 @@ import { StoreLayout } from "@/components/layout/StoreLayout";
 import { PageSkeleton } from "@/components/layout/PageSkeleton";
 import { sanitizeHtml } from "@/lib/sanitizeHtml";
 import { getPublicInstitutionalPage } from "@/server/institutional.functions";
+import { SITE_URL } from "@/lib/seo";
+
+const DESC_PAD =
+  "Saiba mais sobre as políticas e informações institucionais da Led Maricá — material elétrico e iluminação LED em Maricá/RJ.";
+
+function padDescription(value: string | null | undefined, fallback: string): string {
+  const base = (value ?? "").trim() || fallback.trim();
+  if (base.length >= 50) return base.slice(0, 160);
+  return `${base} ${DESC_PAD}`.trim().slice(0, 160);
+}
 
 export const Route = createFileRoute("/institucional/$slug")({
   loader: async ({ params }) => {
@@ -11,16 +21,21 @@ export const Route = createFileRoute("/institucional/$slug")({
     if (!page) throw notFound();
     return { page };
   },
-  head: ({ loaderData }) => {
+  head: ({ params, loaderData }) => {
     const p = loaderData?.page;
-    if (!p) return {};
+    const canonical = `${SITE_URL}/institucional/${params.slug}`;
+    if (!p) return { links: [{ rel: "canonical", href: canonical }] };
+    const title = p.seo_title || p.title;
+    const description = padDescription(p.seo_description || p.excerpt, p.title);
     return {
       meta: [
-        { title: p.seo_title || `${p.title}` },
-        { name: "description", content: p.seo_description || p.excerpt || p.title },
-        { property: "og:title", content: p.seo_title || p.title },
-        { property: "og:description", content: p.seo_description || p.excerpt || p.title },
+        { title },
+        { name: "description", content: description },
+        { property: "og:title", content: title },
+        { property: "og:description", content: description },
+        { property: "og:url", content: canonical },
       ],
+      links: [{ rel: "canonical", href: canonical }],
     };
   },
   pendingComponent: () => (
