@@ -20,7 +20,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent } from "@/components/ui/card";
 import { getPublicCompanySettings, submitContactMessage } from "@/server/institutional.functions";
-import { buildSeo } from "@/lib/seo";
+import { buildSeo, SITE_URL } from "@/lib/seo";
 
 export const Route = createFileRoute("/contato")({
   head: () =>
@@ -265,6 +265,53 @@ function ContatoPage() {
           </Card>
         </div>
       </div>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "ContactPage",
+            name: "Contato — Fale Conosco",
+            url: `${SITE_URL}/contato`,
+            description:
+              "Fale com a Led Maricá: telefone, WhatsApp, e-mail e formulário de contato. Atendimento rápido para dúvidas, orçamentos e suporte em material elétrico e iluminação LED.",
+          }),
+        }}
+      />
+      {company && (
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify({
+              "@context": "https://schema.org",
+              "@type": ["Store", "LocalBusiness"],
+              name: "Led Maricá",
+              url: SITE_URL,
+              telephone: company.support_phone || undefined,
+              email: company.support_email || undefined,
+              address: {
+                "@type": "PostalAddress",
+                streetAddress: [company.address_street, company.address_number]
+                  .filter(Boolean)
+                  .join(", "),
+                addressLocality: company.address_city,
+                addressRegion: company.address_state,
+                postalCode: company.address_zipcode,
+                addressCountry: "BR",
+              },
+              openingHours: company.business_hours,
+              contactPoint: company.support_phone
+                ? {
+                    "@type": "ContactPoint",
+                    telephone: company.support_phone,
+                    contactType: "customer service",
+                    availableLanguage: "Portuguese",
+                  }
+                : undefined,
+            }),
+          }}
+        />
+      )}
     </StoreLayout>
   );
 }
