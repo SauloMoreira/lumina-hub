@@ -868,6 +868,11 @@ export const commitImport = createServerFn({ method: "POST" })
             const w = Number(row.tech.peso_kg.replace(",", "."));
             if (Number.isFinite(w) && w >= 0) update.weight_kg = w;
           }
+          if (row.tech?.ncm) {
+            const digits = row.tech.ncm.replace(/\D/g, "").slice(0, 8);
+            if (digits.length === 8) update.ncm = digits;
+          }
+
 
 
           const { error } = await supabaseAdmin
