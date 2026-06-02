@@ -20,23 +20,16 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent } from "@/components/ui/card";
 import { getPublicCompanySettings, submitContactMessage } from "@/server/institutional.functions";
+import { buildSeo } from "@/lib/seo";
 
 export const Route = createFileRoute("/contato")({
-  head: () => ({
-    meta: [
-      { title: "Contato — Fale Conosco" },
-      {
-        name: "description",
-        content:
-          "Entre em contato com nossa equipe. Responderemos sua mensagem o mais breve possível.",
-      },
-      { property: "og:title", content: "Contato — Fale Conosco" },
-      {
-        property: "og:description",
-        content: "Canais de atendimento, telefone, WhatsApp, e-mail e formulário de contato.",
-      },
-    ],
-  }),
+  head: () =>
+    buildSeo({
+      title: "Contato — Fale Conosco",
+      description:
+        "Fale com a Led Maricá: telefone, WhatsApp, e-mail e formulário de contato. Atendimento rápido para dúvidas, orçamentos e suporte em material elétrico e iluminação LED.",
+      url: "/contato",
+    }),
   component: ContatoPage,
 });
 
