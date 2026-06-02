@@ -57,7 +57,7 @@ const searchSchema = z.object({
   ip: z.string().max(120).optional(),
 });
 
-import { buildSeo } from "@/lib/seo";
+import { buildSeo, SITE_URL } from "@/lib/seo";
 
 export const Route = createFileRoute("/catalogo")({
   validateSearch: searchSchema,
@@ -775,6 +775,43 @@ function CatalogPage() {
           className="mt-2"
         />
       </div>
+      {products.length > 0 && (
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify({
+              "@context": "https://schema.org",
+              "@type": "CollectionPage",
+              name: pageTitle,
+              url: `${SITE_URL}/catalogo`,
+              description:
+                "Catálogo de material elétrico e iluminação LED da Led Maricá. Lâmpadas, disjuntores, cabos, refletores e muito mais. Frete grátis acima de R$199.",
+              mainEntity: {
+                "@type": "ItemList",
+                itemListElement: products.slice(0, 24).map((p, i) => ({
+                  "@type": "ListItem",
+                  position: i + 1,
+                  item: {
+                    "@type": "Product",
+                    name: p.name,
+                    url: `${SITE_URL}/produto/${p.slug}`,
+                    image: p.images?.[0],
+                    offers: {
+                      "@type": "Offer",
+                      price: String(p.price),
+                      priceCurrency: "BRL",
+                      availability:
+                        p.stock_qty > 0
+                          ? "https://schema.org/InStock"
+                          : "https://schema.org/OutOfStock",
+                    },
+                  },
+                })),
+              },
+            }),
+          }}
+        />
+      )}
     </StoreLayout>
   );
 }
