@@ -136,15 +136,39 @@ function ProdutosList() {
         )
         .limit(20000),
     ]);
+    // Mapa de aliases: a tabela product_attributes pode ter chaves em pt-BR
+    // (potencia_w, tensao_v, etc.) ou na forma canônica em inglês (power, voltage).
+    // Normalizamos para a chave canônica usada pelos filtros.
+    const KEY_ALIASES: Record<string, string> = {
+      power: "power",
+      potencia: "power",
+      potencia_w: "power",
+      voltage: "voltage",
+      voltagem: "voltage",
+      tensao: "voltage",
+      tensao_v: "voltage",
+      color_temperature: "color_temperature",
+      temperatura: "color_temperature",
+      temperatura_cor: "color_temperature",
+      temperatura_cor_k: "color_temperature",
+      ip_rating: "ip_rating",
+      grau_protecao: "ip_rating",
+      grau_protecao_ip: "ip_rating",
+      protecao_ip: "ip_rating",
+      ncm: "ncm",
+    };
     const attrKeyMap = new Map<string, Set<string>>();
     const attrListMap = new Map<string, any[]>();
     (attrs ?? []).forEach((a: any) => {
       const v = (a.attribute_value ?? "").toString().trim();
       if (!v) return;
-      const k = (a.attribute_key ?? "").toString().toLowerCase();
-      if (!k) return;
+      const rawKey = (a.attribute_key ?? "").toString().toLowerCase();
+      if (!rawKey) return;
       if (!attrKeyMap.has(a.product_id)) attrKeyMap.set(a.product_id, new Set());
-      attrKeyMap.get(a.product_id)!.add(k);
+      const set = attrKeyMap.get(a.product_id)!;
+      set.add(rawKey);
+      const canonical = KEY_ALIASES[rawKey];
+      if (canonical) set.add(canonical);
       if (!attrListMap.has(a.product_id)) attrListMap.set(a.product_id, []);
       attrListMap.get(a.product_id)!.push(a);
     });
@@ -238,7 +262,7 @@ function ProdutosList() {
       case "no_cost":
         return p.cost_price == null || Number(p.cost_price) <= 0;
       case "no_ncm":
-        return !p.ncm || p.ncm.trim().length === 0;
+        return (!p.ncm || p.ncm.trim().length === 0) && !p.tech_attr_keys?.has("ncm");
       case "b2b_incomplete":
         return (
           p.b2b_enabled &&
