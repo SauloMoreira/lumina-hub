@@ -407,7 +407,7 @@ export const parseImportSheet = createServerFn({ method: "POST" })
       action: "product_import.parse",
       resourceType: "products",
       description: `Parse de planilha "${data.fileName}": ${rows.length} linhas, ${blocked} com pré-erros.`,
-      after: { total: rows.length, blocked, fileName: data.fileName, version: "v1.0.4" },
+      after: { total: rows.length, blocked, fileName: data.fileName, version: "v1.0.5" },
     });
     if (blocked > 0) {
       await logAdminAction({
@@ -415,7 +415,7 @@ export const parseImportSheet = createServerFn({ method: "POST" })
         action: "product_import.blocked",
         resourceType: "products",
         description: `${blocked} linha(s) bloqueada(s) no parse (notação científica / tipo numérico em coluna-código).`,
-        after: { blocked, fileName: data.fileName, version: "v1.0.4" },
+        after: { blocked, fileName: data.fileName, version: "v1.0.5" },
       });
     }
 
@@ -942,7 +942,7 @@ export const simulateImport = createServerFn({ method: "POST" })
       action: "product_import.simulate",
       resourceType: "products",
       description: `Simulação: ${summary.toCreate} criar, ${summary.toUpdate} atualizar, ${summary.toSkip} ignorar, ${summary.errors} erro.`,
-      after: { ...summary, version: "v1.0.4" },
+      after: { ...summary, version: "v1.0.5" },
     });
 
     return { ok: true as const, plan, summary };
@@ -1286,7 +1286,7 @@ export const downloadRevisedSheet = createServerFn({ method: "POST" })
       action: "product_import.export_revised",
       resourceType: "products",
       description: `Exportação de planilha revisada (${data.rows.length} linhas).`,
-      after: { total: data.rows.length, version: "v1.0.4" },
+      after: { total: data.rows.length, version: "v1.0.5" },
     });
 
     return { ok: true as const, fileBase64: base64, fileName: "produtos_revisado.xlsx" };
