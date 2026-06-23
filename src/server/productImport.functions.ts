@@ -894,7 +894,8 @@ type SimAction = "create" | "update" | "skip" | "error";
 export const simulateImport = createServerFn({ method: "POST" })
   .middleware([requireAdmin])
   .inputValidator((raw: unknown) => RowsInput.parse(raw))
-  .handler(async ({ data }) => {
+  .handler(async ({ data, context }) => {
+    const adminUserId = (context as { adminUserId: string }).adminUserId;
     const plan = data.rows.map((r) => {
       let simAction: SimAction = "skip";
       const reasons: string[] = [];
@@ -936,6 +937,14 @@ export const simulateImport = createServerFn({ method: "POST" })
       toSkip: plan.filter((p) => p.simAction === "skip").length,
       errors: plan.filter((p) => p.simAction === "error").length,
     };
+
+    await logAdminAction({
+      adminId: adminUserId,
+      action: "product_import.simulate",
+      resourceType: "products",
+      description: `Simulação: ${summary.toCreate} criar, ${summary.toUpdate} atualizar, ${summary.toSkip} ignorar, ${summary.errors} erro.`,
+      after: { ...summary, version: "v1.0.4" },
+    });
 
     return { ok: true as const, plan, summary };
   });
