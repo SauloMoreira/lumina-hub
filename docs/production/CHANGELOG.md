@@ -73,9 +73,11 @@ e versionamento [SemVer](https://semver.org/lang/pt-BR/).
   regenerado com formato `@` também no **estilo da coluna** para `sku`, `ean_gtin`,
   `codigo_barras`, `ncm`, `cest`, `cfop_default`, `codigo_fornecedor`, `modelo` e `marca`,
   além das células já materializadas e da tabela `TabelaProdutosImportacao`.
-- O download recebeu novo cache-buster (`v=1.0.5-column-text-20260623b`). A v1.0.5 continua
-  sem aceite operacional até o usuário baixar o modelo oficial, digitar `7891234567890123`
-  na coluna SKU e confirmar que o Excel mantém o valor exatamente assim.
+- O download agora aponta para um novo nome físico de arquivo
+  (`Cadastro_Minimo_Produtos_Led_Marica_IA_v1.0.5_Texto.xlsx`) para eliminar risco de cache
+  do arquivo antigo. A v1.0.5 continua sem aceite operacional até o usuário baixar o modelo
+  oficial, digitar `7891234567890123` na coluna SKU e confirmar que o Excel mantém o valor
+  exatamente assim.
 
 ### Arquivos
 - `supabase/migrations/*_import_product_with_attrs.sql` (nova RPC)
