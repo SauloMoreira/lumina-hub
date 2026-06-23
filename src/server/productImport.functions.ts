@@ -438,9 +438,14 @@ export const validateImportRows = createServerFn({ method: "POST" })
     }
 
     const categoryByKey = new Map<string, { id: string; name: string; slug: string }>();
+    const categoryKeyCount = new Map<string, number>();
     for (const c of existingCategories ?? []) {
-      categoryByKey.set(c.slug.toLowerCase(), c);
-      categoryByKey.set(c.name.toLowerCase(), c);
+      const slugKey = c.slug.toLowerCase();
+      const nameKey = c.name.toLowerCase();
+      categoryByKey.set(slugKey, c);
+      categoryByKey.set(nameKey, c);
+      categoryKeyCount.set(slugKey, (categoryKeyCount.get(slugKey) ?? 0) + 1);
+      categoryKeyCount.set(nameKey, (categoryKeyCount.get(nameKey) ?? 0) + 1);
     }
 
     // Dedup SKU na planilha
@@ -486,15 +491,22 @@ export const validateImportRows = createServerFn({ method: "POST" })
       if (!categoriaRaw) {
         errors.push("Categoria obrigatória.");
       } else {
-        const cat =
-          categoryByKey.get(categoriaRaw.toLowerCase()) ||
-          categoryByKey.get(slugify(categoriaRaw));
-        if (cat) {
-          matchedCategoryId = cat.id;
-        } else {
+        const lkLower = categoriaRaw.toLowerCase();
+        const lkSlug = slugify(categoriaRaw);
+        const cat = categoryByKey.get(lkLower) || categoryByKey.get(lkSlug);
+        const ambiguous =
+          (categoryKeyCount.get(lkLower) ?? 0) > 1 ||
+          (categoryKeyCount.get(lkSlug) ?? 0) > 1;
+        if (!cat) {
           errors.push(
             `Categoria "${categoriaRaw}" não encontrada. Crie a categoria antes de importar.`,
           );
+        } else if (ambiguous) {
+          errors.push(
+            `Categoria "${categoriaRaw}" é ambígua (mais de uma categoria com mesmo nome/slug). Selecione a categoria correta antes de importar.`,
+          );
+        } else {
+          matchedCategoryId = cat.id;
         }
       }
 
