@@ -181,4 +181,9 @@ neste arquivo na seção "Histórico" abaixo.
   área `A1:T10000` convertida em tabela Excel `TabelaProdutosImportacao`; link de download
   recebeu cache-buster. Aceite operacional continua condicionado ao teste manual no Excel
   preservando `7891234567890123` exatamente como texto após salvar e reabrir.
+- **Hotfix do modelo Excel (23/jun/2026):** após novo teste manual ainda mostrar notação
+  científica, o modelo foi regenerado com formato `@` aplicado no **nível da coluna** e nas
+  células críticas materializadas da tabela. O link de download recebeu novo cache-buster
+  `v=1.0.5-column-text-20260623b`. A v1.0.5 permanece sem aceite operacional até validação
+  manual do SKU `7891234567890123` digitado diretamente na coluna SKU do modelo oficial.
 
