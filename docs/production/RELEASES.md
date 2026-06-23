@@ -24,14 +24,20 @@ porque a numeração v1.0.4 já estava ocupada por CC-2026-008 (exclusão segura
 produtos com pedidos).
 
 Trata SKU, EAN/GTIN, código de barras, NCM, CEST, CFOP, código do fornecedor, modelo e
-marca como TEXTO em todo o pipeline: planilha modelo (`@` célula a célula em 10000 linhas,
-inclusive células vazias, com tabela Excel e cache-buster no download), parser
+marca como TEXTO em todo o pipeline: planilha modelo (`@` no nível da coluna e célula a
+célula em 10000 linhas, inclusive células vazias, com tabela Excel e cache-buster no download), parser
 (detecta célula numérica + notação científica), revisão editável, simulação e commit
 atômico via RPC `import_product_with_attrs` com `SECURITY DEFINER`, whitelist de campos,
 admin+AAL2 checados internamente, audit completo (`parse|simulate|commit|blocked|export_revised`).
 Sem impacto em checkout, MP, webhook, pedidos, estoque pós-venda, e-mails, CRM ou MFA geral.
 
 Detalhes técnicos completos no `CHANGELOG.md` (seção 1.0.5) e `CHANGE_CONTROL.md` (CC-2026-009).
+
+### Hotfix de modelo Excel — 23/jun/2026
+Após evidência manual de que o Excel ainda convertia SKU longo em notação científica, o
+modelo oficial foi regenerado com formato Texto aplicado também no estilo das colunas críticas,
+não apenas em células materializadas. Aceite operacional segue pendente até validação manual
+com `7891234567890123` preservado exatamente no Excel.
 
 ---
 

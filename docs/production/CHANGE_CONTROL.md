@@ -181,4 +181,10 @@ neste arquivo na seção "Histórico" abaixo.
   área `A1:T10000` convertida em tabela Excel `TabelaProdutosImportacao`; link de download
   recebeu cache-buster. Aceite operacional continua condicionado ao teste manual no Excel
   preservando `7891234567890123` exatamente como texto após salvar e reabrir.
+- **Hotfix do modelo Excel (23/jun/2026):** após novo teste manual ainda mostrar notação
+  científica, o modelo foi regenerado com formato `@` aplicado no **nível da coluna** e nas
+  células críticas materializadas da tabela. O link de download passou a apontar para novo
+  arquivo físico `Cadastro_Minimo_Produtos_Led_Marica_IA_v1.0.5_Texto.xlsx`, eliminando risco
+  de cache do arquivo antigo. A v1.0.5 permanece sem aceite operacional até validação manual
+  do SKU `7891234567890123` digitado diretamente na coluna SKU do modelo oficial.
 
