@@ -4,16 +4,23 @@ import * as XLSX from "xlsx";
 import { requireAdmin } from "@/integrations/supabase/admin-middleware";
 import { logAdminAction } from "@/server/security/auditLog";
 import {
+  CODE_COLUMN_KEYS,
   countRows,
+  isScientificNotation,
+  nullIfEmpty,
   parseAction,
   parseBoolPtBr,
   parseInteger,
   parsePrice,
   parseTags,
+  safeCell,
   sanitizeTechValue,
   slugify,
   TECH_FIELDS,
   TECH_FIELD_KEYS,
+  validateCestFormat,
+  validateCfopFormat,
+  validateNcmFormat,
   validateTechValue,
   type ImportConfidence,
   type ImportRow,
@@ -78,6 +85,18 @@ const HEADER_MAP: Record<string, keyof RawRow> = {
   observações_usuario: "obs_user",
   observacoes: "obs_user",
   observações: "obs_user",
+  // v1.0.4 — colunas-código (todas viram texto puro)
+  ean_gtin: "gtin_ean",
+  gtin_ean: "gtin_ean",
+  ean: "gtin_ean",
+  gtin: "gtin_ean",
+  codigo_barras: "codigo_barras",
+  código_de_barras: "codigo_barras",
+  codigo_de_barras: "codigo_barras",
+  ncm: "ncm",
+  cest: "cest",
+  cfop_default: "cfop_default",
+  cfop: "cfop_default",
 };
 
 type RawRow = {
@@ -93,6 +112,11 @@ type RawRow = {
   revisado: unknown;
   aprovado: unknown;
   obs_user: unknown;
+  gtin_ean: unknown;
+  codigo_barras: unknown;
+  ncm: unknown;
+  cest: unknown;
+  cfop_default: unknown;
 };
 
 // ===================== Schemas =====================
@@ -110,6 +134,11 @@ const ImportRowSchema = z.object({
   revisado_humano: z.boolean(),
   aprovado_importar: z.boolean(),
   observacoes_usuario: z.string(),
+  gtin_ean: z.string().default(""),
+  codigo_barras: z.string().default(""),
+  ncm: z.string().default(""),
+  cest: z.string().default(""),
+  cfop_default: z.string().default(""),
   slug_sugerido: z.string().nullable(),
   descricao_curta: z.string().nullable(),
   descricao_longa: z.string().nullable(),
@@ -147,6 +176,11 @@ function emptyRow(rowIndex: number): ImportRow {
     revisado_humano: false,
     aprovado_importar: false,
     observacoes_usuario: "",
+    gtin_ean: "",
+    codigo_barras: "",
+    ncm: "",
+    cest: "",
+    cfop_default: "",
     slug_sugerido: null,
     descricao_curta: null,
     descricao_longa: null,
@@ -249,9 +283,49 @@ export const parseImportSheet = createServerFn({ method: "POST" })
       };
     }
 
+    // v1.0.4 — Detector de células numéricas em COLUNAS-CÓDIGO
+    // Constrói map: colunaLetra -> normHeader, e marca por linha quais
+    // cabeçalhos críticos vieram como tipo 'n' (numérico) no XLSX.
+    const codeCellErrorsByRow = new Map<number, string[]>();
+    try {
+      const ref = sheet["!ref"];
+      if (ref) {
+        const range = XLSX.utils.decode_range(ref);
+        const colToHeader = new Map<number, string>();
+        for (let c = range.s.c; c <= range.e.c; c++) {
+          const addr = XLSX.utils.encode_cell({ r: range.s.r, c });
+          const raw = sheet[addr]?.v;
+          if (raw == null) continue;
+          const norm = normalizeHeader(String(raw));
+          if (CODE_COLUMN_KEYS.has(norm)) colToHeader.set(c, norm);
+        }
+        for (let r = range.s.r + 1; r <= range.e.r; r++) {
+          const rowIdx = r - range.s.r + 1; // alinhado com idx+2 abaixo
+          for (const [c, header] of colToHeader) {
+            const addr = XLSX.utils.encode_cell({ r, c });
+            const cell = sheet[addr];
+            if (cell && cell.t === "n") {
+              const list = codeCellErrorsByRow.get(rowIdx) ?? [];
+              list.push(
+                `Coluna "${header}" veio como NÚMERO no Excel. Formate como TEXTO e digite novamente para preservar zeros/precisão.`,
+              );
+              codeCellErrorsByRow.set(rowIdx, list);
+            }
+          }
+        }
+      }
+    } catch (e) {
+      console.warn("[importacao] type-scan falhou (ignora):", e);
+    }
+
     const rows: ImportRow[] = [];
     json.forEach((rawObj, idx) => {
       const row = emptyRow(idx + 2); // +2 = 1 do cabeçalho + 1 base
+
+      // Aplica erros pré-detectados de tipo numérico em colunas-código
+      const pre = codeCellErrorsByRow.get(idx + 2);
+      if (pre && pre.length) row.errors.push(...pre);
+
       for (const [k, v] of Object.entries(rawObj)) {
         const norm = normalizeHeader(k);
         const key = HEADER_MAP[norm];
@@ -290,6 +364,21 @@ export const parseImportSheet = createServerFn({ method: "POST" })
             case "obs_user":
               row.observacoes_usuario = String(v ?? "").trim();
               break;
+            case "gtin_ean":
+              row.gtin_ean = String(v ?? "").trim();
+              break;
+            case "codigo_barras":
+              row.codigo_barras = String(v ?? "").trim();
+              break;
+            case "ncm":
+              row.ncm = String(v ?? "").trim();
+              break;
+            case "cest":
+              row.cest = String(v ?? "").trim();
+              break;
+            case "cfop_default":
+              row.cfop_default = String(v ?? "").trim();
+              break;
           }
           continue;
         }
@@ -301,7 +390,13 @@ export const parseImportSheet = createServerFn({ method: "POST" })
       }
 
       // ignora linhas totalmente vazias
-      if (!row.sku && !row.nome_produto && !row.categoria && row.preco_venda === null && row.preco_custo === null) {
+      if (
+        !row.sku &&
+        !row.nome_produto &&
+        !row.categoria &&
+        row.preco_venda === null &&
+        row.preco_custo === null
+      ) {
         return;
       }
       rows.push(row);

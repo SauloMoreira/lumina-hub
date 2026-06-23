@@ -1,0 +1,1 @@
+REVOKE EXECUTE ON FUNCTION public.import_product_with_attrs(text, jsonb, jsonb) FROM anon, PUBLIC;
