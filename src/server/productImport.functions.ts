@@ -1182,8 +1182,9 @@ export const commitImport = createServerFn({ method: "POST" })
 export const downloadRevisedSheet = createServerFn({ method: "POST" })
   .middleware([requireAdmin])
   .inputValidator((raw: unknown) => RowsInput.parse(raw))
-  .handler(async ({ data }) => {
+  .handler(async ({ data, context }) => {
     const techKeys = TECH_FIELD_KEYS;
+    const adminUserId = (context as { adminUserId: string }).adminUserId;
     const aoa: Array<Array<string | number | null>> = [];
     aoa.push([
       "rowIndex",
@@ -1198,6 +1199,11 @@ export const downloadRevisedSheet = createServerFn({ method: "POST" })
       "ativo",
       "revisado_humano",
       "aprovado_importar",
+      "ean_gtin",
+      "codigo_barras",
+      "ncm",
+      "cest",
+      "cfop_default",
       "slug_sugerido",
       "descricao_curta",
       "descricao_longa",
@@ -1210,31 +1216,37 @@ export const downloadRevisedSheet = createServerFn({ method: "POST" })
       "erros",
       "avisos",
     ]);
+    // safeCell aplicado SOMENTE na geração do XLSX (evita fórmula no Excel).
     for (const r of data.rows) {
       aoa.push([
         r.rowIndex,
-        r.status,
-        r.action,
-        r.sku,
-        r.nome_produto,
-        r.categoria,
+        safeCell(r.status) as string,
+        safeCell(r.action) as string,
+        safeCell(r.sku) as string,
+        safeCell(r.nome_produto) as string,
+        safeCell(r.categoria) as string,
         r.preco_custo,
         r.preco_venda,
         r.estoque_inicial,
         r.ativo ? "sim" : "não",
         r.revisado_humano ? "sim" : "não",
         r.aprovado_importar ? "sim" : "não",
-        r.slug_sugerido,
-        r.descricao_curta,
-        r.descricao_longa,
-        r.tags.join(", "),
-        r.titulo_seo,
-        r.meta_description,
-        r.nivel_confianca_ia,
-        r.observacoes_ia,
-        ...techKeys.map((k) => (r.tech?.[k] ?? null)),
-        r.errors.join(" | "),
-        r.warnings.join(" | "),
+        safeCell(r.gtin_ean) as string,
+        safeCell(r.codigo_barras) as string,
+        safeCell(r.ncm) as string,
+        safeCell(r.cest) as string,
+        safeCell(r.cfop_default) as string,
+        safeCell(r.slug_sugerido ?? "") as string,
+        safeCell(r.descricao_curta ?? "") as string,
+        safeCell(r.descricao_longa ?? "") as string,
+        safeCell(r.tags.join(", ")) as string,
+        safeCell(r.titulo_seo ?? "") as string,
+        safeCell(r.meta_description ?? "") as string,
+        safeCell(r.nivel_confianca_ia ?? "") as string,
+        safeCell(r.observacoes_ia ?? "") as string,
+        ...techKeys.map((k) => safeCell(r.tech?.[k] ?? "") as string),
+        safeCell(r.errors.join(" | ")) as string,
+        safeCell(r.warnings.join(" | ")) as string,
       ]);
     }
     const ws = XLSX.utils.aoa_to_sheet(aoa);
@@ -1242,6 +1254,16 @@ export const downloadRevisedSheet = createServerFn({ method: "POST" })
     XLSX.utils.book_append_sheet(wb, ws, "PRODUTOS_REVISADO");
     const buf = XLSX.write(wb, { type: "buffer", bookType: "xlsx" }) as Buffer;
     const base64 = Buffer.from(buf).toString("base64");
+
+    await logAdminAction({
+      adminId: adminUserId,
+      action: "product_import.export_revised",
+      resourceType: "products",
+      description: `Exportação de planilha revisada (${data.rows.length} linhas).`,
+      after: { total: data.rows.length, version: "v1.0.4" },
+    });
+
     return { ok: true as const, fileBase64: base64, fileName: "produtos_revisado.xlsx" };
   });
+
 
