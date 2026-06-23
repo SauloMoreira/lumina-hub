@@ -315,10 +315,12 @@ export const parseImportSheet = createServerFn({ method: "POST" })
 
     const rows: ImportRow[] = [];
     json.forEach((rawObj, idx) => {
-      const row = emptyRow(idx + 2); // +2 = 1 do cabeçalho + 1 base
+      const sheetRowNum = (rawObj as { __rowNum__?: unknown }).__rowNum__;
+      const sourceRowIndex = typeof sheetRowNum === "number" ? sheetRowNum + 1 : idx + 2;
+      const row = emptyRow(sourceRowIndex);
 
       // Aplica erros pré-detectados de tipo numérico em colunas-código
-      const pre = codeCellErrorsByRow.get(idx + 2);
+      const pre = codeCellErrorsByRow.get(sourceRowIndex);
       if (pre && pre.length) row.errors.push(...pre);
 
       for (const [k, v] of Object.entries(rawObj)) {
