@@ -220,7 +220,8 @@ export const parseImportSheet = createServerFn({ method: "POST" })
       })
       .parse(raw),
   )
-  .handler(async ({ data }) => {
+  .handler(async ({ data, context }) => {
+    const adminUserId = (context as { adminUserId: string }).adminUserId;
     // Decodifica base64
     const cleaned = data.fileBase64.replace(/^data:[^;]+;base64,/, "");
     let bytes: Uint8Array;
