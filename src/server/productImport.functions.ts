@@ -402,6 +402,23 @@ export const parseImportSheet = createServerFn({ method: "POST" })
       }
       rows.push(row);
     });
+    const blocked = rows.filter((r) => r.errors.length > 0).length;
+    await logAdminAction({
+      adminId: adminUserId,
+      action: "product_import.parse",
+      resourceType: "products",
+      description: `Parse de planilha "${data.fileName}": ${rows.length} linhas, ${blocked} com pré-erros.`,
+      after: { total: rows.length, blocked, fileName: data.fileName, version: "v1.0.4" },
+    });
+    if (blocked > 0) {
+      await logAdminAction({
+        adminId: adminUserId,
+        action: "product_import.blocked",
+        resourceType: "products",
+        description: `${blocked} linha(s) bloqueada(s) no parse (notação científica / tipo numérico em coluna-código).`,
+        after: { blocked, fileName: data.fileName, version: "v1.0.4" },
+      });
+    }
 
     return { ok: true as const, rows, sheetName };
   });
