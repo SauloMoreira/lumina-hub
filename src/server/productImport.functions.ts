@@ -574,6 +574,66 @@ export const validateImportRows = createServerFn({ method: "POST" })
         techClean[k] = sanitized;
       }
 
+      // ===== v1.0.4 — Colunas-código como texto =====
+      // 1) Bloqueio de notação científica no SKU.
+      if (sku && isScientificNotation(sku)) {
+        errors.push(
+          `SKU em notação científica ("${sku}"). Reabra a planilha, formate a coluna como Texto e digite o código novamente.`,
+        );
+      }
+
+      // 2) Merge codigo_barras + gtin_ean (sem coluna própria no banco).
+      const eanIn = (r.gtin_ean ?? "").trim();
+      const cbIn = (r.codigo_barras ?? "").trim();
+      let gtinFinal = "";
+      if (eanIn && cbIn) {
+        if (eanIn !== cbIn) {
+          errors.push(
+            "EAN/GTIN e código de barras estão divergentes. Corrija antes de importar.",
+          );
+        } else {
+          gtinFinal = eanIn;
+        }
+      } else {
+        gtinFinal = eanIn || cbIn;
+      }
+      if (gtinFinal && isScientificNotation(gtinFinal)) {
+        errors.push(
+          "EAN/GTIN em notação científica. Reabra a planilha, formate a coluna como Texto e digite novamente.",
+        );
+        gtinFinal = "";
+      }
+
+      // 3) NCM / CEST / CFOP — validação estrutural apenas (formato válido).
+      let ncmFinal = "";
+      if (r.ncm) {
+        const v = validateNcmFormat(r.ncm);
+        if (!v.ok) errors.push(v.error ?? "NCM inválido.");
+        else if (v.normalized) ncmFinal = v.normalized;
+      }
+      let cestFinal = "";
+      if (r.cest) {
+        const v = validateCestFormat(r.cest);
+        if (!v.ok) errors.push(v.error ?? "CEST inválido.");
+        else if (v.normalized) cestFinal = v.normalized;
+      }
+      let cfopFinal = "";
+      if (r.cfop_default) {
+        const v = validateCfopFormat(r.cfop_default);
+        if (!v.ok) errors.push(v.error ?? "CFOP inválido.");
+        else if (v.normalized) cfopFinal = v.normalized;
+      }
+
+      // 4) Atributos técnicos com texto sensível à notação científica
+      for (const codeKey of ["codigo_fornecedor", "modelo"] as const) {
+        const val = techClean[codeKey];
+        if (val && isScientificNotation(val)) {
+          errors.push(
+            `Atributo "${codeKey}" em notação científica. Formate a coluna como Texto.`,
+          );
+          delete techClean[codeKey];
+        }
+      }
 
       let status: ImportStatus;
       if (errors.length > 0) {
@@ -593,6 +653,11 @@ export const validateImportRows = createServerFn({ method: "POST" })
         matched_product_id: matchedProductId,
         matched_category_id: matchedCategoryId,
         tech: techClean,
+        gtin_ean: gtinFinal,
+        codigo_barras: cbIn, // mantém o original na revisão; persistência usa gtin_ean
+        ncm: ncmFinal,
+        cest: cestFinal,
+        cfop_default: cfopFinal,
       };
     });
 
