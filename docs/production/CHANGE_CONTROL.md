@@ -140,13 +140,13 @@ neste arquivo na seção "Histórico" abaixo.
 - **Backup necessário:** snapshot diário automático (sem alteração destrutiva de dados existentes — RPC só insere/atualiza produto + atributos com whitelist de campos).
 - **Arquivos alterados:**
   - `supabase/migrations/*_import_product_with_attrs.sql` (nova RPC + revoke anon)
-  - `public/templates/Cadastro_Minimo_Produtos_Led_Marica_IA.xlsx` (regenerada com formato `@`)
+  - `public/templates/Cadastro_Minimo_Produtos_Led_Marica_IA.xlsx` (regenerada com formato `@` célula a célula nas linhas 1–10000)
   - `src/lib/productImport.ts` (tipos + helpers)
   - `src/server/productImport.functions.ts` (HEADER_MAP, detector numérico, merge códigos, commit via RPC, audits, safeCell)
   - `src/routes/admin.produtos.importacao-ia.tsx` (UI: fieldsets de códigos/atributos)
   - `docs/production/CHANGELOG.md`, `docs/production/RELEASES.md`, este arquivo
 - **Plano de teste:**
-  1. Baixar nova planilha modelo, abrir no Excel — colunas-código devem aparecer formatadas como Texto.
+  1. Baixar nova planilha modelo pela tela `/admin/produtos/importacao-ia`, abrir no Excel — colunas-código devem aparecer formatadas como Texto em células vazias.
   2. Digitar SKU `LED-EXEMPLO-001` → preservado.
   3. Digitar SKU `7891234567890` → preservado como string.
   4. Digitar SKU `000123456789` → zeros mantidos.
@@ -175,4 +175,10 @@ neste arquivo na seção "Histórico" abaixo.
 - **Versão alvo:** v1.0.5
 - **Status:** publicado
 - **Data fechamento:** 23/jun/2026
+- **Ajuste pós-teste manual (23/jun/2026):** modelo XLSX regenerado com células vazias
+  materializadas como Texto (`@` + `quotePrefix`) nas linhas 1–10000 para `sku`, `ean_gtin`,
+  `codigo_barras`, `ncm`, `cest`, `cfop_default`, `codigo_fornecedor`, `modelo` e `marca`;
+  área `A1:T10000` convertida em tabela Excel `TabelaProdutosImportacao`; link de download
+  recebeu cache-buster. Aceite operacional continua condicionado ao teste manual no Excel
+  preservando `7891234567890123` exatamente como texto após salvar e reabrir.
 

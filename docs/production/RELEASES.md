@@ -13,7 +13,7 @@ Resumo curto vai em `CHANGELOG.md`; o dossiê completo fica aqui.
 | Data                | 23/jun/2026                                        |
 | Responsável         | Saulo Moreira (saulocmoreira@gmail.com)            |
 | Tipo                | correção crítica (importador de produtos)          |
-| Status              | publicado                                          |
+| Status              | publicado; aceite operacional pendente de revalidação Excel |
 | ChangeControl       | CC-2026-009                                        |
 | Backup pré-deploy   | snapshot diário automático                         |
 | Plano de rollback   | reverter arquivos + `DROP FUNCTION import_product_with_attrs` |
@@ -24,7 +24,8 @@ porque a numeração v1.0.4 já estava ocupada por CC-2026-008 (exclusão segura
 produtos com pedidos).
 
 Trata SKU, EAN/GTIN, código de barras, NCM, CEST, CFOP, código do fornecedor, modelo e
-marca como TEXTO em todo o pipeline: planilha modelo (`@` em 10000 linhas), parser
+marca como TEXTO em todo o pipeline: planilha modelo (`@` célula a célula em 10000 linhas,
+inclusive células vazias, com tabela Excel e cache-buster no download), parser
 (detecta célula numérica + notação científica), revisão editável, simulação e commit
 atômico via RPC `import_product_with_attrs` com `SECURITY DEFINER`, whitelist de campos,
 admin+AAL2 checados internamente, audit completo (`parse|simulate|commit|blocked|export_revised`).

@@ -262,14 +262,8 @@ export const parseImportSheet = createServerFn({ method: "POST" })
     const json = XLSX.utils.sheet_to_json<Record<string, unknown>>(sheet, {
       defval: "",
       raw: false,
+      blankrows: false,
     });
-
-    if (json.length > MAX_ROWS) {
-      return {
-        ok: false as const,
-        error: `Planilha com ${json.length} linhas excede o limite de ${MAX_ROWS}.`,
-      };
-    }
 
     // Verifica cabeçalhos essenciais
     const firstRow = json[0] ?? {};
@@ -321,10 +315,12 @@ export const parseImportSheet = createServerFn({ method: "POST" })
 
     const rows: ImportRow[] = [];
     json.forEach((rawObj, idx) => {
-      const row = emptyRow(idx + 2); // +2 = 1 do cabeçalho + 1 base
+      const sheetRowNum = (rawObj as { __rowNum__?: unknown }).__rowNum__;
+      const sourceRowIndex = typeof sheetRowNum === "number" ? sheetRowNum + 1 : idx + 2;
+      const row = emptyRow(sourceRowIndex);
 
       // Aplica erros pré-detectados de tipo numérico em colunas-código
-      const pre = codeCellErrorsByRow.get(idx + 2);
+      const pre = codeCellErrorsByRow.get(sourceRowIndex);
       if (pre && pre.length) row.errors.push(...pre);
 
       for (const [k, v] of Object.entries(rawObj)) {
@@ -402,13 +398,19 @@ export const parseImportSheet = createServerFn({ method: "POST" })
       }
       rows.push(row);
     });
+    if (rows.length > MAX_ROWS) {
+      return {
+        ok: false as const,
+        error: `Planilha com ${rows.length} linhas preenchidas excede o limite de ${MAX_ROWS}.`,
+      };
+    }
     const blocked = rows.filter((r) => r.errors.length > 0).length;
     await logAdminAction({
       adminId: adminUserId,
       action: "product_import.parse",
       resourceType: "products",
       description: `Parse de planilha "${data.fileName}": ${rows.length} linhas, ${blocked} com pré-erros.`,
-      after: { total: rows.length, blocked, fileName: data.fileName, version: "v1.0.4" },
+      after: { total: rows.length, blocked, fileName: data.fileName, version: "v1.0.5" },
     });
     if (blocked > 0) {
       await logAdminAction({
@@ -416,7 +418,7 @@ export const parseImportSheet = createServerFn({ method: "POST" })
         action: "product_import.blocked",
         resourceType: "products",
         description: `${blocked} linha(s) bloqueada(s) no parse (notação científica / tipo numérico em coluna-código).`,
-        after: { blocked, fileName: data.fileName, version: "v1.0.4" },
+        after: { blocked, fileName: data.fileName, version: "v1.0.5" },
       });
     }
 
@@ -943,7 +945,7 @@ export const simulateImport = createServerFn({ method: "POST" })
       action: "product_import.simulate",
       resourceType: "products",
       description: `Simulação: ${summary.toCreate} criar, ${summary.toUpdate} atualizar, ${summary.toSkip} ignorar, ${summary.errors} erro.`,
-      after: { ...summary, version: "v1.0.4" },
+      after: { ...summary, version: "v1.0.5" },
     });
 
     return { ok: true as const, plan, summary };
@@ -1287,7 +1289,7 @@ export const downloadRevisedSheet = createServerFn({ method: "POST" })
       action: "product_import.export_revised",
       resourceType: "products",
       description: `Exportação de planilha revisada (${data.rows.length} linhas).`,
-      after: { total: data.rows.length, version: "v1.0.4" },
+      after: { total: data.rows.length, version: "v1.0.5" },
     });
 
     return { ok: true as const, fileBase64: base64, fileName: "produtos_revisado.xlsx" };

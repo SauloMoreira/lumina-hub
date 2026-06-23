@@ -21,8 +21,9 @@ e versionamento [SemVer](https://semver.org/lang/pt-BR/).
 - **SKU, EAN/GTIN, código de barras, NCM, CEST, CFOP, código do fornecedor, modelo e marca**
   agora são tratados como TEXTO em todo o fluxo (planilha, parser, revisão, simulação,
   commit, banco). Não há mais conversão numérica em colunas-código:
-  - Excel reabre a planilha modelo já com formato `@` (Texto) aplicado nas linhas 1–10000
-    das colunas críticas, impedindo a aparição de notação científica.
+  - Excel reabre a planilha modelo com formato `@` (Texto) aplicado célula a célula nas
+    linhas 1–10000 das colunas críticas, inclusive células vazias, com `quotePrefix` e
+    tabela Excel `TabelaProdutosImportacao`, impedindo a aparição de notação científica.
   - O parser detecta células que chegaram com tipo `n` (numérico) em colunas-código e
     bloqueia a linha com mensagem clara: "formate como TEXTO e digite novamente".
   - Regex adicional bloqueia notação científica residual (`7,89123E+12`).
@@ -56,6 +57,15 @@ e versionamento [SemVer](https://semver.org/lang/pt-BR/).
   correto". A correção fiscal continua sendo responsabilidade contábil/operacional.
 - Nenhuma alteração em checkout, Mercado Pago, webhook, pedidos, estoque pós-venda,
   e-mails transacionais, CRM, GA4, DNS, MFA/AAL2 geral, RLS, policies ou permissões públicas.
+
+### Ajuste pós-teste manual — 2026-06-23
+- Modelo oficial regenerado novamente após identificação de conversão do SKU longo pelo
+  Excel em célula vazia. As células das colunas `sku`, `ean_gtin`, `codigo_barras`, `ncm`,
+  `cest`, `cfop_default`, `codigo_fornecedor`, `modelo` e `marca` agora são materializadas
+  como células Texto (`@`) da linha 1 até a 10000, não apenas via dimensão/estilo de coluna.
+- Link da tela administrativa atualizado com cache-buster para evitar download do modelo antigo.
+- Aceite operacional da v1.0.5 permanece pendente até validação manual no Excel com o SKU
+  `7891234567890123` preservado exatamente como texto após salvar e reabrir.
 
 ### Arquivos
 - `supabase/migrations/*_import_product_with_attrs.sql` (nova RPC)
