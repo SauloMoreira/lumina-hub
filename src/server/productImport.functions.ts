@@ -264,13 +264,6 @@ export const parseImportSheet = createServerFn({ method: "POST" })
       raw: false,
     });
 
-    if (json.length > MAX_ROWS) {
-      return {
-        ok: false as const,
-        error: `Planilha com ${json.length} linhas excede o limite de ${MAX_ROWS}.`,
-      };
-    }
-
     // Verifica cabeçalhos essenciais
     const firstRow = json[0] ?? {};
     const normHeaders = Object.keys(firstRow).map(normalizeHeader);
@@ -402,6 +395,12 @@ export const parseImportSheet = createServerFn({ method: "POST" })
       }
       rows.push(row);
     });
+    if (rows.length > MAX_ROWS) {
+      return {
+        ok: false as const,
+        error: `Planilha com ${rows.length} linhas preenchidas excede o limite de ${MAX_ROWS}.`,
+      };
+    }
     const blocked = rows.filter((r) => r.errors.length > 0).length;
     await logAdminAction({
       adminId: adminUserId,
