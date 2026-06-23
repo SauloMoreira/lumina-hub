@@ -193,4 +193,14 @@ neste arquivo na seção "Histórico" abaixo.
   materializadas. Validações `ISTEXT` seguem em modo bloqueante. O link administrativo agora
   aponta para `Cadastro_Minimo_Produtos_Led_Marica_IA_v1.0.5_Texto_ExcelSeguro.xlsx`, mantendo
   o nome de download `Cadastro_Minimo_Produtos_Led_Marica_IA.xlsx`.
+- **Hotfix corretivo do XLSX oficial (23/jun/2026):** após nova reprovação manual, o modelo
+  oficial `public/templates/Cadastro_Minimo_Produtos_Led_Marica_IA.xlsx` foi regenerado com
+  `xlsxwriter`. O formato real de Texto (`numFmtId=49`) foi aplicado no nível das colunas
+  `sku`, `ean_gtin`, `codigo_barras`, `ncm`, `cest`, `cfop_default`, `codigo_fornecedor`,
+  `modelo` e `marca`, com células vazias pré-formatadas como Texto das linhas 2 até 10000.
+  A linha de exemplo usa `7891234567890123` como string. O botão oficial voltou a apontar
+  para o arquivo oficial único com cache-buster, sem dependência dos nomes físicos antigos
+  `v1.0.5_Texto` ou `ExcelSeguro`. A v1.0.5 permanece pendente de aceite manual enquanto o
+  modelo baixável não for validado no Microsoft Excel com SKU numérico longo preservado como
+  Texto.
 

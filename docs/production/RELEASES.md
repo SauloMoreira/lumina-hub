@@ -46,6 +46,17 @@ As colunas críticas usam agora o formato Texto nativo do Excel (`numFmtId=49`) 
 `quotePrefix=1`, além das validações `ISTEXT` em modo bloqueante. Aceite operacional continua
 condicionado ao teste manual no Excel oficial baixado pela tela administrativa.
 
+### Hotfix corretivo do XLSX oficial — 23/jun/2026
+Após reprovação manual adicional, o arquivo oficial
+`public/templates/Cadastro_Minimo_Produtos_Led_Marica_IA.xlsx` foi regenerado com `xlsxwriter`.
+As colunas `sku`, `ean_gtin`, `codigo_barras`, `ncm`, `cest`, `cfop_default`,
+`codigo_fornecedor`, `modelo` e `marca` receberam formato real de Texto (`numFmtId=49`) no
+nível da coluna e células vazias pré-formatadas como Texto das linhas 2 até 10000. O botão
+oficial voltou a apontar para o arquivo oficial único com cache-buster, removendo dependência
+dos nomes antigos `v1.0.5_Texto` e `ExcelSeguro`. A v1.0.5 permanece pendente de aceite manual
+enquanto o modelo baixável não for validado no Microsoft Excel com SKU numérico longo
+preservado como Texto.
+
 ---
 
 

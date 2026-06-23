@@ -90,6 +90,21 @@ e versionamento [SemVer](https://semver.org/lang/pt-BR/).
 - Validações de dados das colunas críticas permanecem com `errorStyle="stop"` e fórmula
   `ISTEXT`, impedindo entrada numérica nessas colunas quando o Excel respeita a validação.
 
+### Hotfix corretivo do XLSX oficial — 2026-06-23
+- Após reprovação manual adicional, o arquivo oficial
+  `public/templates/Cadastro_Minimo_Produtos_Led_Marica_IA.xlsx` foi regenerado com
+  `xlsxwriter`, sem depender de tooltip, comentário ou DataValidation como solução.
+- As colunas `sku`, `ean_gtin`, `codigo_barras`, `ncm`, `cest`, `cfop_default`,
+  `codigo_fornecedor`, `modelo` e `marca` receberam formato real de Texto no nível da
+  coluna (`numFmtId=49`) e células vazias pré-formatadas como Texto das linhas 2 até 10000.
+- A linha de exemplo usa SKU longo `7891234567890123` escrito como string para validação
+  objetiva no Excel.
+- O botão oficial voltou a apontar para o arquivo oficial único
+  `Cadastro_Minimo_Produtos_Led_Marica_IA.xlsx` com cache-buster, removendo dependência dos
+  nomes físicos antigos `v1.0.5_Texto` e `ExcelSeguro`.
+- A v1.0.5 permanece pendente de aceite manual enquanto o modelo baixável não for validado
+  no Microsoft Excel com SKU numérico longo preservado como Texto.
+
 ### Arquivos
 - `supabase/migrations/*_import_product_with_attrs.sql` (nova RPC)
 - `public/templates/Cadastro_Minimo_Produtos_Led_Marica_IA.xlsx` (regenerada)
