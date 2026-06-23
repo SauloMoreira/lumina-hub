@@ -67,6 +67,16 @@ e versionamento [SemVer](https://semver.org/lang/pt-BR/).
 - Aceite operacional da v1.0.5 permanece pendente até validação manual no Excel com o SKU
   `7891234567890123` preservado exatamente como texto após salvar e reabrir.
 
+### Hotfix do modelo Excel — 2026-06-23
+- Confirmada a causa raiz do teste manual: só materializar células vazias não garantia que o
+  Excel aplicasse **Texto** na digitação do usuário final em algumas instalações. O modelo foi
+  regenerado com formato `@` também no **estilo da coluna** para `sku`, `ean_gtin`,
+  `codigo_barras`, `ncm`, `cest`, `cfop_default`, `codigo_fornecedor`, `modelo` e `marca`,
+  além das células já materializadas e da tabela `TabelaProdutosImportacao`.
+- O download recebeu novo cache-buster (`v=1.0.5-column-text-20260623b`). A v1.0.5 continua
+  sem aceite operacional até o usuário baixar o modelo oficial, digitar `7891234567890123`
+  na coluna SKU e confirmar que o Excel mantém o valor exatamente assim.
+
 ### Arquivos
 - `supabase/migrations/*_import_product_with_attrs.sql` (nova RPC)
 - `public/templates/Cadastro_Minimo_Produtos_Led_Marica_IA.xlsx` (regenerada)
