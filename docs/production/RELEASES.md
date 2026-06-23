@@ -39,6 +39,13 @@ modelo oficial foi regenerado com formato Texto aplicado também no estilo das c
 não apenas em células materializadas. Aceite operacional segue pendente até validação manual
 com `7891234567890123` preservado exatamente no Excel.
 
+### Hotfix reforçado de modelo Excel — 23/jun/2026
+Após nova evidência manual mostrando `7891234567890123` como `7,89123E+15`, o arquivo
+baixável foi substituído por `Cadastro_Minimo_Produtos_Led_Marica_IA_v1.0.5_Texto_ExcelSeguro.xlsx`.
+As colunas críticas usam agora o formato Texto nativo do Excel (`numFmtId=49`) com
+`quotePrefix=1`, além das validações `ISTEXT` em modo bloqueante. Aceite operacional continua
+condicionado ao teste manual no Excel oficial baixado pela tela administrativa.
+
 ---
 
 

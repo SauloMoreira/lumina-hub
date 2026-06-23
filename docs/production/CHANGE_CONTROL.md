@@ -187,4 +187,10 @@ neste arquivo na seção "Histórico" abaixo.
   arquivo físico `Cadastro_Minimo_Produtos_Led_Marica_IA_v1.0.5_Texto.xlsx`, eliminando risco
   de cache do arquivo antigo. A v1.0.5 permanece sem aceite operacional até validação manual
   do SKU `7891234567890123` digitado diretamente na coluna SKU do modelo oficial.
+- **Hotfix reforçado do modelo Excel (23/jun/2026):** após evidência manual adicional com
+  `7891234567890123` exibido como `7,89123E+15`, os estilos de texto foram convertidos para
+  o formato nativo do Excel (`numFmtId=49`) com `quotePrefix=1` nas colunas críticas e células
+  materializadas. Validações `ISTEXT` seguem em modo bloqueante. O link administrativo agora
+  aponta para `Cadastro_Minimo_Produtos_Led_Marica_IA_v1.0.5_Texto_ExcelSeguro.xlsx`, mantendo
+  o nome de download `Cadastro_Minimo_Produtos_Led_Marica_IA.xlsx`.
 

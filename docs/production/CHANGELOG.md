@@ -79,6 +79,17 @@ e versionamento [SemVer](https://semver.org/lang/pt-BR/).
   oficial, digitar `7891234567890123` na coluna SKU e confirmar que o Excel mantém o valor
   exatamente assim.
 
+### Hotfix reforçado do modelo Excel — 2026-06-23
+- Após nova evidência manual (SKU `7891234567890123` ainda exibido como `7,89123E+15`),
+  o modelo foi reforçado para usar o formato Texto nativo do Excel (`numFmtId=49`) com
+  `quotePrefix=1` nos estilos aplicados às colunas críticas e às células materializadas.
+- O link administrativo agora aponta para novo arquivo físico
+  `Cadastro_Minimo_Produtos_Led_Marica_IA_v1.0.5_Texto_ExcelSeguro.xlsx`, mantendo o nome
+  de download amigável `Cadastro_Minimo_Produtos_Led_Marica_IA.xlsx`, para forçar o usuário
+  a baixar o modelo corrigido sem reaproveitar cache antigo.
+- Validações de dados das colunas críticas permanecem com `errorStyle="stop"` e fórmula
+  `ISTEXT`, impedindo entrada numérica nessas colunas quando o Excel respeita a validação.
+
 ### Arquivos
 - `supabase/migrations/*_import_product_with_attrs.sql` (nova RPC)
 - `public/templates/Cadastro_Minimo_Produtos_Led_Marica_IA.xlsx` (regenerada)
