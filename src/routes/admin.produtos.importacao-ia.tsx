@@ -338,7 +338,7 @@ function ImportacaoIaPage() {
             <div className="space-y-3">
               <Button asChild variant="default" className="w-full">
                 <a
-                  href="/templates/Cadastro_Minimo_Produtos_Led_Marica_IA_v1.0.5_Texto_ExcelSeguro.xlsx"
+                  href="/templates/Cadastro_Minimo_Produtos_Led_Marica_IA.xlsx?v=20260623-texto-real-xlsxwriter"
                   download="Cadastro_Minimo_Produtos_Led_Marica_IA.xlsx"
                 >
                   <Download className="h-4 w-4 mr-2" />
