@@ -994,72 +994,88 @@ export const commitImport = createServerFn({ method: "POST" })
           continue;
         }
 
+        // v1.0.4 — Revalidação server-side defensiva dos campos-código.
+        if (row.sku && isScientificNotation(row.sku)) {
+          log.push({ rowIndex: row.rowIndex, sku: row.sku, result: "error", message: "SKU em notação científica." });
+          continue;
+        }
+        if (row.ncm) {
+          const v = validateNcmFormat(row.ncm);
+          if (!v.ok) { log.push({ rowIndex: row.rowIndex, sku: row.sku, result: "error", message: v.error ?? "NCM inválido." }); continue; }
+        }
+        if (row.cest) {
+          const v = validateCestFormat(row.cest);
+          if (!v.ok) { log.push({ rowIndex: row.rowIndex, sku: row.sku, result: "error", message: v.error ?? "CEST inválido." }); continue; }
+        }
+        if (row.cfop_default) {
+          const v = validateCfopFormat(row.cfop_default);
+          if (!v.ok) { log.push({ rowIndex: row.rowIndex, sku: row.sku, result: "error", message: v.error ?? "CFOP inválido." }); continue; }
+        }
+
         const dbId = dbSkuMap.get(row.sku.trim()) ?? null;
+
+        // Whitelist de atributos técnicos (texto puro) — exclui marca/peso/ncm
+        // que vão direto no produto e podem repetir keys.
+        const attrs = Object.entries(row.tech ?? {})
+          .filter(([k]) => k !== "marca" && k !== "peso_kg" && k !== "ncm")
+          .map(([k, v], i) => {
+            const def = TECH_FIELDS.find((f) => f.key === k);
+            if (!def) return null;
+            const cleanValue = stripUnitSuffix(String(v ?? ""), def.unit).slice(0, 500);
+            if (!cleanValue) return null;
+            return {
+              attribute_key: k,
+              attribute_label: def.label,
+              attribute_value: cleanValue,
+              attribute_unit: def.unit ?? null,
+              sort_order: i,
+              is_visible: true,
+            };
+          })
+          .filter((x): x is NonNullable<typeof x> => x !== null);
+
+        // Peso técnico → weight_kg
+        let weightKg: number | null = null;
+        if (row.tech?.peso_kg) {
+          const w = Number(String(row.tech.peso_kg).replace(",", "."));
+          if (Number.isFinite(w) && w >= 0) weightKg = w;
+        }
+        const brand = row.tech?.marca ? String(row.tech.marca).slice(0, 120) : null;
 
         if (row.action === "atualizar") {
           if (!dbId) {
-            log.push({
-              rowIndex: row.rowIndex,
-              sku: row.sku,
-              result: "error",
-              message: "SKU não existe para atualizar.",
-            });
+            log.push({ rowIndex: row.rowIndex, sku: row.sku, result: "error", message: "SKU não existe para atualizar." });
             continue;
           }
-          // Atualização NÃO sobrescreve estoque por padrão (regra de segurança).
-          const update: {
-            name: string;
-            category_id: string | null;
-            price: number;
-            cost_price?: number;
-            updated_at: string;
-            description?: string;
-            tags?: string[];
-            seo_title?: string;
-            seo_description?: string;
-            active?: boolean;
-            brand?: string;
-            weight_kg?: number;
-            ncm?: string;
-
-          } = {
-
+          const payloadUpd: Record<string, unknown> = {
+            id: dbId,
             name: row.nome_produto,
             category_id: row.matched_category_id,
             price: row.preco_venda,
-            updated_at: new Date().toISOString(),
+            cost_price:
+              row.preco_custo !== null && row.preco_custo >= 0
+                ? String(row.preco_custo)
+                : "",
+            gtin_ean: nullIfEmpty(row.gtin_ean) ?? "",
+            ncm: nullIfEmpty(row.ncm) ?? "",
+            cest: nullIfEmpty(row.cest) ?? "",
+            cfop_default: nullIfEmpty(row.cfop_default) ?? "",
           };
-          if (row.preco_custo !== null && row.preco_custo >= 0) {
-            update.cost_price = row.preco_custo;
-          }
-          if (row.descricao_longa) update.description = row.descricao_longa;
-          if (row.tags.length) update.tags = row.tags;
-          if (row.titulo_seo) update.seo_title = row.titulo_seo;
-          if (row.meta_description) update.seo_description = row.meta_description;
-          if (row.ativo && row.warnings.length === 0) update.active = true;
-          if (row.tech?.marca) update.brand = row.tech.marca.slice(0, 120);
-          if (row.tech?.peso_kg) {
-            const w = Number(row.tech.peso_kg.replace(",", "."));
-            if (Number.isFinite(w) && w >= 0) update.weight_kg = w;
-          }
-          if (row.tech?.ncm) {
-            const digits = row.tech.ncm.replace(/\D/g, "").slice(0, 8);
-            if (digits.length === 8) update.ncm = digits;
-          }
+          if (row.descricao_longa) payloadUpd.description = row.descricao_longa;
+          if (row.tags.length) payloadUpd.tags = row.tags;
+          if (row.titulo_seo) payloadUpd.seo_title = row.titulo_seo;
+          if (row.meta_description) payloadUpd.seo_description = row.meta_description;
+          if (row.ativo && row.warnings.length === 0) payloadUpd.active = true;
+          if (brand) payloadUpd.brand = brand;
+          if (weightKg !== null) payloadUpd.weight_kg = String(weightKg);
 
-
-
-          const { error } = await supabaseAdmin
-            .from("products")
-            .update(update)
-            .eq("id", dbId);
+          const { error } = await supabaseAdmin.rpc("import_product_with_attrs" as never, {
+            _mode: "update",
+            _payload: payloadUpd,
+            _attrs: attrs,
+          } as never);
           if (error) throw new Error(error.message);
-          log.push({
-            rowIndex: row.rowIndex,
-            sku: row.sku,
-            result: "updated",
-            productId: dbId,
-          });
+          log.push({ rowIndex: row.rowIndex, sku: row.sku, result: "updated", productId: dbId });
           continue;
         }
 
@@ -1083,7 +1099,6 @@ export const commitImport = createServerFn({ method: "POST" })
           attempt += 1;
           candidate = `${baseSlug}-${attempt}`;
         }
-        // Confere no banco também
         const { data: slugHit } = await supabaseAdmin
           .from("products")
           .select("id")
@@ -1094,93 +1109,42 @@ export const commitImport = createServerFn({ method: "POST" })
         }
         slugCheckCache.add(candidate);
 
-        const insert: {
-          sku: string;
-          name: string;
-          slug: string;
-          category_id: string | null;
-          price: number;
-          cost_price: number | null;
-          stock_qty: number;
-          active: boolean;
-          description: string | null;
-          tags: string[] | null;
-          seo_title: string | null;
-          seo_description: string | null;
-          brand?: string;
-          weight_kg?: number;
-          ncm?: string;
-        } = {
+        const payloadIns: Record<string, unknown> = {
           sku: row.sku,
           name: row.nome_produto,
           slug: candidate,
           category_id: row.matched_category_id,
-          price: row.preco_venda,
+          price: String(row.preco_venda),
           cost_price:
-            row.preco_custo !== null && row.preco_custo >= 0 ? row.preco_custo : null,
-          stock_qty: row.estoque_inicial ?? 0,
+            row.preco_custo !== null && row.preco_custo >= 0
+              ? String(row.preco_custo)
+              : "",
+          stock_qty: String(row.estoque_inicial ?? 0),
           active: row.ativo && row.warnings.length === 0,
-          description: row.descricao_longa ?? null,
-          tags: row.tags.length ? row.tags : null,
-          seo_title: row.titulo_seo ?? null,
-          seo_description: row.meta_description ?? null,
+          description: row.descricao_longa ?? "",
+          tags: row.tags.length ? row.tags : [],
+          seo_title: row.titulo_seo ?? "",
+          seo_description: row.meta_description ?? "",
+          brand: brand ?? "",
+          gtin_ean: nullIfEmpty(row.gtin_ean) ?? "",
+          ncm: nullIfEmpty(row.ncm) ?? "",
+          cest: nullIfEmpty(row.cest) ?? "",
+          cfop_default: nullIfEmpty(row.cfop_default) ?? "",
+          weight_kg: weightKg !== null ? String(weightKg) : "",
         };
-        if (row.tech?.marca) insert.brand = row.tech.marca.slice(0, 120);
-        if (row.tech?.peso_kg) {
-          const w = Number(row.tech.peso_kg.replace(",", "."));
-          if (Number.isFinite(w) && w >= 0) insert.weight_kg = w;
-        }
-        if (row.tech?.ncm) {
-          const digits = row.tech.ncm.replace(/\D/g, "").slice(0, 8);
-          if (digits.length === 8) insert.ncm = digits;
-        }
 
-
-        const { data: created, error } = await supabaseAdmin
-          .from("products")
-          .insert(insert)
-          .select("id")
-          .single();
+        const { data: rpcRes, error } = await supabaseAdmin.rpc(
+          "import_product_with_attrs" as never,
+          { _mode: "create", _payload: payloadIns, _attrs: attrs } as never,
+        );
         if (error) throw new Error(error.message);
-
-        // ===== Persistir dados técnicos opcionais em product_attributes =====
-        // (v1.0.2) Best-effort: falha não interrompe a importação do produto.
-        if (created?.id) {
-          const attrs = Object.entries(row.tech ?? {})
-            .filter(([k]) => k !== "marca" && k !== "peso_kg" && k !== "ncm")
-            .map(([k, v], i) => {
-              const def = TECH_FIELDS.find((f) => f.key === k);
-              if (!def) return null;
-              const cleanValue = stripUnitSuffix(v, def.unit).slice(0, 500);
-              return {
-                product_id: created.id,
-                attribute_key: k,
-                attribute_label: def.label,
-                attribute_value: cleanValue,
-                attribute_unit: def.unit ?? null,
-                sort_order: i,
-                is_visible: true,
-              };
-            })
-            .filter((x): x is NonNullable<typeof x> => x !== null);
-          if (attrs.length) {
-            const { error: attrErr } = await supabaseAdmin
-              .from("product_attributes")
-              .insert(attrs);
-            if (attrErr) {
-              console.error("tech attributes insert error", attrErr);
-            }
-          }
-        }
-
+        const createdId = (rpcRes as { product_id?: string } | null)?.product_id;
         log.push({
           rowIndex: row.rowIndex,
           sku: row.sku,
           result: "created",
-          productId: created?.id,
+          productId: createdId,
         });
-
-
       } catch (e) {
         log.push({
           rowIndex: row.rowIndex,
