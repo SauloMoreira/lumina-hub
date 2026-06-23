@@ -262,6 +262,7 @@ export const parseImportSheet = createServerFn({ method: "POST" })
     const json = XLSX.utils.sheet_to_json<Record<string, unknown>>(sheet, {
       defval: "",
       raw: false,
+      blankrows: false,
     });
 
     // Verifica cabeçalhos essenciais
