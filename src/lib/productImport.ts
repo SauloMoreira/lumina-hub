@@ -24,6 +24,14 @@ export type ImportRow = {
   aprovado_importar: boolean;
   observacoes_usuario: string;
 
+  // Campos estruturados de produto (v1.0.4)
+  // SEMPRE tratados como texto. Vazio vira null no payload.
+  gtin_ean: string;       // mapeado de ean_gtin (e codigo_barras fundido)
+  codigo_barras: string;  // sinônimo da planilha; fundido em gtin_ean no commit
+  ncm: string;            // CHECK ^[0-9]{8}$ no banco
+  cest: string;           // CHECK ^[0-9]{7}$ no banco
+  cfop_default: string;   // CHECK ^[0-9]{4}$ no banco
+
   // Campos preenchidos pela IA
   slug_sugerido: string | null;
   descricao_curta: string | null;
@@ -231,3 +239,93 @@ export function countRows(rows: ImportRow[]): ImportCounts {
   }
   return c;
 }
+
+// ===================== v1.0.4 helpers (texto puro / segurança) =====================
+
+/** Converte string vazia/whitespace em null. Preserva o resto. Para colunas com CHECK. */
+export function nullIfEmpty(v: string | null | undefined): string | null {
+  if (v === null || v === undefined) return null;
+  const t = String(v).trim();
+  return t === "" ? null : t;
+}
+
+/** Detecta notação científica residual (ex.: "7,89123E+12", "1.2e+10"). */
+export function isScientificNotation(v: string): boolean {
+  return /^-?\d+(?:[.,]\d+)?[eE][+-]?\d+$/.test(v.trim());
+}
+
+/**
+ * Sanitiza célula antes de exportar XLSX: prefixa apóstrofo se começar
+ * com =, +, -, @, =-, +- etc. (CSV/XLSX formula injection guard).
+ * USAR SOMENTE NA EXPORTAÇÃO. Não usar em valores persistidos.
+ */
+export function safeCell<T>(v: T): T | string {
+  if (typeof v !== "string") return v;
+  const t = v;
+  if (t.length === 0) return t;
+  const c = t.charCodeAt(0);
+  // 0x3D '=' 0x2B '+' 0x2D '-' 0x40 '@' 0x09 tab 0x0D CR
+  if (c === 0x3d || c === 0x2b || c === 0x2d || c === 0x40 || c === 0x09 || c === 0x0d) {
+    return "'" + t;
+  }
+  return t;
+}
+
+/** Valida estrutura de NCM (8 dígitos). Aceita "8539.50.00" ou "85395000". */
+export function validateNcmFormat(v: string): { ok: boolean; normalized: string | null; error?: string } {
+  const t = v.trim();
+  if (!t) return { ok: true, normalized: null };
+  if (isScientificNotation(t)) {
+    return { ok: false, normalized: null, error: "NCM em notação científica. Formate a coluna como Texto e digite novamente." };
+  }
+  const digits = t.replace(/\D/g, "");
+  if (digits.length !== 8) {
+    return { ok: false, normalized: null, error: `NCM deve ter 8 dígitos (formato válido). Recebido: "${t}".` };
+  }
+  return { ok: true, normalized: digits };
+}
+
+/** Valida estrutura de CEST (7 dígitos). */
+export function validateCestFormat(v: string): { ok: boolean; normalized: string | null; error?: string } {
+  const t = v.trim();
+  if (!t) return { ok: true, normalized: null };
+  if (isScientificNotation(t)) {
+    return { ok: false, normalized: null, error: "CEST em notação científica. Formate a coluna como Texto." };
+  }
+  const digits = t.replace(/\D/g, "");
+  if (digits.length !== 7) {
+    return { ok: false, normalized: null, error: `CEST deve ter 7 dígitos (formato válido). Recebido: "${t}".` };
+  }
+  return { ok: true, normalized: digits };
+}
+
+/** Valida estrutura de CFOP (4 dígitos). */
+export function validateCfopFormat(v: string): { ok: boolean; normalized: string | null; error?: string } {
+  const t = v.trim();
+  if (!t) return { ok: true, normalized: null };
+  if (isScientificNotation(t)) {
+    return { ok: false, normalized: null, error: "CFOP em notação científica. Formate a coluna como Texto." };
+  }
+  const digits = t.replace(/\D/g, "");
+  if (digits.length !== 4) {
+    return { ok: false, normalized: null, error: `CFOP deve ter 4 dígitos (formato válido). Recebido: "${t}".` };
+  }
+  return { ok: true, normalized: digits };
+}
+
+/** Conjunto de chaves de cabeçalho normalizadas consideradas "colunas-código" críticas. */
+export const CODE_COLUMN_KEYS = new Set<string>([
+  "sku",
+  "ean_gtin",
+  "gtin_ean",
+  "gtin",
+  "ean",
+  "codigo_barras",
+  "ncm",
+  "cest",
+  "cfop_default",
+  "cfop",
+  "codigo_fornecedor",
+  "modelo",
+]);
+

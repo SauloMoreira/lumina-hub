@@ -3709,6 +3709,10 @@ export type Database = {
         Returns: string
       }
       get_user_company_id: { Args: { _user_id: string }; Returns: string }
+      import_product_with_attrs: {
+        Args: { _attrs: Json; _mode: string; _payload: Json }
+        Returns: Json
+      }
       increment_coupon_usage: { Args: { _code: string }; Returns: undefined }
       is_admin: { Args: { _user_id: string }; Returns: boolean }
       log_admin_action: {

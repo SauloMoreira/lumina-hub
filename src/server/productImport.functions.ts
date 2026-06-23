@@ -4,16 +4,23 @@ import * as XLSX from "xlsx";
 import { requireAdmin } from "@/integrations/supabase/admin-middleware";
 import { logAdminAction } from "@/server/security/auditLog";
 import {
+  CODE_COLUMN_KEYS,
   countRows,
+  isScientificNotation,
+  nullIfEmpty,
   parseAction,
   parseBoolPtBr,
   parseInteger,
   parsePrice,
   parseTags,
+  safeCell,
   sanitizeTechValue,
   slugify,
   TECH_FIELDS,
   TECH_FIELD_KEYS,
+  validateCestFormat,
+  validateCfopFormat,
+  validateNcmFormat,
   validateTechValue,
   type ImportConfidence,
   type ImportRow,
@@ -78,6 +85,18 @@ const HEADER_MAP: Record<string, keyof RawRow> = {
   observações_usuario: "obs_user",
   observacoes: "obs_user",
   observações: "obs_user",
+  // v1.0.4 — colunas-código (todas viram texto puro)
+  ean_gtin: "gtin_ean",
+  gtin_ean: "gtin_ean",
+  ean: "gtin_ean",
+  gtin: "gtin_ean",
+  codigo_barras: "codigo_barras",
+  código_de_barras: "codigo_barras",
+  codigo_de_barras: "codigo_barras",
+  ncm: "ncm",
+  cest: "cest",
+  cfop_default: "cfop_default",
+  cfop: "cfop_default",
 };
 
 type RawRow = {
@@ -93,6 +112,11 @@ type RawRow = {
   revisado: unknown;
   aprovado: unknown;
   obs_user: unknown;
+  gtin_ean: unknown;
+  codigo_barras: unknown;
+  ncm: unknown;
+  cest: unknown;
+  cfop_default: unknown;
 };
 
 // ===================== Schemas =====================
@@ -110,6 +134,11 @@ const ImportRowSchema = z.object({
   revisado_humano: z.boolean(),
   aprovado_importar: z.boolean(),
   observacoes_usuario: z.string(),
+  gtin_ean: z.string().default(""),
+  codigo_barras: z.string().default(""),
+  ncm: z.string().default(""),
+  cest: z.string().default(""),
+  cfop_default: z.string().default(""),
   slug_sugerido: z.string().nullable(),
   descricao_curta: z.string().nullable(),
   descricao_longa: z.string().nullable(),
@@ -147,6 +176,11 @@ function emptyRow(rowIndex: number): ImportRow {
     revisado_humano: false,
     aprovado_importar: false,
     observacoes_usuario: "",
+    gtin_ean: "",
+    codigo_barras: "",
+    ncm: "",
+    cest: "",
+    cfop_default: "",
     slug_sugerido: null,
     descricao_curta: null,
     descricao_longa: null,
@@ -186,7 +220,8 @@ export const parseImportSheet = createServerFn({ method: "POST" })
       })
       .parse(raw),
   )
-  .handler(async ({ data }) => {
+  .handler(async ({ data, context }) => {
+    const adminUserId = (context as { adminUserId: string }).adminUserId;
     // Decodifica base64
     const cleaned = data.fileBase64.replace(/^data:[^;]+;base64,/, "");
     let bytes: Uint8Array;
@@ -249,9 +284,49 @@ export const parseImportSheet = createServerFn({ method: "POST" })
       };
     }
 
+    // v1.0.4 — Detector de células numéricas em COLUNAS-CÓDIGO
+    // Constrói map: colunaLetra -> normHeader, e marca por linha quais
+    // cabeçalhos críticos vieram como tipo 'n' (numérico) no XLSX.
+    const codeCellErrorsByRow = new Map<number, string[]>();
+    try {
+      const ref = sheet["!ref"];
+      if (ref) {
+        const range = XLSX.utils.decode_range(ref);
+        const colToHeader = new Map<number, string>();
+        for (let c = range.s.c; c <= range.e.c; c++) {
+          const addr = XLSX.utils.encode_cell({ r: range.s.r, c });
+          const raw = sheet[addr]?.v;
+          if (raw == null) continue;
+          const norm = normalizeHeader(String(raw));
+          if (CODE_COLUMN_KEYS.has(norm)) colToHeader.set(c, norm);
+        }
+        for (let r = range.s.r + 1; r <= range.e.r; r++) {
+          const rowIdx = r - range.s.r + 1; // alinhado com idx+2 abaixo
+          for (const [c, header] of colToHeader) {
+            const addr = XLSX.utils.encode_cell({ r, c });
+            const cell = sheet[addr];
+            if (cell && cell.t === "n") {
+              const list = codeCellErrorsByRow.get(rowIdx) ?? [];
+              list.push(
+                `Coluna "${header}" veio como NÚMERO no Excel. Formate como TEXTO e digite novamente para preservar zeros/precisão.`,
+              );
+              codeCellErrorsByRow.set(rowIdx, list);
+            }
+          }
+        }
+      }
+    } catch (e) {
+      console.warn("[importacao] type-scan falhou (ignora):", e);
+    }
+
     const rows: ImportRow[] = [];
     json.forEach((rawObj, idx) => {
       const row = emptyRow(idx + 2); // +2 = 1 do cabeçalho + 1 base
+
+      // Aplica erros pré-detectados de tipo numérico em colunas-código
+      const pre = codeCellErrorsByRow.get(idx + 2);
+      if (pre && pre.length) row.errors.push(...pre);
+
       for (const [k, v] of Object.entries(rawObj)) {
         const norm = normalizeHeader(k);
         const key = HEADER_MAP[norm];
@@ -290,6 +365,21 @@ export const parseImportSheet = createServerFn({ method: "POST" })
             case "obs_user":
               row.observacoes_usuario = String(v ?? "").trim();
               break;
+            case "gtin_ean":
+              row.gtin_ean = String(v ?? "").trim();
+              break;
+            case "codigo_barras":
+              row.codigo_barras = String(v ?? "").trim();
+              break;
+            case "ncm":
+              row.ncm = String(v ?? "").trim();
+              break;
+            case "cest":
+              row.cest = String(v ?? "").trim();
+              break;
+            case "cfop_default":
+              row.cfop_default = String(v ?? "").trim();
+              break;
           }
           continue;
         }
@@ -301,11 +391,34 @@ export const parseImportSheet = createServerFn({ method: "POST" })
       }
 
       // ignora linhas totalmente vazias
-      if (!row.sku && !row.nome_produto && !row.categoria && row.preco_venda === null && row.preco_custo === null) {
+      if (
+        !row.sku &&
+        !row.nome_produto &&
+        !row.categoria &&
+        row.preco_venda === null &&
+        row.preco_custo === null
+      ) {
         return;
       }
       rows.push(row);
     });
+    const blocked = rows.filter((r) => r.errors.length > 0).length;
+    await logAdminAction({
+      adminId: adminUserId,
+      action: "product_import.parse",
+      resourceType: "products",
+      description: `Parse de planilha "${data.fileName}": ${rows.length} linhas, ${blocked} com pré-erros.`,
+      after: { total: rows.length, blocked, fileName: data.fileName, version: "v1.0.4" },
+    });
+    if (blocked > 0) {
+      await logAdminAction({
+        adminId: adminUserId,
+        action: "product_import.blocked",
+        resourceType: "products",
+        description: `${blocked} linha(s) bloqueada(s) no parse (notação científica / tipo numérico em coluna-código).`,
+        after: { blocked, fileName: data.fileName, version: "v1.0.4" },
+      });
+    }
 
     return { ok: true as const, rows, sheetName };
   });
@@ -343,9 +456,14 @@ export const validateImportRows = createServerFn({ method: "POST" })
     }
 
     const categoryByKey = new Map<string, { id: string; name: string; slug: string }>();
+    const categoryKeyCount = new Map<string, number>();
     for (const c of existingCategories ?? []) {
-      categoryByKey.set(c.slug.toLowerCase(), c);
-      categoryByKey.set(c.name.toLowerCase(), c);
+      const slugKey = c.slug.toLowerCase();
+      const nameKey = c.name.toLowerCase();
+      categoryByKey.set(slugKey, c);
+      categoryByKey.set(nameKey, c);
+      categoryKeyCount.set(slugKey, (categoryKeyCount.get(slugKey) ?? 0) + 1);
+      categoryKeyCount.set(nameKey, (categoryKeyCount.get(nameKey) ?? 0) + 1);
     }
 
     // Dedup SKU na planilha
@@ -391,15 +509,22 @@ export const validateImportRows = createServerFn({ method: "POST" })
       if (!categoriaRaw) {
         errors.push("Categoria obrigatória.");
       } else {
-        const cat =
-          categoryByKey.get(categoriaRaw.toLowerCase()) ||
-          categoryByKey.get(slugify(categoriaRaw));
-        if (cat) {
-          matchedCategoryId = cat.id;
-        } else {
+        const lkLower = categoriaRaw.toLowerCase();
+        const lkSlug = slugify(categoriaRaw);
+        const cat = categoryByKey.get(lkLower) || categoryByKey.get(lkSlug);
+        const ambiguous =
+          (categoryKeyCount.get(lkLower) ?? 0) > 1 ||
+          (categoryKeyCount.get(lkSlug) ?? 0) > 1;
+        if (!cat) {
           errors.push(
             `Categoria "${categoriaRaw}" não encontrada. Crie a categoria antes de importar.`,
           );
+        } else if (ambiguous) {
+          errors.push(
+            `Categoria "${categoriaRaw}" é ambígua (mais de uma categoria com mesmo nome/slug). Selecione a categoria correta antes de importar.`,
+          );
+        } else {
+          matchedCategoryId = cat.id;
         }
       }
 
@@ -467,6 +592,66 @@ export const validateImportRows = createServerFn({ method: "POST" })
         techClean[k] = sanitized;
       }
 
+      // ===== v1.0.4 — Colunas-código como texto =====
+      // 1) Bloqueio de notação científica no SKU.
+      if (sku && isScientificNotation(sku)) {
+        errors.push(
+          `SKU em notação científica ("${sku}"). Reabra a planilha, formate a coluna como Texto e digite o código novamente.`,
+        );
+      }
+
+      // 2) Merge codigo_barras + gtin_ean (sem coluna própria no banco).
+      const eanIn = (r.gtin_ean ?? "").trim();
+      const cbIn = (r.codigo_barras ?? "").trim();
+      let gtinFinal = "";
+      if (eanIn && cbIn) {
+        if (eanIn !== cbIn) {
+          errors.push(
+            "EAN/GTIN e código de barras estão divergentes. Corrija antes de importar.",
+          );
+        } else {
+          gtinFinal = eanIn;
+        }
+      } else {
+        gtinFinal = eanIn || cbIn;
+      }
+      if (gtinFinal && isScientificNotation(gtinFinal)) {
+        errors.push(
+          "EAN/GTIN em notação científica. Reabra a planilha, formate a coluna como Texto e digite novamente.",
+        );
+        gtinFinal = "";
+      }
+
+      // 3) NCM / CEST / CFOP — validação estrutural apenas (formato válido).
+      let ncmFinal = "";
+      if (r.ncm) {
+        const v = validateNcmFormat(r.ncm);
+        if (!v.ok) errors.push(v.error ?? "NCM inválido.");
+        else if (v.normalized) ncmFinal = v.normalized;
+      }
+      let cestFinal = "";
+      if (r.cest) {
+        const v = validateCestFormat(r.cest);
+        if (!v.ok) errors.push(v.error ?? "CEST inválido.");
+        else if (v.normalized) cestFinal = v.normalized;
+      }
+      let cfopFinal = "";
+      if (r.cfop_default) {
+        const v = validateCfopFormat(r.cfop_default);
+        if (!v.ok) errors.push(v.error ?? "CFOP inválido.");
+        else if (v.normalized) cfopFinal = v.normalized;
+      }
+
+      // 4) Atributos técnicos com texto sensível à notação científica
+      for (const codeKey of ["codigo_fornecedor", "modelo"] as const) {
+        const val = techClean[codeKey];
+        if (val && isScientificNotation(val)) {
+          errors.push(
+            `Atributo "${codeKey}" em notação científica. Formate a coluna como Texto.`,
+          );
+          delete techClean[codeKey];
+        }
+      }
 
       let status: ImportStatus;
       if (errors.length > 0) {
@@ -486,6 +671,11 @@ export const validateImportRows = createServerFn({ method: "POST" })
         matched_product_id: matchedProductId,
         matched_category_id: matchedCategoryId,
         tech: techClean,
+        gtin_ean: gtinFinal,
+        codigo_barras: cbIn, // mantém o original na revisão; persistência usa gtin_ean
+        ncm: ncmFinal,
+        cest: cestFinal,
+        cfop_default: cfopFinal,
       };
     });
 
@@ -704,7 +894,8 @@ type SimAction = "create" | "update" | "skip" | "error";
 export const simulateImport = createServerFn({ method: "POST" })
   .middleware([requireAdmin])
   .inputValidator((raw: unknown) => RowsInput.parse(raw))
-  .handler(async ({ data }) => {
+  .handler(async ({ data, context }) => {
+    const adminUserId = (context as { adminUserId: string }).adminUserId;
     const plan = data.rows.map((r) => {
       let simAction: SimAction = "skip";
       const reasons: string[] = [];
@@ -746,6 +937,14 @@ export const simulateImport = createServerFn({ method: "POST" })
       toSkip: plan.filter((p) => p.simAction === "skip").length,
       errors: plan.filter((p) => p.simAction === "error").length,
     };
+
+    await logAdminAction({
+      adminId: adminUserId,
+      action: "product_import.simulate",
+      resourceType: "products",
+      description: `Simulação: ${summary.toCreate} criar, ${summary.toUpdate} atualizar, ${summary.toSkip} ignorar, ${summary.errors} erro.`,
+      after: { ...summary, version: "v1.0.4" },
+    });
 
     return { ok: true as const, plan, summary };
   });
@@ -822,72 +1021,88 @@ export const commitImport = createServerFn({ method: "POST" })
           continue;
         }
 
+        // v1.0.4 — Revalidação server-side defensiva dos campos-código.
+        if (row.sku && isScientificNotation(row.sku)) {
+          log.push({ rowIndex: row.rowIndex, sku: row.sku, result: "error", message: "SKU em notação científica." });
+          continue;
+        }
+        if (row.ncm) {
+          const v = validateNcmFormat(row.ncm);
+          if (!v.ok) { log.push({ rowIndex: row.rowIndex, sku: row.sku, result: "error", message: v.error ?? "NCM inválido." }); continue; }
+        }
+        if (row.cest) {
+          const v = validateCestFormat(row.cest);
+          if (!v.ok) { log.push({ rowIndex: row.rowIndex, sku: row.sku, result: "error", message: v.error ?? "CEST inválido." }); continue; }
+        }
+        if (row.cfop_default) {
+          const v = validateCfopFormat(row.cfop_default);
+          if (!v.ok) { log.push({ rowIndex: row.rowIndex, sku: row.sku, result: "error", message: v.error ?? "CFOP inválido." }); continue; }
+        }
+
         const dbId = dbSkuMap.get(row.sku.trim()) ?? null;
+
+        // Whitelist de atributos técnicos (texto puro) — exclui marca/peso/ncm
+        // que vão direto no produto e podem repetir keys.
+        const attrs = Object.entries(row.tech ?? {})
+          .filter(([k]) => k !== "marca" && k !== "peso_kg" && k !== "ncm")
+          .map(([k, v], i) => {
+            const def = TECH_FIELDS.find((f) => f.key === k);
+            if (!def) return null;
+            const cleanValue = stripUnitSuffix(String(v ?? ""), def.unit).slice(0, 500);
+            if (!cleanValue) return null;
+            return {
+              attribute_key: k,
+              attribute_label: def.label,
+              attribute_value: cleanValue,
+              attribute_unit: def.unit ?? null,
+              sort_order: i,
+              is_visible: true,
+            };
+          })
+          .filter((x): x is NonNullable<typeof x> => x !== null);
+
+        // Peso técnico → weight_kg
+        let weightKg: number | null = null;
+        if (row.tech?.peso_kg) {
+          const w = Number(String(row.tech.peso_kg).replace(",", "."));
+          if (Number.isFinite(w) && w >= 0) weightKg = w;
+        }
+        const brand = row.tech?.marca ? String(row.tech.marca).slice(0, 120) : null;
 
         if (row.action === "atualizar") {
           if (!dbId) {
-            log.push({
-              rowIndex: row.rowIndex,
-              sku: row.sku,
-              result: "error",
-              message: "SKU não existe para atualizar.",
-            });
+            log.push({ rowIndex: row.rowIndex, sku: row.sku, result: "error", message: "SKU não existe para atualizar." });
             continue;
           }
-          // Atualização NÃO sobrescreve estoque por padrão (regra de segurança).
-          const update: {
-            name: string;
-            category_id: string | null;
-            price: number;
-            cost_price?: number;
-            updated_at: string;
-            description?: string;
-            tags?: string[];
-            seo_title?: string;
-            seo_description?: string;
-            active?: boolean;
-            brand?: string;
-            weight_kg?: number;
-            ncm?: string;
-
-          } = {
-
+          const payloadUpd: Record<string, unknown> = {
+            id: dbId,
             name: row.nome_produto,
             category_id: row.matched_category_id,
             price: row.preco_venda,
-            updated_at: new Date().toISOString(),
+            cost_price:
+              row.preco_custo !== null && row.preco_custo >= 0
+                ? String(row.preco_custo)
+                : "",
+            gtin_ean: nullIfEmpty(row.gtin_ean) ?? "",
+            ncm: nullIfEmpty(row.ncm) ?? "",
+            cest: nullIfEmpty(row.cest) ?? "",
+            cfop_default: nullIfEmpty(row.cfop_default) ?? "",
           };
-          if (row.preco_custo !== null && row.preco_custo >= 0) {
-            update.cost_price = row.preco_custo;
-          }
-          if (row.descricao_longa) update.description = row.descricao_longa;
-          if (row.tags.length) update.tags = row.tags;
-          if (row.titulo_seo) update.seo_title = row.titulo_seo;
-          if (row.meta_description) update.seo_description = row.meta_description;
-          if (row.ativo && row.warnings.length === 0) update.active = true;
-          if (row.tech?.marca) update.brand = row.tech.marca.slice(0, 120);
-          if (row.tech?.peso_kg) {
-            const w = Number(row.tech.peso_kg.replace(",", "."));
-            if (Number.isFinite(w) && w >= 0) update.weight_kg = w;
-          }
-          if (row.tech?.ncm) {
-            const digits = row.tech.ncm.replace(/\D/g, "").slice(0, 8);
-            if (digits.length === 8) update.ncm = digits;
-          }
+          if (row.descricao_longa) payloadUpd.description = row.descricao_longa;
+          if (row.tags.length) payloadUpd.tags = row.tags;
+          if (row.titulo_seo) payloadUpd.seo_title = row.titulo_seo;
+          if (row.meta_description) payloadUpd.seo_description = row.meta_description;
+          if (row.ativo && row.warnings.length === 0) payloadUpd.active = true;
+          if (brand) payloadUpd.brand = brand;
+          if (weightKg !== null) payloadUpd.weight_kg = String(weightKg);
 
-
-
-          const { error } = await supabaseAdmin
-            .from("products")
-            .update(update)
-            .eq("id", dbId);
+          const { error } = await supabaseAdmin.rpc("import_product_with_attrs" as never, {
+            _mode: "update",
+            _payload: payloadUpd,
+            _attrs: attrs,
+          } as never);
           if (error) throw new Error(error.message);
-          log.push({
-            rowIndex: row.rowIndex,
-            sku: row.sku,
-            result: "updated",
-            productId: dbId,
-          });
+          log.push({ rowIndex: row.rowIndex, sku: row.sku, result: "updated", productId: dbId });
           continue;
         }
 
@@ -911,7 +1126,6 @@ export const commitImport = createServerFn({ method: "POST" })
           attempt += 1;
           candidate = `${baseSlug}-${attempt}`;
         }
-        // Confere no banco também
         const { data: slugHit } = await supabaseAdmin
           .from("products")
           .select("id")
@@ -922,93 +1136,42 @@ export const commitImport = createServerFn({ method: "POST" })
         }
         slugCheckCache.add(candidate);
 
-        const insert: {
-          sku: string;
-          name: string;
-          slug: string;
-          category_id: string | null;
-          price: number;
-          cost_price: number | null;
-          stock_qty: number;
-          active: boolean;
-          description: string | null;
-          tags: string[] | null;
-          seo_title: string | null;
-          seo_description: string | null;
-          brand?: string;
-          weight_kg?: number;
-          ncm?: string;
-        } = {
+        const payloadIns: Record<string, unknown> = {
           sku: row.sku,
           name: row.nome_produto,
           slug: candidate,
           category_id: row.matched_category_id,
-          price: row.preco_venda,
+          price: String(row.preco_venda),
           cost_price:
-            row.preco_custo !== null && row.preco_custo >= 0 ? row.preco_custo : null,
-          stock_qty: row.estoque_inicial ?? 0,
+            row.preco_custo !== null && row.preco_custo >= 0
+              ? String(row.preco_custo)
+              : "",
+          stock_qty: String(row.estoque_inicial ?? 0),
           active: row.ativo && row.warnings.length === 0,
-          description: row.descricao_longa ?? null,
-          tags: row.tags.length ? row.tags : null,
-          seo_title: row.titulo_seo ?? null,
-          seo_description: row.meta_description ?? null,
+          description: row.descricao_longa ?? "",
+          tags: row.tags.length ? row.tags : [],
+          seo_title: row.titulo_seo ?? "",
+          seo_description: row.meta_description ?? "",
+          brand: brand ?? "",
+          gtin_ean: nullIfEmpty(row.gtin_ean) ?? "",
+          ncm: nullIfEmpty(row.ncm) ?? "",
+          cest: nullIfEmpty(row.cest) ?? "",
+          cfop_default: nullIfEmpty(row.cfop_default) ?? "",
+          weight_kg: weightKg !== null ? String(weightKg) : "",
         };
-        if (row.tech?.marca) insert.brand = row.tech.marca.slice(0, 120);
-        if (row.tech?.peso_kg) {
-          const w = Number(row.tech.peso_kg.replace(",", "."));
-          if (Number.isFinite(w) && w >= 0) insert.weight_kg = w;
-        }
-        if (row.tech?.ncm) {
-          const digits = row.tech.ncm.replace(/\D/g, "").slice(0, 8);
-          if (digits.length === 8) insert.ncm = digits;
-        }
 
-
-        const { data: created, error } = await supabaseAdmin
-          .from("products")
-          .insert(insert)
-          .select("id")
-          .single();
+        const { data: rpcRes, error } = await supabaseAdmin.rpc(
+          "import_product_with_attrs" as never,
+          { _mode: "create", _payload: payloadIns, _attrs: attrs } as never,
+        );
         if (error) throw new Error(error.message);
-
-        // ===== Persistir dados técnicos opcionais em product_attributes =====
-        // (v1.0.2) Best-effort: falha não interrompe a importação do produto.
-        if (created?.id) {
-          const attrs = Object.entries(row.tech ?? {})
-            .filter(([k]) => k !== "marca" && k !== "peso_kg" && k !== "ncm")
-            .map(([k, v], i) => {
-              const def = TECH_FIELDS.find((f) => f.key === k);
-              if (!def) return null;
-              const cleanValue = stripUnitSuffix(v, def.unit).slice(0, 500);
-              return {
-                product_id: created.id,
-                attribute_key: k,
-                attribute_label: def.label,
-                attribute_value: cleanValue,
-                attribute_unit: def.unit ?? null,
-                sort_order: i,
-                is_visible: true,
-              };
-            })
-            .filter((x): x is NonNullable<typeof x> => x !== null);
-          if (attrs.length) {
-            const { error: attrErr } = await supabaseAdmin
-              .from("product_attributes")
-              .insert(attrs);
-            if (attrErr) {
-              console.error("tech attributes insert error", attrErr);
-            }
-          }
-        }
-
+        const createdId = (rpcRes as { product_id?: string } | null)?.product_id;
         log.push({
           rowIndex: row.rowIndex,
           sku: row.sku,
           result: "created",
-          productId: created?.id,
+          productId: createdId,
         });
-
-
       } catch (e) {
         log.push({
           rowIndex: row.rowIndex,
@@ -1046,8 +1209,9 @@ export const commitImport = createServerFn({ method: "POST" })
 export const downloadRevisedSheet = createServerFn({ method: "POST" })
   .middleware([requireAdmin])
   .inputValidator((raw: unknown) => RowsInput.parse(raw))
-  .handler(async ({ data }) => {
+  .handler(async ({ data, context }) => {
     const techKeys = TECH_FIELD_KEYS;
+    const adminUserId = (context as { adminUserId: string }).adminUserId;
     const aoa: Array<Array<string | number | null>> = [];
     aoa.push([
       "rowIndex",
@@ -1062,6 +1226,11 @@ export const downloadRevisedSheet = createServerFn({ method: "POST" })
       "ativo",
       "revisado_humano",
       "aprovado_importar",
+      "ean_gtin",
+      "codigo_barras",
+      "ncm",
+      "cest",
+      "cfop_default",
       "slug_sugerido",
       "descricao_curta",
       "descricao_longa",
@@ -1074,31 +1243,37 @@ export const downloadRevisedSheet = createServerFn({ method: "POST" })
       "erros",
       "avisos",
     ]);
+    // safeCell aplicado SOMENTE na geração do XLSX (evita fórmula no Excel).
     for (const r of data.rows) {
       aoa.push([
         r.rowIndex,
-        r.status,
-        r.action,
-        r.sku,
-        r.nome_produto,
-        r.categoria,
+        safeCell(r.status) as string,
+        safeCell(r.action) as string,
+        safeCell(r.sku) as string,
+        safeCell(r.nome_produto) as string,
+        safeCell(r.categoria) as string,
         r.preco_custo,
         r.preco_venda,
         r.estoque_inicial,
         r.ativo ? "sim" : "não",
         r.revisado_humano ? "sim" : "não",
         r.aprovado_importar ? "sim" : "não",
-        r.slug_sugerido,
-        r.descricao_curta,
-        r.descricao_longa,
-        r.tags.join(", "),
-        r.titulo_seo,
-        r.meta_description,
-        r.nivel_confianca_ia,
-        r.observacoes_ia,
-        ...techKeys.map((k) => (r.tech?.[k] ?? null)),
-        r.errors.join(" | "),
-        r.warnings.join(" | "),
+        safeCell(r.gtin_ean) as string,
+        safeCell(r.codigo_barras) as string,
+        safeCell(r.ncm) as string,
+        safeCell(r.cest) as string,
+        safeCell(r.cfop_default) as string,
+        safeCell(r.slug_sugerido ?? "") as string,
+        safeCell(r.descricao_curta ?? "") as string,
+        safeCell(r.descricao_longa ?? "") as string,
+        safeCell(r.tags.join(", ")) as string,
+        safeCell(r.titulo_seo ?? "") as string,
+        safeCell(r.meta_description ?? "") as string,
+        safeCell(r.nivel_confianca_ia ?? "") as string,
+        safeCell(r.observacoes_ia ?? "") as string,
+        ...techKeys.map((k) => safeCell(r.tech?.[k] ?? "") as string),
+        safeCell(r.errors.join(" | ")) as string,
+        safeCell(r.warnings.join(" | ")) as string,
       ]);
     }
     const ws = XLSX.utils.aoa_to_sheet(aoa);
@@ -1106,6 +1281,16 @@ export const downloadRevisedSheet = createServerFn({ method: "POST" })
     XLSX.utils.book_append_sheet(wb, ws, "PRODUTOS_REVISADO");
     const buf = XLSX.write(wb, { type: "buffer", bookType: "xlsx" }) as Buffer;
     const base64 = Buffer.from(buf).toString("base64");
+
+    await logAdminAction({
+      adminId: adminUserId,
+      action: "product_import.export_revised",
+      resourceType: "products",
+      description: `Exportação de planilha revisada (${data.rows.length} linhas).`,
+      after: { total: data.rows.length, version: "v1.0.4" },
+    });
+
     return { ok: true as const, fileBase64: base64, fileName: "produtos_revisado.xlsx" };
   });
+
 

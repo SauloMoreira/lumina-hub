@@ -865,6 +865,111 @@ function EditRowDialog({
           </fieldset>
 
           <fieldset className="space-y-3">
+            <legend className="font-semibold text-sm mb-1">
+              Identificadores fiscais e códigos (texto)
+            </legend>
+            <p className="text-[11px] text-muted-foreground">
+              Todos os campos são tratados como TEXTO. Preserve zeros à esquerda e nunca
+              digite em notação científica. Vazio = não enviado.
+            </p>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              <div>
+                <Label>EAN / GTIN</Label>
+                <Input
+                  type="text"
+                  inputMode="numeric"
+                  autoComplete="off"
+                  value={row.gtin_ean}
+                  onChange={(e) => set("gtin_ean", e.target.value)}
+                  placeholder="Ex.: 7891234567890"
+                />
+              </div>
+              <div>
+                <Label>Código de barras</Label>
+                <Input
+                  type="text"
+                  inputMode="numeric"
+                  autoComplete="off"
+                  value={row.codigo_barras}
+                  onChange={(e) => set("codigo_barras", e.target.value)}
+                  placeholder="Mesmo que EAN/GTIN (será fundido)"
+                />
+              </div>
+              <div>
+                <Label>NCM (8 dígitos)</Label>
+                <Input
+                  type="text"
+                  inputMode="numeric"
+                  autoComplete="off"
+                  value={row.ncm}
+                  onChange={(e) => set("ncm", e.target.value)}
+                  placeholder="Ex.: 8539.50.00 ou 85395000"
+                />
+              </div>
+              <div>
+                <Label>CEST (7 dígitos)</Label>
+                <Input
+                  type="text"
+                  inputMode="numeric"
+                  autoComplete="off"
+                  value={row.cest}
+                  onChange={(e) => set("cest", e.target.value)}
+                  placeholder="Opcional"
+                />
+              </div>
+              <div>
+                <Label>CFOP padrão (4 dígitos)</Label>
+                <Input
+                  type="text"
+                  inputMode="numeric"
+                  autoComplete="off"
+                  value={row.cfop_default}
+                  onChange={(e) => set("cfop_default", e.target.value)}
+                  placeholder="Opcional"
+                />
+              </div>
+            </div>
+          </fieldset>
+
+          <fieldset className="space-y-3">
+            <legend className="font-semibold text-sm mb-1">
+              Atributos técnicos (texto)
+            </legend>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              <div>
+                <Label>Marca</Label>
+                <Input
+                  type="text"
+                  value={row.tech?.marca ?? ""}
+                  onChange={(e) => set("tech", { ...(row.tech ?? {}), marca: e.target.value })}
+                />
+              </div>
+              <div>
+                <Label>Modelo</Label>
+                <Input
+                  type="text"
+                  value={row.tech?.modelo ?? ""}
+                  onChange={(e) => set("tech", { ...(row.tech ?? {}), modelo: e.target.value })}
+                />
+              </div>
+              <div>
+                <Label>Código do fornecedor</Label>
+                <Input
+                  type="text"
+                  inputMode="text"
+                  autoComplete="off"
+                  value={row.tech?.codigo_fornecedor ?? ""}
+                  onChange={(e) =>
+                    set("tech", { ...(row.tech ?? {}), codigo_fornecedor: e.target.value })
+                  }
+                  placeholder="Preserva zeros à esquerda"
+                />
+              </div>
+            </div>
+          </fieldset>
+
+
+          <fieldset className="space-y-3">
             <legend className="font-semibold text-sm mb-1">Comercial</legend>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
               <div>

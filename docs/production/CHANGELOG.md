@@ -8,6 +8,65 @@ e versionamento [SemVer](https://semver.org/lang/pt-BR/).
 
 ---
 
+## [1.0.5] — 2026-06-23
+
+**Tipo:** correção crítica (importação de produtos por planilha — códigos como texto)
+**ChangeControl:** CC-2026-009
+**Classificação:** Média (alterações em planilha modelo, parser de importação, RPC nova; sem impacto em checkout, MP, webhook, pedidos, estoque pós-venda, e-mails)
+
+> Numeração: planejada internamente como "v1.0.4 — códigos como texto", entregue
+> como v1.0.5 porque a v1.0.4 já estava ocupada (CC-2026-008, exclusão de produtos).
+
+### Corrigido
+- **SKU, EAN/GTIN, código de barras, NCM, CEST, CFOP, código do fornecedor, modelo e marca**
+  agora são tratados como TEXTO em todo o fluxo (planilha, parser, revisão, simulação,
+  commit, banco). Não há mais conversão numérica em colunas-código:
+  - Excel reabre a planilha modelo já com formato `@` (Texto) aplicado nas linhas 1–10000
+    das colunas críticas, impedindo a aparição de notação científica.
+  - O parser detecta células que chegaram com tipo `n` (numérico) em colunas-código e
+    bloqueia a linha com mensagem clara: "formate como TEXTO e digite novamente".
+  - Regex adicional bloqueia notação científica residual (`7,89123E+12`).
+  - Campos vazios com `CHECK` (NCM/CEST/CFOP/GTIN) são enviados como `null`, não string vazia.
+- **`codigo_barras` mapeado para `products.gtin_ean`** (sinônimo operacional). Se
+  `codigo_barras` e `ean_gtin` forem preenchidos e divergirem, a linha é bloqueada.
+- **Categoria ambígua** (mais de uma categoria com mesmo nome/slug) agora bloqueia a linha
+  até seleção humana.
+
+### Adicionado
+- **RPC atômica `public.import_product_with_attrs(_mode, _payload, _attrs)`**:
+  - `SECURITY DEFINER SET search_path = public, pg_temp`.
+  - `REVOKE EXECUTE FROM PUBLIC, anon`; `GRANT EXECUTE TO authenticated, service_role`.
+  - Checa `is_admin(auth.uid())` + `auth.jwt()->>'aal' = 'aal2'` quando chamada por usuário
+    autenticado direto (service_role bypass — servidor já valida admin+AAL2 na entrada).
+  - Whitelist de campos do payload (não aceita mudar pedidos, roles, permissões, estoque
+    pós-venda, payment_status, owner, etc.).
+  - Insere/atualiza `products` + `product_attributes` em uma única transação. Falha em
+    qualquer passo reverte a linha inteira; outras linhas seguem.
+- **Auditoria** com eventos `product_import.parse`, `product_import.simulate`,
+  `product_import.commit`, `product_import.blocked`, `product_import.export_revised`.
+- **Tela de revisão** (`/admin/produtos/importacao-ia`) ganhou inputs editáveis `type="text"`
+  para `ean_gtin`, `codigo_barras`, `ncm`, `cest`, `cfop_default`, `marca`, `modelo`,
+  `codigo_fornecedor`.
+- **`safeCell`** prefixa apóstrofo em strings que começam com `=`, `+`, `-`, `@` na
+  exportação XLSX revisada (proteção contra injeção de fórmula). Aplicado SOMENTE na
+  exportação — nunca em valores persistidos no banco.
+
+### Segurança
+- Validação NCM/CEST/CFOP é apenas **estrutural** (formato válido) — nunca "fiscalmente
+  correto". A correção fiscal continua sendo responsabilidade contábil/operacional.
+- Nenhuma alteração em checkout, Mercado Pago, webhook, pedidos, estoque pós-venda,
+  e-mails transacionais, CRM, GA4, DNS, MFA/AAL2 geral, RLS, policies ou permissões públicas.
+
+### Arquivos
+- `supabase/migrations/*_import_product_with_attrs.sql` (nova RPC)
+- `public/templates/Cadastro_Minimo_Produtos_Led_Marica_IA.xlsx` (regenerada)
+- `src/lib/productImport.ts` (tipos novos + helpers `nullIfEmpty`, `safeCell`, `isScientificNotation`, `validateNcmFormat`, `validateCestFormat`, `validateCfopFormat`, `CODE_COLUMN_KEYS`)
+- `src/server/productImport.functions.ts` (HEADER_MAP estendido, detecção numérica, merge `codigo_barras`↔`gtin_ean`, RPC no commit, audits, safeCell no export)
+- `src/routes/admin.produtos.importacao-ia.tsx` (fieldset de códigos + atributos)
+- `docs/production/CHANGE_CONTROL.md` (CC-2026-009 com rollback)
+
+---
+
 ## [1.0.4] — 2026-06-02
 
 **Tipo:** correção (exclusão de produtos com pedidos vinculados)
