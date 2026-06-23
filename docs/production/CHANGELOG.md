@@ -21,9 +21,9 @@ e versionamento [SemVer](https://semver.org/lang/pt-BR/).
 - **SKU, EAN/GTIN, código de barras, NCM, CEST, CFOP, código do fornecedor, modelo e marca**
   agora são tratados como TEXTO em todo o fluxo (planilha, parser, revisão, simulação,
   commit, banco). Não há mais conversão numérica em colunas-código:
-  - Excel reabre a planilha modelo com formato `@` (Texto) aplicado célula a célula nas
-    linhas 1–10000 das colunas críticas, inclusive células vazias, com `quotePrefix` e
-    tabela Excel `TabelaProdutosImportacao`, impedindo a aparição de notação científica.
+  - Excel reabre a planilha modelo com formato real de Texto (`numFmtId=49`) aplicado no
+    nível da coluna e nas células vazias das linhas 2–10000 das colunas críticas, com tabela
+    Excel `TabelaProdutosImportacao`, para impedir notação científica na digitação.
   - O parser detecta células que chegaram com tipo `n` (numérico) em colunas-código e
     bloqueia a linha com mensagem clara: "formate como TEXTO e digite novamente".
   - Regex adicional bloqueia notação científica residual (`7,89123E+12`).
@@ -87,8 +87,8 @@ e versionamento [SemVer](https://semver.org/lang/pt-BR/).
   `Cadastro_Minimo_Produtos_Led_Marica_IA_v1.0.5_Texto_ExcelSeguro.xlsx`, mantendo o nome
   de download amigável `Cadastro_Minimo_Produtos_Led_Marica_IA.xlsx`, para forçar o usuário
   a baixar o modelo corrigido sem reaproveitar cache antigo.
-- Validações de dados das colunas críticas permanecem com `errorStyle="stop"` e fórmula
-  `ISTEXT`, impedindo entrada numérica nessas colunas quando o Excel respeita a validação.
+- Este hotfix foi supersedido pelo hotfix corretivo abaixo, que remove a dependência de
+  validação/tooltip e regenera o XLSX oficial com formato Texto estrutural.
 
 ### Hotfix corretivo do XLSX oficial — 2026-06-23
 - Após reprovação manual adicional, o arquivo oficial

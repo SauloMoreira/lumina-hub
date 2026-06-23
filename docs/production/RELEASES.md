@@ -24,8 +24,8 @@ porque a numeração v1.0.4 já estava ocupada por CC-2026-008 (exclusão segura
 produtos com pedidos).
 
 Trata SKU, EAN/GTIN, código de barras, NCM, CEST, CFOP, código do fornecedor, modelo e
-marca como TEXTO em todo o pipeline: planilha modelo (`@` no nível da coluna e célula a
-célula em 10000 linhas, inclusive células vazias, com tabela Excel e cache-buster no download), parser
+marca como TEXTO em todo o pipeline: planilha modelo (`numFmtId=49` no nível da coluna e
+células vazias pré-formatadas como Texto das linhas 2–10000, com tabela Excel e cache-buster no download), parser
 (detecta célula numérica + notação científica), revisão editável, simulação e commit
 atômico via RPC `import_product_with_attrs` com `SECURITY DEFINER`, whitelist de campos,
 admin+AAL2 checados internamente, audit completo (`parse|simulate|commit|blocked|export_revised`).
