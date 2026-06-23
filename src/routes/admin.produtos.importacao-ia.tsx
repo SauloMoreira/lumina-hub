@@ -338,7 +338,7 @@ function ImportacaoIaPage() {
             <div className="space-y-3">
               <Button asChild variant="default" className="w-full">
                 <a
-                  href="/templates/Cadastro_Minimo_Produtos_Led_Marica_IA_v1.0.5_Texto.xlsx"
+                  href="/templates/Cadastro_Minimo_Produtos_Led_Marica_IA_v1.0.5_Texto_ExcelSeguro.xlsx"
                   download="Cadastro_Minimo_Produtos_Led_Marica_IA.xlsx"
                 >
                   <Download className="h-4 w-4 mr-2" />
@@ -347,7 +347,7 @@ function ImportacaoIaPage() {
               </Button>
               <p className="text-xs text-muted-foreground">
                 O arquivo deve ser mantido no formato original. As colunas SKU, EAN/GTIN,
-                código de barras, NCM, CEST, CFOP, código fornecedor, modelo e marca já vêm como Texto no nível da coluna.
+                código de barras, NCM, CEST, CFOP, código fornecedor, modelo e marca já vêm como Texto nativo do Excel, inclusive para novas digitações.
               </p>
             </div>
           </Card>
