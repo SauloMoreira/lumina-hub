@@ -260,6 +260,22 @@ function ProductForm() {
       toast.error(QUALITY_FEATURED_BLOCK_MESSAGE);
       return;
     }
+    // Validação client-side: campos obrigatórios pelo schema (name, slug, price)
+    const trimmedName = form.name.trim();
+    if (!trimmedName) {
+      toast.error("Informe o nome do produto.");
+      return;
+    }
+    const priceNum = Number(form.price);
+    if (!form.price || Number.isNaN(priceNum) || priceNum < 0) {
+      toast.error("Informe um preço válido (maior ou igual a zero).");
+      return;
+    }
+    const slugCandidate = (form.slug || slugify(trimmedName)).trim();
+    if (!slugCandidate) {
+      toast.error("Slug inválido. Informe um nome com letras/números.");
+      return;
+    }
     setSaving(true);
 
     try {
@@ -356,7 +372,14 @@ function ProductForm() {
         nav({ to: "/admin/produtos" as any });
       }
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Erro ao salvar produto ou imagens");
+      // Supabase retorna objetos planos com message/details/hint, não instâncias de Error.
+      const err = error as { message?: string; details?: string; hint?: string; code?: string } | null;
+      const parts = [err?.message, err?.details, err?.hint, err?.code ? `(${err.code})` : null]
+        .filter(Boolean)
+        .join(" — ");
+      const msg = parts || (error instanceof Error ? error.message : "Erro ao salvar produto ou imagens");
+      console.error("[admin.produtos.salvar] falha:", error);
+      toast.error(msg);
     } finally {
       setSaving(false);
     }
