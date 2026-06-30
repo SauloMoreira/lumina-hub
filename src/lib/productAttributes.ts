@@ -49,6 +49,18 @@ export const ATTRIBUTE_SUGGESTIONS: AttributeSuggestion[] = [
   },
   { key: "warranty", label: "Garantia", placeholder: "12 meses" },
   { key: "brand", label: "Marca", placeholder: "Ex.: Ourolux" },
+  {
+    key: "ncm",
+    label: "NCM",
+    placeholder: "Ex.: 94054000",
+    description: "Nomenclatura Comum do Mercosul (8 dígitos).",
+  },
+  {
+    key: "barcode",
+    label: "Código de barras (EAN/GTIN)",
+    placeholder: "Ex.: 7891234567890",
+    description: "Código de barras EAN-13 ou GTIN.",
+  },
 ];
 
 const SUGGESTION_BY_KEY = new Map(ATTRIBUTE_SUGGESTIONS.map((s) => [s.key, s]));
