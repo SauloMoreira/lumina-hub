@@ -372,7 +372,14 @@ function ProductForm() {
         nav({ to: "/admin/produtos" as any });
       }
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Erro ao salvar produto ou imagens");
+      // Supabase retorna objetos planos com message/details/hint, não instâncias de Error.
+      const err = error as { message?: string; details?: string; hint?: string; code?: string } | null;
+      const parts = [err?.message, err?.details, err?.hint, err?.code ? `(${err.code})` : null]
+        .filter(Boolean)
+        .join(" — ");
+      const msg = parts || (error instanceof Error ? error.message : "Erro ao salvar produto ou imagens");
+      console.error("[admin.produtos.salvar] falha:", error);
+      toast.error(msg);
     } finally {
       setSaving(false);
     }
