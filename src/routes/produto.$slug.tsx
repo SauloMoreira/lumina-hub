@@ -98,7 +98,9 @@ const productQueryOptions = (slug: string) => ({
     const { data, error } = await supabase
       .from("products")
       .select(
-        "id, name, slug, description, specs, price, sale_price, stock_qty, stock_min_alert, sku, ncm, brand, weight_kg, height_cm, width_cm, length_cm, category_id, images, tags, active, featured, created_at, updated_at, seo_title, seo_description, seo_keywords, free_shipping_eligible, b2b_enabled, b2b_price, b2b_min_qty, b2b_qty_multiple, b2b_valid_until, b2b_show_in_vitrine, b2b_commercial_note, cest, cfop_default, product_origin, commercial_unit, tributary_unit, tax_category, fiscal_description, fiscal_notes, gtin_ean, gtin_tax, net_weight, gross_weight, fiscal_enabled, fiscal_status, fiscal_score, fiscal_updated_at, stock_alert_enabled, allow_out_of_stock_sales",
+        // Colunas sensíveis (cost_price, b2b_price, fiscal_*, stock_min_alert, stock_alert_enabled etc.)
+        // não são retornadas ao público — a leitura das mesmas foi restrita via GRANT no banco.
+        "id, name, slug, description, specs, price, sale_price, stock_qty, sku, ncm, brand, weight_kg, height_cm, width_cm, length_cm, category_id, images, tags, active, featured, created_at, updated_at, seo_title, seo_description, seo_keywords, free_shipping_eligible, b2b_enabled, b2b_show_in_vitrine, b2b_commercial_note, allow_out_of_stock_sales",
       )
       .eq("slug", slug)
       .eq("active", true)
