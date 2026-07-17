@@ -161,9 +161,17 @@ export function formatAttributeDisplay(value: string, unit?: string | null): str
   if (!v) return "";
   const u = (unit ?? "").trim();
   if (!u) return v;
+
+  // Se o valor já termina com a própria unidade (dado de origem já veio com
+  // a unidade embutida, ex: valor "100W" + unidade "W"), remove antes de
+  // anexar de novo — evita duplicações como "100WW", "60HZHz", "1000LMlm".
+  const escapedUnit = u.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  const dupSuffix = new RegExp(`\\s*${escapedUnit}$`, "i");
+  const vClean = v.replace(dupSuffix, "").trim() || v;
+
   // Unidades coladas (W, K, lm) ficam sem espaço; outras com espaço
   const noSpace = /^(W|K|lm|kW|V|Hz|mA|A)$/i.test(u);
-  return noSpace ? `${v}${u}` : `${v} ${u}`;
+  return noSpace ? `${vClean}${u}` : `${vClean} ${u}`;
 }
 
 // ---------------------------------------------------------------------------
