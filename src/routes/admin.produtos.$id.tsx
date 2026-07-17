@@ -178,7 +178,8 @@ function ProductForm() {
             }>,
           });
           setLoading(false);
-        });
+      })();
+
     }
   }, [id, isNew, nav]);
 
