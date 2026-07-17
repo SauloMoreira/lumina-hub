@@ -122,13 +122,11 @@ function ProdutosList() {
 
   const load = async () => {
     setLoading(true);
-    const [{ data }, { data: attrs }] = await Promise.all([
+    const [{ data: productsData }, { data: imagesData }, { data: attrs }] = await Promise.all([
+      supabase.rpc("admin_list_products"),
       supabase
-        .from("products")
-        .select(
-          "*, product_images(url_thumb, url_card, original_url, is_primary, sort_order, alt_text)",
-        )
-        .order("created_at", { ascending: false }),
+        .from("product_images")
+        .select("product_id, url_thumb, url_card, original_url, is_primary, sort_order, alt_text"),
       supabase
         .from("product_attributes")
         .select(
@@ -136,6 +134,16 @@ function ProdutosList() {
         )
         .limit(20000),
     ]);
+    const imagesByProduct = new Map<string, any[]>();
+    (imagesData ?? []).forEach((img: any) => {
+      if (!imagesByProduct.has(img.product_id)) imagesByProduct.set(img.product_id, []);
+      imagesByProduct.get(img.product_id)!.push(img);
+    });
+    const data = (productsData ?? []).map((p: any) => ({
+      ...p,
+      product_images: imagesByProduct.get(p.id) ?? [],
+    }));
+
     // Mapa de aliases: a tabela product_attributes pode ter chaves em pt-BR
     // (potencia_w, tensao_v, etc.) ou na forma canônica em inglês (power, voltage).
     // Normalizamos para a chave canônica usada pelos filtros.
