@@ -116,17 +116,22 @@ function ProductForm() {
       .order("name")
       .then(({ data }) => setCats((data as any) ?? []));
     if (!isNew) {
-      supabase
-        .from("products")
-        .select("*, product_images(alt_text, original_url)")
-        .eq("id", id)
-        .maybeSingle()
-        .then(({ data, error }) => {
-          if (error || !data) {
-            toast.error("Produto não encontrado");
-            nav({ to: "/admin/produtos" as any });
-            return;
-          }
+      (async () => {
+        const [{ data: prod, error }, { data: imgs }] = await Promise.all([
+          supabase.rpc("admin_get_product", { p_id: id }),
+          supabase
+            .from("product_images")
+            .select("alt_text, original_url")
+            .eq("product_id", id),
+        ]);
+        if (error || !prod) {
+          toast.error("Produto não encontrado");
+          nav({ to: "/admin/produtos" as any });
+          return;
+        }
+        const data: any = { ...(prod as any), product_images: imgs ?? [] };
+
+
           setForm({
             name: data.name,
             slug: data.slug,
@@ -173,7 +178,8 @@ function ProductForm() {
             }>,
           });
           setLoading(false);
-        });
+      })();
+
     }
   }, [id, isNew, nav]);
 
