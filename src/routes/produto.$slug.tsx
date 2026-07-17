@@ -113,7 +113,7 @@ const productQueryOptions = (slug: string) => ({
       .eq("product_id", (data as { id: string }).id)
       .order("is_primary", { ascending: false })
       .order("sort_order", { ascending: true });
-    return { ...(data as ProductWithSeo), product_images: (imgs ?? []) as ProductImageRow[] };
+    return { ...(data as unknown as ProductWithSeo), product_images: (imgs ?? []) as ProductImageRow[] };
   },
 });
 
