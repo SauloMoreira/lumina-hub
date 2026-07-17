@@ -417,10 +417,6 @@ function ProductPage() {
           </aside>
         </div>
 
-        <div className="mt-8 lg:max-w-[calc(100%-380px)]">
-          <BuyTogetherBlock product={product} />
-        </div>
-
         {(() => {
           const faq = extractFaq(product.specs);
           if (faq.length === 0) return null;
