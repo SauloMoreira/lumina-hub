@@ -1,0 +1,1 @@
+GRANT SELECT (seo_title, seo_description, seo_keywords, free_shipping_eligible, b2b_enabled, b2b_show_in_vitrine, b2b_commercial_note, allow_out_of_stock_sales) ON public.products TO anon, authenticated;
