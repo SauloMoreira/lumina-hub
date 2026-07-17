@@ -24,21 +24,7 @@ export type PublicAttributeLabel = {
 // ---------------------------------------------------------------------------
 // Auth helpers
 // ---------------------------------------------------------------------------
-async function getOptionalUserId(): Promise<string | null> {
-  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-  try {
-    const { getRequestHeader } = await import("@tanstack/react-start/server");
-    const auth = getRequestHeader("Authorization") || getRequestHeader("authorization");
-    if (auth && auth.toLowerCase().startsWith("bearer ")) {
-      const token = auth.slice(7).trim();
-      const { data: userRes } = await supabaseAdmin.auth.getUser(token);
-      return userRes.user?.id ?? null;
-    }
-  } catch {
-    /* anon */
-  }
-  return null;
-}
+
 
 async function requireAdmin(): Promise<string> {
   const { assertAdminAal2FromBearer } = await import("@/integrations/supabase/admin-assertions.server");
