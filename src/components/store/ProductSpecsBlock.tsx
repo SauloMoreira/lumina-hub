@@ -13,6 +13,7 @@ type Props = { productId: string };
  * configurados em /admin/produtos/atributos-rotulos quando disponíveis.
  */
 export function ProductSpecsBlock({ productId }: Props) {
+  const [expanded, setExpanded] = useState(false);
   const { data, isLoading } = useQuery({
     queryKey: ["product-specs-public", productId],
     queryFn: () => getPublicProductAttributes({ data: { productId } }),
@@ -35,7 +36,6 @@ export function ProductSpecsBlock({ productId }: Props) {
 
   const lookup = buildLabelLookup(labels ?? []);
   const PREVIEW_COUNT = 3;
-  const [expanded, setExpanded] = useState(false);
   const visibleData = expanded ? data : data.slice(0, PREVIEW_COUNT);
   const hasMore = data.length > PREVIEW_COUNT;
 
