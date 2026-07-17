@@ -130,7 +130,7 @@ function ProductForm() {
           return;
         }
         const data: any = { ...(prod as any), product_images: imgs ?? [] };
-        {
+
 
           setForm({
             name: data.name,
