@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { getPublicProductAttributes } from "@/server/productAttributes.functions";
 import { getPublicAttributeLabels } from "@/server/productAttributeLabels.functions";
@@ -33,12 +34,16 @@ export function ProductSpecsBlock({ productId }: Props) {
   if (isLoading || !data || data.length === 0) return null;
 
   const lookup = buildLabelLookup(labels ?? []);
+  const PREVIEW_COUNT = 3;
+  const [expanded, setExpanded] = useState(false);
+  const visibleData = expanded ? data : data.slice(0, PREVIEW_COUNT);
+  const hasMore = data.length > PREVIEW_COUNT;
 
   return (
     <section className="mt-8 max-w-2xl">
       <h2 className="font-display font-semibold text-lg mb-3">Especificações técnicas</h2>
       <dl className="rounded-lg border bg-card divide-y divide-border overflow-hidden">
-        {data.map((attr) => {
+        {visibleData.map((attr) => {
           const friendly = lookup.find(attr.attribute_key, attr.attribute_value);
           const technical = formatAttributeDisplay(attr.attribute_value, attr.attribute_unit);
           return (
@@ -76,6 +81,14 @@ export function ProductSpecsBlock({ productId }: Props) {
           );
         })}
       </dl>
+      {hasMore && (
+        <button
+          onClick={() => setExpanded((v) => !v)}
+          className="mt-2 text-sm font-medium text-accent hover:underline"
+        >
+          {expanded ? "Ver menos" : `Ver mais especificações (${data.length - PREVIEW_COUNT})`}
+        </button>
+      )}
     </section>
   );
 }
