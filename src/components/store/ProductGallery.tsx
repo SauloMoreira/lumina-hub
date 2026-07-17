@@ -113,7 +113,7 @@ export function ProductGallery({ images, productName }: Props) {
             onMouseEnter={() => canHover && setIsZooming(true)}
             onMouseLeave={() => setIsZooming(false)}
             onMouseMove={handleMouseMove}
-            className="relative w-full aspect-square bg-surface border border-border rounded-lg overflow-hidden select-none"
+            className="relative w-full aspect-square bg-surface border border-border rounded-lg overflow-hidden select-none p-8"
             style={{ cursor: isZooming ? "crosshair" : "default" }}
           >
             <img
