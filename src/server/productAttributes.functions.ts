@@ -24,10 +24,6 @@ export type ProductAttributeRow = {
 // ---------------------------------------------------------------------------
 // Auth helpers (mesmo padrão do productRelations.functions.ts)
 // ---------------------------------------------------------------------------
-async function getOptionalUserId(): Promise<string | null> {
-  const { getOptionalUserIdFromBearer } = await import("./bearerAuth.server");
-  return getOptionalUserIdFromBearer();
-}
 
 
 async function requireAdmin(): Promise<string> {
