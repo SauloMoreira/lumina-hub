@@ -414,11 +414,8 @@ function ProductPage() {
                 </span>
               </div>
             </div>
+            <BuyTogetherBlock product={product} />
           </aside>
-        </div>
-
-        <div className="mt-8 lg:max-w-[calc(100%-380px)]">
-          <BuyTogetherBlock product={product} />
         </div>
 
         {(() => {
