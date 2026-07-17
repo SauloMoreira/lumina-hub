@@ -414,6 +414,7 @@ function ProductPage() {
                 </span>
               </div>
             </div>
+            <BuyTogetherBlock product={product} />
           </aside>
         </div>
 
