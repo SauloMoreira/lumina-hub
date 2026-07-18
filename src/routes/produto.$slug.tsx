@@ -283,6 +283,11 @@ function ProductPage() {
             )}
 
             <ProductSpecsBlock productId={product.id} />
+            <ProductReviews
+              productId={product.id}
+              avgRating={Number((product as any).avg_rating ?? 0)}
+              reviewCount={Number((product as any).review_count ?? 0)}
+            />
           </div>
 
           {/* COLUNA DIREITA: PAINEL DE COMPRA (sticky) */}
