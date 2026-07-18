@@ -16,6 +16,7 @@ import { RelatedProductsBlock } from "@/components/store/RelatedProductsBlock";
 import { BuyTogetherBlock } from "@/components/store/BuyTogetherBlock";
 import { ProductInBundlesBlock } from "@/components/store/ProductInBundlesBlock";
 import { ProductSpecsBlock } from "@/components/store/ProductSpecsBlock";
+import { ProductReviews } from "@/components/store/ProductReviews";
 
 type FaqItem = { question: string; answer: string };
 type ProductWithSeo = Product & {
