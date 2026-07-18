@@ -1,0 +1,1 @@
+GRANT SELECT (ncm) ON public.products TO anon;
