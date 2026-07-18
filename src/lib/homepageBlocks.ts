@@ -279,7 +279,8 @@ export type HomepageSectionKey =
   | "dynamic_showcases"
   | "combos_showcase"
   | "institutional_block"
-  | "main_cta";
+  | "main_cta"
+  | "newsletter_signup";
 
 export interface HomepageSection {
   id: string;
