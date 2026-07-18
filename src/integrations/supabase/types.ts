@@ -3167,10 +3167,114 @@ export type Database = {
           },
         ]
       }
+      product_review_messages: {
+        Row: {
+          author_type: string
+          author_user_id: string
+          created_at: string
+          id: string
+          message: string
+          review_id: string
+        }
+        Insert: {
+          author_type: string
+          author_user_id: string
+          created_at?: string
+          id?: string
+          message: string
+          review_id: string
+        }
+        Update: {
+          author_type?: string
+          author_user_id?: string
+          created_at?: string
+          id?: string
+          message?: string
+          review_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "product_review_messages_author_user_id_fkey"
+            columns: ["author_user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "product_review_messages_review_id_fkey"
+            columns: ["review_id"]
+            isOneToOne: false
+            referencedRelation: "product_reviews"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      product_reviews: {
+        Row: {
+          comment: string
+          created_at: string
+          id: string
+          is_hidden: boolean
+          order_id: string | null
+          product_id: string
+          rating: number
+          title: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          comment: string
+          created_at?: string
+          id?: string
+          is_hidden?: boolean
+          order_id?: string | null
+          product_id: string
+          rating: number
+          title?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          comment?: string
+          created_at?: string
+          id?: string
+          is_hidden?: boolean
+          order_id?: string | null
+          product_id?: string
+          rating?: number
+          title?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "product_reviews_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "product_reviews_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "product_reviews_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       products: {
         Row: {
           active: boolean | null
           allow_out_of_stock_sales: boolean
+          avg_rating: number
           b2b_commercial_note: string | null
           b2b_enabled: boolean
           b2b_min_qty: number | null
@@ -3207,6 +3311,7 @@ export type Database = {
           net_weight: number | null
           price: number
           product_origin: number | null
+          review_count: number
           sale_price: number | null
           seo_description: string | null
           seo_keywords: string | null
@@ -3227,6 +3332,7 @@ export type Database = {
         Insert: {
           active?: boolean | null
           allow_out_of_stock_sales?: boolean
+          avg_rating?: number
           b2b_commercial_note?: string | null
           b2b_enabled?: boolean
           b2b_min_qty?: number | null
@@ -3263,6 +3369,7 @@ export type Database = {
           net_weight?: number | null
           price: number
           product_origin?: number | null
+          review_count?: number
           sale_price?: number | null
           seo_description?: string | null
           seo_keywords?: string | null
@@ -3283,6 +3390,7 @@ export type Database = {
         Update: {
           active?: boolean | null
           allow_out_of_stock_sales?: boolean
+          avg_rating?: number
           b2b_commercial_note?: string | null
           b2b_enabled?: boolean
           b2b_min_qty?: number | null
@@ -3319,6 +3427,7 @@ export type Database = {
           net_weight?: number | null
           price?: number
           product_origin?: number | null
+          review_count?: number
           sale_price?: number | null
           seo_description?: string | null
           seo_keywords?: string | null
@@ -3578,6 +3687,7 @@ export type Database = {
         Returns: {
           active: boolean | null
           allow_out_of_stock_sales: boolean
+          avg_rating: number
           b2b_commercial_note: string | null
           b2b_enabled: boolean
           b2b_min_qty: number | null
@@ -3614,6 +3724,7 @@ export type Database = {
           net_weight: number | null
           price: number
           product_origin: number | null
+          review_count: number
           sale_price: number | null
           seo_description: string | null
           seo_keywords: string | null
@@ -3643,6 +3754,7 @@ export type Database = {
         Returns: {
           active: boolean | null
           allow_out_of_stock_sales: boolean
+          avg_rating: number
           b2b_commercial_note: string | null
           b2b_enabled: boolean
           b2b_min_qty: number | null
@@ -3679,6 +3791,7 @@ export type Database = {
           net_weight: number | null
           price: number
           product_origin: number | null
+          review_count: number
           sale_price: number | null
           seo_description: string | null
           seo_keywords: string | null
@@ -4005,6 +4118,10 @@ export type Database = {
       }
       user_belongs_to_company: {
         Args: { _company_id: string; _user_id: string }
+        Returns: boolean
+      }
+      user_purchased_product: {
+        Args: { _product_id: string; _user_id: string }
         Returns: boolean
       }
       validate_b2b_pricing: {
