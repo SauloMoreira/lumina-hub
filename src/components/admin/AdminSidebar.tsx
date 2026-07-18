@@ -32,6 +32,8 @@ import {
   DollarSign,
   ScrollText,
   Star,
+} from "lucide-react";
+
 
 import { supabase } from "@/integrations/supabase/client";
 import logo from "@/assets/logo-navbar.png";
