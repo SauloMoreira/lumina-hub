@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 
 const WELCOME_COUPON_CODE = "BEMVINDO10";
 
-export function NewsletterSignup() {
+export function NewsletterSignup({ compact = false }: { compact?: boolean } = {}) {
   const [email, setEmail] = useState("");
   const [status, setStatus] = useState<"idle" | "loading" | "done" | "error">("idle");
   const [copied, setCopied] = useState(false);
@@ -31,10 +31,11 @@ export function NewsletterSignup() {
     });
   };
 
-  return (
-    <section className="container mx-auto px-4 pb-12">
-      <div className="rounded-2xl bg-gradient-to-br from-primary via-primary to-primary/80 text-primary-foreground p-8 md:p-12 text-center shadow-elevated">
-        <div className="max-w-lg mx-auto">
+  const card = (
+    <div
+      className={`rounded-2xl bg-gradient-to-br from-primary via-primary to-primary/80 text-primary-foreground ${compact ? "p-6 md:p-8" : "p-8 md:p-12"} text-center shadow-elevated`}
+    >
+      <div className="max-w-lg mx-auto">
           {status === "done" ? (
             <>
               <Check className="w-12 h-12 mx-auto mb-4 opacity-90" />
@@ -93,8 +94,9 @@ export function NewsletterSignup() {
               )}
             </>
           )}
-        </div>
       </div>
-    </section>
+    </div>
   );
+  if (compact) return card;
+  return <section className="container mx-auto px-4 pb-12">{card}</section>;
 }
