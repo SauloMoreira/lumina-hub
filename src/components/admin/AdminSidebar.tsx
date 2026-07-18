@@ -149,6 +149,8 @@ const groups: Group[] = [
       { to: "/admin/produtos/atributos-rotulos", label: "Rótulos amigáveis", icon: Tags },
       { to: "/admin/produtos/combos", label: "Kits e Combos", icon: PackagePlus },
       { to: "/admin/produtos/importacao-ia", label: "Importação IA", icon: Sparkles },
+      { to: "/admin/avaliacoes", label: "Avaliações", icon: Star },
+
     ],
   },
   {
