@@ -356,6 +356,7 @@ export const createOrder = createServerFn({ method: "POST" })
         {
           _code: data.couponCode,
           _subtotal: subtotal,
+          _user_id: userId,
         } as never,
       );
       const row = Array.isArray(rows)

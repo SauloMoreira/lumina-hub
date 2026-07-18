@@ -867,6 +867,7 @@ export type Database = {
           id: string
           max_uses: number | null
           min_order_value: number | null
+          single_use_per_customer: boolean
           used_count: number | null
         }
         Insert: {
@@ -880,6 +881,7 @@ export type Database = {
           id?: string
           max_uses?: number | null
           min_order_value?: number | null
+          single_use_per_customer?: boolean
           used_count?: number | null
         }
         Update: {
@@ -893,6 +895,7 @@ export type Database = {
           id?: string
           max_uses?: number | null
           min_order_value?: number | null
+          single_use_per_customer?: boolean
           used_count?: number | null
         }
         Relationships: []
@@ -3816,14 +3819,23 @@ export type Database = {
           isSetofReturn: true
         }
       }
-      apply_coupon: {
-        Args: { _code: string; _subtotal: number }
-        Returns: {
-          discount: number
-          message: string
-          valid: boolean
-        }[]
-      }
+      apply_coupon:
+        | {
+            Args: { _code: string; _subtotal: number }
+            Returns: {
+              discount: number
+              message: string
+              valid: boolean
+            }[]
+          }
+        | {
+            Args: { _code: string; _subtotal: number; _user_id?: string }
+            Returns: {
+              discount: number
+              message: string
+              valid: boolean
+            }[]
+          }
       audit_jsonb_diff: { Args: { _after: Json; _before: Json }; Returns: Json }
       autocomplete_products_public: {
         Args: { _limit?: number; _terms: string[] }
