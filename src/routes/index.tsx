@@ -913,7 +913,7 @@ function HomePage() {
     );
   };
 
-  const renderMainCta = () => {
+  const renderMainCta = (compact = false) => {
     if (!(homepage?.main_cta_is_active ?? true)) return null;
     const CtaIcon = getLucideIcon(homepage?.main_cta_icon, Sparkles);
     const title = homepage?.main_cta_title ?? "A loja certa para o seu projeto";
@@ -935,10 +935,11 @@ function HomePage() {
       containerStyle.background = bg;
     }
     if (fg) containerStyle.color = fg;
+    const pad = compact ? "p-6 md:p-8" : "p-8 md:p-12";
     const baseCls =
       bg || bgImage
-        ? "rounded-2xl text-primary-foreground p-8 md:p-12 text-center shadow-elevated"
-        : "rounded-2xl bg-gradient-to-br from-primary via-primary to-primary/80 text-primary-foreground p-8 md:p-12 text-center shadow-elevated";
+        ? `rounded-2xl text-primary-foreground ${pad} text-center shadow-elevated`
+        : `rounded-2xl bg-gradient-to-br from-primary via-primary to-primary/80 text-primary-foreground ${pad} text-center shadow-elevated`;
 
     const renderBtn = () => {
       if (!btnActive) return null;
@@ -974,18 +975,24 @@ function HomePage() {
       );
     };
 
+    const card = (
+      <div className={baseCls} style={containerStyle}>
+        <CtaIcon className="w-8 h-8 mx-auto mb-3 opacity-90" />
+        <h3 className={`font-display font-bold ${compact ? "text-xl md:text-2xl" : "text-2xl md:text-3xl"} mb-3`}>
+          {title}
+        </h3>
+        {desc && (
+          <p className="text-sm md:text-base opacity-90 max-w-xl mx-auto mb-6 leading-relaxed">
+            {desc}
+          </p>
+        )}
+        {renderBtn()}
+      </div>
+    );
+    if (compact) return card;
     return (
       <section key="main_cta" className="container mx-auto px-4 pb-12">
-        <div className={baseCls} style={containerStyle}>
-          <CtaIcon className="w-8 h-8 mx-auto mb-3 opacity-90" />
-          <h3 className="font-display font-bold text-2xl md:text-3xl mb-3">{title}</h3>
-          {desc && (
-            <p className="text-sm md:text-base opacity-90 max-w-xl mx-auto mb-6 leading-relaxed">
-              {desc}
-            </p>
-          )}
-          {renderBtn()}
-        </div>
+        {card}
       </section>
     );
   };
@@ -1030,13 +1037,26 @@ function HomePage() {
     .slice()
     .sort((a, b) => a.sort_order - b.sort_order);
 
-  return (
-    <StoreLayout>
-      {orderedSections.map((s) => {
-        const node = SECTION_RENDERERS[s.section_key]();
-        if (!node) return null;
-        return <React.Fragment key={s.section_key}>{node}</React.Fragment>;
-      })}
-    </StoreLayout>
-  );
+  const renderedNodes: React.ReactNode[] = [];
+  for (let i = 0; i < orderedSections.length; i++) {
+    const s = orderedSections[i];
+    const next = orderedSections[i + 1];
+    if (s.section_key === "main_cta" && next?.section_key === "newsletter_signup") {
+      renderedNodes.push(
+        <section key="main_cta_newsletter_combo" className="container mx-auto px-4 pb-12">
+          <div className="grid md:grid-cols-2 gap-4 md:gap-6">
+            {renderMainCta(true)}
+            <NewsletterSignup compact />
+          </div>
+        </section>,
+      );
+      i++;
+      continue;
+    }
+    const node = SECTION_RENDERERS[s.section_key]();
+    if (!node) continue;
+    renderedNodes.push(<React.Fragment key={s.section_key}>{node}</React.Fragment>);
+  }
+
+  return <StoreLayout>{renderedNodes}</StoreLayout>;
 }
