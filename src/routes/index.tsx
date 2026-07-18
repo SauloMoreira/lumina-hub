@@ -39,6 +39,7 @@ import {
 } from "@/lib/homepageBlocks";
 import { HomepageShowcaseSection } from "@/components/store/HomepageShowcaseSection";
 import { KitsCarousel } from "@/components/store/KitsCarousel";
+import { NewsletterSignup } from "@/components/store/NewsletterSignup";
 import logoHero from "@/assets/logo-hero.webp";
 import { optimizeBannerUrl } from "@/lib/bannerImages";
 import { fetchHomeBanners } from "@/server/homepage.functions";
@@ -1009,6 +1010,7 @@ function HomePage() {
     ),
     institutional_block: () => null,
     main_cta: renderMainCta,
+    newsletter_signup: () => <NewsletterSignup key="newsletter_signup" />,
   };
 
   // Fallback se a tabela falhar/voltar vazia: usa a ordem padrão hardcoded.

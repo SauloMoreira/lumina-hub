@@ -279,7 +279,8 @@ export type HomepageSectionKey =
   | "dynamic_showcases"
   | "combos_showcase"
   | "institutional_block"
-  | "main_cta";
+  | "main_cta"
+  | "newsletter_signup";
 
 export interface HomepageSection {
   id: string;
@@ -374,6 +375,13 @@ export const DEFAULT_HOMEPAGE_SECTION_ORDER: Array<{
     title: "CTA principal",
     description: "Chamada final administrável da home.",
     sort_order: 110,
+    is_active: true,
+  },
+  {
+    section_key: "newsletter_signup",
+    title: "Cadastro de e-mail (newsletter)",
+    description: "Captura de e-mail com cupom de boas-vindas, no rodapé da home.",
+    sort_order: 120,
     is_active: true,
   },
 ];
