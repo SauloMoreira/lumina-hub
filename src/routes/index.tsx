@@ -1010,6 +1010,7 @@ function HomePage() {
     ),
     institutional_block: () => null,
     main_cta: renderMainCta,
+    newsletter_signup: () => <NewsletterSignup key="newsletter_signup" />,
   };
 
   // Fallback se a tabela falhar/voltar vazia: usa a ordem padrão hardcoded.
