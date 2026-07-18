@@ -1,0 +1,1 @@
+SELECT * FROM public.detect_abandoned_carts(60);
