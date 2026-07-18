@@ -63,6 +63,7 @@ import { Route as AdminCarrinhosAbandonadosRouteImport } from './routes/admin.ca
 import { Route as AdminCampanhasPerformanceRouteImport } from './routes/admin.campanhas-performance'
 import { Route as AdminCampanhasRouteImport } from './routes/admin.campanhas'
 import { Route as AdminBannersRouteImport } from './routes/admin.banners'
+import { Route as AdminAvaliacoesRouteImport } from './routes/admin.avaliacoes'
 import { Route as AdminAutomacoesRouteImport } from './routes/admin.automacoes'
 import { Route as AdminProdutosIndexRouteImport } from './routes/admin.produtos.index'
 import { Route as AdminPedidosIndexRouteImport } from './routes/admin.pedidos.index'
@@ -366,6 +367,11 @@ const AdminBannersRoute = AdminBannersRouteImport.update({
   path: '/admin/banners',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AdminAvaliacoesRoute = AdminAvaliacoesRouteImport.update({
+  id: '/admin/avaliacoes',
+  path: '/admin/avaliacoes',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AdminAutomacoesRoute = AdminAutomacoesRouteImport.update({
   id: '/admin/automacoes',
   path: '/admin/automacoes',
@@ -554,6 +560,7 @@ export interface FileRoutesByFullPath {
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/troca': typeof TrocaRoute
   '/admin/automacoes': typeof AdminAutomacoesRoute
+  '/admin/avaliacoes': typeof AdminAvaliacoesRoute
   '/admin/banners': typeof AdminBannersRoute
   '/admin/campanhas': typeof AdminCampanhasRoute
   '/admin/campanhas-performance': typeof AdminCampanhasPerformanceRoute
@@ -639,6 +646,7 @@ export interface FileRoutesByTo {
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/troca': typeof TrocaRoute
   '/admin/automacoes': typeof AdminAutomacoesRoute
+  '/admin/avaliacoes': typeof AdminAvaliacoesRoute
   '/admin/banners': typeof AdminBannersRoute
   '/admin/campanhas': typeof AdminCampanhasRoute
   '/admin/campanhas-performance': typeof AdminCampanhasPerformanceRoute
@@ -725,6 +733,7 @@ export interface FileRoutesById {
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/troca': typeof TrocaRoute
   '/admin/automacoes': typeof AdminAutomacoesRoute
+  '/admin/avaliacoes': typeof AdminAvaliacoesRoute
   '/admin/banners': typeof AdminBannersRoute
   '/admin/campanhas': typeof AdminCampanhasRoute
   '/admin/campanhas-performance': typeof AdminCampanhasPerformanceRoute
@@ -813,6 +822,7 @@ export interface FileRouteTypes {
     | '/sitemap.xml'
     | '/troca'
     | '/admin/automacoes'
+    | '/admin/avaliacoes'
     | '/admin/banners'
     | '/admin/campanhas'
     | '/admin/campanhas-performance'
@@ -898,6 +908,7 @@ export interface FileRouteTypes {
     | '/sitemap.xml'
     | '/troca'
     | '/admin/automacoes'
+    | '/admin/avaliacoes'
     | '/admin/banners'
     | '/admin/campanhas'
     | '/admin/campanhas-performance'
@@ -983,6 +994,7 @@ export interface FileRouteTypes {
     | '/sitemap.xml'
     | '/troca'
     | '/admin/automacoes'
+    | '/admin/avaliacoes'
     | '/admin/banners'
     | '/admin/campanhas'
     | '/admin/campanhas-performance'
@@ -1070,6 +1082,7 @@ export interface RootRouteChildren {
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   TrocaRoute: typeof TrocaRoute
   AdminAutomacoesRoute: typeof AdminAutomacoesRoute
+  AdminAvaliacoesRoute: typeof AdminAvaliacoesRoute
   AdminBannersRoute: typeof AdminBannersRoute
   AdminCampanhasRoute: typeof AdminCampanhasRoute
   AdminCampanhasPerformanceRoute: typeof AdminCampanhasPerformanceRoute
@@ -1501,6 +1514,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminBannersRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/admin/avaliacoes': {
+      id: '/admin/avaliacoes'
+      path: '/admin/avaliacoes'
+      fullPath: '/admin/avaliacoes'
+      preLoaderRoute: typeof AdminAvaliacoesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/admin/automacoes': {
       id: '/admin/automacoes'
       path: '/admin/automacoes'
@@ -1799,6 +1819,7 @@ const rootRouteChildren: RootRouteChildren = {
   SitemapDotxmlRoute: SitemapDotxmlRoute,
   TrocaRoute: TrocaRoute,
   AdminAutomacoesRoute: AdminAutomacoesRoute,
+  AdminAvaliacoesRoute: AdminAvaliacoesRoute,
   AdminBannersRoute: AdminBannersRoute,
   AdminCampanhasRoute: AdminCampanhasRoute,
   AdminCampanhasPerformanceRoute: AdminCampanhasPerformanceRoute,
@@ -1852,12 +1873,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { createStart } from '@tanstack/react-start'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-  }
-}
