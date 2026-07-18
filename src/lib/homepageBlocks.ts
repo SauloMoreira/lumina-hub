@@ -377,6 +377,13 @@ export const DEFAULT_HOMEPAGE_SECTION_ORDER: Array<{
     sort_order: 110,
     is_active: true,
   },
+  {
+    section_key: "newsletter_signup",
+    title: "Cadastro de e-mail (newsletter)",
+    description: "Captura de e-mail com cupom de boas-vindas, no rodapé da home.",
+    sort_order: 120,
+    is_active: true,
+  },
 ];
 
 const SECTION_COLS = "id, section_key, title, description, sort_order, is_active, is_locked";
