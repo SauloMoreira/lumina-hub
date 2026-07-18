@@ -16,6 +16,7 @@ import { RelatedProductsBlock } from "@/components/store/RelatedProductsBlock";
 import { BuyTogetherBlock } from "@/components/store/BuyTogetherBlock";
 import { ProductInBundlesBlock } from "@/components/store/ProductInBundlesBlock";
 import { ProductSpecsBlock } from "@/components/store/ProductSpecsBlock";
+import { ProductReviews } from "@/components/store/ProductReviews";
 
 type FaqItem = { question: string; answer: string };
 type ProductWithSeo = Product & {
@@ -100,7 +101,7 @@ const productQueryOptions = (slug: string) => ({
       .select(
         // Colunas sensíveis (cost_price, b2b_price, fiscal_*, stock_min_alert, stock_alert_enabled etc.)
         // não são retornadas ao público — a leitura das mesmas foi restrita via GRANT no banco.
-        "id, name, slug, description, specs, price, sale_price, stock_qty, sku, ncm, brand, weight_kg, height_cm, width_cm, length_cm, category_id, images, tags, active, featured, created_at, updated_at, seo_title, seo_description, seo_keywords, free_shipping_eligible, b2b_enabled, b2b_show_in_vitrine, b2b_commercial_note, allow_out_of_stock_sales",
+        "id, name, slug, description, specs, price, sale_price, stock_qty, sku, ncm, brand, weight_kg, height_cm, width_cm, length_cm, category_id, images, tags, active, featured, created_at, updated_at, seo_title, seo_description, seo_keywords, free_shipping_eligible, b2b_enabled, b2b_show_in_vitrine, b2b_commercial_note, allow_out_of_stock_sales, avg_rating, review_count",
       )
       .eq("slug", slug)
       .eq("active", true)
@@ -282,6 +283,11 @@ function ProductPage() {
             )}
 
             <ProductSpecsBlock productId={product.id} />
+            <ProductReviews
+              productId={product.id}
+              avgRating={Number((product as any).avg_rating ?? 0)}
+              reviewCount={Number((product as any).review_count ?? 0)}
+            />
           </div>
 
           {/* COLUNA DIREITA: PAINEL DE COMPRA (sticky) */}
