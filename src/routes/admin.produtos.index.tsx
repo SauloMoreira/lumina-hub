@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
-import { Plus, Pencil, Trash2, Sparkles, Boxes } from "lucide-react";
+import { Plus, Pencil, Trash2, Sparkles, Boxes, ImageOff } from "lucide-react";
 import { z } from "zod";
 import { zodValidator, fallback } from "@tanstack/zod-adapter";
 import { AdminLayout } from "@/components/admin/AdminLayout";
