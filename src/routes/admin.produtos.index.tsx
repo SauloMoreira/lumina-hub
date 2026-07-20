@@ -398,7 +398,12 @@ function ProdutosList() {
               className="w-10 h-10 object-cover rounded border border-border"
             />
           ) : (
-            <div className="w-10 h-10 rounded bg-muted" />
+            <div
+              title="Produto sem imagem cadastrada"
+              className="w-10 h-10 rounded bg-muted border border-dashed border-border flex items-center justify-center flex-shrink-0"
+            >
+              <ImageOff className="w-4 h-4 text-muted-foreground" />
+            </div>
           )}
           <div className="min-w-0">
             <p className="font-medium truncate">{p.name}</p>
