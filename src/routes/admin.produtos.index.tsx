@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
-import { Plus, Pencil, Trash2, Sparkles, Boxes } from "lucide-react";
+import { Plus, Pencil, Trash2, Sparkles, Boxes, ImageOff } from "lucide-react";
 import { z } from "zod";
 import { zodValidator, fallback } from "@tanstack/zod-adapter";
 import { AdminLayout } from "@/components/admin/AdminLayout";
@@ -398,7 +398,12 @@ function ProdutosList() {
               className="w-10 h-10 object-cover rounded border border-border"
             />
           ) : (
-            <div className="w-10 h-10 rounded bg-muted" />
+            <div
+              title="Produto sem imagem cadastrada"
+              className="w-10 h-10 rounded bg-muted border border-dashed border-border flex items-center justify-center flex-shrink-0"
+            >
+              <ImageOff className="w-4 h-4 text-muted-foreground" />
+            </div>
           )}
           <div className="min-w-0">
             <p className="font-medium truncate">{p.name}</p>
